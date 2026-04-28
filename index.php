@@ -1,4 +1,5 @@
 <?php
+require 'login_check.php';
 include 'db.php';
 ?>
 <!DOCTYPE html>

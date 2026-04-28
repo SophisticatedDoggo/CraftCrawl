@@ -6,17 +6,21 @@ CREATE TABLE IF NOT EXISTS users (
     fName VARCHAR(50) NOT NULL,
     lName VARCHAR(50) NOT NULL,
     email VARCHAR(255) NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(60) NOT NULL,
     createdAt DATETIME NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS businesses (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    bname VARCHAR (255) NOT NULL,
-    bEmail VARCHAR(255),
+    bName VARCHAR (255) NOT NULL,
+    bEmail VARCHAR(255) NOT NULL,
     bPhone VARCHAR(20),
+    password_hash VARCHAR(60) NOT NULL,
     bLocation VARCHAR(2048) NOT NULL,
-    bWebsite VARCHAR(2048)
+    bWebsite VARCHAR(2048),
+    bType VARCHAR(255) NOT NULL,
+    createdAt DATETIME NOT NULL,
+    approved BOOL NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS reviews (
@@ -27,6 +31,16 @@ CREATE TABLE IF NOT EXISTS reviews (
     notes VARCHAR(2048),
     CONSTRAINT fk_userId FOREIGN KEY (user_id)
     REFERENCES users(id),
-    CONSTRAINT fk_businessId FOREIGN KEY (business_id)
+    CONSTRAINT fk_review_businessId FOREIGN KEY (business_id)
+    REFERENCES businesses(id)
+);
+
+CREATE TABLE IF NOT EXISTS events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    eName VARCHAR(255) NOT NULL,
+    eTime DATETIME NOT NULL,
+    eDescription VARCHAR(2048),
+    business_id INT NOT NULL,
+    CONSTRAINT fk_event_businessId FOREIGN KEY (business_id)
     REFERENCES businesses(id)
 );
