@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     fName VARCHAR(50) NOT NULL,
     lName VARCHAR(50) NOT NULL,
     email VARCHAR(255) NOT NULL,
-    password_hash VARCHAR(60) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
     createdAt DATETIME NOT NULL
 );
 
@@ -15,12 +15,18 @@ CREATE TABLE IF NOT EXISTS businesses (
     bName VARCHAR (255) NOT NULL,
     bEmail VARCHAR(255) NOT NULL,
     bPhone VARCHAR(20),
-    password_hash VARCHAR(60) NOT NULL,
-    bLocation VARCHAR(2048) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    street_address VARCHAR(255) NOT NULL,
+    apt_suite      VARCHAR(100),
+    city           VARCHAR(100) NOT NULL,
+    state          VARCHAR(2)   NOT NULL,
+    zip            VARCHAR(10)  NOT NULL,
+    latitude       DECIMAL(9,6) NOT NULL,
+    longitude      DECIMAL(9,6) NOT NULL,
     bWebsite VARCHAR(2048),
     bType VARCHAR(255) NOT NULL,
     createdAt DATETIME NOT NULL,
-    approved BOOL NOT NULL
+    approved BOOL NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS reviews (

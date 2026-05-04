@@ -7,8 +7,6 @@ $success = null;
 $email = "";
 $first_name = "";
 $last_name = "";
-$password = "";
-$verify_password = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'];
@@ -77,15 +75,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h1>Create An Account</h1>
         <form id="account_creation_form" action="" method="POST">
             <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required value="<?php echo $email ?>"><br><br>
+            <input type="email" id="email" name="email" required value="<?php echo htmlSpecialChars($email) ?>"><br><br>
             <label for="first_name">First Name:</label>
             <input type="text" id="first_name" name="first_name" required value="<?php echo $first_name ?>"><br><br>
             <label for="last_name">Last Name:</label>
             <input type="text" id="last_name" name="last_name" required value="<?php echo $last_name ?>"><br><br>
             <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required value="<?php echo $password ?>"><br><br>
+            <input type="password" id="password" name="password" required><br><br>
             <label for="verify_password">Verify Password:</label>
-            <input type="password" id="verify_password" name="verify_password" required value="<?php echo $verify_password ?>"><br><br>
+            <input type="password" id="verify_password" name="verify_password" required><br><br>
             <div id="pswd_validation_msg"></div>
             <input type="submit" value="Create Account">
             <div>

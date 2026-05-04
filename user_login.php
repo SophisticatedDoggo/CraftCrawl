@@ -3,10 +3,15 @@ session_start();
 include 'db.php';
 
 $login_error = false;
+$email = "";
+
+function escape_output($value) {
+    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = $_POST['email'];
-    $password = $_POST['password'];
+    $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
+    $password = trim($_POST['password'] ?? '');
 
     $stmt = $conn->prepare("SELECT id, password_hash FROM users WHERE email=?");
     $stmt->bind_param("s", $email);
@@ -16,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if($user && password_verify($password, $user['password_hash'])) {
         $_SESSION['user_id'] = $user['id'];
-        header("Location: index.php");
+        header("Location: user/portal.php");
         exit();
     } else {
         $login_error = true;
@@ -37,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h1>Login</h1>
         <form id="login_form" action="" method="POST">
             <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required><br><br>
+            <input type="email" id="email" name="email" required value="<?php echo escape_output($email) ?>"><br><br>
             <label for="password">Password:</label>
             <input type="password" id="password" name="password" required><br><br>
             <input type="submit" value="Login">

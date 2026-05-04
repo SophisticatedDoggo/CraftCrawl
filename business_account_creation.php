@@ -1,29 +1,50 @@
 <?php
 include 'db.php';
+include 'config.php';
 
 $message = null;
-$success = null;
+$success = false;
+$approved = false;
+$business_name = "";
+$phone = "";
+$website = "";
 
-$email = "";
-$first_name = "";
-$last_name = "";
-$password = "";
-$verify_password = "";
+function clean_text($value) {
+    return trim(strip_tags($value ?? ''));
+}
+
+function escape_output($value) {
+    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = $_POST['email'];
-    $business_name = $_POST['business_name'];
-    $password = $_POST['password'];
-    $verify_password = $_POST['verify_password'];
+    $message = null;
+
+    $business_name = clean_text($_POST['business_name'] ?? '');
+    $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
+    $type = clean_text($_POST['business_types'] ?? '');
+    $phone = clean_text($_POST['phone'] ?? '');
+    $website = filter_var(trim($_POST['website'] ?? ''), FILTER_SANITIZE_URL);
+    $password = trim($_POST['password'] ?? '');
+    $verify_password = trim($_POST['verify_password'] ?? '');
     $date = date('Y-m-d H:i:s');
 
-    $stmt = $conn->prepare("SELECT id FROM users WHERE email=?");
+    $address = clean_text($_POST['address_address-search'] ?? '');
+    $apt_suite = clean_text($_POST['apartment'] ?? '');
+    $city = clean_text($_POST['city'] ?? '');
+    $state = strtoupper(clean_text($_POST['state'] ?? ''));
+    $zip = clean_text($_POST['postal_code'] ?? '');
+    $latitude = filter_var($_POST['latitude'] ?? 0, FILTER_VALIDATE_FLOAT);
+    $longitude = filter_var($_POST['longitude'] ?? 0, FILTER_VALIDATE_FLOAT);
+
+    $stmt = $conn->prepare("SELECT id FROM businesses WHERE bEmail=?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
-    $user = $result->fetch_assoc();
+    $business = $result->fetch_assoc();
 
-    if(!$user) {
+
+    if(!$business) {
         if(!empty($password) && ($password === $verify_password)) {
             if (strlen($password) < 10) {
                 $message = "Your Password Must Contain At Least 10 Characters!";
@@ -41,17 +62,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message = "Your Password Must Contain At Least 1 Lowercase Letter!";
             }
             else {
+                echo "<script>console.log('Password hashed');</script>";
                 $hash = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $conn->prepare("INSERT INTO users (fName, lName, email, password_hash, createdAt) VALUES (?, ?, ?, ?, ?)");
-                $stmt->bind_param("sssss", $first_name, $last_name, $email, $hash, $date);
-                $stmt->execute();
-                $message = "You have successfully created an account! Redirecting...";
-                $success = true;
             }
         } else {
             if($password !== $verify_password) {
                 $message = "Your passwords do not match!";
             }
+        }
+
+
+        if (!isset($message)) {
+            $stmt = $conn->prepare("INSERT INTO businesses (bName, bEmail, bType, bPhone, bWebsite, password_hash, street_address, apt_suite, city, state, zip, latitude, longitude, createdAt, approved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssssssssssddsi", $business_name, $email, $type, $phone, $website, $hash, $address, $apt_suite, $city, $state, $zip, $latitude, $longitude, $date, $approved);
+            $stmt->execute();
+            $message = "You have successfully created an account! Redirecting...";
+            $success = true;
         }
     } else {
         $message = "An account already exists with that Email";
@@ -65,32 +91,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CraftCrawl | User Account Creation</title>
+    <title>CraftCrawl | Business Account Creation</title>
     <link rel="stylesheet" href="css/style.css">
+    <script id="search-js" defer src="https://api.mapbox.com/search-js/v1.5.0/web.js"></script>
     <?php if ($success) : ?>
-        <meta http-equiv="refresh" content="3;url=user_login.php">
+        <meta http-equiv="refresh" content="3;url=business_login.php">
     <?php endif; ?>
 </head>
 <body>
     <div>
         <h1>Create An Account</h1>
         <form id="account_creation_form" action="" method="POST">
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required value="<?php echo $email ?>"><br><br>
             <label for="business_name">Business Name:</label>
-            <input type="text" id="business_name" name="business_name" required value="<?php echo $business_name ?>"><br><br>
+            <input type="text" id="business_name" name="business_name" required value="<?php echo escape_output($business_name) ?>"><br><br>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required><br><br>
+            <label for="business_types">Select a Business Type:</label>
+            <select name="business_types" id="business_types" required="true">
+                <option value="">--Please Select a Type--</option>
+                <option value="brewery">Brewery</option>
+                <option value="winery">Winery</option>
+                <option value="cidery">Cidery</option>
+                <option value="distilery">Distilery</option>
+            </select><br><br>
+            <label for="phone">Phone:</label>
+            <input type="tel" id="phone" name="phone" placeholder="Optional" value="<?php echo escape_output($phone) ?>"><br><br>
+            <label for="website">Business Website:</label>
+            <input type="url" id="website" name="website" placeholder="Optional" value="<?php echo escape_output($website) ?>"><br><br>
+
+            <h3>Business Address</h3>
+            <input name="address" autocomplete="address-line1" placeholder="Address" required>
+            <input name="apartment" autocomplete="address-line2" placeholder="Apartment">
+            <div class="flex">
+                <input name="city" autocomplete="address-level2" placeholder="City" required>
+                <input name="state" autocomplete="address-level1" placeholder="State" required>
+                <input name="postal_code" autocomplete="postal-code" placeholder="ZIP / Postcode" required>
+            </div>
+            <input name="latitude" id="latitude" type="hidden" value="0.0">
+            <input name="longitude" id="longitude" type="hidden" value="0.0"><br><br>
+
             <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required value="<?php echo $password ?>"><br><br>
+            <input type="password" id="password" name="password" required><br><br>
             <label for="verify_password">Verify Password:</label>
-            <input type="password" id="verify_password" name="verify_password" required value="<?php echo $verify_password ?>"><br><br>
+            <input type="password" id="verify_password" name="verify_password" required><br><br>
             <div id="pswd_validation_msg"></div>
             <input type="submit" value="Create Account">
             <div>
                 <?php if (isset($message)) : ?>
-                    <p><?php echo $message ?></p>
+                    <p><?php echo escape_output($message) ?></p>
                 <?php endif; ?>
             </div>
         </form>
     </div>
+<script>
+    window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
+</script>
+<script src="js/business_account_creation.js"></script>
 </body>
 </html>

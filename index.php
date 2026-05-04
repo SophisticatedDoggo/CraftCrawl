@@ -1,17 +1,21 @@
 <?php
 require 'login_check.php';
-include 'db.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CraftCrawl | Home</title>
+    <title>Craft Crawl | Portal</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <h1>Craft Crawl</h1>
-    <p>Welcome to Craft Crawl!</p>
+    <div>
+        <h1>Choose Regular or Business Account</h1>
+        <div>
+            <a href="user_login.php">Regular Account</a>
+            <a href="business_login.php">Business Account</a>
+        </div>
+    </div>
 </body>
 </html>
