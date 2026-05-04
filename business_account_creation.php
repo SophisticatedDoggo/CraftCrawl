@@ -13,10 +13,6 @@ function clean_text($value) {
     return trim(strip_tags($value ?? ''));
 }
 
-function escape_output($value) {
-    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $message = null;
 
