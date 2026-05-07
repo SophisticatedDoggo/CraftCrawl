@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS businesses (
     longitude      DECIMAL(9,6) NOT NULL,
     bWebsite VARCHAR(2048),
     bType VARCHAR(255) NOT NULL,
+    bAbout TEXT,
     createdAt DATETIME NOT NULL,
     approved BOOL NOT NULL DEFAULT FALSE
 );
@@ -35,6 +36,8 @@ CREATE TABLE IF NOT EXISTS reviews (
     user_id INT NOT NULL,
     business_id INT NOT NULL,
     notes VARCHAR(2048),
+    business_response VARCHAR(2048),
+    business_responseAt DATETIME,
     CONSTRAINT fk_userId FOREIGN KEY (user_id)
     REFERENCES users(id),
     CONSTRAINT fk_review_businessId FOREIGN KEY (business_id)
@@ -44,9 +47,27 @@ CREATE TABLE IF NOT EXISTS reviews (
 CREATE TABLE IF NOT EXISTS events (
     id INT AUTO_INCREMENT PRIMARY KEY,
     eName VARCHAR(255) NOT NULL,
-    eTime DATETIME NOT NULL,
     eDescription VARCHAR(2048),
+    eventDate DATE NOT NULL,
+    startTime TIME NOT NULL,
+    endTime TIME,
+    isRecurring BOOL NOT NULL DEFAULT FALSE,
+    recurrenceRule VARCHAR(50),
+    recurrenceEnd DATE,
+    createdAt DATETIME NOT NULL,
     business_id INT NOT NULL,
     CONSTRAINT fk_event_businessId FOREIGN KEY (business_id)
+    REFERENCES businesses(id)
+);
+
+CREATE TABLE IF NOT EXISTS liked_businesses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    business_id INT NOT NULL,
+    createdAt DATETIME NOT NULL,
+    UNIQUE KEY unique_user_business_like (user_id, business_id),
+    CONSTRAINT fk_liked_userId FOREIGN KEY (user_id)
+    REFERENCES users(id),
+    CONSTRAINT fk_liked_businessId FOREIGN KEY (business_id)
     REFERENCES businesses(id)
 );

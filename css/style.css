@@ -20,32 +20,32 @@
     justify-content: center;
     width: 24px;
     height: 24px;
-    border: 3px solid #6b7280;
+    border: 3px solid #ffffff;
     border-radius: 50%;
-    background: #ffffff;
-    color: #6b7280;
+    background: #6b7280;
+    color: #ffffff;
     font-weight: 700;
     font-size: 13px;
 }
 
 .business-list-number-brewery {
-    border-color: #f97316;
-    color: #f97316;
+    background: #f97316;
 }
 
 .business-list-number-winery {
-    border-color: #9333ea;
-    color: #9333ea;
+    background: #9333ea;
 }
 
 .business-list-number-cidery {
-    border-color: #16a34a;
-    color: #16a34a;
+    background: #dc2626;
 }
 
 .business-list-number-distillery {
-    border-color: #2563eb;
-    color: #2563eb;
+    background: #2563eb;
+}
+
+.business-list-number-meadery {
+    background: #facc15;
 }
 
 .business-list-details {
@@ -56,4 +56,515 @@
 
 .business-list-details span {
     color: #4b5563;
+}
+
+.portal-header,
+.details-nav,
+.business-header-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+}
+
+.portal-header {
+    width: 800px;
+    margin-bottom: 16px;
+}
+
+.portal-header h1,
+.portal-header p {
+    margin: 0;
+}
+
+.business-search {
+    position: relative;
+    flex: 1;
+    max-width: 420px;
+}
+
+.business-search label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 700;
+}
+
+.business-search input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 15px;
+}
+
+.business-search-results {
+    position: absolute;
+    z-index: 5;
+    top: calc(100% + 6px);
+    right: 0;
+    left: 0;
+    overflow: hidden;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #ffffff;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+}
+
+.business-search-results a {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    color: #111827;
+    text-decoration: none;
+}
+
+.business-search-results a:hover,
+.business-search-results a:focus {
+    background: #f8fafc;
+}
+
+.business-search-results span {
+    color: #4b5563;
+    font-size: 14px;
+}
+
+.portal-tabs {
+    display: flex;
+    gap: 8px;
+    width: 800px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.portal-tab {
+    padding: 10px 14px;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.portal-tab.is-active {
+    border-bottom-color: #2563eb;
+    color: #2563eb;
+}
+
+.portal-panel-hidden {
+    display: none;
+}
+
+.events-feed {
+    width: 800px;
+    display: grid;
+    gap: 14px;
+}
+
+.events-feed-header {
+    width: 800px;
+}
+
+.events-feed-header h2 {
+    margin-bottom: 4px;
+}
+
+.events-feed-header p {
+    margin-top: 0;
+    color: #4b5563;
+}
+
+.events-liked-toggle,
+.like-business-form {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.like-business-form {
+    margin-top: 14px;
+}
+
+.event-feed-item {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.event-feed-date {
+    display: grid;
+    align-content: start;
+    justify-items: center;
+    padding: 10px;
+    border-radius: 6px;
+    background: #f3f4f6;
+}
+
+.event-feed-date strong {
+    font-size: 18px;
+}
+
+.event-feed-date span,
+.event-feed-details p {
+    color: #4b5563;
+}
+
+.event-feed-details h3 {
+    margin: 0 0 6px;
+}
+
+.event-feed-details p {
+    margin: 0 0 8px;
+}
+
+.business-portal {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 20px;
+}
+
+.business-portal-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.business-portal-header h1 {
+    margin: 0 0 6px;
+}
+
+.business-portal-header p {
+    margin: 0;
+    color: #4b5563;
+}
+
+.approval-status {
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.approval-status-approved {
+    color: #166534;
+    background: #dcfce7;
+}
+
+.approval-status-pending {
+    color: #92400e;
+    background: #fef3c7;
+}
+
+.form-message {
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-weight: 700;
+}
+
+.form-message-success {
+    color: #166534;
+    background: #dcfce7;
+}
+
+.form-message-error {
+    color: #991b1b;
+    background: #fee2e2;
+}
+
+.business-portal-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.8fr) minmax(360px, 1.2fr);
+    gap: 32px;
+    align-items: start;
+}
+
+.business-portal-grid-single {
+    grid-template-columns: 1fr;
+}
+
+.business-section-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+}
+
+.business-preview h2,
+.business-edit-panel h2 {
+    margin-top: 0;
+}
+
+.business-preview-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    background: #ffffff;
+}
+
+.business-preview-card h3 {
+    margin: 0 0 12px;
+}
+
+.business-preview-card p {
+    margin: 0 0 12px;
+}
+
+.business-preview-type {
+    color: #4b5563;
+    font-weight: 700;
+}
+
+.business-edit-panel form {
+    display: grid;
+    gap: 10px;
+}
+
+.business-edit-panel input,
+.business-edit-panel select,
+.business-edit-panel textarea,
+.business-review-card textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px;
+}
+
+.business-edit-panel button {
+    justify-self: start;
+    padding: 10px 14px;
+}
+
+.business-form-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 120px;
+    gap: 12px;
+}
+
+.business-reviews-panel {
+    margin-top: 36px;
+}
+
+.business-reviews-panel header {
+    margin-bottom: 16px;
+}
+
+.business-reviews-panel h2 {
+    margin-bottom: 6px;
+}
+
+.business-reviews-panel header p {
+    margin: 0;
+    color: #4b5563;
+}
+
+.business-review-card {
+    border-top: 1px solid #e5e7eb;
+    padding: 18px 0;
+}
+
+.business-review-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+}
+
+.business-review-card form {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.business-review-card button {
+    justify-self: start;
+    padding: 8px 12px;
+}
+
+.business-review-response-date {
+    margin: 0;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.business-details-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 20px;
+}
+
+.business-details-hero {
+    margin: 24px 0 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.business-details-hero h1 {
+    margin: 0 0 12px;
+}
+
+.review-form-panel {
+    margin-top: 28px;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+.review-form-panel form {
+    display: grid;
+    gap: 10px;
+}
+
+.review-form-panel select,
+.review-form-panel textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px;
+}
+
+.review-form-panel button {
+    justify-self: start;
+    padding: 10px 14px;
+}
+
+.business-owner-response {
+    margin-top: 12px;
+    padding: 12px;
+    border-left: 3px solid #d1d5db;
+    background: #f9fafb;
+}
+
+.business-owner-response p {
+    margin-bottom: 0;
+}
+
+.business-events-panel {
+    margin-top: 28px;
+}
+
+.business-event-preview {
+    padding: 14px 0;
+    border-top: 1px solid #e5e7eb;
+}
+
+.business-event-preview time {
+    color: #4b5563;
+    font-weight: 700;
+}
+
+.business-event-preview h3 {
+    margin: 6px 0;
+}
+
+.event-manager-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 28px;
+    align-items: start;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.calendar-header h2 {
+    margin: 0;
+}
+
+.event-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    border-top: 1px solid #e5e7eb;
+    border-left: 1px solid #e5e7eb;
+}
+
+.event-calendar-day-name,
+.event-calendar-empty,
+.event-calendar-day {
+    min-height: 92px;
+    padding: 8px;
+    border-right: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    box-sizing: border-box;
+}
+
+.event-calendar-day-name {
+    min-height: auto;
+    font-weight: 700;
+    background: #f9fafb;
+}
+
+.event-calendar-date {
+    display: inline-block;
+    margin-bottom: 6px;
+    font-weight: 700;
+}
+
+.event-calendar-event {
+    display: block;
+    margin-top: 4px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    background: #eef2ff;
+    font-size: 13px;
+}
+
+.event-form-panel {
+    padding: 18px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+.event-form-panel form {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.event-form-panel input,
+.event-form-panel textarea,
+.event-form-panel select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px;
+}
+
+.event-recurring-toggle {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.event-recurring-toggle input {
+    width: auto;
+}
+
+.recurrence-fields {
+    display: grid;
+    gap: 10px;
+}
+
+.recurrence-fields-hidden {
+    display: none;
+}
+
+@media (max-width: 760px) {
+    .business-portal-header,
+    .business-portal-grid,
+    .event-manager-grid,
+    .business-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .business-portal-header {
+        display: grid;
+    }
 }

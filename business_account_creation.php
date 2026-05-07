@@ -108,7 +108,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <option value="brewery">Brewery</option>
                 <option value="winery">Winery</option>
                 <option value="cidery">Cidery</option>
-                <option value="distilery">Distilery</option>
+                <option value="distillery">Distillery</option>
+                <option value="meadery">Meadery</option>
             </select><br><br>
             <label for="phone">Phone:</label>
             <input type="tel" id="phone" name="phone" placeholder="Optional" value="<?php echo escape_output($phone) ?>"><br><br>
