@@ -2,6 +2,8 @@ const script = document.getElementById('search-js');
 
 script.onload = function () {
     mapboxsearch.config.accessToken = window.MAPBOX_ACCESS_TOKEN;
+    const streetAddressInput = document.getElementById('street_address');
+    let selectedAddress = streetAddressInput ? streetAddressInput.value : '';
 
     const autofill = mapboxsearch.autofill({
         options: {
@@ -26,7 +28,8 @@ script.onload = function () {
         document.getElementById('latitude').value = latitude;
 
         if (properties.address_line1 || properties.full_address || properties.name) {
-            document.getElementById('street_address').value = properties.address_line1 || properties.full_address || properties.name;
+            selectedAddress = properties.address_line1 || properties.full_address || properties.name;
+            document.getElementById('street_address').value = selectedAddress;
         }
 
         if ((context.place && context.place.name) || properties.place) {
@@ -41,4 +44,16 @@ script.onload = function () {
             document.getElementById('zip').value = (context.postcode && context.postcode.name) || properties.postcode;
         }
     });
+
+    if (streetAddressInput) {
+        streetAddressInput.addEventListener('input', function () {
+            if (streetAddressInput.value !== selectedAddress) {
+                document.getElementById('longitude').value = '';
+                document.getElementById('latitude').value = '';
+                document.getElementById('city').value = '';
+                document.getElementById('state').value = '';
+                document.getElementById('zip').value = '';
+            }
+        });
+    }
 };

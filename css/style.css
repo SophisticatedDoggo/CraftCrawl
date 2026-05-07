@@ -334,6 +334,18 @@
     padding: 8px;
 }
 
+.business-edit-panel input[readonly] {
+    color: #4b5563;
+    background: #f8fafc;
+    cursor: not-allowed;
+}
+
+.form-help {
+    margin: -4px 0 4px;
+    color: #4b5563;
+    font-size: 14px;
+}
+
 .business-edit-panel button {
     justify-self: start;
     padding: 10px 14px;

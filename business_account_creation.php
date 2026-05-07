@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $verify_password = trim($_POST['verify_password'] ?? '');
     $date = date('Y-m-d H:i:s');
 
-    $address = clean_text($_POST['address_address-search'] ?? '');
+    $address = clean_text($_POST['address_address-search'] ?? $_POST['address'] ?? '');
     $apt_suite = clean_text($_POST['apartment'] ?? '');
     $city = clean_text($_POST['city'] ?? '');
     $state = strtoupper(clean_text($_POST['state'] ?? ''));
@@ -41,7 +41,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
     if(!$business) {
-        if(!empty($password) && ($password === $verify_password)) {
+        if ($business_name === '' || $type === '' || $address === '' || $city === '' || $state === '' || $zip === '' || $latitude === false || $longitude === false || $latitude == 0.0 || $longitude == 0.0) {
+            $message = "Please select a complete address from the address search.";
+        }
+        elseif(!empty($password) && ($password === $verify_password)) {
             if (strlen($password) < 10) {
                 $message = "Your Password Must Contain At Least 10 Characters!";
             }
@@ -117,12 +120,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="url" id="website" name="website" placeholder="Optional" value="<?php echo escape_output($website) ?>"><br><br>
 
             <h3>Business Address</h3>
-            <input name="address" autocomplete="address-line1" placeholder="Address" required>
+            <input id="street_address" name="address" autocomplete="address-line1" placeholder="Address" required>
+            <p class="form-help">Start typing a street address and select a Mapbox result so your map location stays accurate.</p>
             <input name="apartment" autocomplete="address-line2" placeholder="Apartment">
             <div class="flex">
-                <input name="city" autocomplete="address-level2" placeholder="City" required>
-                <input name="state" autocomplete="address-level1" placeholder="State" required>
-                <input name="postal_code" autocomplete="postal-code" placeholder="ZIP / Postcode" required>
+                <input id="city" name="city" autocomplete="address-level2" placeholder="City" required readonly>
+                <input id="state" name="state" autocomplete="address-level1" placeholder="State" required readonly>
+                <input id="zip" name="postal_code" autocomplete="postal-code" placeholder="ZIP / Postcode" required readonly>
             </div>
             <input name="latitude" id="latitude" type="hidden" value="0.0">
             <input name="longitude" id="longitude" type="hidden" value="0.0"><br><br>

@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $about = clean_text($_POST['about'] ?? '');
     $phone = clean_text($_POST['phone'] ?? '');
     $website = filter_var(trim($_POST['website'] ?? ''), FILTER_SANITIZE_URL);
-    $street_address = clean_text($_POST['address_address-search'] ?? '');
+    $street_address = clean_text($_POST['address_address-search'] ?? $_POST['address'] ?? '');
     $apt_suite = clean_text($_POST['apt_suite'] ?? '');
     $city = clean_text($_POST['city'] ?? '');
     $state = strtoupper(clean_text($_POST['state'] ?? ''));
@@ -110,6 +110,7 @@ if (!$business) {
 
                 <label for="street_address">Street Address</label>
                 <input type="text" id="street_address" name="address" autocomplete="address-line1" required value="<?php echo escape_output($business['street_address']); ?>">
+                <p class="form-help">Start typing a new street address and select a Mapbox result so the map location stays accurate.</p>
 
                 <label for="apt_suite">Apartment / Suite</label>
                 <input type="text" id="apt_suite" name="apt_suite" autocomplete="address-line2" value="<?php echo escape_output($business['apt_suite']); ?>">
@@ -117,15 +118,15 @@ if (!$business) {
                 <div class="business-form-row">
                     <div>
                         <label for="city">City</label>
-                        <input type="text" id="city" name="city" autocomplete="address-level2" required value="<?php echo escape_output($business['city']); ?>">
+                        <input type="text" id="city" name="city" autocomplete="address-level2" required readonly value="<?php echo escape_output($business['city']); ?>">
                     </div>
                     <div>
                         <label for="state">State</label>
-                        <input type="text" id="state" name="state" maxlength="2" autocomplete="address-level1" required value="<?php echo escape_output($business['state']); ?>">
+                        <input type="text" id="state" name="state" maxlength="2" autocomplete="address-level1" required readonly value="<?php echo escape_output($business['state']); ?>">
                     </div>
                     <div>
                         <label for="zip">ZIP</label>
-                        <input type="text" id="zip" name="zip" autocomplete="postal-code" required value="<?php echo escape_output($business['zip']); ?>">
+                        <input type="text" id="zip" name="zip" autocomplete="postal-code" required readonly value="<?php echo escape_output($business['zip']); ?>">
                     </div>
                 </div>
 
