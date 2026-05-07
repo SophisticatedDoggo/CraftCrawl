@@ -1,0 +1,59 @@
+.business-list {
+    width: 800px;
+    margin: 20px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.business-list-item {
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.business-list-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: 3px solid #6b7280;
+    border-radius: 50%;
+    background: #ffffff;
+    color: #6b7280;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.business-list-number-brewery {
+    border-color: #f97316;
+    color: #f97316;
+}
+
+.business-list-number-winery {
+    border-color: #9333ea;
+    color: #9333ea;
+}
+
+.business-list-number-cidery {
+    border-color: #16a34a;
+    color: #16a34a;
+}
+
+.business-list-number-distillery {
+    border-color: #2563eb;
+    color: #2563eb;
+}
+
+.business-list-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.business-list-details span {
+    color: #4b5563;
+}

@@ -19,9 +19,11 @@ include '../config.php';
     <h1>Craft Crawl</h1>
     <p>Welcome to Craft Crawl!</p>
     <div id="map" style="width: 800px; height: 600px;"></div>
+    <ol id="business-list" class="business-list"></ol>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
 </script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="../js/map.js"></script>
 </body>
 </html>
