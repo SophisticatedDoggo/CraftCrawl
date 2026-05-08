@@ -1,6 +1,9 @@
 <?php
+require_once __DIR__ . '/lib/security.php';
+craftcrawl_secure_session_start();
 include 'db.php';
 include 'config.php';
+require_once 'lib/hcaptcha.php';
 
 $message = null;
 $success = false;
@@ -14,15 +17,18 @@ function clean_text($value) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    craftcrawl_verify_csrf();
+
     $message = null;
 
     $business_name = clean_text($_POST['business_name'] ?? '');
-    $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
+    $email = strtolower(trim($_POST['email'] ?? ''));
     $type = clean_text($_POST['business_types'] ?? '');
     $phone = clean_text($_POST['phone'] ?? '');
     $website = filter_var(trim($_POST['website'] ?? ''), FILTER_SANITIZE_URL);
     $password = trim($_POST['password'] ?? '');
     $verify_password = trim($_POST['verify_password'] ?? '');
+    $captcha_token = $_POST['h-captcha-response'] ?? '';
     $date = date('Y-m-d H:i:s');
 
     $address = clean_text($_POST['address_address-search'] ?? $_POST['address'] ?? '');
@@ -33,53 +39,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $latitude = filter_var($_POST['latitude'] ?? 0, FILTER_VALIDATE_FLOAT);
     $longitude = filter_var($_POST['longitude'] ?? 0, FILTER_VALIDATE_FLOAT);
 
-    $stmt = $conn->prepare("SELECT id FROM businesses WHERE bEmail=?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $business = $result->fetch_assoc();
+    try {
+        $captcha_valid = craftcrawl_hcaptcha_verify($captcha_token, $_SERVER['REMOTE_ADDR'] ?? null);
+    } catch (Throwable $error) {
+        $captcha_valid = false;
+    }
+
+    if (!$captcha_valid) {
+        $message = "Please complete the hCaptcha challenge.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $message = "Please enter a valid email address.";
+    } else {
+        $stmt = $conn->prepare("SELECT id FROM businesses WHERE bEmail=?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $business = $result->fetch_assoc();
+
+        if (!$business) {
+            if ($business_name === '' || $type === '' || $address === '' || $city === '' || $state === '' || $zip === '' || $latitude === false || $longitude === false || $latitude == 0.0 || $longitude == 0.0) {
+                $message = "Please select a complete address from the address search.";
+            }
+            elseif (!empty($password) && ($password === $verify_password)) {
+                if (strlen($password) < 10) {
+                    $message = "Your Password Must Contain At Least 10 Characters!";
+                }
+                elseif(!preg_match("#[0-9]+#",$password)) {
+                    $message = "Your Password Must Contain At Least 1 Number!";
+                }
+                elseif(!preg_match('/[!@#$%^&*]+/',$password)) {
+                    $message = "Your Password Must Contain At Least 1 Symbol (!@#$%^&*)!";
+                }
+                elseif(!preg_match("#[A-Z]+#",$password)) {
+                    $message = "Your Password Must Contain At Least 1 Capital Letter!";
+                }
+                elseif(!preg_match("#[a-z]+#",$password)) {
+                    $message = "Your Password Must Contain At Least 1 Lowercase Letter!";
+                }
+                else {
+                    $hash = password_hash($password, PASSWORD_DEFAULT);
+                }
+            } else {
+                if ($password !== $verify_password) {
+                    $message = "Your passwords do not match!";
+                } else {
+                    $message = "Please enter a password.";
+                }
+            }
 
 
-    if(!$business) {
-        if ($business_name === '' || $type === '' || $address === '' || $city === '' || $state === '' || $zip === '' || $latitude === false || $longitude === false || $latitude == 0.0 || $longitude == 0.0) {
-            $message = "Please select a complete address from the address search.";
-        }
-        elseif(!empty($password) && ($password === $verify_password)) {
-            if (strlen($password) < 10) {
-                $message = "Your Password Must Contain At Least 10 Characters!";
-            }
-            elseif(!preg_match("#[0-9]+#",$password)) {
-                $message = "Your Password Must Contain At Least 1 Number!";
-            }
-            elseif(!preg_match('/[!@#$%^&*]+/',$password)) {
-                $message = "Your Password Must Contain At Least 1 Symbol (!@#$%^&*)!";
-            }
-            elseif(!preg_match("#[A-Z]+#",$password)) {
-                $message = "Your Password Must Contain At Least 1 Capital Letter!";
-            }
-            elseif(!preg_match("#[a-z]+#",$password)) {
-                $message = "Your Password Must Contain At Least 1 Lowercase Letter!";
-            }
-            else {
-                echo "<script>console.log('Password hashed');</script>";
-                $hash = password_hash($password, PASSWORD_DEFAULT);
+            if (!isset($message)) {
+                $stmt = $conn->prepare("INSERT INTO businesses (bName, bEmail, bType, bPhone, bWebsite, password_hash, street_address, apt_suite, city, state, zip, latitude, longitude, createdAt, approved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("sssssssssssddsi", $business_name, $email, $type, $phone, $website, $hash, $address, $apt_suite, $city, $state, $zip, $latitude, $longitude, $date, $approved);
+                $stmt->execute();
+                $message = "You have successfully created an account! Redirecting...";
+                $success = true;
             }
         } else {
-            if($password !== $verify_password) {
-                $message = "Your passwords do not match!";
-            }
+            $message = "An account already exists with that Email";
         }
-
-
-        if (!isset($message)) {
-            $stmt = $conn->prepare("INSERT INTO businesses (bName, bEmail, bType, bPhone, bWebsite, password_hash, street_address, apt_suite, city, state, zip, latitude, longitude, createdAt, approved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssssssssssddsi", $business_name, $email, $type, $phone, $website, $hash, $address, $apt_suite, $city, $state, $zip, $latitude, $longitude, $date, $approved);
-            $stmt->execute();
-            $message = "You have successfully created an account! Redirecting...";
-            $success = true;
-        }
-    } else {
-        $message = "An account already exists with that Email";
     }
 
 
@@ -91,16 +109,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CraftCrawl | Business Account Creation</title>
+    <script src="js/theme_init.js"></script>
     <link rel="stylesheet" href="css/style.css">
     <script id="search-js" defer src="https://api.mapbox.com/search-js/v1.5.0/web.js"></script>
+    <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
     <?php if ($success) : ?>
         <meta http-equiv="refresh" content="3;url=business_login.php">
     <?php endif; ?>
 </head>
-<body>
-    <div>
+<body class="auth-body">
+    <main class="auth-card auth-card-wide">
         <h1>Create An Account</h1>
         <form id="account_creation_form" action="" method="POST">
+            <?php echo craftcrawl_csrf_input(); ?>
+            <div class="form-feedback">
+                <?php if (isset($message)) : ?>
+                    <p class="form-message <?php echo $success ? 'form-message-success' : 'form-message-error'; ?>"><?php echo escape_output($message) ?></p>
+                <?php endif; ?>
+            </div>
             <label for="business_name">Business Name:</label>
             <input type="text" id="business_name" name="business_name" required value="<?php echo escape_output($business_name) ?>"><br><br>
             <label for="email">Email:</label>
@@ -123,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input id="street_address" name="address" autocomplete="address-line1" placeholder="Address" required>
             <p class="form-help">Start typing a street address and select a Mapbox result so your map location stays accurate.</p>
             <input name="apartment" autocomplete="address-line2" placeholder="Apartment">
-            <div class="flex">
+            <div class="business-form-row business-form-row-address">
                 <input id="city" name="city" autocomplete="address-level2" placeholder="City" required readonly>
                 <input id="state" name="state" autocomplete="address-level1" placeholder="State" required readonly>
                 <input id="zip" name="postal_code" autocomplete="postal-code" placeholder="ZIP / Postcode" required readonly>
@@ -136,14 +162,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label for="verify_password">Verify Password:</label>
             <input type="password" id="verify_password" name="verify_password" required><br><br>
             <div id="pswd_validation_msg"></div>
-            <input type="submit" value="Create Account">
-            <div>
-                <?php if (isset($message)) : ?>
-                    <p><?php echo escape_output($message) ?></p>
-                <?php endif; ?>
+            <div class="captcha-field">
+                <?php echo craftcrawl_hcaptcha_widget(); ?>
             </div>
+            <input type="submit" value="Create Account">
         </form>
-    </div>
+        <p class="auth-switch"><a href="business_login.php">Back to login</a></p>
+    </main>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
 </script>

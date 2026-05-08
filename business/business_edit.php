@@ -20,6 +20,8 @@ function clean_text($value) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    craftcrawl_verify_csrf();
+
     $business_name = clean_text($_POST['business_name'] ?? '');
     $business_type = clean_text($_POST['business_type'] ?? '');
     $about = clean_text($_POST['about'] ?? '');
@@ -63,6 +65,7 @@ if (!$business) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CraftCrawl | Edit Business</title>
+    <script src="../js/theme_init.js"></script>
     <link rel="stylesheet" href="../css/style.css">
     <script id="search-js" defer src="https://api.mapbox.com/search-js/v1.5.0/web.js"></script>
 </head>
@@ -73,11 +76,20 @@ if (!$business) {
                 <h1>Edit Business Information</h1>
                 <p><?php echo escape_output($business['bName']); ?></p>
             </div>
-            <div class="business-header-actions">
-                <a href="business_portal.php">Back to Preview</a>
-                <form action="../logout.php" method="POST">
-                    <button type="submit">Logout</button>
-                </form>
+            <div class="business-header-actions mobile-actions-menu business-actions-menu" data-mobile-actions-menu>
+                <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="mobile-actions-panel" data-mobile-actions-panel>
+                    <a href="business_portal.php">Back to Preview</a>
+                    <a href="settings.php">Settings</a>
+                    <form action="../logout.php" method="POST">
+                        <?php echo craftcrawl_csrf_input(); ?>
+                        <button type="submit">Logout</button>
+                    </form>
+                </div>
             </div>
         </header>
 
@@ -87,6 +99,7 @@ if (!$business) {
 
         <section class="business-edit-panel">
             <form method="POST" action="">
+                <?php echo craftcrawl_csrf_input(); ?>
                 <label for="business_name">Business Name</label>
                 <input type="text" id="business_name" name="business_name" required value="<?php echo escape_output($business['bName']); ?>">
 
@@ -141,5 +154,6 @@ if (!$business) {
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
 </script>
 <script src="../js/business_portal.js"></script>
+<script src="../js/mobile_actions_menu.js"></script>
 </body>
 </html>

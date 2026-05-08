@@ -85,6 +85,7 @@ foreach ($events_by_date as $date => $events) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CraftCrawl | <?php echo escape_output($business['bName']); ?> Calendar</title>
+    <script src="js/theme_init.js"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -92,6 +93,7 @@ foreach ($events_by_date as $date => $events) {
         <div class="details-nav">
             <a href="business_details.php?id=<?php echo escape_output($business_id); ?>">Back to Business</a>
             <form action="logout.php" method="POST">
+                <?php echo craftcrawl_csrf_input(); ?>
                 <button type="submit">Logout</button>
             </form>
         </div>

@@ -1,7 +1,10 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-session_start();
+require_once '../lib/security.php';
+craftcrawl_secure_session_start();
 include '../db.php';
+include '../config.php';
+require_once '../lib/cloudinary_upload.php';
 
 $today = date('Y-m-d');
 $range_end = date('Y-m-d', strtotime('+1 year'));
@@ -22,6 +25,7 @@ function add_event_occurrence(&$events, $event, $date) {
         'date' => $date,
         'startTime' => $event['startTime'],
         'endTime' => $event['endTime'],
+        'coverPhotoUrl' => !empty($event['cover_photo_key']) ? craftcrawl_cloudinary_delivery_url($event['cover_photo_key'], 'f_auto,q_auto,c_fill,w_520,h_300') : null,
         'isRecurring' => (bool) $event['isRecurring']
     ];
 }
@@ -48,9 +52,10 @@ function add_recurring_event_occurrences(&$events, $event, $today, $range_end) {
     }
 }
 
-$sql = "SELECT e.*, b.bName, b.bType, b.city, b.state
+$sql = "SELECT e.*, b.bName, b.bType, b.city, b.state, p.object_key AS cover_photo_key
         FROM events e
         INNER JOIN businesses b ON b.id = e.business_id
+        LEFT JOIN photos p ON p.id = e.cover_photo_id AND p.deletedAt IS NULL
         " . ($liked_only ? "INNER JOIN liked_businesses lb ON lb.business_id = b.id AND lb.user_id = ?" : "") . "
         WHERE b.approved = TRUE
         AND (e.eventDate BETWEEN ? AND ? OR (e.isRecurring=TRUE AND e.eventDate <= ? AND e.recurrenceEnd >= ?))";
@@ -69,7 +74,10 @@ try {
         add_recurring_event_occurrences($events, $event, $today, $range_end);
     }
 } catch (Exception $e) {
-    die($e);
+    error_log('Event feed failed: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'Unable to load events.']);
+    exit();
 }
 
 usort($events, function ($a, $b) {

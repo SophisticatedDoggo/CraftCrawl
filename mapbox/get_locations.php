@@ -30,7 +30,10 @@ try {
         ];
     }
 } catch (Exception $e) {
-    die($e);
+    error_log('Location feed failed: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'Unable to load locations.']);
+    exit();
 }
 
 echo json_encode($features);

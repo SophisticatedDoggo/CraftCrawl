@@ -59,6 +59,9 @@ function add_recurring_event_occurrences(&$events, $event, $start_date, $end_dat
     }
 }
 
+require_once 'config.php';
+require_once 'lib/cloudinary_upload.php';
+
 if (!$business_id) {
     header('Location: user/portal.php');
     exit();
@@ -76,6 +79,8 @@ if (!$business) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    craftcrawl_verify_csrf();
+
     $form_action = $_POST['form_action'] ?? 'review';
 
     if ($form_action === 'toggle_like') {
@@ -98,17 +103,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $rating = filter_var($_POST['rating'] ?? null, FILTER_VALIDATE_INT);
     $notes = clean_text($_POST['notes'] ?? '');
+    $review_photo_uploads = craftcrawl_normalize_file_uploads($_FILES['review_photos'] ?? []);
+    $review_photo_uploads = array_values(array_filter($review_photo_uploads, function ($file) {
+        return ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+    }));
 
     if ($rating && $rating >= 1 && $rating <= 5) {
-        $stmt = $conn->prepare("INSERT INTO reviews (rating, user_id, business_id, notes) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("iiis", $rating, $user_id, $business_id, $notes);
-        $stmt->execute();
+        if (count($review_photo_uploads) > 3) {
+            $message = 'review_photo_count_error';
+        } else {
+            try {
+                $conn->begin_transaction();
 
-        header("Location: business_details.php?id=" . $business_id . "&message=review_saved");
-        exit();
+                $stmt = $conn->prepare("INSERT INTO reviews (rating, user_id, business_id, notes) VALUES (?, ?, ?, ?)");
+                $stmt->bind_param("iiis", $rating, $user_id, $business_id, $notes);
+                $stmt->execute();
+                $review_id = $stmt->insert_id;
+
+                foreach ($review_photo_uploads as $sort_order => $photo_upload) {
+                    $upload_result = craftcrawl_upload_photo_to_cloudinary($photo_upload, 'reviews', $user_id);
+                    $photo_id = craftcrawl_insert_cloudinary_photo($conn, $upload_result, $user_id, null);
+
+                    $photo_stmt = $conn->prepare("INSERT INTO review_photos (review_id, photo_id, sort_order) VALUES (?, ?, ?)");
+                    $photo_stmt->bind_param("iii", $review_id, $photo_id, $sort_order);
+                    $photo_stmt->execute();
+                }
+
+                $conn->commit();
+
+                header("Location: business_details.php?id=" . $business_id . "&message=review_saved");
+                exit();
+            } catch (Throwable $error) {
+                $conn->rollback();
+                $message = str_contains($error->getMessage(), 'server upload limit') ? 'review_photo_server_limit_error' : 'review_photo_error';
+            }
+        }
+    } else {
+        $message = 'review_error';
     }
-
-    $message = 'review_error';
 }
 
 $rating_stmt = $conn->prepare("SELECT AVG(rating) AS average_rating, COUNT(*) AS review_count FROM reviews WHERE business_id=?");
@@ -117,20 +149,82 @@ $rating_stmt->execute();
 $rating_result = $rating_stmt->get_result();
 $rating_summary = $rating_result->fetch_assoc();
 
-$review_stmt = $conn->prepare("SELECT r.rating, r.notes, r.business_response, r.business_responseAt, u.fName, u.lName FROM reviews r INNER JOIN users u ON u.id = r.user_id WHERE r.business_id=? ORDER BY r.id DESC");
+$review_stmt = $conn->prepare("SELECT r.id, r.rating, r.notes, r.business_response, r.business_responseAt, u.fName, u.lName FROM reviews r INNER JOIN users u ON u.id = r.user_id WHERE r.business_id=? ORDER BY r.id DESC");
 $review_stmt->bind_param("i", $business_id);
 $review_stmt->execute();
-$reviews = $review_stmt->get_result();
+$review_result = $review_stmt->get_result();
+$reviews = [];
+$review_photos_by_review = [];
+
+while ($review = $review_result->fetch_assoc()) {
+    $review['photos'] = [];
+    $reviews[] = $review;
+    $review_photos_by_review[(int) $review['id']] = [];
+}
+
+$review_ids = array_keys($review_photos_by_review);
+
+if (!empty($review_ids)) {
+    $review_id_list = implode(',', array_map('intval', $review_ids));
+    $photo_result = $conn->query("
+        SELECT rp.review_id, p.object_key, p.public_url, p.width, p.height
+        FROM review_photos rp
+        INNER JOIN photos p ON p.id = rp.photo_id
+        WHERE rp.review_id IN ($review_id_list)
+        AND p.deletedAt IS NULL
+        AND p.status = 'approved'
+        ORDER BY rp.sort_order, rp.id
+    ");
+
+    while ($photo = $photo_result->fetch_assoc()) {
+        $review_photos_by_review[(int) $photo['review_id']][] = $photo;
+    }
+
+    foreach ($reviews as $index => $review) {
+        $reviews[$index]['photos'] = $review_photos_by_review[(int) $review['id']];
+    }
+}
 
 $like_stmt = $conn->prepare("SELECT id FROM liked_businesses WHERE user_id=? AND business_id=?");
 $like_stmt->bind_param("ii", $user_id, $business_id);
 $like_stmt->execute();
 $is_liked = (bool) $like_stmt->get_result()->fetch_assoc();
 
+$business_photo_stmt = $conn->prepare("
+    SELECT p.object_key, p.public_url, p.width, p.height, bp.photo_type, bp.sort_order
+    FROM business_photos bp
+    INNER JOIN photos p ON p.id = bp.photo_id
+    WHERE bp.business_id=?
+    AND p.deletedAt IS NULL
+    AND p.status = 'approved'
+    ORDER BY bp.photo_type = 'cover' DESC, bp.sort_order, bp.id
+");
+$business_photo_stmt->bind_param("i", $business_id);
+$business_photo_stmt->execute();
+$business_photo_result = $business_photo_stmt->get_result();
+$business_cover_photo = null;
+$business_gallery_photos = [];
+
+while ($photo = $business_photo_result->fetch_assoc()) {
+    if ($photo['photo_type'] === 'cover' && $business_cover_photo === null) {
+        $business_cover_photo = $photo;
+        continue;
+    }
+
+    $business_gallery_photos[] = $photo;
+}
+
 $today = date('Y-m-d');
 $event_range_end = date('Y-m-d', strtotime('+1 year'));
 $events = [];
-$event_stmt = $conn->prepare("SELECT * FROM events WHERE business_id=? AND (eventDate BETWEEN ? AND ? OR (isRecurring=TRUE AND eventDate <= ? AND recurrenceEnd >= ?)) ORDER BY eventDate, startTime");
+$event_stmt = $conn->prepare("
+    SELECT e.*, p.object_key AS cover_photo_key
+    FROM events e
+    LEFT JOIN photos p ON p.id = e.cover_photo_id AND p.deletedAt IS NULL
+    WHERE e.business_id=?
+    AND (e.eventDate BETWEEN ? AND ? OR (e.isRecurring=TRUE AND e.eventDate <= ? AND e.recurrenceEnd >= ?))
+    ORDER BY e.eventDate, e.startTime
+");
 $event_stmt->bind_param("issss", $business_id, $today, $event_range_end, $event_range_end, $today);
 $event_stmt->execute();
 $event_result = $event_stmt->get_result();
@@ -151,18 +245,35 @@ $upcoming_events = array_slice($events, 0, 5);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CraftCrawl | <?php echo escape_output($business['bName']); ?></title>
+    <script src="js/theme_init.js"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <main class="business-details-page">
         <div class="details-nav">
             <a href="user/portal.php">Back to Map</a>
-            <form action="logout.php" method="POST">
-                <button type="submit">Logout</button>
-            </form>
+            <div class="mobile-actions-menu details-actions-menu" data-mobile-actions-menu>
+                <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="mobile-actions-panel" data-mobile-actions-panel>
+                    <a href="user/settings.php">Settings</a>
+                    <form action="logout.php" method="POST">
+                        <?php echo craftcrawl_csrf_input(); ?>
+                        <button type="submit">Logout</button>
+                    </form>
+                </div>
+            </div>
         </div>
 
         <section class="business-details-hero">
+            <?php if ($business_cover_photo) : ?>
+                <?php $cover_url = craftcrawl_cloudinary_delivery_url($business_cover_photo['object_key'], 'f_auto,q_auto,c_fill,w_1200,h_520'); ?>
+                <img class="business-cover-photo" src="<?php echo escape_output($cover_url); ?>" alt="<?php echo escape_output($business['bName']); ?> cover photo">
+            <?php endif; ?>
+
             <p class="business-preview-type"><?php echo escape_output(format_business_type($business['bType'])); ?></p>
             <h1><?php echo escape_output($business['bName']); ?></h1>
 
@@ -187,16 +298,53 @@ $upcoming_events = array_slice($events, 0, 5);
                 <p><?php echo escape_output($business['bPhone']); ?></p>
             <?php endif; ?>
 
-            <?php if (!empty($business['bWebsite'])) : ?>
-                <a href="<?php echo escape_output($business['bWebsite']); ?>" target="_blank" rel="noopener">Visit Website</a>
-            <?php endif; ?>
+            <div class="business-details-actions">
+                <?php if (!empty($business['bWebsite'])) : ?>
+                    <a href="<?php echo escape_output($business['bWebsite']); ?>" target="_blank" rel="noopener">Visit Website</a>
+                <?php endif; ?>
 
-            <form method="POST" action="" class="like-business-form">
-                <input type="hidden" name="form_action" value="toggle_like">
-                <input type="hidden" name="is_liked" value="<?php echo $is_liked ? '1' : '0'; ?>">
-                <button type="submit"><?php echo $is_liked ? 'Unlike Location' : 'Like Location'; ?></button>
-            </form>
+                <form method="POST" action="" class="like-business-form">
+                    <?php echo craftcrawl_csrf_input(); ?>
+                    <input type="hidden" name="form_action" value="toggle_like">
+                    <input type="hidden" name="is_liked" value="<?php echo $is_liked ? '1' : '0'; ?>">
+                    <button type="submit"><?php echo $is_liked ? 'Unlike Location' : 'Like Location'; ?></button>
+                </form>
+            </div>
         </section>
+
+        <?php if (!empty($business_gallery_photos)) : ?>
+            <section class="business-gallery-panel">
+                <h2>Photos</h2>
+                <div class="business-gallery-carousel" data-business-gallery>
+                    <div class="business-gallery-track">
+                    <?php foreach ($business_gallery_photos as $photo_index => $photo) : ?>
+                        <?php $photo_url = craftcrawl_cloudinary_delivery_url($photo['object_key'], 'f_auto,q_auto,c_fill,w_900,h_560'); ?>
+                        <img
+                            class="business-gallery-slide <?php echo $photo_index === 0 ? 'is-active' : ''; ?>"
+                            src="<?php echo escape_output($photo_url); ?>"
+                            alt="<?php echo escape_output($business['bName']); ?> photo <?php echo escape_output($photo_index + 1); ?>"
+                            loading="<?php echo $photo_index === 0 ? 'eager' : 'lazy'; ?>"
+                        >
+                    <?php endforeach; ?>
+                    </div>
+
+                    <?php if (count($business_gallery_photos) > 1) : ?>
+                        <button type="button" class="business-gallery-nav business-gallery-prev" data-gallery-prev aria-label="Previous photo">&lsaquo;</button>
+                        <button type="button" class="business-gallery-nav business-gallery-next" data-gallery-next aria-label="Next photo">&rsaquo;</button>
+                        <div class="business-gallery-dots">
+                            <?php foreach ($business_gallery_photos as $photo_index => $photo) : ?>
+                                <button
+                                    type="button"
+                                    class="business-gallery-dot <?php echo $photo_index === 0 ? 'is-active' : ''; ?>"
+                                    data-gallery-dot="<?php echo escape_output($photo_index); ?>"
+                                    aria-label="Show photo <?php echo escape_output($photo_index + 1); ?>"
+                                ></button>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </section>
+        <?php endif; ?>
 
         <?php if ($message === 'review_saved') : ?>
             <p class="form-message form-message-success">Your review has been posted.</p>
@@ -206,6 +354,12 @@ $upcoming_events = array_slice($events, 0, 5);
             <p class="form-message form-message-success">Location removed from your likes.</p>
         <?php elseif ($message === 'review_error') : ?>
             <p class="form-message form-message-error">Please choose a rating from 1 to 5.</p>
+        <?php elseif ($message === 'review_photo_count_error') : ?>
+            <p class="form-message form-message-error">Please upload no more than 3 photos with a review.</p>
+        <?php elseif ($message === 'review_photo_server_limit_error') : ?>
+            <p class="form-message form-message-error">That photo is larger than your current PHP upload limit. Increase upload_max_filesize and post_max_size, or try a smaller image.</p>
+        <?php elseif ($message === 'review_photo_error') : ?>
+            <p class="form-message form-message-error">Your review photo could not be uploaded. Please try again with a JPEG, PNG, or WebP photo under 10 MB.</p>
         <?php endif; ?>
 
         <section class="business-events-panel">
@@ -220,6 +374,10 @@ $upcoming_events = array_slice($events, 0, 5);
 
             <?php foreach ($upcoming_events as $event) : ?>
                 <article class="business-event-preview">
+                    <?php if (!empty($event['cover_photo_key'])) : ?>
+                        <?php $event_cover_url = craftcrawl_cloudinary_delivery_url($event['cover_photo_key'], 'f_auto,q_auto,c_fill,w_640,h_280'); ?>
+                        <img class="business-event-cover" src="<?php echo escape_output($event_cover_url); ?>" alt="<?php echo escape_output($event['eName']); ?> cover photo" loading="lazy">
+                    <?php endif; ?>
                     <time><?php echo escape_output(date('M j, Y', strtotime($event['occurrenceDate']))); ?> at <?php echo escape_output(date('g:i A', strtotime($event['startTime']))); ?></time>
                     <h3><?php echo escape_output($event['eName']); ?></h3>
                     <?php if (!empty($event['eDescription'])) : ?>
@@ -231,7 +389,8 @@ $upcoming_events = array_slice($events, 0, 5);
 
         <section class="review-form-panel">
             <h2>Leave a Review</h2>
-            <form method="POST" action="">
+            <form method="POST" action="" enctype="multipart/form-data">
+                <?php echo craftcrawl_csrf_input(); ?>
                 <label for="rating">Rating</label>
                 <select id="rating" name="rating" required>
                     <option value="">Choose a rating</option>
@@ -245,6 +404,10 @@ $upcoming_events = array_slice($events, 0, 5);
                 <label for="notes">Review</label>
                 <textarea id="notes" name="notes" rows="5"></textarea>
 
+                <label for="review_photos">Photos</label>
+                <input type="file" id="review_photos" name="review_photos[]" accept="image/jpeg,image/png,image/webp" multiple>
+                <p class="form-help">Add up to 3 JPEG, PNG, or WebP photos under 10 MB each.</p>
+
                 <button type="submit">Post Review</button>
             </form>
         </section>
@@ -252,11 +415,11 @@ $upcoming_events = array_slice($events, 0, 5);
         <section class="business-reviews-panel">
             <h2>User Reviews</h2>
 
-            <?php if ($reviews->num_rows === 0) : ?>
+            <?php if (empty($reviews)) : ?>
                 <p>No reviews yet.</p>
             <?php endif; ?>
 
-            <?php while ($review = $reviews->fetch_assoc()) : ?>
+            <?php foreach ($reviews as $review) : ?>
                 <article class="business-review-card">
                     <div class="business-review-header">
                         <strong><?php echo escape_output($review['fName'] . ' ' . $review['lName']); ?></strong>
@@ -267,6 +430,24 @@ $upcoming_events = array_slice($events, 0, 5);
                         <p><?php echo nl2br(escape_output($review['notes'])); ?></p>
                     <?php endif; ?>
 
+                    <?php if (!empty($review['photos'])) : ?>
+                        <div class="review-photo-grid">
+                            <?php foreach ($review['photos'] as $photo_index => $photo) : ?>
+                                <?php $photo_thumb_url = craftcrawl_cloudinary_delivery_url($photo['object_key'], 'f_auto,q_auto,c_fill,w_180,h_132'); ?>
+                                <?php $photo_large_url = craftcrawl_cloudinary_delivery_url($photo['object_key'], 'f_auto,q_auto,c_limit,w_1600,h_1200'); ?>
+                                <button
+                                    type="button"
+                                    class="review-photo-button"
+                                    data-review-photo-url="<?php echo escape_output($photo_large_url); ?>"
+                                    data-review-photo-index="<?php echo escape_output($photo_index); ?>"
+                                    aria-label="Open review photo <?php echo escape_output($photo_index + 1); ?>"
+                                >
+                                    <img src="<?php echo escape_output($photo_thumb_url); ?>" alt="Review photo" loading="lazy">
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+
                     <?php if (!empty($review['business_response'])) : ?>
                         <div class="business-owner-response">
                             <strong>Business response</strong>
@@ -274,8 +455,19 @@ $upcoming_events = array_slice($events, 0, 5);
                         </div>
                     <?php endif; ?>
                 </article>
-            <?php endwhile; ?>
+            <?php endforeach; ?>
         </section>
     </main>
+    <div class="review-photo-lightbox" id="review-photo-lightbox" hidden>
+        <div class="review-photo-lightbox-backdrop" data-lightbox-close></div>
+        <div class="review-photo-lightbox-count" id="review-photo-lightbox-count"></div>
+        <button type="button" class="review-photo-lightbox-close" data-lightbox-close aria-label="Close photo viewer">x</button>
+        <button type="button" class="review-photo-lightbox-nav review-photo-lightbox-prev" id="review-photo-lightbox-prev" aria-label="Previous photo">&lsaquo;</button>
+        <img class="review-photo-lightbox-image" id="review-photo-lightbox-image" alt="Review photo">
+        <button type="button" class="review-photo-lightbox-nav review-photo-lightbox-next" id="review-photo-lightbox-next" aria-label="Next photo">&rsaquo;</button>
+    </div>
+<script src="js/business_gallery.js"></script>
+<script src="js/review_photos.js"></script>
+<script src="js/mobile_actions_menu.js"></script>
 </body>
 </html>

@@ -1,5 +1,13 @@
 <?php
-session_start();
+require_once __DIR__ . '/lib/security.php';
+craftcrawl_secure_session_start();
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: index.php');
+    exit();
+}
+
+craftcrawl_verify_csrf();
 
 $_SESSION = [];
 

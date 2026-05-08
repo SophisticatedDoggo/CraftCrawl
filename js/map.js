@@ -413,9 +413,13 @@ function renderEventsFeed(events) {
     feedContainer.innerHTML = events.map((event) => {
         const eventDate = new Date(`${event.date}T${event.startTime}`);
         const endTime = event.endTime ? ` - ${formatEventTime(event.endTime)}` : '';
+        const coverPhoto = event.coverPhotoUrl
+            ? `<img class="event-feed-cover" src="${event.coverPhotoUrl}" alt="">`
+            : '';
 
         return `
-            <article class="event-feed-item">
+            <article class="event-feed-item ${event.coverPhotoUrl ? 'event-feed-item-with-cover' : ''}">
+                ${coverPhoto}
                 <div class="event-feed-date">
                     <strong>${eventDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</strong>
                     <span>${eventDate.toLocaleDateString(undefined, { weekday: 'short' })}</span>
