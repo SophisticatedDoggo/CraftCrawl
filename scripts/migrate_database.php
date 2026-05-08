@@ -5,6 +5,8 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
+require_once __DIR__ . '/../lib/env.php';
+
 $db_host = getenv('CRAFTCRAWL_DB_HOST') ?: 'localhost';
 $db_user = getenv('CRAFTCRAWL_DB_USER') ?: 'craft_crawl';
 $db_password = getenv('CRAFTCRAWL_DB_PASSWORD') ?: '';

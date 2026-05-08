@@ -25,8 +25,9 @@ the secret key to GitHub. Configure these values as host environment variables:
 
 ## Database configuration
 
-Database credentials are read from environment variables so secrets are not kept
-in source files:
+Database credentials are read from environment variables or a local `.env` file
+so secrets are not kept in source files. Copy `.env.example` to `.env` for local
+development, then fill in your real values:
 
 - `CRAFTCRAWL_DB_HOST`
 - `CRAFTCRAWL_DB_USER`

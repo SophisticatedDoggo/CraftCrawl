@@ -1,3 +1,4 @@
 db.php
 config.php
 /data
+.env
