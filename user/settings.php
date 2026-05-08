@@ -3,8 +3,7 @@ require '../login_check.php';
 include '../db.php';
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: ../user_login.php');
-    exit();
+    craftcrawl_redirect('user_login.php');
 }
 
 function escape_output($value) {

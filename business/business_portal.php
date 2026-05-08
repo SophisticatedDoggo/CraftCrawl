@@ -3,8 +3,7 @@ require '../login_check.php';
 include '../db.php';
 
 if (!isset($_SESSION['business_id'])) {
-    header('Location: ../business_login.php');
-    exit();
+    craftcrawl_redirect('business_login.php');
 }
 
 $message = $_GET['message'] ?? null;
@@ -160,8 +159,7 @@ $business = $result->fetch_assoc();
 
 if (!$business) {
     session_destroy();
-    header('Location: ../business_login.php');
-    exit();
+    craftcrawl_redirect('business_login.php');
 }
 
 $rating_stmt = $conn->prepare("SELECT AVG(rating) AS average_rating, COUNT(*) AS review_count FROM reviews WHERE business_id=?");

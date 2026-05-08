@@ -4,8 +4,7 @@ include '../db.php';
 include '../config.php';
 
 if (!isset($_SESSION['business_id'])) {
-    header('Location: ../business_login.php');
-    exit();
+    craftcrawl_redirect('business_login.php');
 }
 
 $message = null;
@@ -55,8 +54,7 @@ $business = $result->fetch_assoc();
 
 if (!$business) {
     session_destroy();
-    header('Location: ../business_login.php');
-    exit();
+    craftcrawl_redirect('business_login.php');
 }
 ?>
 <!DOCTYPE html>
