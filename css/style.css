@@ -266,6 +266,19 @@ label {
     font-weight: 700;
 }
 
+.remember-login-toggle {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: fit-content;
+    font-weight: 700;
+}
+
+.remember-login-toggle input {
+    width: 18px;
+    height: 18px;
+}
+
 .auth-body {
     display: grid;
     place-items: center;
@@ -294,6 +307,12 @@ label {
     gap: 10px;
 }
 
+.settings-form {
+    display: grid;
+    gap: 10px;
+    max-width: 460px;
+}
+
 .auth-card br {
     display: none;
 }
@@ -306,10 +325,20 @@ label {
     text-align: center;
 }
 
-.landing-actions {
+.landing-primary-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+}
+
+.landing-admin-action {
+    margin-top: 28px;
+    padding-top: 18px;
+    border-top: 1px solid var(--color-border);
+}
+
+.landing-admin-action .button-link {
+    width: min(100%, 220px);
 }
 
 .form-feedback:empty {
@@ -422,7 +451,13 @@ label {
     position: relative;
     width: min(100%, var(--portal-max));
     margin: 0 auto 16px;
+    align-items: flex-end;
     flex-wrap: wrap;
+}
+
+.portal-header > div:first-child {
+    display: flex;
+    align-items: flex-end;
 }
 
 .details-nav {
@@ -487,7 +522,7 @@ label {
     position: relative;
     flex: 1;
     min-width: min(100%, 280px);
-    max-width: 420px;
+    max-width: none;
 }
 
 .business-search label {
@@ -584,6 +619,35 @@ label {
     border-color: #b45309;
 }
 
+.map-popup-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.map-popup-actions a {
+    flex: 1 1 130px;
+}
+
+.map-action-button:hover,
+.map-action-button:focus,
+.mapboxgl-popup-content .map-action-button:hover,
+.mapboxgl-popup-content .map-action-button:focus {
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    transform: none;
+    box-shadow: none;
+}
+
+.mapboxgl-popup-content .map-action-button:hover,
+.mapboxgl-popup-content .map-action-button:focus {
+    border-color: #b45309;
+    color: #ffffff;
+    background: #b45309;
+}
+
 .mapboxgl-ctrl-attrib a {
     display: inline;
     min-height: 0;
@@ -645,6 +709,7 @@ label {
     width: 100%;
     display: grid;
     gap: 14px;
+    margin-top: 14px;
 }
 
 .events-feed-header {
@@ -669,10 +734,12 @@ label {
 
 .events-liked-toggle {
     max-width: max-content;
+    margin-top: 8px;
     padding: 8px 10px;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-primary);
+    border-left-width: 3px;
     border-radius: var(--radius-sm);
-    background: var(--color-surface);
+    background: var(--color-surface-muted);
 }
 
 .events-liked-toggle input {
@@ -904,6 +971,7 @@ label {
 }
 
 .business-details-hero,
+.business-location-panel,
 .business-gallery-panel,
 .business-events-panel,
 .business-reviews-panel,
@@ -1152,6 +1220,20 @@ label {
     margin-bottom: 18px;
     border-radius: var(--radius-md);
     object-fit: cover;
+    background: var(--color-surface-muted);
+}
+
+.business-location-panel {
+    margin-bottom: 28px;
+}
+
+#business-location-map {
+    width: 100%;
+    height: min(46vh, 420px);
+    min-height: 320px;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
     background: var(--color-surface-muted);
 }
 
@@ -1736,6 +1818,146 @@ a.event-calendar-event {
     overflow: hidden;
 }
 
+.admin-page {
+    gap: 24px;
+}
+
+.admin-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+}
+
+.admin-stat-grid article,
+.admin-panel {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.admin-stat-grid article {
+    display: grid;
+    gap: 4px;
+    padding: 18px;
+}
+
+.admin-stat-grid strong {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.admin-stat-grid span {
+    color: var(--color-muted);
+}
+
+.admin-panel {
+    padding: 22px;
+}
+
+.admin-list-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: center;
+    border-top: 1px solid var(--color-border);
+    padding: 16px 0;
+}
+
+.admin-list-item:first-of-type {
+    border-top: 0;
+}
+
+.admin-list-item h3 {
+    margin: 0 0 4px;
+}
+
+.admin-list-item p {
+    margin: 0;
+    color: var(--color-muted);
+}
+
+.admin-search-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 16px;
+}
+
+.admin-business-search-form {
+    grid-template-columns: minmax(280px, 1fr) minmax(160px, 220px) auto;
+}
+
+.admin-review-search-form {
+    grid-template-columns: minmax(280px, 1fr) auto;
+}
+
+.admin-reset-form {
+    grid-template-columns: repeat(3, minmax(180px, 1fr)) auto;
+}
+
+.admin-field {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+.admin-field-wide {
+    min-width: min(100%, 280px);
+}
+
+.admin-search-form label,
+.admin-review-card label {
+    font-weight: 700;
+}
+
+.admin-search-form input,
+.admin-search-form select,
+.admin-review-card input,
+.admin-review-card select,
+.admin-review-card textarea {
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    color: var(--color-text);
+    background: var(--color-surface);
+    font: inherit;
+}
+
+.admin-checkbox {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    width: fit-content;
+    font-weight: 700;
+}
+
+.admin-checkbox input {
+    width: 18px;
+    height: 18px;
+}
+
+.admin-review-card form {
+    display: grid;
+    gap: 10px;
+}
+
+.admin-delete-form {
+    margin-top: 12px;
+}
+
+.admin-delete-form button {
+    color: #ffffff;
+    background: var(--color-danger);
+}
+
+.danger-button {
+    color: #ffffff;
+    background: var(--color-danger);
+}
+
 @media (max-width: 900px) {
     .portal-header,
     .business-portal-header,
@@ -1798,11 +2020,11 @@ a.event-calendar-event {
         font-size: 15px;
     }
 
-    .auth-body {
+    .auth-body:not(.landing-body) {
         align-items: start;
     }
 
-    .landing-actions,
+    .landing-primary-actions,
     .business-portal-header,
     .business-portal-grid,
     .event-manager-grid,
@@ -1882,6 +2104,11 @@ a.event-calendar-event {
 
     .event-feed-date {
         min-height: 0;
+    }
+
+    #business-location-map {
+        height: 340px;
+        min-height: 300px;
     }
 
     .event-detail-meta {
@@ -2085,6 +2312,15 @@ a.event-calendar-event {
     .business-review-header {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .admin-list-item {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+    }
+
+    .admin-search-form {
+        grid-template-columns: 1fr;
     }
 
     .business-cover-photo {

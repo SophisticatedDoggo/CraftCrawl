@@ -195,14 +195,19 @@ map.on('load', function () {
     map.on('click', 'places', (e) => {
         const coordinates = e.features[0].geometry.coordinates.slice();
         const properties = e.features[0].properties;
+        const address = `${properties.streetAddress}, ${properties.city}, ${properties.state} ${properties.zip}`;
+        const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
         const popupHTML = `
-            <strong>${properties.title}</strong>
-            <p>${formatBusinessType(properties.businessType)} &middot; #${properties.listNumber} on map</p>
+            <strong>${escapeHtml(properties.title)}</strong>
+            <p>${escapeHtml(formatBusinessType(properties.businessType))} &middot; #${escapeHtml(properties.listNumber)} on map</p>
             <p>
-                ${properties.streetAddress}<br>
-                ${properties.city}, ${properties.state} ${properties.zip}
+                ${escapeHtml(properties.streetAddress)}<br>
+                ${escapeHtml(properties.city)}, ${escapeHtml(properties.state)} ${escapeHtml(properties.zip)}
             </p>
-            <a href="../business_details.php?id=${properties.id}">Open details</a>
+            <div class="map-popup-actions">
+                <a class="map-action-button" href="../business_details.php?id=${encodeURIComponent(properties.id)}">Open details</a>
+                <a class="map-action-button" href="${directionsUrl}" target="_blank" rel="noopener">Get Directions</a>
+            </div>
         `;
 
         new mapboxgl.Popup()
@@ -243,6 +248,12 @@ function formatBusinessType(type) {
     };
 
     return labels[type] || 'Business';
+}
+
+function escapeHtml(value) {
+    const element = document.createElement('span');
+    element.textContent = value || '';
+    return element.innerHTML;
 }
 
 function getAllLocations(){

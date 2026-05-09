@@ -4,6 +4,7 @@ craftcrawl_secure_session_start();
 include 'db.php';
 include 'config.php';
 require_once 'lib/hcaptcha.php';
+require_once 'lib/email_verification.php';
 
 $message = null;
 $success = false;
@@ -28,8 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $phone = clean_text($_POST['phone'] ?? '');
     $website = filter_var(trim($_POST['website'] ?? ''), FILTER_SANITIZE_URL);
     $hours = clean_text($_POST['hours'] ?? '');
-    $password = trim($_POST['password'] ?? '');
-    $verify_password = trim($_POST['verify_password'] ?? '');
+    $password = (string) ($_POST['password'] ?? '');
+    $verify_password = (string) ($_POST['verify_password'] ?? '');
     $captcha_token = $_POST['h-captcha-response'] ?? '';
     $date = date('Y-m-d H:i:s');
 
@@ -62,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($business_name === '' || $type === '' || $address === '' || $city === '' || $state === '' || $zip === '' || $latitude === false || $longitude === false || $latitude == 0.0 || $longitude == 0.0) {
                 $message = "Please select a complete address from the address search.";
             }
-            elseif (!empty($password) && ($password === $verify_password)) {
+            elseif ($password !== '' && hash_equals($password, $verify_password)) {
                 if (strlen($password) < 10) {
                     $message = "Your Password Must Contain At Least 10 Characters!";
                 }
@@ -82,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $hash = password_hash($password, PASSWORD_DEFAULT);
                 }
             } else {
-                if ($password !== $verify_password) {
+                if (!hash_equals($password, $verify_password)) {
                     $message = "Your passwords do not match!";
                 } else {
                     $message = "Please enter a password.";
@@ -91,10 +92,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
             if (!isset($message)) {
-                $stmt = $conn->prepare("INSERT INTO businesses (bName, bEmail, bType, bPhone, bWebsite, bHours, password_hash, street_address, apt_suite, city, state, zip, latitude, longitude, createdAt, approved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt = $conn->prepare("INSERT INTO businesses (bName, bEmail, bType, bPhone, bWebsite, bHours, password_hash, street_address, apt_suite, city, state, zip, latitude, longitude, createdAt, emailVerifiedAt, approved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)");
                 $stmt->bind_param("ssssssssssssddsi", $business_name, $email, $type, $phone, $website, $hours, $hash, $address, $apt_suite, $city, $state, $zip, $latitude, $longitude, $date, $approved);
                 $stmt->execute();
-                $message = "You have successfully created an account! Redirecting...";
+                $business_id = $stmt->insert_id;
+                $email_sent = craftcrawl_issue_email_verification($conn, 'business', $business_id, $email);
+                $message = $email_sent
+                    ? "Account created. Please check your email to verify your address before logging in."
+                    : "Account created, but the verification email could not be sent. Please contact support.";
                 $success = true;
             }
         } else {
@@ -115,9 +120,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="css/style.css">
     <script id="search-js" defer src="https://api.mapbox.com/search-js/v1.5.0/web.js"></script>
     <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
-    <?php if ($success) : ?>
-        <meta http-equiv="refresh" content="3;url=business_login.php">
-    <?php endif; ?>
 </head>
 <body class="auth-body">
     <main class="auth-card auth-card-wide">
@@ -163,9 +165,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input name="longitude" id="longitude" type="hidden" value="0.0"><br><br>
 
             <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required><br><br>
+            <input type="password" id="password" name="password" autocomplete="new-password" required><br><br>
             <label for="verify_password">Verify Password:</label>
-            <input type="password" id="verify_password" name="verify_password" required><br><br>
+            <input type="password" id="verify_password" name="verify_password" autocomplete="new-password" required><br><br>
             <div id="pswd_validation_msg"></div>
             <div class="captcha-field">
                 <?php echo craftcrawl_hcaptcha_widget(); ?>

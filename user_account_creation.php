@@ -4,6 +4,7 @@ craftcrawl_secure_session_start();
 include 'db.php';
 include 'config.php';
 require_once 'lib/hcaptcha.php';
+require_once 'lib/email_verification.php';
 
 $message = null;
 $success = null;
@@ -22,8 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = strtolower(trim($_POST['email'] ?? ''));
     $first_name = clean_text($_POST['first_name'] ?? '');
     $last_name = clean_text($_POST['last_name'] ?? '');
-    $password = trim($_POST['password'] ?? '');
-    $verify_password = trim($_POST['verify_password'] ?? '');
+    $password = (string) ($_POST['password'] ?? '');
+    $verify_password = (string) ($_POST['verify_password'] ?? '');
     $captcha_token = $_POST['h-captcha-response'] ?? '';
     $date = date('Y-m-d H:i:s');
 
@@ -45,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $result->fetch_assoc();
 
         if (!$user) {
-            if (!empty($password) && ($password === $verify_password)) {
+            if ($password !== '' && hash_equals($password, $verify_password)) {
                 if (strlen($password) < 10) {
                     $message = "Your Password Must Contain At Least 10 Characters!";
                 }
@@ -63,14 +64,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 else {
                     $hash = password_hash($password, PASSWORD_DEFAULT);
-                    $stmt = $conn->prepare("INSERT INTO users (fName, lName, email, password_hash, createdAt) VALUES (?, ?, ?, ?, ?)");
+                    $stmt = $conn->prepare("INSERT INTO users (fName, lName, email, password_hash, createdAt, emailVerifiedAt) VALUES (?, ?, ?, ?, ?, NULL)");
                     $stmt->bind_param("sssss", $first_name, $last_name, $email, $hash, $date);
                     $stmt->execute();
-                    $message = "You have successfully created an account! Redirecting...";
+                    $user_id = $stmt->insert_id;
+                    $email_sent = craftcrawl_issue_email_verification($conn, 'user', $user_id, $email);
+                    $message = $email_sent
+                        ? "Account created. Please check your email to verify your address before logging in."
+                        : "Account created, but the verification email could not be sent. Please contact support.";
                     $success = true;
                 }
             } else {
-                if ($password !== $verify_password) {
+                if (!hash_equals($password, $verify_password)) {
                     $message = "Your passwords do not match!";
                 } else {
                     $message = "Please enter a password.";
@@ -93,9 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="js/theme_init.js"></script>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
-    <?php if ($success) : ?>
-        <meta http-equiv="refresh" content="3;url=user_login.php">
-    <?php endif; ?>
 </head>
 <body class="auth-body">
     <main class="auth-card auth-card-wide">
@@ -114,9 +116,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label for="last_name">Last Name:</label>
             <input type="text" id="last_name" name="last_name" required value="<?php echo escape_output($last_name) ?>"><br><br>
             <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required><br><br>
+            <input type="password" id="password" name="password" autocomplete="new-password" required><br><br>
             <label for="verify_password">Verify Password:</label>
-            <input type="password" id="verify_password" name="verify_password" required><br><br>
+            <input type="password" id="verify_password" name="verify_password" autocomplete="new-password" required><br><br>
             <div id="pswd_validation_msg"></div>
             <div class="captcha-field">
                 <?php echo craftcrawl_hcaptcha_widget(); ?>

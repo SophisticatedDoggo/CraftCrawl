@@ -3,3 +3,4 @@ config.php
 data/
 .env
 scripts/
+migrations/

@@ -6,16 +6,14 @@ include 'db.php';
 
 $login_error = false;
 $captcha_error = false;
-$verification_error = false;
 $email = "";
 
-$login_feedback = $_SESSION['user_login_feedback'] ?? null;
-unset($_SESSION['user_login_feedback']);
+$login_feedback = $_SESSION['admin_login_feedback'] ?? null;
+unset($_SESSION['admin_login_feedback']);
 
 if ($login_feedback) {
     $login_error = !empty($login_feedback['login_error']);
     $captcha_error = !empty($login_feedback['captcha_error']);
-    $verification_error = !empty($login_feedback['verification_error']);
     $email = $login_feedback['email'] ?? '';
 }
 
@@ -41,58 +39,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$captcha_valid) {
-        $_SESSION['user_login_feedback'] = [
+        $_SESSION['admin_login_feedback'] = [
             'captcha_error' => true,
             'email' => $email
         ];
-        header("Location: user_login.php");
+        header("Location: admin_login.php");
         exit();
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $_SESSION['user_login_feedback'] = [
+        $_SESSION['admin_login_feedback'] = [
             'login_error' => true,
             'email' => $email
         ];
-        header("Location: user_login.php");
+        header("Location: admin_login.php");
         exit();
     } else {
-        $stmt = $conn->prepare("SELECT id, password_hash, emailVerifiedAt FROM users WHERE email=?");
+        $stmt = $conn->prepare("SELECT id, password_hash FROM admins WHERE email=? AND active=TRUE");
         $stmt->bind_param("s", $email);
         $stmt->execute();
-        $result = $stmt->get_result();
-        $user = $result->fetch_assoc();
+        $admin = $stmt->get_result()->fetch_assoc();
 
-        if($user && password_verify($password, $user['password_hash'])) {
-            if (empty($user['emailVerifiedAt'])) {
-                $_SESSION['user_login_feedback'] = [
-                    'verification_error' => true,
-                    'email' => $email
-                ];
-                header("Location: user_login.php");
-                exit();
-            }
-
+        if ($admin && password_verify($password, $admin['password_hash'])) {
             session_regenerate_id(true);
-            unset($_SESSION['business_id'], $_SESSION['admin_id']);
-            $_SESSION['user_id'] = $user['id'];
+            unset($_SESSION['user_id'], $_SESSION['business_id']);
+            $_SESSION['admin_id'] = $admin['id'];
 
             if ($remember_me) {
-                craftcrawl_issue_remember_token($conn, 'user', (int) $user['id']);
+                craftcrawl_issue_remember_token($conn, 'admin', (int) $admin['id']);
             } else {
                 craftcrawl_revoke_current_remember_token($conn);
             }
 
-            header("Location: user/portal.php");
-            exit();
-        } else {
-            $_SESSION['user_login_feedback'] = [
-                'login_error' => true,
-                'email' => $email
-            ];
-            header("Location: user_login.php");
+            header("Location: admin/dashboard.php");
             exit();
         }
-    }
 
+        $_SESSION['admin_login_feedback'] = [
+            'login_error' => true,
+            'email' => $email
+        ];
+        header("Location: admin_login.php");
+        exit();
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -100,18 +87,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CraftCrawl | User Login</title>
+    <title>CraftCrawl | Admin Login</title>
     <script src="js/theme_init.js"></script>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 </head>
 <body class="auth-body">
     <main class="auth-card">
-        <h1>Login</h1>
-        <form id="login_form" action="" method="POST">
+        <h1>Admin Login</h1>
+        <form action="" method="POST">
             <?php echo craftcrawl_csrf_input(); ?>
             <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required value="<?php echo escape_output($email) ?>"><br><br>
+            <input type="email" id="email" name="email" required value="<?php echo escape_output($email); ?>"><br><br>
             <label for="password">Password:</label>
             <input type="password" id="password" name="password" required><br><br>
             <label class="remember-login-toggle">
@@ -129,18 +116,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php if ($login_error) : ?>
                     <p class="form-message form-message-error">Incorrect Email or Password</p>
                 <?php endif; ?>
-                <?php if ($verification_error) : ?>
-                    <p class="form-message form-message-error">Please verify your email before logging in.</p>
-                <?php endif; ?>
             </div>
         </form>
-        <p class="auth-switch"><a href="forgot_password.php?account_type=user">Forgot password?</a></p>
-        <p class="auth-switch"><a href="user_account_creation.php">Create An Account</a></p>
-        <?php if ($verification_error) : ?>
-            <p class="auth-switch">
-                <a href="resend_verification.php?account_type=user&email=<?php echo escape_output(rawurlencode($email)); ?>">Resend verification email</a>
-            </p>
-        <?php endif; ?>
+        <p class="auth-switch"><a href="index.php">Back to account selection</a></p>
     </main>
 </body>
 </html>

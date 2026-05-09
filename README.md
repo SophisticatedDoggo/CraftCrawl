@@ -23,6 +23,22 @@ the secret key to GitHub. Configure these values as host environment variables:
 - `HCAPTCHA_SITE_KEY`
 - `HCAPTCHA_SECRET_KEY`
 
+## Email verification
+
+New user and business accounts must verify their email address before login.
+Verification links are sent with PHP `mail()`. Configure your host mailer or
+set these environment variables:
+
+- `CRAFTCRAWL_APP_URL`
+- `CRAFTCRAWL_MAIL_FROM`
+
+Run the email verification migration for existing databases:
+
+```sh
+mysql -u craft_crawl -p craft_crawl < migrations/2026_05_09_email_verification.sql
+mysql -u craft_crawl -p craft_crawl < migrations/2026_05_09_password_resets.sql
+```
+
 ## Database configuration
 
 Database credentials are read from environment variables or a local `.env` file
@@ -35,3 +51,21 @@ development, then fill in your real values:
 - `CRAFTCRAWL_DB_NAME`
 
 Rotate any credentials that were previously committed before deploying publicly.
+
+## Admin accounts
+
+Run the SQL migration before using admin features:
+
+```sh
+mysql -u craft_crawl -p craft_crawl < migrations/2026_05_09_admin_features.sql
+mysql -u craft_crawl -p craft_crawl < migrations/2026_05_09_remember_login_tokens.sql
+```
+
+Create or reset the first admin account from the command line:
+
+```sh
+php -r "echo password_hash('StrongPass!123', PASSWORD_DEFAULT), PHP_EOL;"
+mysql -u craft_crawl -p craft_crawl < migrations/2026_05_09_create_admin_account_template.sql
+```
+
+Admins sign in at `admin_login.php`.

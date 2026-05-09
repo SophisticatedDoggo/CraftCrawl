@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/lib/security.php';
+require_once __DIR__ . '/lib/remember_auth.php';
 craftcrawl_secure_session_start();
+include 'db.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: index.php');
@@ -8,6 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 craftcrawl_verify_csrf();
+craftcrawl_revoke_current_remember_token($conn);
 
 $_SESSION = [];
 

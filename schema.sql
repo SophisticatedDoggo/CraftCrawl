@@ -8,7 +8,33 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     createdAt DATETIME NOT NULL,
+    emailVerifiedAt DATETIME,
     UNIQUE KEY unique_user_email (email)
+);
+
+CREATE TABLE IF NOT EXISTS admins (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fName VARCHAR(50) NOT NULL,
+    lName VARCHAR(50) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    active BOOL NOT NULL DEFAULT TRUE,
+    createdAt DATETIME NOT NULL,
+    UNIQUE KEY unique_admin_email (email)
+);
+
+CREATE TABLE IF NOT EXISTS account_login_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    account_type ENUM('user', 'business', 'admin') NOT NULL,
+    account_id INT NOT NULL,
+    selector CHAR(24) NOT NULL,
+    validator_hash CHAR(64) NOT NULL,
+    expiresAt DATETIME NOT NULL,
+    createdAt DATETIME NOT NULL,
+    lastUsedAt DATETIME,
+    UNIQUE KEY unique_account_login_selector (account_type, selector),
+    KEY idx_account_login_account (account_type, account_id),
+    KEY idx_account_login_expires (expiresAt)
 );
 
 CREATE TABLE IF NOT EXISTS businesses (
@@ -29,8 +55,35 @@ CREATE TABLE IF NOT EXISTS businesses (
     bAbout TEXT,
     bHours TEXT,
     createdAt DATETIME NOT NULL,
+    emailVerifiedAt DATETIME,
     approved BOOL NOT NULL DEFAULT FALSE,
     UNIQUE KEY unique_business_email (bEmail)
+);
+
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    account_type ENUM('user', 'business') NOT NULL,
+    account_id INT NOT NULL,
+    token_hash CHAR(64) NOT NULL,
+    expiresAt DATETIME NOT NULL,
+    createdAt DATETIME NOT NULL,
+    usedAt DATETIME,
+    UNIQUE KEY unique_email_verification_token (token_hash),
+    KEY idx_email_verification_account (account_type, account_id),
+    KEY idx_email_verification_expires (expiresAt)
+);
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    account_type ENUM('user', 'business') NOT NULL,
+    account_id INT NOT NULL,
+    token_hash CHAR(64) NOT NULL,
+    expiresAt DATETIME NOT NULL,
+    createdAt DATETIME NOT NULL,
+    usedAt DATETIME,
+    UNIQUE KEY unique_password_reset_token (token_hash),
+    KEY idx_password_reset_account (account_type, account_id),
+    KEY idx_password_reset_expires (expiresAt)
 );
 
 CREATE TABLE IF NOT EXISTS photos (

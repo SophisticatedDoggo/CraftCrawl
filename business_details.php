@@ -268,7 +268,9 @@ function format_event_time_range($event) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CraftCrawl | <?php echo escape_output($business['bName']); ?></title>
     <script src="js/theme_init.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.21.0/mapbox-gl.css" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.21.0/mapbox-gl.js"></script>
 </head>
 <body>
     <main class="business-details-page">
@@ -289,6 +291,22 @@ function format_event_time_range($event) {
                 </div>
             </div>
         </div>
+
+        <?php if ($message === 'review_saved') : ?>
+            <p class="form-message form-message-success">Your review has been posted.</p>
+        <?php elseif ($message === 'liked') : ?>
+            <p class="form-message form-message-success">Location added to your likes.</p>
+        <?php elseif ($message === 'unliked') : ?>
+            <p class="form-message form-message-success">Location removed from your likes.</p>
+        <?php elseif ($message === 'review_error') : ?>
+            <p class="form-message form-message-error">Please choose a rating from 1 to 5.</p>
+        <?php elseif ($message === 'review_photo_count_error') : ?>
+            <p class="form-message form-message-error">Please upload no more than 3 photos with a review.</p>
+        <?php elseif ($message === 'review_photo_server_limit_error') : ?>
+            <p class="form-message form-message-error">That photo is larger than your current PHP upload limit. Increase upload_max_filesize and post_max_size, or try a smaller image.</p>
+        <?php elseif ($message === 'review_photo_error') : ?>
+            <p class="form-message form-message-error">Your review photo could not be uploaded. Please try again with a JPEG, PNG, or WebP photo under 10 MB.</p>
+        <?php endif; ?>
 
         <section class="business-details-hero">
             <?php if ($business_cover_photo) : ?>
@@ -347,6 +365,26 @@ function format_event_time_range($event) {
             </div>
         </section>
 
+        <section class="business-location-panel">
+            <div class="business-section-header">
+                <h2>Location</h2>
+                <a
+                    class="map-action-button"
+                    href="https://www.google.com/maps/search/?api=1&query=<?php echo escape_output(rawurlencode($business['street_address'] . ', ' . $business['city'] . ', ' . $business['state'] . ' ' . $business['zip'])); ?>"
+                    target="_blank"
+                    rel="noopener"
+                >Get Directions</a>
+            </div>
+            <div
+                id="business-location-map"
+                data-business-name="<?php echo escape_output($business['bName']); ?>"
+                data-business-type="<?php echo escape_output($business['bType']); ?>"
+                data-business-latitude="<?php echo escape_output($business['latitude']); ?>"
+                data-business-longitude="<?php echo escape_output($business['longitude']); ?>"
+                aria-label="Map showing <?php echo escape_output($business['bName']); ?> location"
+            ></div>
+        </section>
+
         <?php if (!empty($business_gallery_photos)) : ?>
             <section class="business-gallery-panel">
                 <h2>Photos</h2>
@@ -387,22 +425,6 @@ function format_event_time_range($event) {
                     <?php endif; ?>
                 </div>
             </section>
-        <?php endif; ?>
-
-        <?php if ($message === 'review_saved') : ?>
-            <p class="form-message form-message-success">Your review has been posted.</p>
-        <?php elseif ($message === 'liked') : ?>
-            <p class="form-message form-message-success">Location added to your likes.</p>
-        <?php elseif ($message === 'unliked') : ?>
-            <p class="form-message form-message-success">Location removed from your likes.</p>
-        <?php elseif ($message === 'review_error') : ?>
-            <p class="form-message form-message-error">Please choose a rating from 1 to 5.</p>
-        <?php elseif ($message === 'review_photo_count_error') : ?>
-            <p class="form-message form-message-error">Please upload no more than 3 photos with a review.</p>
-        <?php elseif ($message === 'review_photo_server_limit_error') : ?>
-            <p class="form-message form-message-error">That photo is larger than your current PHP upload limit. Increase upload_max_filesize and post_max_size, or try a smaller image.</p>
-        <?php elseif ($message === 'review_photo_error') : ?>
-            <p class="form-message form-message-error">Your review photo could not be uploaded. Please try again with a JPEG, PNG, or WebP photo under 10 MB.</p>
         <?php endif; ?>
 
         <section class="business-events-panel">
@@ -521,6 +543,10 @@ function format_event_time_range($event) {
         <img class="photo-lightbox-image review-photo-lightbox-image" id="business-gallery-lightbox-image" alt="<?php echo escape_output($business['bName']); ?> photo">
         <button type="button" class="photo-lightbox-nav photo-lightbox-next review-photo-lightbox-nav review-photo-lightbox-next" id="business-gallery-lightbox-next" aria-label="Next photo">&rsaquo;</button>
     </div>
+<script>
+    window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
+</script>
+<script src="js/business_details_map.js"></script>
 <script src="js/business_gallery.js"></script>
 <script src="js/review_photos.js"></script>
 <script src="js/mobile_actions_menu.js"></script>
