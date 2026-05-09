@@ -49,6 +49,18 @@ include '../config.php';
 
         <section id="map-panel" class="portal-panel">
             <div id="map"></div>
+            <div class="business-list-toolbar">
+                <label for="business-list-sort">Sort list</label>
+                <select id="business-list-sort">
+                    <option value="map">Map order</option>
+                    <option value="name">Name</option>
+                    <option value="brewery">Breweries first</option>
+                    <option value="winery">Wineries first</option>
+                    <option value="cidery">Cideries first</option>
+                    <option value="distillery">Distilleries first</option>
+                    <option value="meadery">Meaderies first</option>
+                </select>
+            </div>
             <ol id="business-list" class="business-list"></ol>
         </section>
 
@@ -70,5 +82,6 @@ include '../config.php';
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="../js/map.js"></script>
 <script src="../js/mobile_actions_menu.js"></script>
+<script src="../js/depth_animations.js"></script>
 </body>
 </html>

@@ -29,6 +29,19 @@ function format_business_type($type) {
     return $labels[$type] ?? 'Business';
 }
 
+function render_star_rating($rating, $label = '') {
+    $rating_value = max(0, min(5, (float) $rating));
+    $rounded_rating = (int) round($rating_value);
+    $label_text = $label !== '' ? $label : number_format($rating_value, 1) . ' out of 5';
+    $html = '<span class="star-rating" aria-label="' . escape_output($label_text) . '">';
+
+    for ($star = 1; $star <= 5; $star++) {
+        $html .= '<span class="' . ($star <= $rounded_rating ? 'star-filled' : 'star-empty') . '">&#9733;</span>';
+    }
+
+    return $html . '</span>';
+}
+
 require_once '../config.php';
 require_once '../lib/cloudinary_upload.php';
 
@@ -264,11 +277,20 @@ $business_photos = $photo_stmt->get_result();
                     </p>
                     <p>
                         <?php if ((int) $rating_summary['review_count'] > 0) : ?>
-                            <?php echo escape_output(number_format((float) $rating_summary['average_rating'], 1)); ?> / 5 from <?php echo escape_output($rating_summary['review_count']); ?> reviews
+                            <span class="rating-summary">
+                                <?php echo render_star_rating($rating_summary['average_rating']); ?>
+                                <span><?php echo escape_output(number_format((float) $rating_summary['average_rating'], 1)); ?> / 5 from <?php echo escape_output($rating_summary['review_count']); ?> reviews</span>
+                            </span>
                         <?php else : ?>
                             No user reviews yet
                         <?php endif; ?>
                     </p>
+                    <?php if (!empty($business['bHours'])) : ?>
+                        <div class="business-hours">
+                            <strong>Hours</strong>
+                            <p><?php echo nl2br(escape_output($business['bHours'])); ?></p>
+                        </div>
+                    <?php endif; ?>
                     <?php if (!empty($business['bPhone'])) : ?>
                         <p><?php echo escape_output($business['bPhone']); ?></p>
                     <?php endif; ?>
@@ -331,7 +353,11 @@ $business_photos = $photo_stmt->get_result();
                 <h2>User Reviews</h2>
                 <p>
                     <?php if ((int) $rating_summary['review_count'] > 0) : ?>
-                        Average rating: <?php echo escape_output(number_format((float) $rating_summary['average_rating'], 1)); ?> / 5
+                        Average rating:
+                        <span class="rating-summary">
+                            <?php echo render_star_rating($rating_summary['average_rating']); ?>
+                            <span><?php echo escape_output(number_format((float) $rating_summary['average_rating'], 1)); ?> / 5</span>
+                        </span>
                     <?php else : ?>
                         User reviews will appear here once visitors review your business.
                     <?php endif; ?>
@@ -346,7 +372,10 @@ $business_photos = $photo_stmt->get_result();
                 <article class="business-review-card">
                     <div class="business-review-header">
                         <strong><?php echo escape_output($review['fName'] . ' ' . $review['lName']); ?></strong>
-                        <span><?php echo escape_output($review['rating']); ?> / 5</span>
+                        <span class="rating-summary">
+                            <?php echo render_star_rating($review['rating'], $review['rating'] . ' out of 5'); ?>
+                            <span><?php echo escape_output(number_format((float) $review['rating'], 1)); ?></span>
+                        </span>
                     </div>
 
                     <?php if (!empty($review['notes'])) : ?>
@@ -392,5 +421,6 @@ $business_photos = $photo_stmt->get_result();
     </main>
     <script src="../js/business_review_responses.js"></script>
     <script src="../js/mobile_actions_menu.js"></script>
+    <script src="../js/depth_animations.js"></script>
 </body>
 </html>

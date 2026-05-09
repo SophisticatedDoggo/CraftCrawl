@@ -24,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $business_name = clean_text($_POST['business_name'] ?? '');
     $business_type = clean_text($_POST['business_type'] ?? '');
     $about = clean_text($_POST['about'] ?? '');
+    $hours = clean_text($_POST['hours'] ?? '');
     $phone = clean_text($_POST['phone'] ?? '');
     $website = filter_var(trim($_POST['website'] ?? ''), FILTER_SANITIZE_URL);
     $street_address = clean_text($_POST['address_address-search'] ?? $_POST['address'] ?? '');
@@ -37,8 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($business_name === '' || $business_type === '' || $street_address === '' || $city === '' || $state === '' || $zip === '' || $latitude === false || $longitude === false) {
         $message = 'Please select a complete address from the address search.';
     } else {
-        $stmt = $conn->prepare("UPDATE businesses SET bName=?, bType=?, bAbout=?, bPhone=?, bWebsite=?, street_address=?, apt_suite=?, city=?, state=?, zip=?, latitude=?, longitude=? WHERE id=?");
-        $stmt->bind_param("ssssssssssddi", $business_name, $business_type, $about, $phone, $website, $street_address, $apt_suite, $city, $state, $zip, $latitude, $longitude, $business_id);
+        $stmt = $conn->prepare("UPDATE businesses SET bName=?, bType=?, bAbout=?, bHours=?, bPhone=?, bWebsite=?, street_address=?, apt_suite=?, city=?, state=?, zip=?, latitude=?, longitude=? WHERE id=?");
+        $stmt->bind_param("sssssssssssddi", $business_name, $business_type, $about, $hours, $phone, $website, $street_address, $apt_suite, $city, $state, $zip, $latitude, $longitude, $business_id);
         $stmt->execute();
 
         header('Location: business_portal.php?message=profile_saved');
@@ -112,6 +113,10 @@ if (!$business) {
 
                 <label for="about">About</label>
                 <textarea id="about" name="about" rows="6"><?php echo escape_output($business['bAbout'] ?? ''); ?></textarea>
+
+                <label for="hours">Hours</label>
+                <textarea id="hours" name="hours" rows="4" placeholder="Optional"><?php echo escape_output($business['bHours'] ?? ''); ?></textarea>
+                <p class="form-help">Optional. Example: Mon-Thu 4-10 PM, Fri-Sat 12-11 PM, Sun 12-8 PM.</p>
 
                 <label for="phone">Phone</label>
                 <input type="tel" id="phone" name="phone" value="<?php echo escape_output($business['bPhone']); ?>">

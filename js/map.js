@@ -266,6 +266,7 @@ function getAllLocations(){
             });
             renderBusinessList(numberedBusinessData);
             setupBusinessSearch();
+            setupBusinessListSort();
         },
         error: function (e) {
             console.log(e);
@@ -398,6 +399,42 @@ function renderBusinessList(features) {
     }).join('');
 }
 
+function setupBusinessListSort() {
+    const sortSelect = document.getElementById('business-list-sort');
+
+    if (!sortSelect || sortSelect.dataset.ready === 'true') {
+        return;
+    }
+
+    sortSelect.dataset.ready = 'true';
+    sortSelect.addEventListener('change', () => {
+        renderBusinessList(getSortedBusinessFeatures(sortSelect.value));
+    });
+}
+
+function getSortedBusinessFeatures(sortValue) {
+    const features = [...allBusinessFeatures];
+
+    if (sortValue === 'name') {
+        return features.sort((a, b) => a.properties.title.localeCompare(b.properties.title));
+    }
+
+    if (sortValue && sortValue !== 'map') {
+        return features.sort((a, b) => {
+            const aMatches = a.properties.businessType === sortValue ? 0 : 1;
+            const bMatches = b.properties.businessType === sortValue ? 0 : 1;
+
+            if (aMatches !== bMatches) {
+                return aMatches - bMatches;
+            }
+
+            return Number(a.properties.listNumber) - Number(b.properties.listNumber);
+        });
+    }
+
+    return features.sort((a, b) => Number(a.properties.listNumber) - Number(b.properties.listNumber));
+}
+
 function renderEventsFeed(events) {
     const feedContainer = document.getElementById('events-feed');
 
@@ -413,27 +450,45 @@ function renderEventsFeed(events) {
     feedContainer.innerHTML = events.map((event) => {
         const eventDate = new Date(`${event.date}T${event.startTime}`);
         const endTime = event.endTime ? ` - ${formatEventTime(event.endTime)}` : '';
+        const eventUrl = `../event_details.php?id=${encodeURIComponent(event.id)}&date=${encodeURIComponent(event.date)}`;
+        const eventName = escapeHtml(event.name);
+        const businessName = escapeHtml(event.businessName);
+        const city = escapeHtml(event.city);
+        const state = escapeHtml(event.state);
+        const description = event.description ? escapeHtml(event.description) : '';
         const coverPhoto = event.coverPhotoUrl
             ? `<img class="event-feed-cover" src="${event.coverPhotoUrl}" alt="">`
             : '';
 
         return `
             <article class="event-feed-item ${event.coverPhotoUrl ? 'event-feed-item-with-cover' : ''}">
-                ${coverPhoto}
                 <div class="event-feed-date">
                     <strong>${eventDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</strong>
                     <span>${eventDate.toLocaleDateString(undefined, { weekday: 'short' })}</span>
                 </div>
+                ${coverPhoto}
                 <div class="event-feed-details">
-                    <h3>${event.name}</h3>
-                    <p>${formatEventTime(event.startTime)}${endTime} &middot; ${event.businessName}</p>
-                    <p>${formatBusinessType(event.businessType)} &middot; ${event.city}, ${event.state}</p>
-                    ${event.description ? `<p>${event.description}</p>` : ''}
+                    <h3>${eventName}</h3>
+                    <p>${formatEventTime(event.startTime)}${endTime} &middot; ${businessName}</p>
+                    <p>${formatBusinessType(event.businessType)} &middot; ${city}, ${state}</p>
+                    ${description ? `<p>${description}</p>` : ''}
+                </div>
+                <div class="event-feed-actions">
+                    <a href="${eventUrl}">View event</a>
                     <a href="../business_details.php?id=${event.businessId}">View business</a>
                 </div>
             </article>
         `;
     }).join('');
+}
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
 }
 
 function formatEventTime(time) {

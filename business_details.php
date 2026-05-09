@@ -31,6 +31,19 @@ function format_business_type($type) {
     return $labels[$type] ?? 'Business';
 }
 
+function render_star_rating($rating, $label = '') {
+    $rating_value = max(0, min(5, (float) $rating));
+    $rounded_rating = (int) round($rating_value);
+    $label_text = $label !== '' ? $label : number_format($rating_value, 1) . ' out of 5';
+    $html = '<span class="star-rating" aria-label="' . escape_output($label_text) . '">';
+
+    for ($star = 1; $star <= 5; $star++) {
+        $html .= '<span class="' . ($star <= $rounded_rating ? 'star-filled' : 'star-empty') . '">&#9733;</span>';
+    }
+
+    return $html . '</span>';
+}
+
 function add_event_occurrence(&$events, $event, $date) {
     $event['occurrenceDate'] = $date;
     $events[] = $event;
@@ -237,6 +250,16 @@ usort($events, function ($a, $b) {
 });
 
 $upcoming_events = array_slice($events, 0, 5);
+
+function format_event_time_range($event) {
+    $time = date('g:i A', strtotime($event['startTime']));
+
+    if (!empty($event['endTime'])) {
+        $time .= ' - ' . date('g:i A', strtotime($event['endTime']));
+    }
+
+    return $time;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -278,7 +301,10 @@ $upcoming_events = array_slice($events, 0, 5);
 
             <p>
                 <?php if ((int) $rating_summary['review_count'] > 0) : ?>
-                    <?php echo escape_output(number_format((float) $rating_summary['average_rating'], 1)); ?> / 5 from <?php echo escape_output($rating_summary['review_count']); ?> reviews
+                    <span class="rating-summary">
+                        <?php echo render_star_rating($rating_summary['average_rating']); ?>
+                        <span><?php echo escape_output(number_format((float) $rating_summary['average_rating'], 1)); ?> / 5 from <?php echo escape_output($rating_summary['review_count']); ?> reviews</span>
+                    </span>
                 <?php else : ?>
                     No reviews yet
                 <?php endif; ?>
@@ -297,6 +323,13 @@ $upcoming_events = array_slice($events, 0, 5);
                 <p><?php echo escape_output($business['bPhone']); ?></p>
             <?php endif; ?>
 
+            <?php if (!empty($business['bHours'])) : ?>
+                <div class="business-hours">
+                    <strong>Hours</strong>
+                    <p><?php echo nl2br(escape_output($business['bHours'])); ?></p>
+                </div>
+            <?php endif; ?>
+
             <div class="business-details-actions">
                 <?php if (!empty($business['bWebsite'])) : ?>
                     <a href="<?php echo escape_output($business['bWebsite']); ?>" target="_blank" rel="noopener">Visit Website</a>
@@ -306,7 +339,10 @@ $upcoming_events = array_slice($events, 0, 5);
                     <?php echo craftcrawl_csrf_input(); ?>
                     <input type="hidden" name="form_action" value="toggle_like">
                     <input type="hidden" name="is_liked" value="<?php echo $is_liked ? '1' : '0'; ?>">
-                    <button type="submit"><?php echo $is_liked ? 'Unlike Location' : 'Like Location'; ?></button>
+                    <button type="submit" class="like-button <?php echo $is_liked ? 'is-liked' : ''; ?>">
+                        <span aria-hidden="true"><?php echo $is_liked ? '&#9829;' : '&#9825;'; ?></span>
+                        <span><?php echo $is_liked ? 'Unlike' : 'Like'; ?></span>
+                    </button>
                 </form>
             </div>
         </section>
@@ -318,12 +354,20 @@ $upcoming_events = array_slice($events, 0, 5);
                     <div class="business-gallery-track">
                     <?php foreach ($business_gallery_photos as $photo_index => $photo) : ?>
                         <?php $photo_url = craftcrawl_cloudinary_delivery_url($photo['object_key'], 'f_auto,q_auto,c_fill,w_900,h_560'); ?>
-                        <img
-                            class="business-gallery-slide <?php echo $photo_index === 0 ? 'is-active' : ''; ?>"
-                            src="<?php echo escape_output($photo_url); ?>"
-                            alt="<?php echo escape_output($business['bName']); ?> photo <?php echo escape_output($photo_index + 1); ?>"
-                            loading="<?php echo $photo_index === 0 ? 'eager' : 'lazy'; ?>"
+                        <?php $photo_large_url = craftcrawl_cloudinary_delivery_url($photo['object_key'], 'f_auto,q_auto,c_limit,w_1800,h_1400'); ?>
+                        <button
+                            type="button"
+                            class="business-gallery-slide-button business-gallery-slide <?php echo $photo_index === 0 ? 'is-active' : ''; ?>"
+                            data-gallery-photo-url="<?php echo escape_output($photo_large_url); ?>"
+                            data-gallery-photo-index="<?php echo escape_output($photo_index); ?>"
+                            aria-label="Open <?php echo escape_output($business['bName']); ?> photo <?php echo escape_output($photo_index + 1); ?>"
                         >
+                            <img
+                                src="<?php echo escape_output($photo_url); ?>"
+                                alt="<?php echo escape_output($business['bName']); ?> photo <?php echo escape_output($photo_index + 1); ?>"
+                                loading="<?php echo $photo_index === 0 ? 'eager' : 'lazy'; ?>"
+                            >
+                        </button>
                     <?php endforeach; ?>
                     </div>
 
@@ -377,11 +421,12 @@ $upcoming_events = array_slice($events, 0, 5);
                         <?php $event_cover_url = craftcrawl_cloudinary_delivery_url($event['cover_photo_key'], 'f_auto,q_auto,c_fill,w_640,h_280'); ?>
                         <img class="business-event-cover" src="<?php echo escape_output($event_cover_url); ?>" alt="<?php echo escape_output($event['eName']); ?> cover photo" loading="lazy">
                     <?php endif; ?>
-                    <time><?php echo escape_output(date('M j, Y', strtotime($event['occurrenceDate']))); ?> at <?php echo escape_output(date('g:i A', strtotime($event['startTime']))); ?></time>
+                    <time><?php echo escape_output(date('M j, Y', strtotime($event['occurrenceDate']))); ?> at <?php echo escape_output(format_event_time_range($event)); ?></time>
                     <h3><?php echo escape_output($event['eName']); ?></h3>
                     <?php if (!empty($event['eDescription'])) : ?>
                         <p><?php echo escape_output($event['eDescription']); ?></p>
                     <?php endif; ?>
+                    <a href="event_details.php?id=<?php echo escape_output($event['id']); ?>&date=<?php echo escape_output($event['occurrenceDate']); ?>">View Event</a>
                 </article>
             <?php endforeach; ?>
         </section>
@@ -422,7 +467,10 @@ $upcoming_events = array_slice($events, 0, 5);
                 <article class="business-review-card">
                     <div class="business-review-header">
                         <strong><?php echo escape_output($review['fName'] . ' ' . $review['lName']); ?></strong>
-                        <span><?php echo escape_output($review['rating']); ?> / 5</span>
+                        <span class="rating-summary">
+                            <?php echo render_star_rating($review['rating'], $review['rating'] . ' out of 5'); ?>
+                            <span><?php echo escape_output(number_format((float) $review['rating'], 1)); ?></span>
+                        </span>
                     </div>
 
                     <?php if (!empty($review['notes'])) : ?>
@@ -458,15 +506,24 @@ $upcoming_events = array_slice($events, 0, 5);
         </section>
     </main>
     <div class="review-photo-lightbox" id="review-photo-lightbox" hidden>
-        <div class="review-photo-lightbox-backdrop" data-lightbox-close></div>
-        <div class="review-photo-lightbox-count" id="review-photo-lightbox-count"></div>
-        <button type="button" class="review-photo-lightbox-close" data-lightbox-close aria-label="Close photo viewer">x</button>
-        <button type="button" class="review-photo-lightbox-nav review-photo-lightbox-prev" id="review-photo-lightbox-prev" aria-label="Previous photo">&lsaquo;</button>
-        <img class="review-photo-lightbox-image" id="review-photo-lightbox-image" alt="Review photo">
-        <button type="button" class="review-photo-lightbox-nav review-photo-lightbox-next" id="review-photo-lightbox-next" aria-label="Next photo">&rsaquo;</button>
+        <div class="photo-lightbox-backdrop review-photo-lightbox-backdrop" data-lightbox-close></div>
+        <div class="photo-lightbox-count review-photo-lightbox-count" id="review-photo-lightbox-count"></div>
+        <button type="button" class="photo-lightbox-close review-photo-lightbox-close" data-lightbox-close aria-label="Close photo viewer">&times;</button>
+        <button type="button" class="photo-lightbox-nav photo-lightbox-prev review-photo-lightbox-nav review-photo-lightbox-prev" id="review-photo-lightbox-prev" aria-label="Previous photo">&lsaquo;</button>
+        <img class="photo-lightbox-image review-photo-lightbox-image" id="review-photo-lightbox-image" alt="Review photo">
+        <button type="button" class="photo-lightbox-nav photo-lightbox-next review-photo-lightbox-nav review-photo-lightbox-next" id="review-photo-lightbox-next" aria-label="Next photo">&rsaquo;</button>
+    </div>
+    <div class="review-photo-lightbox" id="business-gallery-lightbox" hidden>
+        <div class="photo-lightbox-backdrop review-photo-lightbox-backdrop" data-gallery-lightbox-close></div>
+        <div class="photo-lightbox-count review-photo-lightbox-count" id="business-gallery-lightbox-count"></div>
+        <button type="button" class="photo-lightbox-close review-photo-lightbox-close" data-gallery-lightbox-close aria-label="Close photo viewer">&times;</button>
+        <button type="button" class="photo-lightbox-nav photo-lightbox-prev review-photo-lightbox-nav review-photo-lightbox-prev" id="business-gallery-lightbox-prev" aria-label="Previous photo">&lsaquo;</button>
+        <img class="photo-lightbox-image review-photo-lightbox-image" id="business-gallery-lightbox-image" alt="<?php echo escape_output($business['bName']); ?> photo">
+        <button type="button" class="photo-lightbox-nav photo-lightbox-next review-photo-lightbox-nav review-photo-lightbox-next" id="business-gallery-lightbox-next" aria-label="Next photo">&rsaquo;</button>
     </div>
 <script src="js/business_gallery.js"></script>
 <script src="js/review_photos.js"></script>
 <script src="js/mobile_actions_menu.js"></script>
+<script src="js/depth_animations.js"></script>
 </body>
 </html>

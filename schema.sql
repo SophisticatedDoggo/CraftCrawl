@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS businesses (
     bWebsite VARCHAR(2048),
     bType VARCHAR(255) NOT NULL,
     bAbout TEXT,
+    bHours TEXT,
     createdAt DATETIME NOT NULL,
     approved BOOL NOT NULL DEFAULT FALSE,
     UNIQUE KEY unique_business_email (bEmail)

@@ -11,6 +11,7 @@ $approved = false;
 $business_name = "";
 $phone = "";
 $website = "";
+$hours = "";
 
 function clean_text($value) {
     return trim(strip_tags($value ?? ''));
@@ -26,6 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $type = clean_text($_POST['business_types'] ?? '');
     $phone = clean_text($_POST['phone'] ?? '');
     $website = filter_var(trim($_POST['website'] ?? ''), FILTER_SANITIZE_URL);
+    $hours = clean_text($_POST['hours'] ?? '');
     $password = trim($_POST['password'] ?? '');
     $verify_password = trim($_POST['verify_password'] ?? '');
     $captcha_token = $_POST['h-captcha-response'] ?? '';
@@ -89,8 +91,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
             if (!isset($message)) {
-                $stmt = $conn->prepare("INSERT INTO businesses (bName, bEmail, bType, bPhone, bWebsite, password_hash, street_address, apt_suite, city, state, zip, latitude, longitude, createdAt, approved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param("sssssssssssddsi", $business_name, $email, $type, $phone, $website, $hash, $address, $apt_suite, $city, $state, $zip, $latitude, $longitude, $date, $approved);
+                $stmt = $conn->prepare("INSERT INTO businesses (bName, bEmail, bType, bPhone, bWebsite, bHours, password_hash, street_address, apt_suite, city, state, zip, latitude, longitude, createdAt, approved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("ssssssssssssddsi", $business_name, $email, $type, $phone, $website, $hours, $hash, $address, $apt_suite, $city, $state, $zip, $latitude, $longitude, $date, $approved);
                 $stmt->execute();
                 $message = "You have successfully created an account! Redirecting...";
                 $success = true;
@@ -144,6 +146,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="tel" id="phone" name="phone" placeholder="Optional" value="<?php echo escape_output($phone) ?>"><br><br>
             <label for="website">Business Website:</label>
             <input type="url" id="website" name="website" placeholder="Optional" value="<?php echo escape_output($website) ?>"><br><br>
+            <label for="hours">Business Hours:</label>
+            <textarea id="hours" name="hours" rows="4" placeholder="Optional"><?php echo escape_output($hours) ?></textarea>
+            <p class="form-help">Optional. Example: Mon-Thu 4-10 PM, Fri-Sat 12-11 PM, Sun 12-8 PM.</p>
 
             <h3>Business Address</h3>
             <input id="street_address" name="address" autocomplete="address-line1" placeholder="Address" required>
