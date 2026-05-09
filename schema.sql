@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     createdAt DATETIME NOT NULL,
     emailVerifiedAt DATETIME,
+    disabledAt DATETIME,
     UNIQUE KEY unique_user_email (email)
 );
 
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS admins (
     password_hash VARCHAR(255) NOT NULL,
     active BOOL NOT NULL DEFAULT TRUE,
     createdAt DATETIME NOT NULL,
+    disabledAt DATETIME,
     UNIQUE KEY unique_admin_email (email)
 );
 
@@ -56,6 +58,7 @@ CREATE TABLE IF NOT EXISTS businesses (
     bHours TEXT,
     createdAt DATETIME NOT NULL,
     emailVerifiedAt DATETIME,
+    disabledAt DATETIME,
     approved BOOL NOT NULL DEFAULT FALSE,
     UNIQUE KEY unique_business_email (bEmail)
 );
@@ -75,7 +78,7 @@ CREATE TABLE IF NOT EXISTS email_verification_tokens (
 
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    account_type ENUM('user', 'business') NOT NULL,
+    account_type ENUM('user', 'business', 'admin') NOT NULL,
     account_id INT NOT NULL,
     token_hash CHAR(64) NOT NULL,
     expiresAt DATETIME NOT NULL,

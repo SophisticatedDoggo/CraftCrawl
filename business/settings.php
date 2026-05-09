@@ -19,6 +19,31 @@ function escape_output($value) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
 
+    $form_action = $_POST['form_action'] ?? 'change_password';
+
+    if ($form_action === 'disable_account') {
+        $disable_password = (string) ($_POST['disable_password'] ?? '');
+        $stmt = $conn->prepare("SELECT password_hash FROM businesses WHERE id=?");
+        $stmt->bind_param("i", $business_id);
+        $stmt->execute();
+        $business_account = $stmt->get_result()->fetch_assoc();
+
+        if (!$business_account || !password_verify($disable_password, $business_account['password_hash'])) {
+            $message = 'disable_password_error';
+        } else {
+            $disable_stmt = $conn->prepare("UPDATE businesses SET disabledAt=NOW() WHERE id=?");
+            $disable_stmt->bind_param("i", $business_id);
+            $disable_stmt->execute();
+            craftcrawl_revoke_remember_tokens_for_account($conn, 'business', $business_id);
+            craftcrawl_revoke_password_reset_tokens_for_account($conn, 'business', $business_id);
+            craftcrawl_clear_remember_cookie();
+            $_SESSION = [];
+            session_destroy();
+            craftcrawl_redirect('index.php');
+        }
+    }
+
+    if ($form_action === 'change_password') {
     $current_password = (string) ($_POST['current_password'] ?? '');
     $new_password = (string) ($_POST['new_password'] ?? '');
     $verify_password = (string) ($_POST['verify_password'] ?? '');
@@ -47,6 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: settings.php?message=password_saved');
             exit();
         }
+    }
     }
 }
 
@@ -95,6 +121,8 @@ $business = $stmt->get_result()->fetch_assoc();
             <p class="form-message form-message-error">New passwords do not match.</p>
         <?php elseif ($message === 'password_rule_error') : ?>
             <p class="form-message form-message-error">Password must meet the site password rules.</p>
+        <?php elseif ($message === 'disable_password_error') : ?>
+            <p class="form-message form-message-error">Password is incorrect. Your account was not disabled.</p>
         <?php endif; ?>
 
         <section class="settings-panel">
@@ -112,6 +140,7 @@ $business = $stmt->get_result()->fetch_assoc();
             <h2>Reset Password</h2>
             <form method="POST" action="" class="settings-form">
                 <?php echo craftcrawl_csrf_input(); ?>
+                <input type="hidden" name="form_action" value="change_password">
                 <label for="current_password">Current Password</label>
                 <input type="password" id="current_password" name="current_password" autocomplete="current-password" required>
 
@@ -122,6 +151,18 @@ $business = $stmt->get_result()->fetch_assoc();
                 <input type="password" id="verify_password" name="verify_password" autocomplete="new-password" required>
 
                 <button type="submit">Update Password</button>
+            </form>
+        </section>
+
+        <section class="settings-panel">
+            <h2>Disable Account</h2>
+            <p class="form-help">Disabling your account will prevent you from logging in and remove access to your business portal.</p>
+            <form method="POST" action="" class="settings-form" onsubmit="return confirm('Are you sure? Disabling your account will prevent you from logging in.');">
+                <?php echo craftcrawl_csrf_input(); ?>
+                <input type="hidden" name="form_action" value="disable_account">
+                <label for="disable_password">Password</label>
+                <input type="password" id="disable_password" name="disable_password" autocomplete="current-password" required>
+                <button type="submit" class="danger-button">Disable Account</button>
             </form>
         </section>
     </main>

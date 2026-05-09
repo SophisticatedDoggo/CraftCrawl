@@ -86,6 +86,7 @@ if (!$business) {
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
                     <a href="dashboard.php">Dashboard</a>
+                    <a href="accounts.php">Accounts</a>
                     <a href="password_resets.php">Password Resets</a>
                     <a href="reviews.php">Reviews</a>
                     <form action="../logout.php" method="POST">

@@ -492,6 +492,7 @@ label {
 .mobile-actions-panel a,
 .mobile-actions-panel button {
     min-height: 42px;
+    white-space: nowrap;
 }
 
 .palette-switcher {
@@ -810,6 +811,17 @@ label {
 .business-header-actions button {
     min-height: 40px;
     padding: 9px 14px;
+    white-space: nowrap;
+}
+
+.admin-page .business-header-actions {
+    gap: 8px;
+}
+
+.admin-page .business-header-actions a,
+.admin-page .business-header-actions button {
+    padding-right: 12px;
+    padding-left: 12px;
 }
 
 .event-feed-item {

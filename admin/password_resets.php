@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../lib/admin_auth.php';
 require_once __DIR__ . '/../lib/remember_auth.php';
+require_once __DIR__ . '/../lib/password_reset.php';
 craftcrawl_require_admin();
 include '../db.php';
 
@@ -27,14 +28,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
-    $table = $account_type === 'business' ? 'businesses' : ($account_type === 'admin' ? 'admins' : 'users');
-    $email_column = $account_type === 'business' ? 'bEmail' : 'email';
-    $stmt = $conn->prepare("UPDATE {$table} SET password_hash=? WHERE {$email_column}=?");
+    if ($account_type === 'business') {
+        $stmt = $conn->prepare("UPDATE businesses SET password_hash=? WHERE bEmail=? AND disabledAt IS NULL");
+    } elseif ($account_type === 'admin') {
+        $stmt = $conn->prepare("UPDATE admins SET password_hash=? WHERE email=? AND active=TRUE AND disabledAt IS NULL");
+    } else {
+        $stmt = $conn->prepare("UPDATE users SET password_hash=? WHERE email=? AND disabledAt IS NULL");
+    }
     $stmt->bind_param("ss", $password_hash, $email);
     $stmt->execute();
 
     if ($stmt->affected_rows > 0) {
         craftcrawl_revoke_remember_tokens_by_email($conn, $account_type, $email);
+        $account = craftcrawl_password_reset_account_by_email($conn, $account_type, $email);
+
+        if ($account) {
+            craftcrawl_revoke_password_reset_tokens_for_account($conn, $account_type, (int) $account['id']);
+        }
     }
 
     header('Location: password_resets.php?message=' . ($stmt->affected_rows > 0 ? 'password_reset' : 'password_account_error'));
@@ -65,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
                     <a href="dashboard.php">Dashboard</a>
+                    <a href="accounts.php">Accounts</a>
                     <a href="password_resets.php">Password Resets</a>
                     <a href="reviews.php">Reviews</a>
                     <form action="../logout.php" method="POST">

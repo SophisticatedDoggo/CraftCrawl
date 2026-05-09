@@ -12,7 +12,7 @@ $message = null;
 $success = false;
 $token_result = $token !== '' ? craftcrawl_password_reset_token($conn, $token) : ['success' => false, 'reason' => 'invalid'];
 $account_type = $token_result['reset']['account_type'] ?? 'user';
-$login_path = $account_type === 'business' ? 'business_login.php' : 'user_login.php';
+$login_path = $account_type === 'admin' ? 'admin_login.php' : ($account_type === 'business' ? 'business_login.php' : 'user_login.php');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($token_result['success'])) {
     craftcrawl_verify_csrf();
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($token_result['success'])) {
                 craftcrawl_revoke_password_reset_tokens_for_account($conn, $reset_result['account_type'], (int) $reset_result['account_id']);
                 $success = true;
                 $account_type = $reset_result['account_type'];
-                $login_path = $account_type === 'business' ? 'business_login.php' : 'user_login.php';
+                $login_path = $account_type === 'admin' ? 'admin_login.php' : ($account_type === 'business' ? 'business_login.php' : 'user_login.php');
                 $message = 'Your password has been reset. Redirecting you to login...';
             } else {
                 $message = 'That reset link is invalid or expired.';

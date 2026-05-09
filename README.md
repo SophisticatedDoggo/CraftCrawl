@@ -37,6 +37,7 @@ Run the email verification migration for existing databases:
 ```sh
 mysql -u craft_crawl -p craft_crawl < migrations/2026_05_09_email_verification.sql
 mysql -u craft_crawl -p craft_crawl < migrations/2026_05_09_password_resets.sql
+mysql -u craft_crawl -p craft_crawl < migrations/2026_05_09_disable_accounts.sql
 ```
 
 ## Database configuration

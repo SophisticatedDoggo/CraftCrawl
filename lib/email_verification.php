@@ -69,9 +69,9 @@ function craftcrawl_issue_email_verification($conn, $account_type, $account_id, 
 
 function craftcrawl_email_verification_account_by_email($conn, $account_type, $email) {
     if ($account_type === 'user') {
-        $stmt = $conn->prepare("SELECT id, email, emailVerifiedAt FROM users WHERE email=?");
+        $stmt = $conn->prepare("SELECT id, email, emailVerifiedAt FROM users WHERE email=? AND disabledAt IS NULL");
     } elseif ($account_type === 'business') {
-        $stmt = $conn->prepare("SELECT id, bEmail AS email, emailVerifiedAt FROM businesses WHERE bEmail=?");
+        $stmt = $conn->prepare("SELECT id, bEmail AS email, emailVerifiedAt FROM businesses WHERE bEmail=? AND disabledAt IS NULL");
     } else {
         return null;
     }

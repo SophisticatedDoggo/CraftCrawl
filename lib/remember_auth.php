@@ -32,11 +32,11 @@ function craftcrawl_session_key_for_account_type($account_type) {
 
 function craftcrawl_account_exists_for_remember_token($conn, $account_type, $account_id) {
     if ($account_type === 'user') {
-        $stmt = $conn->prepare("SELECT id FROM users WHERE id=?");
+        $stmt = $conn->prepare("SELECT id FROM users WHERE id=? AND disabledAt IS NULL");
     } elseif ($account_type === 'business') {
-        $stmt = $conn->prepare("SELECT id FROM businesses WHERE id=?");
+        $stmt = $conn->prepare("SELECT id FROM businesses WHERE id=? AND disabledAt IS NULL");
     } elseif ($account_type === 'admin') {
-        $stmt = $conn->prepare("SELECT id FROM admins WHERE id=? AND active=TRUE");
+        $stmt = $conn->prepare("SELECT id FROM admins WHERE id=? AND active=TRUE AND disabledAt IS NULL");
     } else {
         return false;
     }

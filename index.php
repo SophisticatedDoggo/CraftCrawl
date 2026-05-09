@@ -9,15 +9,45 @@ if (!isset($_SESSION['user_id']) && !isset($_SESSION['business_id']) && !isset($
 }
 
 if (isset($_SESSION['user_id'])) {
+    $account_id = (int) $_SESSION['user_id'];
+    $stmt = $conn->prepare("SELECT id FROM users WHERE id=? AND disabledAt IS NULL");
+    $stmt->bind_param("i", $account_id);
+    $stmt->execute();
+
+    if (!$stmt->get_result()->fetch_assoc()) {
+        $_SESSION = [];
+        craftcrawl_clear_remember_cookie();
+    } else {
     craftcrawl_redirect('user/portal.php');
+    }
 }
 
 if (isset($_SESSION['business_id'])) {
+    $account_id = (int) $_SESSION['business_id'];
+    $stmt = $conn->prepare("SELECT id FROM businesses WHERE id=? AND disabledAt IS NULL");
+    $stmt->bind_param("i", $account_id);
+    $stmt->execute();
+
+    if (!$stmt->get_result()->fetch_assoc()) {
+        $_SESSION = [];
+        craftcrawl_clear_remember_cookie();
+    } else {
     craftcrawl_redirect('business/business_portal.php');
+    }
 }
 
 if (isset($_SESSION['admin_id'])) {
+    $account_id = (int) $_SESSION['admin_id'];
+    $stmt = $conn->prepare("SELECT id FROM admins WHERE id=? AND active=TRUE AND disabledAt IS NULL");
+    $stmt->bind_param("i", $account_id);
+    $stmt->execute();
+
+    if (!$stmt->get_result()->fetch_assoc()) {
+        $_SESSION = [];
+        craftcrawl_clear_remember_cookie();
+    } else {
     craftcrawl_redirect('admin/dashboard.php');
+    }
 }
 ?>
 <!DOCTYPE html>

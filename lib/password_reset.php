@@ -6,9 +6,11 @@ const CRAFTCRAWL_PASSWORD_RESET_HOURS = 1;
 
 function craftcrawl_password_reset_account_by_email($conn, $account_type, $email) {
     if ($account_type === 'user') {
-        $stmt = $conn->prepare("SELECT id, email FROM users WHERE email=?");
+        $stmt = $conn->prepare("SELECT id, email FROM users WHERE email=? AND disabledAt IS NULL");
     } elseif ($account_type === 'business') {
-        $stmt = $conn->prepare("SELECT id, bEmail AS email FROM businesses WHERE bEmail=?");
+        $stmt = $conn->prepare("SELECT id, bEmail AS email FROM businesses WHERE bEmail=? AND disabledAt IS NULL");
+    } elseif ($account_type === 'admin') {
+        $stmt = $conn->prepare("SELECT id, email FROM admins WHERE email=? AND active=TRUE AND disabledAt IS NULL");
     } else {
         return null;
     }
@@ -22,7 +24,7 @@ function craftcrawl_password_reset_account_by_email($conn, $account_type, $email
 function craftcrawl_issue_password_reset($conn, $account_type, $email) {
     $email = strtolower(trim($email));
 
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !in_array($account_type, ['user', 'business'], true)) {
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !in_array($account_type, ['user', 'business', 'admin'], true)) {
         return false;
     }
 
@@ -115,6 +117,8 @@ function craftcrawl_complete_password_reset($conn, $token, $password_hash) {
             $account_stmt = $conn->prepare("UPDATE users SET password_hash=? WHERE id=?");
         } elseif ($account_type === 'business') {
             $account_stmt = $conn->prepare("UPDATE businesses SET password_hash=? WHERE id=?");
+        } elseif ($account_type === 'admin') {
+            $account_stmt = $conn->prepare("UPDATE admins SET password_hash=? WHERE id=? AND active=TRUE");
         } else {
             throw new RuntimeException('Unknown account type.');
         }

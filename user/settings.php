@@ -19,33 +19,59 @@ function escape_output($value) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
 
-    $current_password = (string) ($_POST['current_password'] ?? '');
-    $new_password = (string) ($_POST['new_password'] ?? '');
-    $verify_password = (string) ($_POST['verify_password'] ?? '');
+    $form_action = $_POST['form_action'] ?? 'change_password';
 
-    $stmt = $conn->prepare("SELECT password_hash FROM users WHERE id=?");
-    $stmt->bind_param("i", $user_id);
-    $stmt->execute();
-    $user = $stmt->get_result()->fetch_assoc();
+    if ($form_action === 'disable_account') {
+        $disable_password = (string) ($_POST['disable_password'] ?? '');
+        $stmt = $conn->prepare("SELECT password_hash FROM users WHERE id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $user = $stmt->get_result()->fetch_assoc();
 
-    if (!$user || !password_verify($current_password, $user['password_hash'])) {
-        $message = 'password_current_error';
-    } elseif (!hash_equals($new_password, $verify_password)) {
-        $message = 'password_match_error';
-    } else {
-        $password_error = craftcrawl_admin_validate_password($new_password);
-
-        if ($password_error !== null) {
-            $message = 'password_rule_error';
+        if (!$user || !password_verify($disable_password, $user['password_hash'])) {
+            $message = 'disable_password_error';
         } else {
-            $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
-            $update_stmt = $conn->prepare("UPDATE users SET password_hash=? WHERE id=?");
-            $update_stmt->bind_param("si", $password_hash, $user_id);
-            $update_stmt->execute();
+            $disable_stmt = $conn->prepare("UPDATE users SET disabledAt=NOW() WHERE id=?");
+            $disable_stmt->bind_param("i", $user_id);
+            $disable_stmt->execute();
             craftcrawl_revoke_remember_tokens_for_account($conn, 'user', $user_id);
             craftcrawl_revoke_password_reset_tokens_for_account($conn, 'user', $user_id);
-            header('Location: settings.php?message=password_saved');
-            exit();
+            craftcrawl_clear_remember_cookie();
+            $_SESSION = [];
+            session_destroy();
+            craftcrawl_redirect('index.php');
+        }
+    }
+
+    if ($form_action === 'change_password') {
+        $current_password = (string) ($_POST['current_password'] ?? '');
+        $new_password = (string) ($_POST['new_password'] ?? '');
+        $verify_password = (string) ($_POST['verify_password'] ?? '');
+
+        $stmt = $conn->prepare("SELECT password_hash FROM users WHERE id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $user = $stmt->get_result()->fetch_assoc();
+
+        if (!$user || !password_verify($current_password, $user['password_hash'])) {
+            $message = 'password_current_error';
+        } elseif (!hash_equals($new_password, $verify_password)) {
+            $message = 'password_match_error';
+        } else {
+            $password_error = craftcrawl_admin_validate_password($new_password);
+
+            if ($password_error !== null) {
+                $message = 'password_rule_error';
+            } else {
+                $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
+                $update_stmt = $conn->prepare("UPDATE users SET password_hash=? WHERE id=?");
+                $update_stmt->bind_param("si", $password_hash, $user_id);
+                $update_stmt->execute();
+                craftcrawl_revoke_remember_tokens_for_account($conn, 'user', $user_id);
+                craftcrawl_revoke_password_reset_tokens_for_account($conn, 'user', $user_id);
+                header('Location: settings.php?message=password_saved');
+                exit();
+            }
         }
     }
 }
@@ -83,6 +109,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p class="form-message form-message-error">New passwords do not match.</p>
         <?php elseif ($message === 'password_rule_error') : ?>
             <p class="form-message form-message-error">Password must meet the site password rules.</p>
+        <?php elseif ($message === 'disable_password_error') : ?>
+            <p class="form-message form-message-error">Password is incorrect. Your account was not disabled.</p>
         <?php endif; ?>
 
         <section class="settings-panel">
@@ -100,6 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h2>Reset Password</h2>
             <form method="POST" action="" class="settings-form">
                 <?php echo craftcrawl_csrf_input(); ?>
+                <input type="hidden" name="form_action" value="change_password">
                 <label for="current_password">Current Password</label>
                 <input type="password" id="current_password" name="current_password" autocomplete="current-password" required>
 
@@ -110,6 +139,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="password" id="verify_password" name="verify_password" autocomplete="new-password" required>
 
                 <button type="submit">Update Password</button>
+            </form>
+        </section>
+
+        <section class="settings-panel">
+            <h2>Disable Account</h2>
+            <p class="form-help">Disabling your account will prevent you from logging in. This does not delete your reviews.</p>
+            <form method="POST" action="" class="settings-form" onsubmit="return confirm('Are you sure? Disabling your account will prevent you from logging in.');">
+                <?php echo craftcrawl_csrf_input(); ?>
+                <input type="hidden" name="form_action" value="disable_account">
+                <label for="disable_password">Password</label>
+                <input type="password" id="disable_password" name="disable_password" autocomplete="current-password" required>
+                <button type="submit" class="danger-button">Disable Account</button>
             </form>
         </section>
     </main>

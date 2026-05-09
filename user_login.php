@@ -7,6 +7,7 @@ include 'db.php';
 $login_error = false;
 $captcha_error = false;
 $verification_error = false;
+$disabled_error = false;
 $email = "";
 
 $login_feedback = $_SESSION['user_login_feedback'] ?? null;
@@ -16,6 +17,7 @@ if ($login_feedback) {
     $login_error = !empty($login_feedback['login_error']);
     $captcha_error = !empty($login_feedback['captcha_error']);
     $verification_error = !empty($login_feedback['verification_error']);
+    $disabled_error = !empty($login_feedback['disabled_error']);
     $email = $login_feedback['email'] ?? '';
 }
 
@@ -55,13 +57,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: user_login.php");
         exit();
     } else {
-        $stmt = $conn->prepare("SELECT id, password_hash, emailVerifiedAt FROM users WHERE email=?");
+        $stmt = $conn->prepare("SELECT id, password_hash, emailVerifiedAt, disabledAt FROM users WHERE email=?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $result = $stmt->get_result();
         $user = $result->fetch_assoc();
 
         if($user && password_verify($password, $user['password_hash'])) {
+            if (!empty($user['disabledAt'])) {
+                $_SESSION['user_login_feedback'] = [
+                    'disabled_error' => true,
+                    'email' => $email
+                ];
+                header("Location: user_login.php");
+                exit();
+            }
+
             if (empty($user['emailVerifiedAt'])) {
                 $_SESSION['user_login_feedback'] = [
                     'verification_error' => true,
@@ -131,6 +142,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
                 <?php if ($verification_error) : ?>
                     <p class="form-message form-message-error">Please verify your email before logging in.</p>
+                <?php endif; ?>
+                <?php if ($disabled_error) : ?>
+                    <p class="form-message form-message-error">This account has been disabled.</p>
                 <?php endif; ?>
             </div>
         </form>
