@@ -15,6 +15,7 @@ $user_id = (int) $_SESSION['user_id'];
 $stmt = $conn->prepare("
     SELECT
         (SELECT COUNT(*) FROM friend_requests WHERE addressee_user_id=? AND status='pending') AS pending_invites,
+        (SELECT COUNT(*) FROM location_recommendations WHERE recipient_user_id=? AND status='pending') AS pending_recommendations,
         (
             SELECT COUNT(*)
             FROM user_friends uf
@@ -23,14 +24,16 @@ $stmt = $conn->prepare("
                 AND (u.friendsSeenAt IS NULL OR uf.createdAt > u.friendsSeenAt)
         ) AS new_friends
 ");
-$stmt->bind_param("ii", $user_id, $user_id);
+$stmt->bind_param("iii", $user_id, $user_id, $user_id);
 $stmt->execute();
 $counts = $stmt->get_result()->fetch_assoc();
+$pending_recommendations = (int) ($counts['pending_recommendations'] ?? 0);
 
 echo json_encode([
     'ok' => true,
     'pending_invites' => (int) ($counts['pending_invites'] ?? 0),
+    'pending_recommendations' => $pending_recommendations,
     'new_friends' => (int) ($counts['new_friends'] ?? 0),
-    'badge_count' => (int) ($counts['pending_invites'] ?? 0) + (int) ($counts['new_friends'] ?? 0)
+    'badge_count' => (int) ($counts['pending_invites'] ?? 0) + $pending_recommendations + (int) ($counts['new_friends'] ?? 0)
 ]);
 ?>

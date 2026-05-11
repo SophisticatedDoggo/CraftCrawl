@@ -107,6 +107,14 @@ $review_eligibility_stmt->execute();
 $review_eligibility = $review_eligibility_stmt->get_result()->fetch_assoc();
 $user_has_checked_in = !empty($review_eligibility['has_checked_in']);
 $user_has_reviewed = !empty($review_eligibility['has_reviewed']);
+$user_review = null;
+
+if ($user_has_reviewed) {
+    $user_review_stmt = $conn->prepare("SELECT id, rating, notes FROM reviews WHERE user_id=? AND business_id=? LIMIT 1");
+    $user_review_stmt->bind_param("ii", $user_id, $business_id);
+    $user_review_stmt->execute();
+    $user_review = $user_review_stmt->get_result()->fetch_assoc();
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
@@ -133,6 +141,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $rating = filter_var($_POST['rating'] ?? null, FILTER_VALIDATE_INT);
     $notes = clean_text($_POST['notes'] ?? '');
+
+    if ($form_action === 'review_edit') {
+        if (!$rating || $rating < 1 || $rating > 5) {
+            $message = 'review_error';
+        } elseif (!$user_has_checked_in) {
+            $message = 'review_checkin_required';
+        } elseif (!$user_has_reviewed) {
+            $message = 'review_missing';
+        } else {
+            $update_stmt = $conn->prepare("UPDATE reviews SET rating=?, notes=? WHERE user_id=? AND business_id=?");
+            $update_stmt->bind_param("isii", $rating, $notes, $user_id, $business_id);
+            $update_stmt->execute();
+            header("Location: business_details.php?id=" . $business_id . "&message=review_updated");
+            exit();
+        }
+    }
+
     $review_photo_uploads = craftcrawl_normalize_file_uploads($_FILES['review_photos'] ?? []);
     $review_photo_uploads = array_values(array_filter($review_photo_uploads, function ($file) {
         return ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
@@ -235,6 +260,22 @@ $like_stmt->bind_param("ii", $user_id, $business_id);
 $like_stmt->execute();
 $is_liked = (bool) $like_stmt->get_result()->fetch_assoc();
 
+$want_stmt = $conn->prepare("SELECT id FROM want_to_go_locations WHERE user_id=? AND business_id=?");
+$want_stmt->bind_param("ii", $user_id, $business_id);
+$want_stmt->execute();
+$is_want_to_go = (bool) $want_stmt->get_result()->fetch_assoc();
+
+$friend_options_stmt = $conn->prepare("
+    SELECT u.id, u.fName, u.lName
+    FROM user_friends uf
+    INNER JOIN users u ON u.id = uf.friend_user_id
+    WHERE uf.user_id=? AND u.disabledAt IS NULL
+    ORDER BY u.fName, u.lName
+");
+$friend_options_stmt->bind_param("i", $user_id);
+$friend_options_stmt->execute();
+$friend_options = $friend_options_stmt->get_result();
+
 $user_progress = craftcrawl_user_level_progress($conn, $user_id);
 
 $business_photo_stmt = $conn->prepare("
@@ -333,16 +374,28 @@ function format_event_time_range($event) {
             <p class="form-message form-message-success">Your review has been posted. You earned XP and a new badge.</p>
         <?php elseif ($message === 'review_saved') : ?>
             <p class="form-message form-message-success">Your review has been posted.</p>
+        <?php elseif ($message === 'review_updated') : ?>
+            <p class="form-message form-message-success">Your review has been updated.</p>
         <?php elseif ($message === 'liked') : ?>
             <p class="form-message form-message-success">Location added to your likes.</p>
         <?php elseif ($message === 'unliked') : ?>
             <p class="form-message form-message-success">Location removed from your likes.</p>
+        <?php elseif ($message === 'want_saved') : ?>
+            <p class="form-message form-message-success">Location added to your want-to-go list.</p>
+        <?php elseif ($message === 'want_removed') : ?>
+            <p class="form-message form-message-success">Location removed from your want-to-go list.</p>
+        <?php elseif ($message === 'recommended') : ?>
+            <p class="form-message form-message-success">Recommendation sent.</p>
+        <?php elseif ($message === 'recommend_error') : ?>
+            <p class="form-message form-message-error">Recommendation could not be sent.</p>
         <?php elseif ($message === 'review_error') : ?>
             <p class="form-message form-message-error">Please choose a rating from 1 to 5.</p>
         <?php elseif ($message === 'review_checkin_required') : ?>
             <p class="form-message form-message-error">Check in at this location before leaving a review.</p>
         <?php elseif ($message === 'review_limit_reached') : ?>
             <p class="form-message form-message-error">You have already reviewed this location.</p>
+        <?php elseif ($message === 'review_missing') : ?>
+            <p class="form-message form-message-error">Your review could not be found.</p>
         <?php elseif ($message === 'review_photo_count_error') : ?>
             <p class="form-message form-message-error">Please upload no more than 3 photos with a review.</p>
         <?php elseif ($message === 'review_photo_server_limit_error') : ?>
@@ -417,7 +470,30 @@ function format_event_time_range($event) {
                         <span><?php echo $is_liked ? 'Unlike' : 'Like'; ?></span>
                     </button>
                 </form>
+                <form method="POST" action="user/want_to_go_toggle.php" class="like-business-form">
+                    <?php echo craftcrawl_csrf_input(); ?>
+                    <input type="hidden" name="business_id" value="<?php echo escape_output($business_id); ?>">
+                    <input type="hidden" name="is_saved" value="<?php echo $is_want_to_go ? '1' : '0'; ?>">
+                    <button type="submit"><?php echo $is_want_to_go ? 'Remove Want-to-Go' : 'Want to Go'; ?></button>
+                </form>
             </div>
+            <?php if ($friend_options->num_rows > 0) : ?>
+                <form method="POST" action="user/recommend_location.php" class="recommend-location-form">
+                    <?php echo craftcrawl_csrf_input(); ?>
+                    <input type="hidden" name="business_id" value="<?php echo escape_output($business_id); ?>">
+                    <label for="recommend_friend">Recommend to a friend</label>
+                    <div>
+                        <select id="recommend_friend" name="friend_id" required>
+                            <option value="">Choose a friend</option>
+                            <?php while ($friend_option = $friend_options->fetch_assoc()) : ?>
+                                <option value="<?php echo escape_output($friend_option['id']); ?>"><?php echo escape_output(trim($friend_option['fName'] . ' ' . $friend_option['lName'])); ?></option>
+                            <?php endwhile; ?>
+                        </select>
+                        <input type="text" name="message" maxlength="255" placeholder="Optional note">
+                        <button type="submit">Recommend</button>
+                    </div>
+                </form>
+            <?php endif; ?>
             <p class="form-message" data-check-in-feedback hidden></p>
             <div class="level-summary-card business-level-summary">
                 <div>
@@ -526,14 +602,46 @@ function format_event_time_range($event) {
         </section>
 
         <section class="review-form-panel">
-            <h2>Leave a Review</h2>
+            <h2><?php echo $user_has_reviewed ? 'Edit Your Review' : 'Leave a Review'; ?></h2>
             <?php if (!$user_has_checked_in) : ?>
                 <p class="form-help">Check in at this location before leaving a review.</p>
             <?php elseif ($user_has_reviewed) : ?>
-                <p class="form-help">You have already reviewed this location. Each user can leave one review per location.</p>
+                <div class="current-review-preview" data-review-edit-preview>
+                    <span class="rating-summary">
+                        <?php echo render_star_rating($user_review['rating'] ?? 0, ($user_review['rating'] ?? 0) . ' out of 5'); ?>
+                        <span><?php echo escape_output(number_format((float) ($user_review['rating'] ?? 0), 1)); ?></span>
+                    </span>
+                    <?php if (!empty($user_review['notes'])) : ?>
+                        <p><?php echo nl2br(escape_output($user_review['notes'])); ?></p>
+                    <?php endif; ?>
+                    <button type="button" data-review-edit-toggle>Edit Review</button>
+                </div>
+                <form method="POST" action="" data-review-edit-form hidden>
+                    <?php echo craftcrawl_csrf_input(); ?>
+                    <input type="hidden" name="form_action" value="review_edit">
+                    <label for="edit_rating">Rating</label>
+                    <select id="edit_rating" name="rating" required>
+                        <option value="">Choose a rating</option>
+                        <?php for ($rating_option = 5; $rating_option >= 1; $rating_option--) : ?>
+                            <option value="<?php echo escape_output($rating_option); ?>" <?php echo (int) ($user_review['rating'] ?? 0) === $rating_option ? 'selected' : ''; ?>>
+                                <?php echo escape_output($rating_option); ?> - <?php echo escape_output(['', 'Bad', 'Poor', 'Okay', 'Good', 'Excellent'][$rating_option]); ?>
+                            </option>
+                        <?php endfor; ?>
+                    </select>
+
+                    <label for="edit_notes">Review</label>
+                    <textarea id="edit_notes" name="notes" rows="5"><?php echo escape_output($user_review['notes'] ?? ''); ?></textarea>
+                    <p class="form-help">Editing your review does not award additional XP.</p>
+
+                    <div class="review-edit-actions">
+                        <button type="submit">Update Review</button>
+                        <button type="button" class="button-link-secondary" data-review-edit-cancel>Cancel</button>
+                    </div>
+                </form>
             <?php else : ?>
                 <form method="POST" action="" enctype="multipart/form-data">
                     <?php echo craftcrawl_csrf_input(); ?>
+                    <input type="hidden" name="form_action" value="review">
                     <label for="rating">Rating</label>
                     <select id="rating" name="rating" required>
                         <option value="">Choose a rating</option>
@@ -630,6 +738,7 @@ function format_event_time_range($event) {
 <script src="js/check_in.js"></script>
 <script src="js/business_gallery.js"></script>
 <script src="js/review_photos.js"></script>
+<script src="js/review_edit_toggle.js"></script>
 <script src="js/mobile_actions_menu.js"></script>
 <script src="js/depth_animations.js"></script>
 </body>

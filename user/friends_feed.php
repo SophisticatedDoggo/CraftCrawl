@@ -39,20 +39,21 @@ while ($friend = $friend_result->fetch_assoc()) {
     $friend_ids[] = $friend_id;
 }
 
-if (empty($friend_ids)) {
-    echo json_encode(['ok' => true, 'friends' => [], 'feed' => []]);
-    exit();
-}
-
-$placeholders = implode(',', array_fill(0, count($friend_ids), '?'));
-$types = str_repeat('i', count($friend_ids));
+$people = $friends;
+$people[$user_id] = [
+    'name' => 'You',
+    'created_at' => null
+];
+$feed_user_ids = array_values(array_unique(array_merge([$user_id], $friend_ids)));
+$placeholders = implode(',', array_fill(0, count($feed_user_ids), '?'));
+$types = str_repeat('i', count($feed_user_ids));
 $feed = [];
 
-function craftcrawl_bind_friend_ids($stmt, $types, $friend_ids) {
+function craftcrawl_bind_feed_user_ids($stmt, $types, $feed_user_ids) {
     $params = [$types];
 
-    foreach ($friend_ids as $index => $friend_id) {
-        $params[] = &$friend_ids[$index];
+    foreach ($feed_user_ids as $index => $feed_user_id) {
+        $params[] = &$feed_user_ids[$index];
     }
 
     call_user_func_array([$stmt, 'bind_param'], $params);
@@ -67,15 +68,18 @@ $visit_sql = "
     LIMIT 80
 ";
 $visit_stmt = $conn->prepare($visit_sql);
-craftcrawl_bind_friend_ids($visit_stmt, $types, $friend_ids);
+craftcrawl_bind_feed_user_ids($visit_stmt, $types, $feed_user_ids);
 $visit_stmt->execute();
 $visit_result = $visit_stmt->get_result();
 
 while ($visit = $visit_result->fetch_assoc()) {
+    $actor_id = (int) $visit['user_id'];
     $feed[] = [
+        'item_key' => 'first_visit:' . (int) $visit['id'],
         'type' => 'first_visit',
         'created_at' => $visit['checkedInAt'],
-        'friend_name' => $friends[(int) $visit['user_id']]['name'] ?? 'A friend',
+        'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
+        'is_self' => $actor_id === $user_id,
         'business_id' => (int) $visit['business_id'],
         'business_name' => $visit['bName'],
         'city' => $visit['city'],
@@ -90,7 +94,7 @@ $xp_sql = "
     ORDER BY user_id ASC, createdAt ASC, id ASC
 ";
 $xp_stmt = $conn->prepare($xp_sql);
-craftcrawl_bind_friend_ids($xp_stmt, $types, $friend_ids);
+craftcrawl_bind_feed_user_ids($xp_stmt, $types, $feed_user_ids);
 $xp_stmt->execute();
 $xp_result = $xp_stmt->get_result();
 $running_xp = [];
@@ -108,9 +112,11 @@ while ($xp = $xp_result->fetch_assoc()) {
     }
 
     $feed[] = [
+        'item_key' => 'level_up:' . (int) $xp['id'],
         'type' => 'level_up',
         'created_at' => $xp['createdAt'],
-        'friend_name' => $friends[$friend_id]['name'] ?? 'A friend',
+        'friend_name' => $people[$friend_id]['name'] ?? 'A friend',
+        'is_self' => $friend_id === $user_id,
         'level' => $after_level,
         'title' => craftcrawl_level_title($after_level)
     ];
@@ -121,6 +127,91 @@ usort($feed, function ($a, $b) {
 });
 
 $feed = array_slice($feed, 0, 60);
+$feed_item_keys = array_column($feed, 'item_key');
+$reactions_by_item = [];
+$comment_counts_by_item = [];
+
+if (!empty($feed_item_keys)) {
+    $reaction_placeholders = implode(',', array_fill(0, count($feed_item_keys), '?'));
+    $reaction_types = str_repeat('s', count($feed_item_keys));
+    $reaction_sql = "
+        SELECT fr.feed_item_key, fr.reaction_type, fr.user_id, u.fName, u.lName
+        FROM feed_reactions fr
+        INNER JOIN users u ON u.id = fr.user_id
+        WHERE fr.feed_item_key IN ($reaction_placeholders)
+        ORDER BY fr.createdAt ASC, fr.id ASC
+    ";
+    $reaction_stmt = $conn->prepare($reaction_sql);
+    $reaction_params = [$reaction_types];
+
+    foreach ($feed_item_keys as $index => $feed_item_key) {
+        $reaction_params[] = &$feed_item_keys[$index];
+    }
+
+    call_user_func_array([$reaction_stmt, 'bind_param'], $reaction_params);
+    $reaction_stmt->execute();
+    $reaction_result = $reaction_stmt->get_result();
+
+    while ($reaction = $reaction_result->fetch_assoc()) {
+        $key = $reaction['feed_item_key'];
+        $type = $reaction['reaction_type'];
+        $reactor_id = (int) $reaction['user_id'];
+        if (!isset($reactions_by_item[$key])) {
+            $reactions_by_item[$key] = [];
+        }
+        if (!isset($reactions_by_item[$key][$type])) {
+            $reactions_by_item[$key][$type] = [
+                'type' => $type,
+                'count' => 0,
+                'reacted' => false,
+                'reactors' => []
+            ];
+        }
+
+        $reactor_name = trim($reaction['fName'] . ' ' . $reaction['lName']);
+        $reactions_by_item[$key][$type]['count']++;
+        $reactions_by_item[$key][$type]['reacted'] = $reactions_by_item[$key][$type]['reacted'] || $reactor_id === $user_id;
+        $reactions_by_item[$key][$type]['reactors'][] = [
+            'id' => $reactor_id,
+            'name' => $reactor_id === $user_id ? 'You' : $reactor_name,
+            'is_you' => $reactor_id === $user_id
+        ];
+    }
+
+    foreach ($feed as $index => $feed_item) {
+        $feed[$index]['reactions'] = array_values($reactions_by_item[$feed_item['item_key']] ?? []);
+    }
+}
+
+if (!empty($feed_item_keys)) {
+    $comment_placeholders = implode(',', array_fill(0, count($feed_item_keys), '?'));
+    $comment_types = str_repeat('s', count($feed_item_keys));
+    $comment_sql = "
+        SELECT feed_item_key, COUNT(*) AS total
+        FROM feed_comments
+        WHERE deletedAt IS NULL AND feed_item_key IN ($comment_placeholders)
+        GROUP BY feed_item_key
+    ";
+    $comment_stmt = $conn->prepare($comment_sql);
+    $comment_params = [$comment_types];
+
+    foreach ($feed_item_keys as $index => $feed_item_key) {
+        $comment_params[] = &$feed_item_keys[$index];
+    }
+
+    call_user_func_array([$comment_stmt, 'bind_param'], $comment_params);
+    $comment_stmt->execute();
+    $comment_result = $comment_stmt->get_result();
+
+    while ($comment_count = $comment_result->fetch_assoc()) {
+        $comment_counts_by_item[$comment_count['feed_item_key']] = (int) $comment_count['total'];
+    }
+
+    foreach ($feed as $index => $feed_item) {
+        $feed[$index]['comment_count'] = $comment_counts_by_item[$feed_item['item_key']] ?? 0;
+    }
+}
+
 $friend_list = [];
 
 foreach ($friends as $id => $friend) {

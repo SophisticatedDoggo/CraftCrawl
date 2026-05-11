@@ -3,7 +3,6 @@ require '../login_check.php';
 require_once '../lib/admin_auth.php';
 require_once '../lib/remember_auth.php';
 require_once '../lib/password_reset.php';
-require_once '../lib/leveling.php';
 include '../db.php';
 
 if (!isset($_SESSION['user_id'])) {
@@ -12,8 +11,6 @@ if (!isset($_SESSION['user_id'])) {
 
 $message = $_GET['message'] ?? null;
 $user_id = (int) $_SESSION['user_id'];
-$user_progress = craftcrawl_user_level_progress($conn, $user_id);
-$user_badges = craftcrawl_user_badges($conn, $user_id);
 $settings_stmt = $conn->prepare("SELECT auto_accept_friend_invites FROM users WHERE id=?");
 $settings_stmt->bind_param("i", $user_id);
 $settings_stmt->execute();
@@ -110,11 +107,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
                 <div>
                     <h1>Settings</h1>
-                    <p>Choose how CraftCrawl looks in this browser.</p>
+                    <p>Manage account preferences and privacy.</p>
                 </div>
             </div>
             <div class="business-header-actions">
                 <a href="portal.php">Back to Map</a>
+                <a href="profile.php">Profile</a>
                 <form action="../logout.php" method="POST">
                     <?php echo craftcrawl_csrf_input(); ?>
                     <button type="submit">Logout</button>
@@ -135,36 +133,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php elseif ($message === 'privacy_saved') : ?>
             <p class="form-message form-message-success">Privacy settings updated.</p>
         <?php endif; ?>
-
-        <section class="settings-panel">
-            <h2>Your Level</h2>
-            <div class="level-summary-card">
-                <div>
-                    <strong>Level <?php echo escape_output($user_progress['level']); ?> - <?php echo escape_output($user_progress['title']); ?></strong>
-                    <?php if ($user_progress['max_level']) : ?>
-                        <span>Max Level Reached</span>
-                    <?php else : ?>
-                        <span><?php echo escape_output($user_progress['total_xp']); ?> / <?php echo escape_output($user_progress['next_level_xp']); ?> XP toward Level <?php echo escape_output($user_progress['level'] + 1); ?></span>
-                    <?php endif; ?>
-                </div>
-                <div class="level-progress-bar" aria-hidden="true">
-                    <span style="width: <?php echo escape_output($user_progress['progress_percent']); ?>%;"></span>
-                </div>
-            </div>
-
-            <div class="badge-grid">
-                <?php if ($user_badges->num_rows === 0) : ?>
-                    <p>No badges earned yet.</p>
-                <?php endif; ?>
-                <?php while ($badge = $user_badges->fetch_assoc()) : ?>
-                    <article class="badge-card">
-                        <strong><?php echo escape_output($badge['badge_name']); ?></strong>
-                        <span><?php echo escape_output($badge['badge_description']); ?></span>
-                        <small>+<?php echo escape_output($badge['xp_awarded']); ?> XP</small>
-                    </article>
-                <?php endwhile; ?>
-            </div>
-        </section>
 
         <section class="settings-panel">
             <h2>Display Theme</h2>

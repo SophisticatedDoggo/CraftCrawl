@@ -38,10 +38,11 @@ $user_progress = craftcrawl_user_level_progress($conn, $user_id);
                 <span></span>
             </button>
             <div class="mobile-actions-panel" data-mobile-actions-panel>
-                <button type="button" data-friends-manager-toggle>
+                <a href="profile.php">Profile</a>
+                <a href="friends.php">
                     Manage Friends
                     <span class="notification-badge" data-friends-menu-badge hidden></span>
-                </button>
+                </a>
                 <a class="settings-icon-link" href="settings.php" aria-label="Settings">
                     <span aria-hidden="true">⚙</span>
                 </a>
@@ -156,37 +157,6 @@ $user_progress = craftcrawl_user_level_progress($conn, $user_id);
             <span>Menu</span>
         </button>
     </nav>
-    <div class="friends-manager" data-friends-manager hidden>
-        <div class="friends-manager-dialog" role="dialog" aria-modal="true" aria-labelledby="friends-manager-title">
-            <header>
-                <div>
-                    <h2 id="friends-manager-title">Add / Approve Friends</h2>
-                    <p>Search for accounts or review incoming friend invites.</p>
-                </div>
-                <button type="button" data-friends-manager-close aria-label="Close friend manager">Close</button>
-            </header>
-            <p class="form-message" data-friends-status hidden></p>
-            <section class="friends-manager-section">
-                <h3>Approve New Friends</h3>
-                <div class="friend-requests-list" data-friend-requests-list></div>
-            </section>
-            <section class="friends-manager-section">
-                <h3>Your Friends</h3>
-                <div class="friend-current-list" data-current-friends-list></div>
-            </section>
-            <section class="friends-manager-section">
-                <h3>Add New Friends</h3>
-                <form class="friends-search-form" data-friends-search-form>
-                    <label for="friend-search-input">Search friend accounts</label>
-                    <div>
-                        <input type="search" id="friend-search-input" name="q" placeholder="Search by name or email" autocomplete="off">
-                        <button type="submit">Search</button>
-                    </div>
-                </form>
-                <div class="friends-search-results" data-friends-search-results hidden></div>
-            </section>
-        </div>
-    </div>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
 </script>

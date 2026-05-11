@@ -1,29 +1,37 @@
 (function () {
     const panel = document.querySelector('[data-friends-panel]');
-    const manager = document.querySelector('[data-friends-manager]');
-
-    if (!panel || !manager) {
-        return;
-    }
-
-    const form = manager.querySelector('[data-friends-search-form]');
-    const input = manager.querySelector('#friend-search-input');
-    const results = manager.querySelector('[data-friends-search-results]');
-    const requestsList = manager.querySelector('[data-friend-requests-list]');
-    const currentFriendsList = manager.querySelector('[data-current-friends-list]');
-    const managerToggles = document.querySelectorAll('[data-friends-manager-toggle]');
-    const managerClose = manager.querySelector('[data-friends-manager-close]');
-    const feed = panel.querySelector('[data-friends-feed]');
-    const status = manager.querySelector('[data-friends-status]');
-    const count = panel.querySelector('[data-friends-count]');
+    const managerPage = document.querySelector('[data-friends-manager-page]');
+    const root = managerPage || document;
+    const form = root.querySelector('[data-friends-search-form]');
+    const input = root.querySelector('#friend-search-input');
+    const results = root.querySelector('[data-friends-search-results]');
+    const requestsList = root.querySelector('[data-friend-requests-list]');
+    const currentFriendsList = root.querySelector('[data-current-friends-list]');
+    const recommendationButtons = root.querySelectorAll('[data-recommendation-id]');
+    const feed = panel?.querySelector('[data-friends-feed]');
+    const status = root.querySelector('[data-friends-status]');
+    const count = panel?.querySelector('[data-friends-count]');
     const menuBadge = document.querySelector('[data-friends-menu-badge]');
     const tabBadge = document.querySelector('[data-friends-tab-badge]');
-    const csrfToken = panel.dataset.csrfToken || '';
+    const csrfToken = panel?.dataset.csrfToken || managerPage?.dataset.csrfToken || '';
     let currentStatus = {
         pendingInvites: 0,
         newFriends: 0,
         badgeCount: 0
     };
+    const reactionLabels = {
+        cheers: '🍻 Cheers',
+        nice_find: '🔥 Nice',
+        want_to_go: '📍 Want to Go'
+    };
+    const reactionTypesByItemType = {
+        first_visit: ['cheers', 'nice_find', 'want_to_go'],
+        level_up: ['cheers', 'nice_find']
+    };
+
+    if (!panel && !managerPage && !menuBadge && !tabBadge) {
+        return;
+    }
 
     function escapeHtml(value) {
         return String(value ?? '')
@@ -80,7 +88,52 @@
         });
     }
 
+    function loadStatus() {
+        return fetch('friend_status.php', { credentials: 'same-origin' })
+            .then((response) => response.json())
+            .then((data) => {
+                if (!data.ok) {
+                    return;
+                }
+
+                const badgeCount = Number(data.badge_count || 0);
+                currentStatus = {
+                    pendingInvites: Number(data.pending_invites || 0),
+                    newFriends: Number(data.new_friends || 0),
+                    badgeCount
+                };
+                setBadge(menuBadge, badgeCount);
+                setBadge(tabBadge, badgeCount);
+            })
+            .catch(() => {});
+    }
+
+    function markFriendsSeen() {
+        if (!csrfToken) {
+            return Promise.resolve();
+        }
+
+        return postForm('friend_seen.php', {
+            csrf_token: csrfToken
+        })
+            .then(() => loadStatus())
+            .catch(() => {});
+    }
+
+    function setBadge(element, value) {
+        if (!element) {
+            return;
+        }
+
+        element.textContent = value > 9 ? '9+' : String(value);
+        element.hidden = value < 1;
+    }
+
     function renderSearchResults(users) {
+        if (!results) {
+            return;
+        }
+
         if (!users.length) {
             results.innerHTML = '<p>No matching user accounts found.</p>';
             results.hidden = false;
@@ -145,9 +198,7 @@
 
                         showStatus(data.message || 'Friend invite updated.', false);
                         button.textContent = data.status === 'pending' ? 'Invite Sent' : 'Added';
-                        loadFeed();
-                        loadRequests();
-                        loadStatus();
+                        refreshFriendsData();
                     })
                     .catch(() => {
                         showStatus('Friend could not be added. Please try again.', true);
@@ -159,6 +210,10 @@
     }
 
     function renderRequests(requests) {
+        if (!requestsList) {
+            return;
+        }
+
         if (!requests.length) {
             requestsList.innerHTML = '<p>No friend invites to approve.</p>';
             return;
@@ -201,9 +256,7 @@
                         if (row) {
                             row.remove();
                         }
-                        loadFeed();
-                        loadRequests();
-                        loadStatus();
+                        refreshFriendsData();
                     })
                     .catch(() => {
                         showStatus('Friend invite could not be updated.', true);
@@ -230,7 +283,10 @@
                     <strong>${escapeHtml(friend.name)}</strong>
                     ${friend.is_new ? '<span>New</span>' : ''}
                 </div>
-                <button type="button" class="danger-button friend-remove-button" data-remove-friend-id="${friend.id}" data-remove-friend-name="${escapeHtml(friend.name)}">Remove</button>
+                <div class="friend-current-actions">
+                    <a href="profile.php?id=${encodeURIComponent(friend.id)}">View Profile</a>
+                    <button type="button" class="danger-button friend-remove-button" data-remove-friend-id="${friend.id}" data-remove-friend-name="${escapeHtml(friend.name)}">Remove</button>
+                </div>
             </article>
         `).join('');
 
@@ -258,9 +314,7 @@
                         }
 
                         showStatus(data.message || 'Friend removed.', false);
-                        loadFeed();
-                        loadRequests();
-                        loadStatus();
+                        refreshFriendsData();
                     })
                     .catch(() => {
                         showStatus('Friend could not be removed. Please try again.', true);
@@ -281,6 +335,10 @@
 
         renderCurrentFriends(friends);
 
+        if (!feed) {
+            return;
+        }
+
         if (!items.length) {
             feed.innerHTML = friends.length
                 ? '<p>No friend activity yet.</p>'
@@ -290,6 +348,7 @@
 
         feed.innerHTML = items.map((item) => {
             const date = formatDate(item.created_at);
+            const reactions = renderReactions(item);
 
             if (item.type === 'level_up') {
                 return `
@@ -298,6 +357,7 @@
                         <div>
                             <strong>${escapeHtml(item.friend_name)} reached Level ${escapeHtml(item.level)}</strong>
                             <p>${escapeHtml(item.title)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
+                            ${reactions}
                         </div>
                     </article>
                 `;
@@ -310,14 +370,152 @@
                         <strong>${escapeHtml(item.friend_name)} visited ${escapeHtml(item.business_name)} for the first time</strong>
                         <p>${escapeHtml(item.city)}, ${escapeHtml(item.state)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
                         <a href="../business_details.php?id=${encodeURIComponent(item.business_id)}">View business</a>
+                        ${reactions}
                     </div>
                 </article>
             `;
         }).join('');
+
+        feed.querySelectorAll('[data-feed-reaction]').forEach((button) => {
+            button.addEventListener('click', () => {
+                button.disabled = true;
+                postForm('feed_reaction_toggle.php', {
+                    csrf_token: csrfToken,
+                    item_key: button.dataset.itemKey,
+                    reaction_type: button.dataset.reactionType
+                })
+                    .then((data) => {
+                        if (!data.ok) {
+                            showStatus(data.message || 'Reaction could not be saved.', true);
+                            return;
+                        }
+
+                        loadFeed();
+                    })
+                    .catch(() => showStatus('Reaction could not be saved.', true))
+                    .finally(() => {
+                        button.disabled = false;
+                    });
+            });
+        });
+
+        feed.querySelectorAll('[data-reaction-details-toggle]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const target = feed.querySelector(`#${button.getAttribute('aria-controls')}`);
+                const isExpanded = button.getAttribute('aria-expanded') === 'true';
+
+                button.setAttribute('aria-expanded', String(!isExpanded));
+                button.querySelector('[data-reaction-toggle-arrow]').textContent = isExpanded ? '>' : 'v';
+                button.querySelector('[data-reaction-toggle-label]').textContent = isExpanded ? 'Show Reactions' : 'Hide Reactions';
+
+                if (target) {
+                    target.hidden = isExpanded;
+                }
+            });
+        });
+    }
+
+    function renderReactions(item) {
+        if (!item.item_key) {
+            return '';
+        }
+
+        const reactions = item.reactions || [];
+        const reactionMap = {};
+        const availableReactions = reactionTypesByItemType[item.type] || Object.keys(reactionLabels);
+
+        reactions.forEach((reaction) => {
+            reactionMap[reaction.type] = reaction;
+        });
+
+        const commentsLink = renderCommentsLink(item);
+        const summary = renderReactionSummary(availableReactions, reactionMap, item.item_key);
+
+        return `
+            <div class="feed-reactions">
+                ${availableReactions.map((type) => {
+                    const reaction = reactionMap[type] || { count: 0, reacted: false };
+                    return `
+                        <button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(item.item_key)}" data-reaction-type="${type}">
+                            ${reactionLabels[type]}${reaction.count > 0 ? ` ${reaction.count}` : ''}
+                        </button>
+                    `;
+                }).join('')}
+            </div>
+            ${commentsLink}
+            ${summary}
+        `;
+    }
+
+    function renderCommentsLink(item) {
+        if (!item.item_key) {
+            return '';
+        }
+
+        const commentCount = Number(item.comment_count || 0);
+        const label = commentCount === 1 ? 'Show Comments (1)' : `Show Comments${commentCount > 0 ? ` (${commentCount})` : ''}`;
+
+        return `
+            <a class="feed-comments-link" href="feed_post.php?item=${encodeURIComponent(item.item_key)}">
+                <span aria-hidden="true">💬</span>
+                <span>${label}</span>
+            </a>
+        `;
+    }
+
+    function renderReactionSummary(availableReactions, reactionMap, itemKey) {
+        const rows = availableReactions
+            .map((type) => {
+                const reaction = reactionMap[type];
+                const reactors = reaction?.reactors || [];
+
+                if (!reactors.length) {
+                    return '';
+                }
+
+                const shownReactors = reactors.slice(0, 3);
+                const remaining = reactors.length - shownReactors.length;
+                const rows = shownReactors.map((reactor) => `
+                    <span>
+                        <strong>${reactionLabels[type]}</strong>
+                        <span aria-hidden="true">-</span>
+                        ${escapeHtml(reactor.name || 'Someone')}
+                    </span>
+                `);
+
+                if (remaining > 0) {
+                    rows.push(`
+                        <span>
+                            <strong>${reactionLabels[type]}</strong>
+                            <span aria-hidden="true">-</span>
+                            +${remaining} more
+                        </span>
+                    `);
+                }
+
+                return rows.join('');
+            })
+            .filter(Boolean);
+
+        if (!rows.length) {
+            return '';
+        }
+
+        const summaryId = `reaction-details-${escapeHtml(itemKey).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+
+        return `
+            <button type="button" class="reaction-details-toggle" data-reaction-details-toggle aria-expanded="false" aria-controls="${summaryId}">
+                <span data-reaction-toggle-arrow aria-hidden="true">&gt;</span>
+                <span data-reaction-toggle-label>Show Reactions</span>
+            </button>
+            <div class="feed-reaction-summary" id="${summaryId}" hidden>
+                ${rows.join('')}
+            </div>
+        `;
     }
 
     function loadFeed() {
-        fetch('friends_feed.php', { credentials: 'same-origin' })
+        return fetch('friends_feed.php', { credentials: 'same-origin' })
             .then((response) => response.json())
             .then((data) => {
                 if (!data.ok) {
@@ -334,7 +532,11 @@
     }
 
     function loadRequests() {
-        fetch('friend_requests.php', { credentials: 'same-origin' })
+        if (!requestsList) {
+            return Promise.resolve();
+        }
+
+        return fetch('friend_requests.php', { credentials: 'same-origin' })
             .then((response) => response.json())
             .then((data) => {
                 if (!data.ok) {
@@ -349,115 +551,84 @@
             });
     }
 
-    function setBadge(element, value) {
-        if (!element) {
-            return;
-        }
-
-        element.textContent = value > 9 ? '9+' : String(value);
-        element.hidden = value < 1;
-    }
-
-    function loadStatus() {
-        fetch('friend_status.php', { credentials: 'same-origin' })
-            .then((response) => response.json())
-            .then((data) => {
-                if (!data.ok) {
-                    return;
-                }
-
-                const badgeCount = Number(data.badge_count || 0);
-                currentStatus = {
-                    pendingInvites: Number(data.pending_invites || 0),
-                    newFriends: Number(data.new_friends || 0),
-                    badgeCount
-                };
-                setBadge(menuBadge, badgeCount);
-                setBadge(tabBadge, badgeCount);
-            })
-            .catch(() => {});
-    }
-
-    function markFriendsSeen() {
-        postForm('friend_seen.php', {
-            csrf_token: csrfToken
-        })
-            .then(() => loadStatus())
-            .catch(() => {});
-    }
-
-    function openManager() {
-        manager.hidden = false;
+    function refreshFriendsData() {
         loadRequests();
-        loadStatus();
-        if (currentStatus.newFriends > 0) {
-            markFriendsSeen();
-        }
-        if (input) {
-            input.focus();
-        }
-    }
-
-    function closeManager() {
-        manager.hidden = true;
-    }
-
-    form.addEventListener('submit', (event) => {
-        event.preventDefault();
-        hideStatus();
-
-        const query = input.value.trim();
-
-        if (query.length < 2) {
-            showStatus('Search by at least two characters.', true);
-            return;
-        }
-
-        fetch(`friend_search.php?q=${encodeURIComponent(query)}`, { credentials: 'same-origin' })
-            .then((response) => response.json())
-            .then((data) => {
-                if (!data.ok) {
-                    showStatus(data.message || 'Search failed.', true);
-                    return;
+        return loadFeed()
+            .then(() => loadStatus())
+            .then(() => {
+                if (managerPage && currentStatus.newFriends > 0) {
+                    return markFriendsSeen();
                 }
 
-                renderSearchResults(data.users || []);
-            })
-            .catch(() => {
-                showStatus('Search failed. Please try again.', true);
+                return null;
             });
-    });
+    }
 
-    managerToggles.forEach((button) => {
-        button.addEventListener('click', openManager);
+    if (form && input) {
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            hideStatus();
+
+            const query = input.value.trim();
+
+            if (query.length < 2) {
+                showStatus('Search by at least two characters.', true);
+                return;
+            }
+
+            fetch(`friend_search.php?q=${encodeURIComponent(query)}`, { credentials: 'same-origin' })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (!data.ok) {
+                        showStatus(data.message || 'Search failed.', true);
+                        return;
+                    }
+
+                    renderSearchResults(data.users || []);
+                })
+                .catch(() => {
+                    showStatus('Search failed. Please try again.', true);
+                });
+        });
+    }
+
+    recommendationButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            button.disabled = true;
+            postForm('recommendation_update.php', {
+                csrf_token: csrfToken,
+                recommendation_id: button.dataset.recommendationId,
+                status: button.dataset.recommendationStatus
+            })
+                .then((data) => {
+                    if (!data.ok) {
+                        showStatus(data.message || 'Recommendation could not be updated.', true);
+                        button.disabled = false;
+                        return;
+                    }
+
+                    button.closest('.friend-recommendation-card')?.remove();
+                })
+                .catch(() => {
+                    showStatus('Recommendation could not be updated.', true);
+                    button.disabled = false;
+                });
+        });
     });
 
     document.querySelectorAll('[data-tab="friends-panel"], [data-app-tab="friends-panel"]').forEach((button) => {
         button.addEventListener('click', () => {
             if (currentStatus.badgeCount > 0) {
-                openManager();
-                return;
+                window.location.href = 'friends.php';
             }
         });
     });
 
-    if (managerClose) {
-        managerClose.addEventListener('click', closeManager);
+    if (managerPage) {
+        refreshFriendsData();
+    } else {
+        loadRequests();
+        loadFeed();
+        loadStatus();
     }
-
-    manager.addEventListener('click', (event) => {
-        if (event.target === manager) {
-            closeManager();
-        }
-    });
-
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && !manager.hidden) {
-            closeManager();
-        }
-    });
-
-    loadRequests();
-    loadStatus();
-    loadFeed();
 }());
