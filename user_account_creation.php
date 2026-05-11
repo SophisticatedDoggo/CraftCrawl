@@ -101,6 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="auth-body">
     <main class="auth-card auth-card-wide">
+        <img class="site-logo auth-logo" src="images/Logo.webp" alt="CraftCrawl logo">
         <h1>Create An Account</h1>
         <form id="account_creation_form" action="" method="POST">
             <?php echo craftcrawl_csrf_input(); ?>

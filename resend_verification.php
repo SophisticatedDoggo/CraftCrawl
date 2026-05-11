@@ -63,6 +63,7 @@ $is_success = !empty($result['success']) || (($result['reason'] ?? '') === 'alre
 </head>
 <body class="auth-body">
     <main class="auth-card">
+        <img class="site-logo auth-logo" src="images/Logo.webp" alt="CraftCrawl logo">
         <h1>Resend Verification</h1>
 
         <?php if ($result !== null) : ?>

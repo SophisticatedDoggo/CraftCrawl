@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../lib/admin_auth.php';
 require_once __DIR__ . '/../lib/email_verification.php';
-require_once __DIR__ . '/../lib/password_reset.php';
 require_once __DIR__ . '/../lib/remember_auth.php';
 craftcrawl_require_admin();
 include '../db.php';
@@ -120,16 +119,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    if ($form_action === 'send_password_reset') {
-        if (!empty($account['disabledAt'])) {
-            header('Location: accounts.php?message=account_disabled_blocked');
-            exit();
-        }
-
-        $sent = craftcrawl_issue_password_reset($conn, $account_type, $account['email']);
-        header('Location: accounts.php?message=' . ($sent ? 'password_reset_sent' : 'email_send_error'));
-        exit();
-    }
 }
 
 $like_search = '%' . $search . '%';
@@ -181,8 +170,11 @@ foreach ($account_queries as $type => $sql) {
     <main class="business-portal admin-page">
         <header class="business-portal-header">
             <div>
-                <h1>Accounts</h1>
-                <p>Disable accounts and send account recovery emails.</p>
+                <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
+                <div>
+                    <h1>Accounts</h1>
+                    <p>Review accounts, open account details, and manage account access.</p>
+                </div>
             </div>
             <div class="business-header-actions mobile-actions-menu business-actions-menu" data-mobile-actions-menu>
                 <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open admin menu">
@@ -193,7 +185,6 @@ foreach ($account_queries as $type => $sql) {
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
                     <a href="dashboard.php">Dashboard</a>
                     <a href="accounts.php">Accounts</a>
-                    <a href="password_resets.php">Password Resets</a>
                     <a href="reviews.php">Reviews</a>
                     <form action="../logout.php" method="POST">
                         <?php echo craftcrawl_csrf_input(); ?>
@@ -209,8 +200,6 @@ foreach ($account_queries as $type => $sql) {
             <p class="form-message form-message-success">Account re-enabled.</p>
         <?php elseif ($message === 'verification_sent') : ?>
             <p class="form-message form-message-success">Verification email sent.</p>
-        <?php elseif ($message === 'password_reset_sent') : ?>
-            <p class="form-message form-message-success">Password reset email sent.</p>
         <?php elseif ($message === 'cannot_disable_self') : ?>
             <p class="form-message form-message-error">You cannot disable your own admin account.</p>
         <?php elseif ($message === 'account_disabled_blocked') : ?>
@@ -267,6 +256,7 @@ foreach ($account_queries as $type => $sql) {
                         </p>
                     </div>
                     <div class="business-header-actions">
+                        <a href="account_details.php?account_type=<?php echo craftcrawl_admin_escape($account['account_type']); ?>&amp;account_id=<?php echo craftcrawl_admin_escape($account['id']); ?>">Details</a>
                         <?php if ($account['account_type'] !== 'admin' && empty($account['emailVerifiedAt']) && empty($account['disabledAt'])) : ?>
                             <form method="POST" action="">
                                 <?php echo craftcrawl_csrf_input(); ?>
@@ -274,15 +264,6 @@ foreach ($account_queries as $type => $sql) {
                                 <input type="hidden" name="account_type" value="<?php echo craftcrawl_admin_escape($account['account_type']); ?>">
                                 <input type="hidden" name="account_id" value="<?php echo craftcrawl_admin_escape($account['id']); ?>">
                                 <button type="submit">Send Verification</button>
-                            </form>
-                        <?php endif; ?>
-                        <?php if (empty($account['disabledAt'])) : ?>
-                            <form method="POST" action="">
-                                <?php echo craftcrawl_csrf_input(); ?>
-                                <input type="hidden" name="form_action" value="send_password_reset">
-                                <input type="hidden" name="account_type" value="<?php echo craftcrawl_admin_escape($account['account_type']); ?>">
-                                <input type="hidden" name="account_id" value="<?php echo craftcrawl_admin_escape($account['id']); ?>">
-                                <button type="submit">Send Password Reset</button>
                             </form>
                         <?php endif; ?>
                         <?php if (empty($account['disabledAt']) && !($account['account_type'] === 'admin' && (int) $account['id'] === $current_admin_id)) : ?>

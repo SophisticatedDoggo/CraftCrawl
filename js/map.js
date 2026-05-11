@@ -196,7 +196,9 @@ map.on('load', function () {
         const coordinates = e.features[0].geometry.coordinates.slice();
         const properties = e.features[0].properties;
         const address = `${properties.streetAddress}, ${properties.city}, ${properties.state} ${properties.zip}`;
-        const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+        const latitude = coordinates[1];
+        const longitude = coordinates[0];
+        const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${latitude},${longitude}`)}`;
         const popupHTML = `
             <strong>${escapeHtml(properties.title)}</strong>
             <p>${escapeHtml(formatBusinessType(properties.businessType))} &middot; #${escapeHtml(properties.listNumber)} on map</p>
@@ -206,7 +208,7 @@ map.on('load', function () {
             </p>
             <div class="map-popup-actions">
                 <a class="map-action-button" href="../business_details.php?id=${encodeURIComponent(properties.id)}">Open details</a>
-                <a class="map-action-button" href="${directionsUrl}" target="_blank" rel="noopener">Get Directions</a>
+                <a class="map-action-button" href="${directionsUrl}" data-directions-address="${escapeHtml(address)}" data-directions-latitude="${escapeHtml(latitude)}" data-directions-longitude="${escapeHtml(longitude)}" target="_blank" rel="noopener">Get Directions</a>
             </div>
         `;
 

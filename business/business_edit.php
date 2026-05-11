@@ -72,8 +72,11 @@ if (!$business) {
     <main class="business-portal">
         <header class="business-portal-header">
             <div>
-                <h1>Edit Business Information</h1>
-                <p><?php echo escape_output($business['bName']); ?></p>
+                <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
+                <div>
+                    <h1>Edit Business Information</h1>
+                    <p><?php echo escape_output($business['bName']); ?></p>
+                </div>
             </div>
             <div class="business-header-actions mobile-actions-menu business-actions-menu" data-mobile-actions-menu>
                 <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">

@@ -172,8 +172,11 @@ $businesses = $business_stmt->get_result();
     <main class="business-portal admin-page">
         <header class="business-portal-header">
             <div>
-                <h1>Admin Dashboard</h1>
-                <p>Approve businesses, search accounts, and handle site moderation.</p>
+                <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
+                <div>
+                    <h1>Admin Dashboard</h1>
+                    <p>Approve businesses, search accounts, and handle site moderation.</p>
+                </div>
             </div>
             <div class="business-header-actions mobile-actions-menu business-actions-menu" data-mobile-actions-menu>
                 <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open admin menu">
@@ -184,7 +187,6 @@ $businesses = $business_stmt->get_result();
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
                     <a href="dashboard.php">Dashboard</a>
                     <a href="accounts.php">Accounts</a>
-                    <a href="password_resets.php">Password Resets</a>
                     <a href="reviews.php">Reviews</a>
                     <form action="../logout.php" method="POST">
                         <?php echo craftcrawl_csrf_input(); ?>

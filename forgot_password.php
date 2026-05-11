@@ -33,6 +33,7 @@ $login_path = $account_type === 'business' ? 'business_login.php' : 'user_login.
 </head>
 <body class="auth-body">
     <main class="auth-card">
+        <img class="site-logo auth-logo" src="images/Logo.webp" alt="CraftCrawl logo">
         <h1>Forgot Password</h1>
 
         <?php if ($submitted && !$send_failed) : ?>

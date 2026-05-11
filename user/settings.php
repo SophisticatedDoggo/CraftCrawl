@@ -89,8 +89,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="settings-page">
         <header class="settings-header">
             <div>
-                <h1>Settings</h1>
-                <p>Choose how CraftCrawl looks in this browser.</p>
+                <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
+                <div>
+                    <h1>Settings</h1>
+                    <p>Choose how CraftCrawl looks in this browser.</p>
+                </div>
             </div>
             <div class="business-header-actions">
                 <a href="portal.php">Back to Map</a>

@@ -58,6 +58,7 @@ function verification_message($result) {
 </head>
 <body class="auth-body">
     <main class="auth-card">
+        <img class="site-logo auth-logo" src="images/Logo.webp" alt="CraftCrawl logo">
         <h1>Email Verification</h1>
         <p class="form-message <?php echo $success ? 'form-message-success' : 'form-message-error'; ?>">
             <?php echo escape_output(verification_message($result)); ?>

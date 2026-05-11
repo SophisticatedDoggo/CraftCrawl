@@ -94,8 +94,11 @@ $business = $stmt->get_result()->fetch_assoc();
     <main class="business-portal settings-page">
         <header class="business-portal-header">
             <div>
-                <h1>Settings</h1>
-                <p><?php echo escape_output($business['bName'] ?? 'Business'); ?></p>
+                <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
+                <div>
+                    <h1>Settings</h1>
+                    <p><?php echo escape_output($business['bName'] ?? 'Business'); ?></p>
+                </div>
             </div>
             <div class="business-header-actions mobile-actions-menu business-actions-menu" data-mobile-actions-menu>
                 <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700..850&family=Manrope:wght@400..800&display=swap');
+
 :root {
     --color-bg: #f4f1ea;
     --color-surface: #fffdf8;
@@ -21,6 +23,13 @@
     --radius-lg: 12px;
     --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.08);
     --shadow-md: 0 12px 28px rgba(15, 23, 42, 0.16);
+    --glass-surface: linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.28) 42%, rgba(255, 255, 255, 0.08));
+    --glass-button: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04) 48%, rgba(0, 0, 0, 0.04));
+    --glass-border: rgba(255, 255, 255, 0.45);
+    --glass-shadow: 0 14px 36px rgba(15, 23, 42, 0.13), inset 0 1px 0 rgba(255, 255, 255, 0.42);
+    --color-accent-light: #d99a4e;
+    --brand-underline: linear-gradient(90deg, var(--color-accent), var(--color-accent-light));
+    --brand-title: #25251f;
     --page-max: 1120px;
     --content-max: 900px;
     --portal-max: 1040px;
@@ -56,6 +65,13 @@
     --color-warning-bg: #713f12;
     --color-error-text: #fecaca;
     --color-error-bg: #7f1d1d;
+    --glass-surface: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.035) 42%, rgba(0, 0, 0, 0.08));
+    --glass-button: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.035) 48%, rgba(0, 0, 0, 0.08));
+    --glass-border: rgba(255, 255, 255, 0.14);
+    --glass-shadow: 0 16px 38px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    --color-accent-light: #e5b36f;
+    --brand-underline: linear-gradient(90deg, var(--color-accent), var(--color-accent-light));
+    --brand-title: #f4f1ea;
 }
 
 :root[data-palette="ember"] {
@@ -65,9 +81,12 @@
     --color-text: #211f1c;
     --color-muted: #6f6a61;
     --color-border: #ddd2c4;
-    --color-primary: #7c2d12;
-    --color-primary-dark: #431407;
+    --color-primary: #c05c23;
+    --color-primary-dark: #8f4219;
     --color-accent: #ca8a04;
+    --color-accent-light: #eab441;
+    --brand-underline: linear-gradient(90deg, var(--color-accent), var(--color-accent-light));
+    --brand-title: #2f261f;
 }
 
 :root[data-palette="ember-dark"] {
@@ -77,9 +96,9 @@
     --color-text: #f4f5f7;
     --color-muted: #b8bec8;
     --color-border: #3a4049;
-    --color-primary: #f59e0b;
-    --color-primary-dark: #d97706;
-    --color-accent: #14b8a6;
+    --color-primary: #c05c23;
+    --color-primary-dark: #8f4219;
+    --color-accent: #c05c23;
     --color-on-primary: #1f1608;
     --color-success-text: #bbf7d0;
     --color-success-bg: #14532d;
@@ -87,6 +106,13 @@
     --color-warning-bg: #713f12;
     --color-error-text: #fecaca;
     --color-error-bg: #7f1d1d;
+    --glass-surface: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.035) 42%, rgba(0, 0, 0, 0.08));
+    --glass-button: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.035) 48%, rgba(0, 0, 0, 0.08));
+    --glass-border: rgba(255, 255, 255, 0.14);
+    --glass-shadow: 0 16px 38px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    --color-accent-light: #e0894d;
+    --brand-underline: linear-gradient(90deg, var(--color-accent), var(--color-accent-light));
+    --brand-title: #f4f1ea;
 }
 
 html {
@@ -104,47 +130,8 @@ body {
     margin: 0;
     color: var(--color-text);
     background: var(--color-bg);
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     line-height: 1.5;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-    .depth-animate {
-        transition:
-            transform 180ms ease,
-            box-shadow 180ms ease,
-            border-color 180ms ease,
-            background-color 180ms ease,
-            opacity 220ms ease;
-    }
-
-    @media (hover: hover) {
-        .event-feed-item:hover,
-        .business-event-preview:hover,
-        .business-review-card:hover,
-        .business-photo-card:hover,
-        .business-preview-card:hover,
-        .event-calendar-event:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .business-list-item:hover {
-            transform: translateX(3px);
-        }
-    }
-
-    @media (hover: none) {
-        .depth-animate {
-            opacity: 0;
-            transform: translateY(14px);
-        }
-
-        .depth-animate.is-in-view {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
 }
 
 img {
@@ -174,8 +161,11 @@ a:not(.mapboxgl-ctrl-logo) {
     border: 1px solid var(--color-primary);
     border-radius: var(--radius-sm);
     color: var(--color-on-primary);
-    background: var(--color-primary);
-    font-weight: 700;
+    background:
+        var(--glass-button),
+        var(--color-primary);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 2px 7px rgba(15, 23, 42, 0.1);
+    font-weight: 650;
     line-height: 1.2;
     text-align: center;
     text-decoration: none;
@@ -185,7 +175,9 @@ a:not(.mapboxgl-ctrl-logo):hover,
 a:not(.mapboxgl-ctrl-logo):focus {
     border-color: var(--color-primary-dark);
     color: var(--color-on-primary);
-    background: var(--color-primary-dark);
+    background:
+        var(--glass-button),
+        var(--color-primary-dark);
 }
 
 button,
@@ -200,10 +192,13 @@ input[type="button"],
     border: 1px solid var(--color-primary);
     border-radius: var(--radius-sm);
     color: var(--color-on-primary);
-    background: var(--color-primary);
+    background:
+        var(--glass-button),
+        var(--color-primary);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 2px 7px rgba(15, 23, 42, 0.1);
     cursor: pointer;
     font: inherit;
-    font-weight: 700;
+    font-weight: 650;
     line-height: 1.2;
     text-align: center;
     text-decoration: none;
@@ -219,18 +214,24 @@ input[type="button"]:focus,
 .button-link:focus {
     border-color: var(--color-primary-dark);
     color: var(--color-on-primary);
-    background: var(--color-primary-dark);
+    background:
+        var(--glass-button),
+        var(--color-primary-dark);
 }
 
 .button-link-secondary {
-    color: var(--color-primary);
-    background: var(--color-surface);
+    color: var(--brand-title);
+    background:
+        var(--glass-surface),
+        var(--color-surface);
 }
 
 .button-link-secondary:hover,
 .button-link-secondary:focus {
     color: var(--color-on-primary);
-    background: var(--color-primary);
+    background:
+        var(--glass-button),
+        var(--color-primary);
 }
 
 input,
@@ -288,10 +289,36 @@ label {
 .auth-card {
     width: min(100%, 460px);
     padding: clamp(22px, 4vw, 34px);
-    border: 1px solid var(--color-border);
+    border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
     border-radius: var(--radius-lg);
+    background:
+        var(--glass-surface),
+        var(--color-surface);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(16px) saturate(1.12);
+    -webkit-backdrop-filter: blur(16px) saturate(1.12);
+}
+
+.site-logo {
+    display: block;
+    width: 58px;
+    height: auto;
+    flex: 0 0 auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
     background: var(--color-surface);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.auth-logo {
+    width: 78px;
+    margin: 0 auto 14px;
+}
+
+.brand-heading {
+    display: flex;
+    gap: 12px;
+    align-items: center;
 }
 
 .auth-card-wide {
@@ -457,7 +484,35 @@ label {
 
 .portal-header > div:first-child {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
+    gap: 14px;
+}
+
+.portal-header .site-logo {
+    width: 64px;
+}
+
+.portal-header h1 {
+    position: relative;
+    display: inline-block;
+    padding-bottom: 6px;
+    color: var(--brand-title);
+    font-family: "Fraunces", Georgia, serif;
+    font-size: clamp(2.4rem, 5.2vw, 3.45rem);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.portal-header h1::after {
+    content: "";
+    position: absolute;
+    right: 0.05em;
+    bottom: 0;
+    left: 0.05em;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--brand-underline);
+    opacity: 0.9;
 }
 
 .details-nav {
@@ -582,31 +637,49 @@ label {
 
 .portal-tabs {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     width: 100%;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
+    padding-bottom: 8px;
     border-bottom: 1px solid var(--color-border);
 }
 
 .portal-tab {
-    padding: 10px 14px;
-    border: 0;
+    min-height: 44px;
+    padding: 11px 18px;
+    border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
     border-bottom: 3px solid transparent;
-    background: transparent;
+    border-radius: var(--radius-sm);
+    background:
+        var(--glass-surface),
+        var(--color-surface);
+    box-shadow: var(--shadow-sm);
     color: var(--color-muted);
     cursor: pointer;
-    font-weight: 700;
+    font-weight: 650;
 }
 
 .portal-tab:hover,
 .portal-tab:focus {
-    background: transparent;
+    border-color: color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
+    border-bottom-color: transparent;
+    outline: 0;
+    background:
+        var(--glass-surface),
+        var(--color-surface);
     color: var(--color-primary);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 5px 14px rgba(15, 23, 42, 0.1);
 }
 
 .portal-tab.is-active {
     border-bottom-color: var(--color-primary);
     color: var(--color-primary);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 5px 14px rgba(15, 23, 42, 0.1);
+}
+
+.portal-tab.is-active:hover,
+.portal-tab.is-active:focus {
+    border-bottom-color: var(--color-primary);
 }
 
 .mapboxgl-popup-content {
@@ -685,10 +758,14 @@ label {
 
 .portal-panel {
     padding: 16px;
-    border: 1px solid var(--color-border);
+    border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
     border-radius: var(--radius-md);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
+    background:
+        var(--glass-surface),
+        var(--color-surface);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(14px) saturate(1.08);
+    -webkit-backdrop-filter: blur(14px) saturate(1.08);
 }
 
 #map-panel {
@@ -830,10 +907,14 @@ label {
     gap: 14px;
     align-items: center;
     padding: 16px;
-    border: 1px solid var(--color-border);
+    border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
     border-radius: var(--radius-md);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
+    background:
+        var(--glass-surface),
+        var(--color-surface);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(14px) saturate(1.08);
+    -webkit-backdrop-filter: blur(14px) saturate(1.08);
 }
 
 .event-feed-item-with-cover {
@@ -842,6 +923,7 @@ label {
 }
 
 .event-feed-cover {
+    align-self: center;
     width: 100%;
     height: 124px;
     aspect-ratio: 16 / 9;
@@ -852,6 +934,7 @@ label {
 }
 
 .event-feed-date {
+    align-self: center;
     display: grid;
     align-content: center;
     justify-items: center;
@@ -876,11 +959,12 @@ label {
 }
 
 .event-feed-details {
-    align-self: start;
+    align-self: center;
 }
 
 .event-feed-actions {
     display: flex;
+    align-self: center;
     gap: 8px;
     align-items: center;
     justify-content: flex-end;
@@ -902,6 +986,13 @@ label {
     gap: 20px;
     align-items: flex-start;
     margin-bottom: 24px;
+}
+
+.business-portal-header > div:first-child,
+.settings-header > div:first-child {
+    display: flex;
+    gap: 12px;
+    align-items: center;
 }
 
 .business-portal-header h1 {
@@ -975,11 +1066,15 @@ label {
 }
 
 .business-preview-card {
-    border: 1px solid var(--color-border);
+    border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
     border-radius: var(--radius-md);
     padding: 20px;
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
+    background:
+        var(--glass-surface),
+        var(--color-surface);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(14px) saturate(1.08);
+    -webkit-backdrop-filter: blur(14px) saturate(1.08);
 }
 
 .business-details-hero,
@@ -992,10 +1087,14 @@ label {
 .event-detail-card,
 .event-calendar-panel {
     padding: 20px;
-    border: 1px solid var(--color-border);
+    border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
     border-radius: var(--radius-md);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
+    background:
+        var(--glass-surface),
+        var(--color-surface);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(14px) saturate(1.08);
+    -webkit-backdrop-filter: blur(14px) saturate(1.08);
 }
 
 .business-preview-card h3 {
@@ -1176,11 +1275,15 @@ label {
 .business-review-card {
     margin-top: 12px;
     padding: 16px;
-    border: 1px solid var(--color-border);
+    border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
     border-left: 3px solid var(--color-primary);
     border-radius: var(--radius-md);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
+    background:
+        var(--glass-surface),
+        var(--color-surface);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(14px) saturate(1.08);
+    -webkit-backdrop-filter: blur(14px) saturate(1.08);
 }
 
 .business-review-header {
@@ -1548,11 +1651,15 @@ body.lightbox-open {
 
 .business-event-preview {
     padding: 16px;
-    border: 1px solid var(--color-border);
+    border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
     border-left: 3px solid var(--color-primary);
     border-radius: var(--radius-md);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
+    background:
+        var(--glass-surface),
+        var(--color-surface);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(14px) saturate(1.08);
+    -webkit-backdrop-filter: blur(14px) saturate(1.08);
 }
 
 .business-event-preview + .business-event-preview {
@@ -1726,7 +1833,9 @@ a.event-calendar-event {
     border-left-width: 3px;
     border-radius: var(--radius-sm);
     color: var(--color-text);
-    background: var(--color-surface-muted);
+    background:
+        var(--glass-surface),
+        var(--color-surface-muted);
     font-size: 13px;
     font-weight: 600;
     text-align: left;
@@ -1842,10 +1951,14 @@ a.event-calendar-event {
 
 .admin-stat-grid article,
 .admin-panel {
-    border: 1px solid var(--color-border);
+    border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
     border-radius: var(--radius-md);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
+    background:
+        var(--glass-surface),
+        var(--color-surface);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(14px) saturate(1.08);
+    -webkit-backdrop-filter: blur(14px) saturate(1.08);
 }
 
 .admin-stat-grid article {
@@ -1905,8 +2018,9 @@ a.event-calendar-event {
     grid-template-columns: minmax(280px, 1fr) auto;
 }
 
-.admin-reset-form {
-    grid-template-columns: repeat(3, minmax(180px, 1fr)) auto;
+.admin-password-form {
+    grid-template-columns: repeat(2, minmax(180px, 1fr)) auto;
+    margin: 16px 0 0;
 }
 
 .admin-field {
@@ -1949,6 +2063,32 @@ a.event-calendar-event {
 .admin-checkbox input {
     width: 18px;
     height: 18px;
+}
+
+.admin-detail-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px;
+    margin: 0;
+}
+
+.admin-detail-list div {
+    display: grid;
+    gap: 4px;
+}
+
+.admin-detail-list dt {
+    color: var(--color-muted);
+    font-weight: 700;
+}
+
+.admin-detail-list dd {
+    margin: 0;
+}
+
+.admin-password-details summary {
+    cursor: pointer;
+    font-weight: 800;
 }
 
 .admin-review-card form {
@@ -2055,6 +2195,14 @@ a.event-calendar-event {
         padding-right: 56px;
     }
 
+    .portal-header .site-logo {
+        width: 58px;
+    }
+
+    .portal-header h1 {
+        font-size: clamp(2rem, 9vw, 2.8rem);
+    }
+
     .business-portal-header {
         position: relative;
         padding-right: 56px;
@@ -2073,7 +2221,7 @@ a.event-calendar-event {
     }
 
     .business-event-preview {
-        padding: 18px 0;
+        padding: 18px 14px;
     }
 
     .business-event-preview:first-of-type {
@@ -2097,9 +2245,31 @@ a.event-calendar-event {
         grid-template-columns: 1fr 1fr;
     }
 
-    .event-feed-item,
-    .event-feed-item-with-cover {
+    .event-feed-item:not(.event-feed-item-with-cover) {
         grid-template-columns: 1fr;
+    }
+
+    .event-feed-item-with-cover {
+        grid-template-columns: 80px minmax(0, 1fr);
+        align-items: center;
+    }
+
+    .event-feed-item-with-cover .event-feed-date {
+        grid-column: 1;
+        grid-row: 1;
+        min-height: 124px;
+        justify-items: center;
+    }
+
+    .event-feed-item-with-cover .event-feed-cover {
+        grid-column: 2;
+        grid-row: 1;
+        height: 124px;
+    }
+
+    .event-feed-item-with-cover .event-feed-details,
+    .event-feed-item-with-cover .event-feed-actions {
+        grid-column: 1 / -1;
     }
 
     .event-feed-actions {
@@ -2107,14 +2277,14 @@ a.event-calendar-event {
         flex-wrap: wrap;
     }
 
-    .event-feed-cover {
+    .event-feed-item:not(.event-feed-item-with-cover) .event-feed-cover {
         width: 100%;
         height: auto;
         min-height: 0;
         aspect-ratio: 16 / 9;
     }
 
-    .event-feed-date {
+    .event-feed-item:not(.event-feed-item-with-cover) .event-feed-date {
         min-height: 0;
     }
 
@@ -2182,19 +2352,19 @@ a.event-calendar-event {
 
     .mobile-actions-toggle {
         display: inline-flex;
-        width: 42px;
-        height: 42px;
-        min-height: 42px;
+        width: 48px;
+        height: 48px;
+        min-height: 48px;
         padding: 0;
-        gap: 4px;
+        gap: 5px;
         flex-direction: column;
         border-radius: var(--radius-sm);
     }
 
     .mobile-actions-toggle span {
         display: block;
-        width: 18px;
-        height: 2px;
+        width: 21px;
+        height: 2.5px;
         border-radius: 999px;
         background: currentColor;
     }
@@ -2249,7 +2419,8 @@ a.event-calendar-event {
         position: sticky;
         z-index: 3;
         top: 0;
-        gap: 0;
+        gap: 8px;
+        padding: 8px 0;
         overflow-x: auto;
         background: var(--color-bg);
     }
@@ -2286,8 +2457,7 @@ a.event-calendar-event {
         justify-self: start;
     }
 
-    .event-feed-item,
-    .event-feed-item-with-cover {
+    .event-feed-item:not(.event-feed-item-with-cover) {
         grid-template-columns: 1fr;
     }
 
@@ -2295,8 +2465,12 @@ a.event-calendar-event {
         aspect-ratio: 16 / 9;
     }
 
-    .event-feed-date {
+    .event-feed-item:not(.event-feed-item-with-cover) .event-feed-date {
         justify-items: start;
+    }
+
+    .event-feed-item-with-cover .event-feed-date {
+        justify-items: center;
     }
 
     .review-photo-lightbox {

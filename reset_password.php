@@ -71,6 +71,7 @@ function reset_password_token_message($token_result) {
 </head>
 <body class="auth-body">
     <main class="auth-card">
+        <img class="site-logo auth-logo" src="images/Logo.webp" alt="CraftCrawl logo">
         <h1>Reset Password</h1>
 
         <?php if ($message) : ?>

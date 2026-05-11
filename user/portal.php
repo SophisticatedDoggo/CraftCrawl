@@ -19,6 +19,7 @@ include '../config.php';
 <body class="portal-body">
     <header class="portal-header">
         <div>
+            <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
             <h1>Craft Crawl</h1>
         </div>
         <form class="business-search" role="search">
@@ -81,6 +82,7 @@ include '../config.php';
 </script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="../js/map.js"></script>
+<script src="../js/directions_links.js"></script>
 <script src="../js/mobile_actions_menu.js"></script>
 <script src="../js/depth_animations.js"></script>
 </body>

@@ -370,7 +370,10 @@ function format_event_time_range($event) {
                 <h2>Location</h2>
                 <a
                     class="map-action-button"
-                    href="https://www.google.com/maps/search/?api=1&query=<?php echo escape_output(rawurlencode($business['street_address'] . ', ' . $business['city'] . ', ' . $business['state'] . ' ' . $business['zip'])); ?>"
+                    href="https://www.google.com/maps/dir/?api=1&destination=<?php echo escape_output(rawurlencode($business['latitude'] . ',' . $business['longitude'])); ?>"
+                    data-directions-address="<?php echo escape_output($business['street_address'] . ', ' . $business['city'] . ', ' . $business['state'] . ' ' . $business['zip']); ?>"
+                    data-directions-latitude="<?php echo escape_output($business['latitude']); ?>"
+                    data-directions-longitude="<?php echo escape_output($business['longitude']); ?>"
                     target="_blank"
                     rel="noopener"
                 >Get Directions</a>
@@ -547,6 +550,7 @@ function format_event_time_range($event) {
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
 </script>
 <script src="js/business_details_map.js"></script>
+<script src="js/directions_links.js"></script>
 <script src="js/business_gallery.js"></script>
 <script src="js/review_photos.js"></script>
 <script src="js/mobile_actions_menu.js"></script>

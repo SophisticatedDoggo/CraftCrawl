@@ -167,8 +167,11 @@ $form_date = $editing_event['eventDate'] ?? $selected_date;
     <main class="business-portal event-edit-page">
         <header class="business-portal-header">
             <div>
-                <h1><?php echo $editing_event ? 'Edit Event' : 'Add Event'; ?></h1>
-                <p><?php echo escape_output($business['bName'] ?? 'Business'); ?></p>
+                <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
+                <div>
+                    <h1><?php echo $editing_event ? 'Edit Event' : 'Add Event'; ?></h1>
+                    <p><?php echo escape_output($business['bName'] ?? 'Business'); ?></p>
+                </div>
             </div>
             <div class="business-header-actions mobile-actions-menu business-actions-menu" data-mobile-actions-menu>
                 <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
