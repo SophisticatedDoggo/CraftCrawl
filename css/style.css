@@ -413,11 +413,20 @@ label {
     padding: 14px 12px;
     border-bottom: 1px solid var(--color-border);
     border-left: 3px solid transparent;
+    cursor: pointer;
 }
 
-.business-list-item:hover {
+.business-list-item:hover,
+.business-list-item:focus-visible {
     border-left-color: var(--color-primary);
     background: var(--color-surface-muted);
+    outline: none;
+}
+
+.business-list-empty {
+    padding: 16px 12px;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-muted);
 }
 
 .business-list-number {
@@ -548,6 +557,16 @@ label {
 .mobile-actions-panel button {
     min-height: 42px;
     white-space: nowrap;
+}
+
+.settings-icon-link {
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+    min-height: 0;
+    padding: 0;
+    font-size: 25px;
+    line-height: 1;
 }
 
 .portal-level-summary {
@@ -791,6 +810,10 @@ label {
     font-size: 14px;
 }
 
+.mobile-app-tabbar {
+    display: none;
+}
+
 .portal-tabs {
     display: flex;
     gap: 10px;
@@ -929,14 +952,36 @@ label {
     overflow: hidden;
 }
 
-#map-panel #map {
+#map-panel .map-shell {
+    position: relative;
     margin-right: -16px;
     margin-left: -16px;
     width: calc(100% + 32px);
+}
+
+#map-panel #map {
+    width: 100%;
     border-top: 0;
     border-right: 0;
     border-left: 0;
     border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.map-zoom-debug {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+    padding: 7px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    border-radius: var(--radius-sm);
+    background: rgba(17, 24, 39, 0.78);
+    color: #ffffff;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1;
+    pointer-events: none;
 }
 
 .events-feed {
@@ -2347,6 +2392,7 @@ a.event-calendar-event {
 
     .portal-body {
         padding-top: 16px;
+        padding-bottom: calc(92px + env(safe-area-inset-bottom));
     }
 
     .portal-header {
@@ -2613,6 +2659,135 @@ a.event-calendar-event {
         min-width: 104px;
     }
 
+    .mobile-app-tabbar {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 20;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 4px;
+        padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+        border-top: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
+        background:
+            var(--glass-surface),
+            color-mix(in srgb, var(--color-surface) 92%, transparent);
+        box-shadow: 0 -12px 28px rgba(15, 23, 42, 0.18);
+        backdrop-filter: blur(18px) saturate(1.12);
+        -webkit-backdrop-filter: blur(18px) saturate(1.12);
+    }
+
+    .mobile-app-tab {
+        display: grid;
+        gap: 3px;
+        justify-items: center;
+        min-height: 52px;
+        padding: 7px 4px;
+        border: 0;
+        border-radius: var(--radius-sm);
+        color: var(--color-muted);
+        background: transparent;
+        box-shadow: none;
+        font-size: 12px;
+        font-weight: 650;
+        text-decoration: none;
+    }
+
+    .mobile-app-tab:hover,
+    .mobile-app-tab:focus,
+    .mobile-app-tab.is-active {
+        color: var(--color-primary);
+        background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    }
+
+    .mobile-app-tab-icon {
+        position: relative;
+        display: block;
+        width: 22px;
+        height: 22px;
+    }
+
+    .mobile-app-tab-icon-map {
+        border: 2px solid currentColor;
+        border-radius: 6px;
+    }
+
+    .mobile-app-tab-icon-map::before,
+    .mobile-app-tab-icon-map::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        bottom: 2px;
+        width: 2px;
+        border-radius: 999px;
+        background: currentColor;
+    }
+
+    .mobile-app-tab-icon-map::before {
+        left: 6px;
+    }
+
+    .mobile-app-tab-icon-map::after {
+        right: 6px;
+    }
+
+    .mobile-app-tab-icon-events::before,
+    .mobile-app-tab-icon-events::after,
+    .mobile-app-tab-icon-checkin::before,
+    .mobile-app-tab-icon-checkin::after {
+        content: "";
+        position: absolute;
+        border-radius: 999px;
+        background: currentColor;
+    }
+
+    .mobile-app-tab-icon-events {
+        border: 2px solid currentColor;
+        border-radius: 5px;
+    }
+
+    .mobile-app-tab-icon-events::before {
+        top: 5px;
+        right: 4px;
+        left: 4px;
+        height: 2px;
+    }
+
+    .mobile-app-tab-icon-events::after {
+        top: 11px;
+        right: 4px;
+        left: 4px;
+        height: 2px;
+    }
+
+    .mobile-app-tab-icon-checkin {
+        border: 2px solid currentColor;
+        border-radius: 50%;
+    }
+
+    .mobile-app-tab-icon-checkin::before {
+        top: 4px;
+        bottom: 4px;
+        left: 9px;
+        width: 2px;
+    }
+
+    .mobile-app-tab-icon-checkin::after {
+        top: 9px;
+        right: 4px;
+        left: 4px;
+        height: 2px;
+    }
+
+    .mobile-app-tab-icon-settings {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        line-height: 1;
+    }
+
     .dashboard-checkin-panel,
     .dashboard-checkin-item {
         grid-template-columns: 1fr;
@@ -2627,9 +2802,9 @@ a.event-calendar-event {
         height: 62vh;
         min-height: 360px;
         border-radius: 0;
-        margin-right: -16px;
-        margin-left: -16px;
-        width: calc(100% + 32px);
+        margin-right: 0;
+        margin-left: 0;
+        width: 100%;
     }
 
     .business-list-item {

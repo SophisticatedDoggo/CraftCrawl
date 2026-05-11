@@ -1,4 +1,13 @@
 let allBusinessFeatures = [];
+let numberedBusinessFeatures = [];
+let userLocation = null;
+let locationsAreLoaded = false;
+let hasCenteredOnUserLocation = false;
+let loadedBusinessCount = 0;
+let renderedMapItemCount = 0;
+const mapRadiusModeMinZoom = 8;
+const mapRadiusMeters = 50 * 1609.344;
+const mapClusterMaxZoom = 12;
 
 mapboxgl.accessToken = window.MAPBOX_ACCESS_TOKEN;
 // creates the map, setting the container to the id of the div you added in step 2, and setting the initial center and zoom level of the map
@@ -15,18 +24,16 @@ const map = new mapboxgl.Map({
     },
     center: [-79.3432615, 40.208976], // starting position [lng, lat]
     zoom: 6.5, // starting zoom
-    maxBounds: [
-        [-80.330658, 39.759134], // Southwest [lng, lat]
-        [-78.548126, 40.698535] // Northeast [lng, lat]
-    ]
 });
 
 map.on('load', function () {
+    updateMapZoomDebug();
+
     //place object we will add our events to
     map.addSource('places',{
         'type': 'geojson',
         'cluster': true,
-        'clusterMaxZoom': 9,
+        'clusterMaxZoom': mapClusterMaxZoom,
         'clusterRadius': 45,
         'data': {
             'type': 'FeatureCollection',
@@ -39,7 +46,7 @@ map.on('load', function () {
         type: 'circle',
         source: 'places',
         filter: ['has', 'point_count'],
-        maxzoom: 10,
+        maxzoom: mapClusterMaxZoom + 1,
         paint: {
             'circle-color': [
                 'step',
@@ -65,7 +72,7 @@ map.on('load', function () {
         type: 'circle',
         source: 'places',
         filter: ['has', 'point_count'],
-        maxzoom: 10,
+        maxzoom: mapClusterMaxZoom + 1,
         paint: {
             'circle-color': '#475569',
             'circle-radius': [
@@ -85,7 +92,7 @@ map.on('load', function () {
         type: 'symbol',
         source: 'places',
         filter: ['has', 'point_count'],
-        maxzoom: 10,
+        maxzoom: mapClusterMaxZoom + 1,
         layout: {
             'text-field': ['concat', ['get', 'point_count_abbreviated'], '+'],
             'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
@@ -172,6 +179,37 @@ map.on('load', function () {
         }
     });
 
+    map.addSource('user-location', {
+        type: 'geojson',
+        data: {
+            type: 'FeatureCollection',
+            features: []
+        }
+    });
+
+    map.addLayer({
+        id: 'user-location-ring',
+        type: 'circle',
+        source: 'user-location',
+        paint: {
+            'circle-radius': 22,
+            'circle-color': '#2563eb',
+            'circle-opacity': 0.18
+        }
+    });
+
+    map.addLayer({
+        id: 'user-location-dot',
+        type: 'circle',
+        source: 'user-location',
+        paint: {
+            'circle-radius': 8,
+            'circle-color': '#2563eb',
+            'circle-stroke-width': 3,
+            'circle-stroke-color': '#ffffff'
+        }
+    });
+
 
     //Handle popups
     map.on('click', 'clusters', (e) => {
@@ -195,26 +233,10 @@ map.on('load', function () {
     map.on('click', 'places', (e) => {
         const coordinates = e.features[0].geometry.coordinates.slice();
         const properties = e.features[0].properties;
-        const address = `${properties.streetAddress}, ${properties.city}, ${properties.state} ${properties.zip}`;
-        const latitude = coordinates[1];
-        const longitude = coordinates[0];
-        const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${latitude},${longitude}`)}`;
-        const popupHTML = `
-            <strong>${escapeHtml(properties.title)}</strong>
-            <p>${escapeHtml(formatBusinessType(properties.businessType))} &middot; #${escapeHtml(properties.listNumber)} on map</p>
-            <p>
-                ${escapeHtml(properties.streetAddress)}<br>
-                ${escapeHtml(properties.city)}, ${escapeHtml(properties.state)} ${escapeHtml(properties.zip)}
-            </p>
-            <div class="map-popup-actions">
-                <a class="map-action-button" href="../business_details.php?id=${encodeURIComponent(properties.id)}">Open details</a>
-                <a class="map-action-button" href="${directionsUrl}" data-directions-address="${escapeHtml(address)}" data-directions-latitude="${escapeHtml(latitude)}" data-directions-longitude="${escapeHtml(longitude)}" target="_blank" rel="noopener">Get Directions</a>
-            </div>
-        `;
 
         new mapboxgl.Popup()
             .setLngLat(coordinates)
-            .setHTML(popupHTML)
+            .setHTML(getBusinessPopupHTML(properties, coordinates))
             .addTo(map);
     });
 
@@ -236,6 +258,19 @@ map.on('load', function () {
     //get our data from php function
     getAllLocations();
     getAllEvents();
+    requestUserLocation();
+
+    map.on('moveend', (event) => {
+        updateBusinessListForCurrentMapArea(Boolean(event.originalEvent));
+    });
+
+    map.on('zoom', () => {
+        updateMapZoomDebug();
+    });
+
+    map.on('idle', () => {
+        updateRenderedMapItemCount();
+    });
 });
 
 setupPortalTabs();
@@ -258,32 +293,118 @@ function escapeHtml(value) {
     return element.innerHTML;
 }
 
+function getBusinessPopupHTML(properties, coordinates) {
+    const address = `${properties.streetAddress}, ${properties.city}, ${properties.state} ${properties.zip}`;
+    const latitude = coordinates[1];
+    const longitude = coordinates[0];
+    const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${latitude},${longitude}`)}`;
+
+    return `
+        <strong>${escapeHtml(properties.title)}</strong>
+        <p>${escapeHtml(formatBusinessType(properties.businessType))} &middot; #${escapeHtml(properties.listNumber)} on map</p>
+        <p>
+            ${escapeHtml(properties.streetAddress)}<br>
+            ${escapeHtml(properties.city)}, ${escapeHtml(properties.state)} ${escapeHtml(properties.zip)}
+        </p>
+        <div class="map-popup-actions">
+            <a class="map-action-button" href="../business_details.php?id=${encodeURIComponent(properties.id)}">Open details</a>
+            <a class="map-action-button" href="${directionsUrl}" data-directions-address="${escapeHtml(address)}" data-directions-latitude="${escapeHtml(latitude)}" data-directions-longitude="${escapeHtml(longitude)}" target="_blank" rel="noopener">Get Directions</a>
+        </div>
+    `;
+}
+
 function getAllLocations(){
     $.ajax({
         url: "../mapbox/get_locations.php",
         dataType: "json",
         success: function (businessData) {
-            const numberedBusinessData = businessData.map((feature, index) => ({
-                ...feature,
-                properties: {
-                    ...feature.properties,
-                    listNumber: String(index + 1)
-                }
-            }));
-
-            allBusinessFeatures = numberedBusinessData;
-            console.log(numberedBusinessData)
-            map.getSource('places').setData({
-                    'type': 'FeatureCollection',
-                    'features': numberedBusinessData
-            });
-            renderBusinessList(numberedBusinessData);
+            allBusinessFeatures = businessData;
+            locationsAreLoaded = true;
             setupBusinessSearch();
             setupBusinessListSort();
+            applyLocationAwareListAndMap();
         },
         error: function (e) {
             console.log(e);
         }
+    });
+}
+
+function requestUserLocation() {
+    if (!navigator.geolocation) {
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition((position) => {
+        userLocation = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+        };
+
+        updateUserLocationMarker();
+        applyLocationAwareListAndMap();
+    }, () => {
+        applyLocationAwareListAndMap();
+    }, {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 60000
+    });
+}
+
+function applyLocationAwareListAndMap() {
+    if (!locationsAreLoaded) {
+        return;
+    }
+
+    const sortSelect = document.getElementById('business-list-sort');
+
+    if (userLocation && sortSelect && (sortSelect.value === 'map' || sortSelect.value === 'nearby')) {
+        sortSelect.value = 'nearby';
+        updateBusinessListForSort('nearby');
+
+        if (!hasCenteredOnUserLocation) {
+            hasCenteredOnUserLocation = true;
+            centerMapOnUserAndNearbyLocations();
+        }
+
+        return;
+    }
+
+    updateBusinessListForSort(sortSelect ? sortSelect.value : 'map');
+}
+
+function updateUserLocationMarker() {
+    const source = map.getSource('user-location');
+
+    if (!source || !userLocation) {
+        return;
+    }
+
+    source.setData({
+        type: 'FeatureCollection',
+        features: [
+            {
+                type: 'Feature',
+                geometry: {
+                    type: 'Point',
+                    coordinates: [userLocation.longitude, userLocation.latitude]
+                },
+                properties: {}
+            }
+        ]
+    });
+}
+
+function centerMapOnUserAndNearbyLocations() {
+    if (!userLocation) {
+        return;
+    }
+
+    map.easeTo({
+        center: [userLocation.longitude, userLocation.latitude],
+        zoom: Math.max(map.getZoom(), 11.5),
+        duration: 900
     });
 }
 
@@ -394,22 +515,82 @@ function renderBusinessList(features) {
         return;
     }
 
+    if (!features.length) {
+        listContainer.innerHTML = '<li class="business-list-empty">No businesses found in this map area.</li>';
+        return;
+    }
+
     listContainer.innerHTML = features.map((feature) => {
         const properties = feature.properties;
+        const distanceText = userLocation
+            ? ` &middot; ${formatDistance(distanceMeters(userLocation.latitude, userLocation.longitude, feature.geometry.coordinates[1], feature.geometry.coordinates[0]))} away`
+            : '';
 
         return `
-            <li class="business-list-item">
+            <li class="business-list-item" data-business-id="${escapeHtml(properties.id)}" role="button" tabindex="0" aria-label="Show ${escapeHtml(properties.title)} on map">
                 <span class="business-list-number business-list-number-${properties.businessType}">
                     ${properties.listNumber}
                 </span>
                 <div class="business-list-details">
-                    <strong>${properties.title}</strong>
-                    <span>${formatBusinessType(properties.businessType)} &middot; ${properties.city}, ${properties.state}</span>
+                    <strong>${escapeHtml(properties.title)}</strong>
+                    <span>${formatBusinessType(properties.businessType)} &middot; ${properties.city}, ${properties.state}${distanceText}</span>
                 </div>
                 <a href="../business_details.php?id=${properties.id}">Open details</a>
             </li>
         `;
     }).join('');
+
+    setupBusinessListMapLinks(listContainer);
+}
+
+function setupBusinessListMapLinks(listContainer) {
+    listContainer.querySelectorAll('.business-list-item').forEach((item) => {
+        item.addEventListener('click', (event) => {
+            const clickedLink = event.target instanceof Element ? event.target.closest('a') : null;
+
+            if (clickedLink) {
+                return;
+            }
+
+            focusBusinessOnMap(item.dataset.businessId);
+        });
+
+        item.addEventListener('keydown', (event) => {
+            const focusedLink = event.target instanceof Element ? event.target.closest('a') : null;
+
+            if (focusedLink || (event.key !== 'Enter' && event.key !== ' ')) {
+                return;
+            }
+
+            event.preventDefault();
+            focusBusinessOnMap(item.dataset.businessId);
+        });
+    });
+}
+
+function focusBusinessOnMap(businessId) {
+    const feature = numberedBusinessFeatures.find((businessFeature) => getBusinessFeatureId(businessFeature) === String(businessId))
+        || allBusinessFeatures.find((businessFeature) => getBusinessFeatureId(businessFeature) === String(businessId));
+    const mapContainer = document.getElementById('map');
+
+    if (!feature) {
+        return;
+    }
+
+    map.easeTo({
+        center: feature.geometry.coordinates,
+        zoom: Math.max(map.getZoom(), 13),
+        duration: 650
+    });
+
+    if (mapContainer) {
+        mapContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    new mapboxgl.Popup()
+        .setLngLat(feature.geometry.coordinates)
+        .setHTML(getBusinessPopupHTML(feature.properties, feature.geometry.coordinates))
+        .addTo(map);
 }
 
 function setupBusinessListSort() {
@@ -421,15 +602,63 @@ function setupBusinessListSort() {
 
     sortSelect.dataset.ready = 'true';
     sortSelect.addEventListener('change', () => {
-        renderBusinessList(getSortedBusinessFeatures(sortSelect.value));
+        updateBusinessListForSort(sortSelect.value);
     });
+}
+
+function updateBusinessListForCurrentMapArea(useMapCenter = false) {
+    if (!locationsAreLoaded) {
+        return;
+    }
+
+    const sortSelect = document.getElementById('business-list-sort');
+    const sortValue = sortSelect ? sortSelect.value : 'map';
+
+    if (sortValue !== 'map' && sortValue !== 'nearby') {
+        return;
+    }
+
+    updateBusinessListForSort(sortValue, { useMapCenter: sortValue === 'map' && useMapCenter });
+}
+
+function updateMapZoomDebug() {
+    const zoomDebug = document.getElementById('map-zoom-debug');
+
+    if (!zoomDebug) {
+        return;
+    }
+
+    const zoom = map.getZoom();
+    const mode = zoom >= mapRadiusModeMinZoom ? '50 mi radius' : 'map view';
+    zoomDebug.textContent = `Zoom ${zoom.toFixed(2)} · ${mode} · ${loadedBusinessCount} businesses · ${renderedMapItemCount} items`;
+}
+
+function updateBusinessListForSort(sortValue, options = {}) {
+    const reference = getListReferencePoint(sortValue, options.useMapCenter);
+    const features = sortValue === 'map' || sortValue === 'nearby'
+        ? getMapRelevantBusinessFeatures()
+        : getSortedBusinessFeatures(sortValue);
+    const orderedFeatures = sortFeaturesForList(features, sortValue, reference);
+    const numberedFeatures = numberFeatures(orderedFeatures);
+
+    updateMapBusinessNumbers(numberedFeatures);
+    renderBusinessList(numberedFeatures);
 }
 
 function getSortedBusinessFeatures(sortValue) {
     const features = [...allBusinessFeatures];
 
     if (sortValue === 'name') {
-        return features.sort((a, b) => a.properties.title.localeCompare(b.properties.title));
+        return features.sort(compareBusinessTitles);
+    }
+
+    if (sortValue === 'nearby' && userLocation) {
+        return features.sort((a, b) => {
+            const distanceA = distanceMeters(userLocation.latitude, userLocation.longitude, a.geometry.coordinates[1], a.geometry.coordinates[0]);
+            const distanceB = distanceMeters(userLocation.latitude, userLocation.longitude, b.geometry.coordinates[1], b.geometry.coordinates[0]);
+
+            return distanceA - distanceB;
+        });
     }
 
     if (sortValue && sortValue !== 'map') {
@@ -441,11 +670,185 @@ function getSortedBusinessFeatures(sortValue) {
                 return aMatches - bMatches;
             }
 
-            return Number(a.properties.listNumber) - Number(b.properties.listNumber);
+            return compareBusinessTitles(a, b);
         });
     }
 
-    return features.sort((a, b) => Number(a.properties.listNumber) - Number(b.properties.listNumber));
+    return features.sort(compareBusinessTitles);
+}
+
+function sortFeaturesForList(features, sortValue, reference) {
+    const sortedFeatures = [...features];
+
+    if ((sortValue === 'map' || sortValue === 'nearby') && reference) {
+        return sortedFeatures.sort((a, b) => {
+            return distanceFromFeatureToReference(a, reference) - distanceFromFeatureToReference(b, reference);
+        });
+    }
+
+    if (sortValue === 'map' || sortValue === 'nearby') {
+        return sortedFeatures.sort((a, b) => a.properties.title.localeCompare(b.properties.title));
+    }
+
+    if (sortValue === 'name') {
+        return sortedFeatures.sort(compareBusinessTitles);
+    }
+
+    if (sortValue && sortValue !== 'map') {
+        return sortedFeatures.sort((a, b) => {
+            const aMatches = a.properties.businessType === sortValue ? 0 : 1;
+            const bMatches = b.properties.businessType === sortValue ? 0 : 1;
+
+            if (aMatches !== bMatches) {
+                return aMatches - bMatches;
+            }
+
+            return compareBusinessTitles(a, b);
+        });
+    }
+
+    return sortedFeatures.sort(compareBusinessTitles);
+}
+
+function getMapRelevantBusinessFeatures() {
+    const center = getMapCenterReference();
+    if (map.getZoom() >= mapRadiusModeMinZoom) {
+        return sortFeaturesByReference(getBusinessFeaturesWithinMapRadius(), center);
+    }
+
+    return sortFeaturesByReference(getVisibleBusinessFeatures(), center);
+}
+
+function updateRenderedMapItemCount() {
+    if (!map.getLayer('clusters') || !map.getLayer('places')) {
+        return;
+    }
+
+    const renderedFeatures = map.queryRenderedFeatures({
+        layers: ['clusters', 'places']
+    });
+    const renderedItems = new Set();
+
+    renderedFeatures.forEach((feature) => {
+        if (feature.properties && feature.properties.cluster_id !== undefined) {
+            renderedItems.add(`cluster-${feature.properties.cluster_id}`);
+            return;
+        }
+
+        if (feature.properties && feature.properties.id !== undefined) {
+            renderedItems.add(`business-${feature.properties.id}`);
+        }
+    });
+
+    renderedMapItemCount = renderedItems.size;
+    updateMapZoomDebug();
+}
+
+function getBusinessFeaturesWithinMapRadius() {
+    const reference = getMapCenterReference();
+
+    return allBusinessFeatures.filter((feature) => {
+        return distanceFromFeatureToReference(feature, reference) <= mapRadiusMeters;
+    });
+}
+
+function getVisibleBusinessFeatures() {
+    const bounds = map.getBounds();
+
+    return allBusinessFeatures.filter((feature) => {
+        return bounds.contains(feature.geometry.coordinates);
+    });
+}
+
+function getListReferencePoint(sortValue, useMapCenter = false) {
+    if (!useMapCenter && sortValue === 'nearby' && userLocation) {
+        return userLocation;
+    }
+
+    return getMapCenterReference();
+}
+
+function getMapCenterReference() {
+    const center = map.getCenter();
+
+    return {
+        latitude: center.lat,
+        longitude: center.lng
+    };
+}
+
+function sortFeaturesByReference(features, reference) {
+    return [...features].sort((a, b) => {
+        return distanceFromFeatureToReference(a, reference) - distanceFromFeatureToReference(b, reference);
+    });
+}
+
+function updateMapBusinessNumbers(orderedFeatures) {
+    const source = map.getSource('places');
+
+    if (!source) {
+        return;
+    }
+
+    numberedBusinessFeatures = numberFeatures(orderedFeatures);
+    loadedBusinessCount = numberedBusinessFeatures.length;
+    updateMapZoomDebug();
+
+    source.setData({
+        type: 'FeatureCollection',
+        features: numberedBusinessFeatures
+    });
+}
+
+function numberFeatures(features) {
+    return features.map((feature, index) => ({
+        ...feature,
+        properties: {
+            ...feature.properties,
+            listNumber: String(index + 1)
+        }
+    }));
+}
+
+function getBusinessFeatureId(feature) {
+    return String(feature.properties.id);
+}
+
+function distanceFromFeatureToReference(feature, reference) {
+    return distanceMeters(
+        reference.latitude,
+        reference.longitude,
+        feature.geometry.coordinates[1],
+        feature.geometry.coordinates[0]
+    );
+}
+
+function compareBusinessTitles(a, b) {
+    return a.properties.title.localeCompare(b.properties.title);
+}
+
+function distanceMeters(lat1, lng1, lat2, lng2) {
+    const earthRadiusMeters = 6371000;
+    const latDelta = toRadians(lat2 - lat1);
+    const lngDelta = toRadians(lng2 - lng1);
+    const a = Math.sin(latDelta / 2) * Math.sin(latDelta / 2)
+        + Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2))
+        * Math.sin(lngDelta / 2) * Math.sin(lngDelta / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return earthRadiusMeters * c;
+}
+
+function toRadians(degrees) {
+    return degrees * Math.PI / 180;
+}
+
+function formatDistance(meters) {
+    if (meters < 160) {
+        return `${Math.round(meters)} m`;
+    }
+
+    return `${(meters / 1609.344).toFixed(1)} mi`;
 }
 
 function renderEventsFeed(events) {
@@ -515,18 +918,45 @@ function formatEventTime(time) {
 
 function setupPortalTabs() {
     const tabs = document.querySelectorAll('.portal-tab');
+    const appTabs = document.querySelectorAll('.mobile-app-tab[data-app-tab]');
+    const appScrollTabs = document.querySelectorAll('.mobile-app-tab[data-app-scroll-target]');
     const panels = document.querySelectorAll('.portal-panel');
     const likedEventsOnly = document.getElementById('liked-events-only');
 
+    function showPanel(targetPanelId) {
+        tabs.forEach((item) => item.classList.toggle('is-active', item.dataset.tab === targetPanelId));
+        appTabs.forEach((item) => item.classList.toggle('is-active', item.dataset.appTab === targetPanelId));
+        panels.forEach((panel) => panel.classList.toggle('portal-panel-hidden', panel.id !== targetPanelId));
+    }
+
+    function scrollTabsIntoView() {
+        const portalTabs = document.querySelector('.portal-tabs');
+
+        if (portalTabs) {
+            portalTabs.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
     tabs.forEach((tab) => {
         tab.addEventListener('click', () => {
-            const targetPanelId = tab.dataset.tab;
+            showPanel(tab.dataset.tab);
+        });
+    });
 
-            tabs.forEach((item) => item.classList.remove('is-active'));
-            panels.forEach((panel) => panel.classList.add('portal-panel-hidden'));
+    appTabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+            showPanel(tab.dataset.appTab);
+            scrollTabsIntoView();
+        });
+    });
 
-            tab.classList.add('is-active');
-            document.getElementById(targetPanelId).classList.remove('portal-panel-hidden');
+    appScrollTabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+            const target = document.getElementById(tab.dataset.appScrollTarget);
+
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         });
     });
 

@@ -38,7 +38,9 @@ $user_progress = craftcrawl_user_level_progress($conn, $user_id);
                 <span></span>
             </button>
             <div class="mobile-actions-panel" data-mobile-actions-panel>
-                <a href="settings.php">Settings</a>
+                <a class="settings-icon-link" href="settings.php" aria-label="Settings">
+                    <span aria-hidden="true">⚙</span>
+                </a>
                 <form action="../logout.php" method="POST">
                     <?php echo craftcrawl_csrf_input(); ?>
                     <button type="submit">Logout</button>
@@ -61,7 +63,7 @@ $user_progress = craftcrawl_user_level_progress($conn, $user_id);
         </section>
     </header>
     <main class="portal-main">
-        <section class="dashboard-checkin-panel" data-dashboard-checkin data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
+        <section id="checkin-panel" class="dashboard-checkin-panel" data-dashboard-checkin data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
             <div>
                 <h2>Check In Nearby</h2>
                 <p>Use your current location to find nearby CraftCrawl locations where you can earn visit XP.</p>
@@ -76,11 +78,15 @@ $user_progress = craftcrawl_user_level_progress($conn, $user_id);
         </div>
 
         <section id="map-panel" class="portal-panel">
-            <div id="map"></div>
+            <div class="map-shell">
+                <div id="map"></div>
+                <div id="map-zoom-debug" class="map-zoom-debug" aria-live="polite">Zoom --</div>
+            </div>
             <div class="business-list-toolbar">
                 <label for="business-list-sort">Sort list</label>
                 <select id="business-list-sort">
-                    <option value="map">Map order</option>
+                    <option value="map">Map area</option>
+                    <option value="nearby">Near me</option>
                     <option value="name">Name</option>
                     <option value="brewery">Breweries first</option>
                     <option value="winery">Wineries first</option>
@@ -104,6 +110,23 @@ $user_progress = craftcrawl_user_level_progress($conn, $user_id);
             <div id="events-feed" class="events-feed"></div>
         </section>
     </main>
+    <nav class="mobile-app-tabbar" aria-label="Primary navigation">
+        <button type="button" class="mobile-app-tab is-active" data-app-tab="map-panel">
+            <span class="mobile-app-tab-icon mobile-app-tab-icon-map" aria-hidden="true"></span>
+            <span>Map</span>
+        </button>
+        <button type="button" class="mobile-app-tab" data-app-tab="events-panel">
+            <span class="mobile-app-tab-icon mobile-app-tab-icon-events" aria-hidden="true"></span>
+            <span>Events</span>
+        </button>
+        <button type="button" class="mobile-app-tab" data-app-scroll-target="checkin-panel">
+            <span class="mobile-app-tab-icon mobile-app-tab-icon-checkin" aria-hidden="true"></span>
+            <span>Check In</span>
+        </button>
+        <a class="mobile-app-tab" href="settings.php" aria-label="Settings">
+            <span class="mobile-app-tab-icon mobile-app-tab-icon-settings" aria-hidden="true">⚙</span>
+        </a>
+    </nav>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
 </script>
