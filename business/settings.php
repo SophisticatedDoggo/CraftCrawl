@@ -108,6 +108,7 @@ $business = $stmt->get_result()->fetch_assoc();
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
                     <a href="business_portal.php">Back to Portal</a>
+                    <a href="analytics.php">Analytics</a>
                     <form action="../logout.php" method="POST">
                         <?php echo craftcrawl_csrf_input(); ?>
                         <button type="submit">Logout</button>

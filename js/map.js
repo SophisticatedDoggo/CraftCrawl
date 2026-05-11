@@ -929,11 +929,13 @@ function setupPortalTabs() {
         panels.forEach((panel) => panel.classList.toggle('portal-panel-hidden', panel.id !== targetPanelId));
     }
 
-    function scrollTabsIntoView() {
+    function scrollPanelIntoView(targetPanelId) {
+        const targetPanel = document.getElementById(targetPanelId);
         const portalTabs = document.querySelector('.portal-tabs');
+        const target = targetPanel || portalTabs;
 
-        if (portalTabs) {
-            portalTabs.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }
 
@@ -946,7 +948,7 @@ function setupPortalTabs() {
     appTabs.forEach((tab) => {
         tab.addEventListener('click', () => {
             showPanel(tab.dataset.appTab);
-            scrollTabsIntoView();
+            scrollPanelIntoView(tab.dataset.appTab);
         });
     });
 

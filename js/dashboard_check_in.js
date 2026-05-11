@@ -18,6 +18,26 @@
         feedback.hidden = false;
     }
 
+    function locationErrorMessage(error) {
+        if (!window.isSecureContext) {
+            return 'Location check-ins require HTTPS on mobile browsers. Use localhost on this device, an HTTPS tunnel, or serve this dev site over HTTPS.';
+        }
+
+        if (error && error.code === error.PERMISSION_DENIED) {
+            return 'Location permission was denied. Enable location access for this site in your browser settings and try again.';
+        }
+
+        if (error && error.code === error.POSITION_UNAVAILABLE) {
+            return 'Your current location is unavailable. Check device location services and try again.';
+        }
+
+        if (error && error.code === error.TIMEOUT) {
+            return 'Finding your location timed out. Move somewhere with a clearer signal and try again.';
+        }
+
+        return 'Location permission is required to find nearby check-ins.';
+    }
+
     function formatBusinessType(type) {
         const labels = {
             brewery: 'Brewery',
@@ -161,8 +181,8 @@
                     findButton.disabled = false;
                     findButton.textContent = 'Find Nearby Check-ins';
                 });
-        }, () => {
-            showStatus('Location permission is required to find nearby check-ins.', true);
+        }, (error) => {
+            showStatus(locationErrorMessage(error), true);
             findButton.disabled = false;
             findButton.textContent = 'Find Nearby Check-ins';
         }, {

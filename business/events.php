@@ -115,6 +115,7 @@ foreach ($events_by_date as $date => $events) {
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
                     <a href="business_portal.php">Back to Preview</a>
+                    <a href="analytics.php">Analytics</a>
                     <a href="event_edit.php?month=<?php echo escape_output($calendar_month); ?>">Add Event</a>
                     <a href="settings.php">Settings</a>
                     <form action="../logout.php" method="POST">

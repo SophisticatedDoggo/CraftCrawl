@@ -149,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
             </div>
         </form>
-        <p class="auth-switch"><a href="forgot_password.php?account_type=user">Forgot password?</a></p>
+        <p class="auth-switch"><a class="text-link" href="forgot_password.php?account_type=user">Forgot password?</a></p>
         <p class="auth-switch"><a href="user_account_creation.php">Create An Account</a></p>
         <?php if ($verification_error) : ?>
             <p class="auth-switch">

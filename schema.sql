@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     total_xp INT NOT NULL DEFAULT 0,
+    auto_accept_friend_invites BOOL NOT NULL DEFAULT FALSE,
+    friendsSeenAt DATETIME,
     createdAt DATETIME NOT NULL,
     emailVerifiedAt DATETIME,
     disabledAt DATETIME,
@@ -136,6 +138,8 @@ CREATE TABLE IF NOT EXISTS reviews (
     notes VARCHAR(2048),
     business_response VARCHAR(2048),
     business_responseAt DATETIME,
+    UNIQUE KEY unique_user_business_review (user_id, business_id),
+    KEY idx_reviews_business_user (business_id, user_id),
     CONSTRAINT fk_userId FOREIGN KEY (user_id)
     REFERENCES users(id),
     CONSTRAINT fk_review_businessId FOREIGN KEY (business_id)
@@ -172,6 +176,34 @@ CREATE TABLE IF NOT EXISTS liked_businesses (
     REFERENCES users(id),
     CONSTRAINT fk_liked_businessId FOREIGN KEY (business_id)
     REFERENCES businesses(id)
+);
+
+CREATE TABLE IF NOT EXISTS user_friends (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    friend_user_id INT NOT NULL,
+    createdAt DATETIME NOT NULL,
+    UNIQUE KEY unique_user_friend (user_id, friend_user_id),
+    KEY idx_user_friends_friend_user_id (friend_user_id),
+    CONSTRAINT fk_user_friends_userId FOREIGN KEY (user_id)
+    REFERENCES users(id),
+    CONSTRAINT fk_user_friends_friendUserId FOREIGN KEY (friend_user_id)
+    REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS friend_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    requester_user_id INT NOT NULL,
+    addressee_user_id INT NOT NULL,
+    status ENUM('pending', 'accepted', 'declined') NOT NULL DEFAULT 'pending',
+    createdAt DATETIME NOT NULL,
+    respondedAt DATETIME,
+    UNIQUE KEY unique_friend_request_pair (requester_user_id, addressee_user_id),
+    KEY idx_friend_requests_addressee_status (addressee_user_id, status),
+    CONSTRAINT fk_friend_requests_requesterId FOREIGN KEY (requester_user_id)
+    REFERENCES users(id),
+    CONSTRAINT fk_friend_requests_addresseeId FOREIGN KEY (addressee_user_id)
+    REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS review_photos (

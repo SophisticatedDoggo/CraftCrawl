@@ -68,7 +68,7 @@ if (isset($_SESSION['admin_id'])) {
             <a class="button-link button-link-secondary" href="business_login.php">Business Account</a>
         </div>
         <div class="landing-admin-action">
-            <a class="button-link button-link-secondary" href="admin_login.php">Admin Account</a>
+            <a class="text-link" href="admin_login.php">Admin Portal</a>
         </div>
     </main>
 </body>

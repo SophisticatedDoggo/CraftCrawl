@@ -96,3 +96,23 @@ INSERT IGNORE INTO businesses (
 ('Salt Lake Wasatch Meadery', 'taste@wasatchmeadery.example', '801-555-0339', '$2y$10$samplehashsamplehashsamplehashsamplehashsamplehashsamplehash', '55 W 100 S', NULL, 'Salt Lake City', 'UT', '84101', 40.767410, -111.892011, 'https://wasatchmeadery.example', 'meadery', 'Urban meadery with dry traditional and fruit-forward honey wines.', '2026-05-10 11:16:00', TRUE),
 ('Anchorage Northern Lights Brewing', 'hello@northernlightsbrewing.example', '907-555-0340', '$2y$10$samplehashsamplehashsamplehashsamplehashsamplehashsamplehash', '500 W 5th Ave', NULL, 'Anchorage', 'AK', '99501', 61.217575, -149.895496, 'https://northernlightsbrewing.example', 'brewery', 'Alaska taproom with rich stouts, pale ales, and cold-weather lagers.', '2026-05-10 11:18:00', TRUE),
 ('Honolulu Island Cider', 'aloha@islandcider.example', '808-555-0341', '$2y$10$samplehashsamplehashsamplehashsamplehashsamplehashsamplehash', '2255 Kalakaua Ave', NULL, 'Honolulu', 'HI', '96815', 21.277894, -157.826190, 'https://islandcider.example', 'cidery', 'Island cider bar with pineapple, guava, and dry apple pours.', '2026-05-10 11:20:00', TRUE);
+
+INSERT IGNORE INTO business_hours (business_id, day_of_week, opens_at, closes_at, is_closed)
+SELECT b.id, d.day_of_week, '00:00:00', '23:59:59', FALSE
+FROM businesses b
+CROSS JOIN (
+    SELECT 0 AS day_of_week
+    UNION ALL SELECT 1
+    UNION ALL SELECT 2
+    UNION ALL SELECT 3
+    UNION ALL SELECT 4
+    UNION ALL SELECT 5
+    UNION ALL SELECT 6
+) d
+WHERE b.bEmail LIKE '%.example'
+    AND NOT EXISTS (
+        SELECT 1
+        FROM business_hours bh
+        WHERE bh.business_id = b.id
+            AND bh.day_of_week = d.day_of_week
+    );

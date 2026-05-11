@@ -97,6 +97,17 @@ $business_hours_text = craftcrawl_business_hours_have_saved_hours($business_hour
     ? craftcrawl_format_business_hours($business_hours)
     : '';
 
+$review_eligibility_stmt = $conn->prepare("
+    SELECT
+        EXISTS(SELECT 1 FROM user_visits WHERE user_id=? AND business_id=? LIMIT 1) AS has_checked_in,
+        EXISTS(SELECT 1 FROM reviews WHERE user_id=? AND business_id=? LIMIT 1) AS has_reviewed
+");
+$review_eligibility_stmt->bind_param("iiii", $user_id, $business_id, $user_id, $business_id);
+$review_eligibility_stmt->execute();
+$review_eligibility = $review_eligibility_stmt->get_result()->fetch_assoc();
+$user_has_checked_in = !empty($review_eligibility['has_checked_in']);
+$user_has_reviewed = !empty($review_eligibility['has_reviewed']);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
 
@@ -128,7 +139,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }));
 
     if ($rating && $rating >= 1 && $rating <= 5) {
-        if (count($review_photo_uploads) > 3) {
+        if (!$user_has_checked_in) {
+            $message = 'review_checkin_required';
+        } elseif ($user_has_reviewed) {
+            $message = 'review_limit_reached';
+        } elseif (count($review_photo_uploads) > 3) {
             $message = 'review_photo_count_error';
         } else {
             try {
@@ -160,7 +175,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit();
             } catch (Throwable $error) {
                 $conn->rollback();
-                $message = str_contains($error->getMessage(), 'server upload limit') ? 'review_photo_server_limit_error' : 'review_photo_error';
+                if (($error instanceof mysqli_sql_exception) && (int) $error->getCode() === 1062) {
+                    $message = 'review_limit_reached';
+                    $user_has_reviewed = true;
+                } else {
+                    $message = str_contains($error->getMessage(), 'server upload limit') ? 'review_photo_server_limit_error' : 'review_photo_error';
+                }
             }
         }
     } else {
@@ -319,6 +339,10 @@ function format_event_time_range($event) {
             <p class="form-message form-message-success">Location removed from your likes.</p>
         <?php elseif ($message === 'review_error') : ?>
             <p class="form-message form-message-error">Please choose a rating from 1 to 5.</p>
+        <?php elseif ($message === 'review_checkin_required') : ?>
+            <p class="form-message form-message-error">Check in at this location before leaving a review.</p>
+        <?php elseif ($message === 'review_limit_reached') : ?>
+            <p class="form-message form-message-error">You have already reviewed this location.</p>
         <?php elseif ($message === 'review_photo_count_error') : ?>
             <p class="form-message form-message-error">Please upload no more than 3 photos with a review.</p>
         <?php elseif ($message === 'review_photo_server_limit_error') : ?>
@@ -503,28 +527,34 @@ function format_event_time_range($event) {
 
         <section class="review-form-panel">
             <h2>Leave a Review</h2>
-            <form method="POST" action="" enctype="multipart/form-data">
-                <?php echo craftcrawl_csrf_input(); ?>
-                <label for="rating">Rating</label>
-                <select id="rating" name="rating" required>
-                    <option value="">Choose a rating</option>
-                    <option value="5">5 - Excellent</option>
-                    <option value="4">4 - Good</option>
-                    <option value="3">3 - Okay</option>
-                    <option value="2">2 - Poor</option>
-                    <option value="1">1 - Bad</option>
-                </select>
+            <?php if (!$user_has_checked_in) : ?>
+                <p class="form-help">Check in at this location before leaving a review.</p>
+            <?php elseif ($user_has_reviewed) : ?>
+                <p class="form-help">You have already reviewed this location. Each user can leave one review per location.</p>
+            <?php else : ?>
+                <form method="POST" action="" enctype="multipart/form-data">
+                    <?php echo craftcrawl_csrf_input(); ?>
+                    <label for="rating">Rating</label>
+                    <select id="rating" name="rating" required>
+                        <option value="">Choose a rating</option>
+                        <option value="5">5 - Excellent</option>
+                        <option value="4">4 - Good</option>
+                        <option value="3">3 - Okay</option>
+                        <option value="2">2 - Poor</option>
+                        <option value="1">1 - Bad</option>
+                    </select>
 
-                <label for="notes">Review</label>
-                <textarea id="notes" name="notes" rows="5"></textarea>
-                <p class="form-help">Reviews earn 25 XP after you have checked in at this location.</p>
+                    <label for="notes">Review</label>
+                    <textarea id="notes" name="notes" rows="5"></textarea>
+                    <p class="form-help">Reviews earn 25 XP once per location after you have checked in.</p>
 
-                <label for="review_photos">Photos</label>
-                <input type="file" id="review_photos" name="review_photos[]" accept="image/jpeg,image/png,image/webp" multiple>
-                <p class="form-help">Add up to 3 JPEG, PNG, or WebP photos under 10 MB each.</p>
+                    <label for="review_photos">Photos</label>
+                    <input type="file" id="review_photos" name="review_photos[]" accept="image/jpeg,image/png,image/webp" multiple>
+                    <p class="form-help">Add up to 3 JPEG, PNG, or WebP photos under 10 MB each.</p>
 
-                <button type="submit">Post Review</button>
-            </form>
+                    <button type="submit">Post Review</button>
+                </form>
+            <?php endif; ?>
         </section>
 
         <section class="business-reviews-panel">

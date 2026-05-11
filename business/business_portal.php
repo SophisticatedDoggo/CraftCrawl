@@ -234,6 +234,7 @@ $business_photos = $photo_stmt->get_result();
                 <span class="approval-status <?php echo $business['approved'] ? 'approval-status-approved' : 'approval-status-pending'; ?>">
                     <?php echo $business['approved'] ? 'Approved' : 'Pending approval'; ?>
                 </span>
+                <a href="analytics.php">Analytics</a>
                 <a href="settings.php">Settings</a>
                 <form action="../logout.php" method="POST">
                     <?php echo craftcrawl_csrf_input(); ?>
@@ -270,6 +271,7 @@ $business_photos = $photo_stmt->get_result();
                 <div class="business-section-header">
                     <h2>Public Page Preview</h2>
                     <div class="business-header-actions">
+                        <a href="analytics.php">Analytics</a>
                         <a href="events.php">Manage Events</a>
                         <a href="business_edit.php">Edit Business Information</a>
                     </div>

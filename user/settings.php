@@ -14,6 +14,11 @@ $message = $_GET['message'] ?? null;
 $user_id = (int) $_SESSION['user_id'];
 $user_progress = craftcrawl_user_level_progress($conn, $user_id);
 $user_badges = craftcrawl_user_badges($conn, $user_id);
+$settings_stmt = $conn->prepare("SELECT auto_accept_friend_invites FROM users WHERE id=?");
+$settings_stmt->bind_param("i", $user_id);
+$settings_stmt->execute();
+$user_settings = $settings_stmt->get_result()->fetch_assoc();
+$auto_accept_friend_invites = !empty($user_settings['auto_accept_friend_invites']);
 
 function escape_output($value) {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
@@ -44,6 +49,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_destroy();
             craftcrawl_redirect('index.php');
         }
+    }
+
+    if ($form_action === 'privacy') {
+        $auto_accept_friend_invites = isset($_POST['auto_accept_friend_invites']);
+        $auto_accept_value = $auto_accept_friend_invites ? 1 : 0;
+        $privacy_stmt = $conn->prepare("UPDATE users SET auto_accept_friend_invites=? WHERE id=?");
+        $privacy_stmt->bind_param("ii", $auto_accept_value, $user_id);
+        $privacy_stmt->execute();
+        header('Location: settings.php?message=privacy_saved');
+        exit();
     }
 
     if ($form_action === 'change_password') {
@@ -117,6 +132,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p class="form-message form-message-error">Password must meet the site password rules.</p>
         <?php elseif ($message === 'disable_password_error') : ?>
             <p class="form-message form-message-error">Password is incorrect. Your account was not disabled.</p>
+        <?php elseif ($message === 'privacy_saved') : ?>
+            <p class="form-message form-message-success">Privacy settings updated.</p>
         <?php endif; ?>
 
         <section class="settings-panel">
@@ -158,6 +175,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="button" data-palette-option="ember-dark">Ember Dark</button>
             </div>
             <p class="form-help">This setting is saved in your browser for now.</p>
+        </section>
+
+        <section class="settings-panel">
+            <h2>Privacy</h2>
+            <form method="POST" action="" class="settings-form">
+                <?php echo craftcrawl_csrf_input(); ?>
+                <input type="hidden" name="form_action" value="privacy">
+                <label class="settings-toggle">
+                    <input type="checkbox" name="auto_accept_friend_invites" value="1" <?php echo $auto_accept_friend_invites ? 'checked' : ''; ?>>
+                    <span>
+                        <strong>Auto Accept Friend Invites</strong>
+                        <small>Turn this off to approve new friends before they are added.</small>
+                    </span>
+                </label>
+                <button type="submit">Save Privacy Settings</button>
+            </form>
         </section>
 
         <section class="settings-panel">

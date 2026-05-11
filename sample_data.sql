@@ -1,10 +1,13 @@
 USE craft_crawl;
 
-INSERT INTO users (id, fName, lName, email, password_hash, createdAt) VALUES
-(1, 'Avery', 'Miller', 'avery@example.com', '$2y$10$samplehashsamplehashsamplehashsamplehashsamplehashsamplehash', '2026-05-01 09:00:00'),
-(2, 'Jordan', 'Parker', 'jordan@example.com', '$2y$10$samplehashsamplehashsamplehashsamplehashsamplehashsamplehash', '2026-05-01 09:10:00'),
-(3, 'Taylor', 'Reed', 'taylor@example.com', '$2y$10$samplehashsamplehashsamplehashsamplehashsamplehashsamplehash', '2026-05-01 09:20:00'),
-(4, 'Morgan', 'Chen', 'morgan@example.com', '$2y$10$samplehashsamplehashsamplehashsamplehashsamplehashsamplehash', '2026-05-01 09:30:00');
+-- Sample user password: Password1!
+INSERT INTO users (id, fName, lName, email, password_hash, total_xp, auto_accept_friend_invites, friendsSeenAt, createdAt, emailVerifiedAt) VALUES
+(1, 'Avery', 'Miller', 'avery@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 225, FALSE, '2026-05-09 09:00:00', '2026-05-01 09:00:00', '2026-05-01 09:05:00'),
+(2, 'Jordan', 'Parker', 'jordan@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 325, TRUE, NULL, '2026-05-01 09:10:00', '2026-05-01 09:15:00'),
+(3, 'Taylor', 'Reed', 'taylor@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 250, FALSE, NULL, '2026-05-01 09:20:00', '2026-05-01 09:25:00'),
+(4, 'Morgan', 'Chen', 'morgan@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 100, FALSE, NULL, '2026-05-01 09:30:00', '2026-05-01 09:35:00'),
+(5, 'Casey', 'Lopez', 'casey@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 0, TRUE, NULL, '2026-05-01 09:40:00', '2026-05-01 09:45:00'),
+(6, 'Riley', 'Brooks', 'riley@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 0, FALSE, NULL, '2026-05-01 09:50:00', '2026-05-01 09:55:00');
 
 INSERT INTO businesses (
     id,
@@ -111,3 +114,59 @@ INSERT INTO liked_businesses (id, user_id, business_id, createdAt) VALUES
 (10, 4, 4, '2026-05-02 08:45:00'),
 (11, 4, 8, '2026-05-02 08:50:00'),
 (12, 4, 20, '2026-05-02 08:55:00');
+
+INSERT INTO business_hours (business_id, day_of_week, opens_at, closes_at, is_closed)
+SELECT b.id, d.day_of_week, '00:00:00', '23:59:59', FALSE
+FROM businesses b
+CROSS JOIN (
+    SELECT 0 AS day_of_week
+    UNION ALL SELECT 1
+    UNION ALL SELECT 2
+    UNION ALL SELECT 3
+    UNION ALL SELECT 4
+    UNION ALL SELECT 5
+    UNION ALL SELECT 6
+) d
+WHERE b.id BETWEEN 1 AND 20;
+
+UPDATE business_hours
+SET opens_at=NULL, closes_at=NULL, is_closed=TRUE
+WHERE business_id=4 AND day_of_week=1;
+
+INSERT INTO user_friends (id, user_id, friend_user_id, createdAt) VALUES
+(1, 1, 2, '2026-05-10 12:00:00'),
+(2, 2, 1, '2026-05-10 12:00:00'),
+(3, 1, 3, '2026-05-08 12:00:00'),
+(4, 3, 1, '2026-05-08 12:00:00');
+
+INSERT INTO friend_requests (id, requester_user_id, addressee_user_id, status, createdAt, respondedAt) VALUES
+(1, 2, 1, 'accepted', '2026-05-10 11:58:00', '2026-05-10 12:00:00'),
+(2, 3, 1, 'accepted', '2026-05-08 11:58:00', '2026-05-08 12:00:00'),
+(3, 4, 1, 'pending', '2026-05-11 09:00:00', NULL),
+(4, 1, 6, 'pending', '2026-05-11 09:15:00', NULL);
+
+INSERT INTO user_visits (id, user_id, business_id, visit_type, xp_awarded, user_latitude, user_longitude, distance_meters, checkedInAt) VALUES
+(1, 1, 1, 'first_time', 100, 40.301500, -79.538900, 5.20, '2026-05-03 13:20:00'),
+(2, 1, 5, 'first_time', 100, 40.112600, -79.382200, 4.90, '2026-05-04 15:10:00'),
+(3, 2, 1, 'first_time', 100, 40.301500, -79.538900, 6.10, '2026-05-06 17:05:00'),
+(4, 2, 2, 'first_time', 100, 40.321200, -79.379500, 4.70, '2026-05-08 16:30:00'),
+(5, 2, 10, 'first_time', 100, 40.312900, -79.389800, 3.80, '2026-05-10 18:40:00'),
+(6, 3, 7, 'first_time', 100, 40.324500, -79.702000, 5.00, '2026-05-05 17:45:00'),
+(7, 3, 11, 'first_time', 100, 40.285500, -79.503800, 6.30, '2026-05-06 19:15:00'),
+(8, 4, 4, 'first_time', 100, 40.149000, -79.541100, 4.20, '2026-05-09 14:10:00');
+
+INSERT INTO xp_log (id, user_id, amount, source_type, source_id, description, createdAt) VALUES
+(1, 1, 100, 'first_time_visit', '1', 'Iron Ridge Brewing', '2026-05-03 13:20:00'),
+(2, 1, 100, 'first_time_visit', '5', 'Summit Stillworks', '2026-05-04 15:10:00'),
+(3, 1, 25, 'review', '1', 'Review', '2026-05-04 16:00:00'),
+(4, 2, 100, 'first_time_visit', '1', 'Iron Ridge Brewing', '2026-05-06 17:05:00'),
+(5, 2, 25, 'review', '2', 'Review', '2026-05-07 12:15:00'),
+(6, 2, 100, 'first_time_visit', '2', 'Maple Run Winery', '2026-05-08 16:30:00'),
+(7, 2, 100, 'first_time_visit', '10', 'Laurel Highlands Brewing', '2026-05-10 18:40:00'),
+(8, 3, 100, 'first_time_visit', '7', 'Trailhead Tapworks', '2026-05-05 17:45:00'),
+(9, 3, 100, 'first_time_visit', '11', 'Red Barn Cider Co.', '2026-05-06 19:15:00'),
+(10, 3, 50, 'badge', 'first_review', 'First Review', '2026-05-07 10:00:00'),
+(11, 4, 100, 'first_time_visit', '4', 'Orchard Fork Cidery', '2026-05-09 14:10:00');
+
+INSERT INTO user_badges (id, user_id, badge_key, badge_name, badge_description, xp_awarded, earnedAt) VALUES
+(1, 3, 'first_review', 'First Review', 'Leave your first review.', 50, '2026-05-07 10:00:00');

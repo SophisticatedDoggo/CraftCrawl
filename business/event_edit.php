@@ -181,6 +181,7 @@ $form_date = $editing_event['eventDate'] ?? $selected_date;
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
                     <a href="events.php?month=<?php echo escape_output($calendar_month); ?>">Back to Calendar</a>
+                    <a href="analytics.php">Analytics</a>
                     <a href="settings.php">Settings</a>
                     <form action="../logout.php" method="POST">
                         <?php echo craftcrawl_csrf_input(); ?>

@@ -38,6 +38,10 @@ $user_progress = craftcrawl_user_level_progress($conn, $user_id);
                 <span></span>
             </button>
             <div class="mobile-actions-panel" data-mobile-actions-panel>
+                <button type="button" data-friends-manager-toggle>
+                    Manage Friends
+                    <span class="notification-badge" data-friends-menu-badge hidden></span>
+                </button>
                 <a class="settings-icon-link" href="settings.php" aria-label="Settings">
                     <span aria-hidden="true">⚙</span>
                 </a>
@@ -75,6 +79,7 @@ $user_progress = craftcrawl_user_level_progress($conn, $user_id);
         <div class="portal-tabs">
             <button type="button" class="portal-tab is-active" data-tab="map-panel">Map</button>
             <button type="button" class="portal-tab" data-tab="events-panel">Events</button>
+            <button type="button" class="portal-tab" data-tab="friends-panel">Friends</button>
         </div>
 
         <section id="map-panel" class="portal-panel">
@@ -109,6 +114,20 @@ $user_progress = craftcrawl_user_level_progress($conn, $user_id);
             </div>
             <div id="events-feed" class="events-feed"></div>
         </section>
+
+        <section id="friends-panel" class="portal-panel portal-panel-hidden" data-friends-panel data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
+            <div class="friends-panel-header">
+                <div>
+                    <h2>Friends</h2>
+                    <p>Follow your friends' CraftCrawl milestones.</p>
+                </div>
+            </div>
+            <div class="friends-feed-header">
+                <h3>Friends Feed</h3>
+                <p data-friends-count></p>
+            </div>
+            <div class="friends-feed" data-friends-feed></div>
+        </section>
     </main>
     <nav class="mobile-app-tabbar" aria-label="Primary navigation">
         <button type="button" class="mobile-app-tab is-active" data-app-tab="map-panel">
@@ -119,14 +138,55 @@ $user_progress = craftcrawl_user_level_progress($conn, $user_id);
             <span class="mobile-app-tab-icon mobile-app-tab-icon-events" aria-hidden="true"></span>
             <span>Events</span>
         </button>
+        <button type="button" class="mobile-app-tab" data-app-tab="friends-panel">
+            <span class="mobile-app-tab-icon mobile-app-tab-icon-friends" aria-hidden="true"></span>
+            <span>Friends</span>
+            <span class="mobile-tab-badge" data-friends-tab-badge hidden></span>
+        </button>
         <button type="button" class="mobile-app-tab" data-app-scroll-target="checkin-panel">
             <span class="mobile-app-tab-icon mobile-app-tab-icon-checkin" aria-hidden="true"></span>
             <span>Check In</span>
         </button>
-        <a class="mobile-app-tab" href="settings.php" aria-label="Settings">
-            <span class="mobile-app-tab-icon mobile-app-tab-icon-settings" aria-hidden="true">⚙</span>
-        </a>
+        <button type="button" class="mobile-app-tab mobile-app-menu-tab" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
+            <span class="mobile-app-tab-icon mobile-app-tab-icon-menu" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+            </span>
+            <span>Menu</span>
+        </button>
     </nav>
+    <div class="friends-manager" data-friends-manager hidden>
+        <div class="friends-manager-dialog" role="dialog" aria-modal="true" aria-labelledby="friends-manager-title">
+            <header>
+                <div>
+                    <h2 id="friends-manager-title">Add / Approve Friends</h2>
+                    <p>Search for accounts or review incoming friend invites.</p>
+                </div>
+                <button type="button" data-friends-manager-close aria-label="Close friend manager">Close</button>
+            </header>
+            <p class="form-message" data-friends-status hidden></p>
+            <section class="friends-manager-section">
+                <h3>Approve New Friends</h3>
+                <div class="friend-requests-list" data-friend-requests-list></div>
+            </section>
+            <section class="friends-manager-section">
+                <h3>Your Friends</h3>
+                <div class="friend-current-list" data-current-friends-list></div>
+            </section>
+            <section class="friends-manager-section">
+                <h3>Add New Friends</h3>
+                <form class="friends-search-form" data-friends-search-form>
+                    <label for="friend-search-input">Search friend accounts</label>
+                    <div>
+                        <input type="search" id="friend-search-input" name="q" placeholder="Search by name or email" autocomplete="off">
+                        <button type="submit">Search</button>
+                    </div>
+                </form>
+                <div class="friends-search-results" data-friends-search-results hidden></div>
+            </section>
+        </div>
+    </div>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
 </script>
@@ -134,6 +194,7 @@ $user_progress = craftcrawl_user_level_progress($conn, $user_id);
 <script src="../js/map.js"></script>
 <script src="../js/directions_links.js"></script>
 <script src="../js/dashboard_check_in.js"></script>
+<script src="../js/friends.js"></script>
 <script src="../js/mobile_actions_menu.js"></script>
 <script src="../js/depth_animations.js"></script>
 </body>
