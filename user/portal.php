@@ -2,6 +2,10 @@
 require '../login_check.php';
 include '../db.php';
 include '../config.php';
+require_once '../lib/leveling.php';
+
+$user_id = (int) ($_SESSION['user_id'] ?? 0);
+$user_progress = craftcrawl_user_level_progress($conn, $user_id);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -41,8 +45,31 @@ include '../config.php';
                 </form>
             </div>
         </div>
+        <section class="portal-level-summary" aria-label="Your CraftCrawl level">
+            <div>
+                <strong>Level <?php echo escape_output($user_progress['level']); ?></strong>
+                <span><?php echo escape_output($user_progress['title']); ?></span>
+            </div>
+            <div class="level-progress-bar" aria-hidden="true">
+                <span style="width: <?php echo escape_output($user_progress['progress_percent']); ?>%;"></span>
+            </div>
+            <?php if ($user_progress['max_level']) : ?>
+                <p>Max Level Reached</p>
+            <?php else : ?>
+                <p><?php echo escape_output($user_progress['total_xp']); ?> / <?php echo escape_output($user_progress['next_level_xp']); ?> XP</p>
+            <?php endif; ?>
+        </section>
     </header>
     <main class="portal-main">
+        <section class="dashboard-checkin-panel" data-dashboard-checkin data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
+            <div>
+                <h2>Check In Nearby</h2>
+                <p>Use your current location to find nearby CraftCrawl locations where you can earn visit XP.</p>
+            </div>
+            <button type="button" data-find-checkins>Find Nearby Check-ins</button>
+            <p class="form-message" data-checkin-status hidden></p>
+            <div class="dashboard-checkin-list" data-checkin-list hidden></div>
+        </section>
         <div class="portal-tabs">
             <button type="button" class="portal-tab is-active" data-tab="map-panel">Map</button>
             <button type="button" class="portal-tab" data-tab="events-panel">Events</button>
@@ -83,6 +110,7 @@ include '../config.php';
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="../js/map.js"></script>
 <script src="../js/directions_links.js"></script>
+<script src="../js/dashboard_check_in.js"></script>
 <script src="../js/mobile_actions_menu.js"></script>
 <script src="../js/depth_animations.js"></script>
 </body>

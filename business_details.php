@@ -73,6 +73,7 @@ function add_recurring_event_occurrences(&$events, $event, $start_date, $end_dat
 
 require_once 'config.php';
 require_once 'lib/cloudinary_upload.php';
+require_once 'lib/leveling.php';
 
 if (!$business_id) {
     header('Location: user/portal.php');
@@ -131,6 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->bind_param("iiis", $rating, $user_id, $business_id, $notes);
                 $stmt->execute();
                 $review_id = $stmt->insert_id;
+                $review_xp_awarded = craftcrawl_award_review_xp($conn, $user_id, $business_id);
 
                 foreach ($review_photo_uploads as $sort_order => $photo_upload) {
                     $upload_result = craftcrawl_upload_photo_to_cloudinary($photo_upload, 'reviews', $user_id);
@@ -141,9 +143,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $photo_stmt->execute();
                 }
 
+                $badges = craftcrawl_award_eligible_badges($conn, $user_id);
                 $conn->commit();
 
-                header("Location: business_details.php?id=" . $business_id . "&message=review_saved");
+                $review_message = $review_xp_awarded ? 'review_saved_xp' : 'review_saved';
+                if (!empty($badges)) {
+                    $review_message = 'review_saved_badge';
+                }
+                header("Location: business_details.php?id=" . $business_id . "&message=" . $review_message);
                 exit();
             } catch (Throwable $error) {
                 $conn->rollback();
@@ -201,6 +208,8 @@ $like_stmt = $conn->prepare("SELECT id FROM liked_businesses WHERE user_id=? AND
 $like_stmt->bind_param("ii", $user_id, $business_id);
 $like_stmt->execute();
 $is_liked = (bool) $like_stmt->get_result()->fetch_assoc();
+
+$user_progress = craftcrawl_user_level_progress($conn, $user_id);
 
 $business_photo_stmt = $conn->prepare("
     SELECT p.object_key, p.public_url, p.width, p.height, bp.photo_type, bp.sort_order
@@ -292,7 +301,11 @@ function format_event_time_range($event) {
             </div>
         </div>
 
-        <?php if ($message === 'review_saved') : ?>
+        <?php if ($message === 'review_saved_xp') : ?>
+            <p class="form-message form-message-success">Your review has been posted. You earned 25 XP.</p>
+        <?php elseif ($message === 'review_saved_badge') : ?>
+            <p class="form-message form-message-success">Your review has been posted. You earned XP and a new badge.</p>
+        <?php elseif ($message === 'review_saved') : ?>
             <p class="form-message form-message-success">Your review has been posted.</p>
         <?php elseif ($message === 'liked') : ?>
             <p class="form-message form-message-success">Location added to your likes.</p>
@@ -349,6 +362,13 @@ function format_event_time_range($event) {
             <?php endif; ?>
 
             <div class="business-details-actions">
+                <form method="POST" action="check_in.php" class="check-in-form" data-check-in-form>
+                    <?php echo craftcrawl_csrf_input(); ?>
+                    <input type="hidden" name="business_id" value="<?php echo escape_output($business_id); ?>">
+                    <input type="hidden" name="latitude" value="">
+                    <input type="hidden" name="longitude" value="">
+                    <button type="submit">Check In</button>
+                </form>
                 <?php if (!empty($business['bWebsite'])) : ?>
                     <a href="<?php echo escape_output($business['bWebsite']); ?>" target="_blank" rel="noopener">Visit Website</a>
                 <?php endif; ?>
@@ -362,6 +382,20 @@ function format_event_time_range($event) {
                         <span><?php echo $is_liked ? 'Unlike' : 'Like'; ?></span>
                     </button>
                 </form>
+            </div>
+            <p class="form-message" data-check-in-feedback hidden></p>
+            <div class="level-summary-card business-level-summary">
+                <div>
+                    <strong>Level <?php echo escape_output($user_progress['level']); ?> - <?php echo escape_output($user_progress['title']); ?></strong>
+                    <?php if ($user_progress['max_level']) : ?>
+                        <span>Max Level Reached</span>
+                    <?php else : ?>
+                        <span><?php echo escape_output($user_progress['total_xp']); ?> / <?php echo escape_output($user_progress['next_level_xp']); ?> XP toward Level <?php echo escape_output($user_progress['level'] + 1); ?></span>
+                    <?php endif; ?>
+                </div>
+                <div class="level-progress-bar" aria-hidden="true">
+                    <span style="width: <?php echo escape_output($user_progress['progress_percent']); ?>%;"></span>
+                </div>
             </div>
         </section>
 
@@ -472,6 +506,7 @@ function format_event_time_range($event) {
 
                 <label for="notes">Review</label>
                 <textarea id="notes" name="notes" rows="5"></textarea>
+                <p class="form-help">Reviews earn 25 XP after you have checked in at this location.</p>
 
                 <label for="review_photos">Photos</label>
                 <input type="file" id="review_photos" name="review_photos[]" accept="image/jpeg,image/png,image/webp" multiple>
@@ -551,6 +586,7 @@ function format_event_time_range($event) {
 </script>
 <script src="js/business_details_map.js"></script>
 <script src="js/directions_links.js"></script>
+<script src="js/check_in.js"></script>
 <script src="js/business_gallery.js"></script>
 <script src="js/review_photos.js"></script>
 <script src="js/mobile_actions_menu.js"></script>

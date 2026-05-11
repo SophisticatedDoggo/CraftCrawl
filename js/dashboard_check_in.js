@@ -1,0 +1,174 @@
+(function () {
+    const widget = document.querySelector('[data-dashboard-checkin]');
+
+    if (!widget) {
+        return;
+    }
+
+    const findButton = widget.querySelector('[data-find-checkins]');
+    const list = widget.querySelector('[data-checkin-list]');
+    const feedback = widget.querySelector('[data-checkin-status]');
+    const csrfToken = widget.dataset.csrfToken || '';
+    let currentPosition = null;
+
+    function showStatus(message, isError) {
+        feedback.textContent = message;
+        feedback.classList.toggle('form-message-error', isError);
+        feedback.classList.toggle('form-message-success', !isError);
+        feedback.hidden = false;
+    }
+
+    function formatBusinessType(type) {
+        const labels = {
+            brewery: 'Brewery',
+            winery: 'Winery',
+            cidery: 'Cidery',
+            distillery: 'Distillery',
+            distilery: 'Distillery',
+            meadery: 'Meadery'
+        };
+
+        return labels[type] || 'Business';
+    }
+
+    function formatDistance(meters) {
+        if (meters < 160) {
+            return `${meters} m`;
+        }
+
+        return `${(meters / 1609.344).toFixed(2)} mi`;
+    }
+
+    function postForm(url, values) {
+        const formData = new FormData();
+
+        Object.keys(values).forEach((key) => {
+            formData.append(key, values[key]);
+        });
+
+        return fetch(url, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        }).then((response) => response.json());
+    }
+
+    function renderLocations(locations) {
+        list.innerHTML = '';
+
+        if (!locations.length) {
+            list.hidden = true;
+            showStatus('No check-in locations found nearby. Move closer to a listed location and try again.', true);
+            return;
+        }
+
+        locations.forEach((location) => {
+            const item = document.createElement('article');
+            const details = document.createElement('div');
+            const title = document.createElement('strong');
+            const meta = document.createElement('span');
+            const action = document.createElement('button');
+
+            item.className = 'dashboard-checkin-item';
+            title.textContent = location.name;
+
+            const visitText = location.visit_type === 'first_time'
+                ? `First-time check-in · +${location.xp_awarded} XP`
+                : (location.eligible ? `Repeat check-in · +${location.xp_awarded} XP` : `Repeat XP available ${location.eligible_at}`);
+
+            meta.textContent = `${formatBusinessType(location.type)} · ${location.city}, ${location.state} · ${formatDistance(location.distance_meters)} · ${visitText}`;
+            action.type = 'button';
+            action.textContent = location.eligible ? 'Check In' : 'On Cooldown';
+            action.disabled = !location.eligible;
+
+            action.addEventListener('click', () => {
+                action.disabled = true;
+                action.textContent = 'Checking in...';
+
+                postForm('../check_in.php', {
+                    csrf_token: csrfToken,
+                    business_id: location.id,
+                    latitude: currentPosition.latitude,
+                    longitude: currentPosition.longitude
+                })
+                    .then((data) => {
+                        if (!data.ok) {
+                            showStatus(data.message || 'Check-in failed.', true);
+                            action.disabled = false;
+                            action.textContent = 'Check In';
+                            return;
+                        }
+
+                        const badgeText = data.badges && data.badges.length
+                            ? ` Badges earned: ${data.badges.join(', ')}.`
+                            : '';
+                        const levelText = data.progress
+                            ? ` Level ${data.progress.level} - ${data.progress.title}.`
+                            : '';
+
+                        showStatus(`${data.message} +${data.xp_awarded} XP.${levelText}${badgeText}`, false);
+                        action.textContent = 'Checked In';
+                    })
+                    .catch(() => {
+                        showStatus('Check-in failed. Please try again.', true);
+                        action.disabled = false;
+                        action.textContent = 'Check In';
+                    });
+            });
+
+            details.append(title, meta);
+            item.append(details, action);
+            list.appendChild(item);
+        });
+
+        list.hidden = false;
+    }
+
+    findButton.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+            showStatus('Your browser does not support location check-ins.', true);
+            return;
+        }
+
+        findButton.disabled = true;
+        findButton.textContent = 'Finding nearby...';
+        list.hidden = true;
+
+        navigator.geolocation.getCurrentPosition((position) => {
+            currentPosition = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            };
+
+            postForm('../nearby_checkins.php', {
+                csrf_token: csrfToken,
+                latitude: currentPosition.latitude,
+                longitude: currentPosition.longitude
+            })
+                .then((data) => {
+                    if (!data.ok) {
+                        showStatus(data.message || 'Could not find nearby check-ins.', true);
+                        return;
+                    }
+
+                    showStatus(`Found ${data.locations.length} nearby check-in location${data.locations.length === 1 ? '' : 's'}.`, false);
+                    renderLocations(data.locations);
+                })
+                .catch(() => {
+                    showStatus('Could not find nearby check-ins. Please try again.', true);
+                })
+                .finally(() => {
+                    findButton.disabled = false;
+                    findButton.textContent = 'Find Nearby Check-ins';
+                });
+        }, () => {
+            showStatus('Location permission is required to find nearby check-ins.', true);
+            findButton.disabled = false;
+            findButton.textContent = 'Find Nearby Check-ins';
+        }, {
+            enableHighAccuracy: true,
+            timeout: 12000,
+            maximumAge: 0
+        });
+    });
+}());

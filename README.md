@@ -53,6 +53,17 @@ development, then fill in your real values:
 
 Rotate any credentials that were previously committed before deploying publicly.
 
+## Leveling and badges
+
+Run the leveling migration before using check-ins, XP, levels, and badges:
+
+```sh
+mysql -u craft_crawl -p craft_crawl < migrations/2026_05_10_leveling_system.sql
+```
+
+Check-ins use browser GPS and server-side distance checks. Review XP is only
+awarded after a user has checked in at that location.
+
 ## Admin accounts
 
 Run the SQL migration before using admin features:

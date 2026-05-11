@@ -550,6 +550,106 @@ label {
     white-space: nowrap;
 }
 
+.portal-level-summary {
+    position: relative;
+    display: grid;
+    gap: 8px;
+    min-width: 220px;
+    padding: 14px 16px 13px;
+    border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
+    border-radius: var(--radius-md);
+    background:
+        var(--glass-surface),
+        var(--color-surface);
+    box-shadow: var(--glass-shadow);
+    overflow: hidden;
+}
+
+.portal-level-summary::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 4px;
+    background: var(--brand-underline);
+}
+
+.portal-level-summary strong,
+.portal-level-summary span,
+.portal-level-summary p {
+    display: block;
+    margin: 0;
+}
+
+.portal-level-summary strong {
+    font-size: 1.35rem;
+    line-height: 1;
+}
+
+.portal-level-summary span,
+.portal-level-summary p {
+    color: var(--color-muted);
+    font-size: 13px;
+}
+
+.portal-level-summary span {
+    font-weight: 650;
+}
+
+.level-summary-card {
+    display: grid;
+    gap: 10px;
+}
+
+.level-summary-card strong {
+    display: block;
+}
+
+.level-summary-card span {
+    color: var(--color-muted);
+}
+
+.level-progress-bar {
+    height: 10px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-surface-muted) 72%, var(--color-surface));
+}
+
+.level-progress-bar span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--brand-underline);
+}
+
+.business-level-summary {
+    margin-top: 14px;
+}
+
+.badge-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.badge-card {
+    display: grid;
+    gap: 4px;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-muted);
+}
+
+.badge-card span,
+.badge-card small {
+    color: var(--color-muted);
+}
+
 .palette-switcher {
     display: flex;
     gap: 6px;
@@ -631,6 +731,62 @@ label {
 }
 
 .business-search-results span {
+    color: var(--color-muted);
+    font-size: 14px;
+}
+
+.dashboard-checkin-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px 16px;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 16px;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
+    border-radius: var(--radius-md);
+    background:
+        var(--glass-surface),
+        var(--color-surface);
+    box-shadow: var(--glass-shadow);
+}
+
+.dashboard-checkin-panel h2,
+.dashboard-checkin-panel p {
+    margin: 0;
+}
+
+.dashboard-checkin-panel h2 {
+    font-size: 1.2rem;
+}
+
+.dashboard-checkin-panel > .form-message,
+.dashboard-checkin-list {
+    grid-column: 1 / -1;
+}
+
+.dashboard-checkin-list {
+    display: grid;
+    gap: 10px;
+}
+
+.dashboard-checkin-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-muted);
+}
+
+.dashboard-checkin-item strong,
+.dashboard-checkin-item span {
+    display: block;
+}
+
+.dashboard-checkin-item span {
     color: var(--color-muted);
     font-size: 14px;
 }
@@ -1165,10 +1321,14 @@ label {
 
 .settings-panel {
     padding: 20px;
-    border: 1px solid var(--color-border);
+    border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
     border-radius: var(--radius-md);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
+    background:
+        var(--glass-surface),
+        var(--color-surface);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(14px) saturate(1.08);
+    -webkit-backdrop-filter: blur(14px) saturate(1.08);
 }
 
 .settings-panel h2 {
@@ -2191,8 +2351,31 @@ a.event-calendar-event {
 
     .portal-header {
         display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        justify-items: stretch;
         align-items: start;
+        padding-right: 0;
+    }
+
+    .portal-header > div:first-child {
         padding-right: 56px;
+    }
+
+    .portal-header .business-search,
+    .portal-header .business-search input,
+    .portal-header .portal-level-summary {
+        width: 100%;
+        max-width: none;
+    }
+
+    .portal-header .business-search,
+    .portal-header .portal-level-summary {
+        min-width: 0;
+        justify-self: stretch;
+    }
+
+    .portal-header .business-search {
+        flex: none;
     }
 
     .portal-header .site-logo {
@@ -2428,6 +2611,16 @@ a.event-calendar-event {
     .portal-tab {
         flex: 1 0 auto;
         min-width: 104px;
+    }
+
+    .dashboard-checkin-panel,
+    .dashboard-checkin-item {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-checkin-panel > button,
+    .dashboard-checkin-item button {
+        width: 100%;
     }
 
     #map {
