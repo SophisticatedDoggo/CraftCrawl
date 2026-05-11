@@ -3,9 +3,11 @@ require_once __DIR__ . '/../lib/admin_auth.php';
 craftcrawl_require_admin();
 include '../db.php';
 include '../config.php';
+require_once '../lib/business_hours.php';
 
 $business_id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT);
 $message = null;
+$business_hours = craftcrawl_default_business_hours();
 
 if (!$business_id) {
     header('Location: dashboard.php');
@@ -20,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $business_type = craftcrawl_admin_clean_text($_POST['business_type'] ?? '');
     $about = craftcrawl_admin_clean_text($_POST['about'] ?? '');
     $hours = craftcrawl_admin_clean_text($_POST['hours'] ?? '');
+    $business_hours = craftcrawl_business_hours_from_post($_POST);
     $phone = craftcrawl_admin_clean_text($_POST['phone'] ?? '');
     $website = filter_var(trim($_POST['website'] ?? ''), FILTER_SANITIZE_URL);
     $street_address = craftcrawl_admin_clean_text($_POST['address_address-search'] ?? $_POST['address'] ?? '');
@@ -31,20 +34,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $longitude = filter_var($_POST['longitude'] ?? null, FILTER_VALIDATE_FLOAT);
     $approved = isset($_POST['approved']) ? 1 : 0;
 
+    $hours_message = craftcrawl_validate_business_hours($business_hours);
+
     if ($business_name === '' || !filter_var($business_email, FILTER_VALIDATE_EMAIL) || $business_type === '' || $street_address === '' || $city === '' || $state === '' || $zip === '' || $latitude === false || $longitude === false) {
         $message = 'Please complete the required business fields.';
+    } elseif ($hours_message) {
+        $message = $hours_message;
     } else {
-        $stmt = $conn->prepare("
-            UPDATE businesses
-            SET bName=?, bEmail=?, bType=?, bAbout=?, bHours=?, bPhone=?, bWebsite=?, street_address=?, apt_suite=?, city=?, state=?, zip=?, latitude=?, longitude=?, approved=?
-            WHERE id=?
-        ");
-        $stmt->bind_param("ssssssssssssddii", $business_name, $business_email, $business_type, $about, $hours, $phone, $website, $street_address, $apt_suite, $city, $state, $zip, $latitude, $longitude, $approved, $business_id);
-        $stmt->execute();
+        $conn->begin_transaction();
 
-        if ($stmt->errno) {
+        try {
+            $stmt = $conn->prepare("
+                UPDATE businesses
+                SET bName=?, bEmail=?, bType=?, bAbout=?, bHours=?, bPhone=?, bWebsite=?, street_address=?, apt_suite=?, city=?, state=?, zip=?, latitude=?, longitude=?, approved=?
+                WHERE id=?
+            ");
+            $stmt->bind_param("ssssssssssssddii", $business_name, $business_email, $business_type, $about, $hours, $phone, $website, $street_address, $apt_suite, $city, $state, $zip, $latitude, $longitude, $approved, $business_id);
+            $stmt->execute();
+
+            if ($stmt->errno) {
+                throw new RuntimeException($stmt->error);
+            }
+
+            craftcrawl_save_business_hours($conn, $business_id, $business_hours);
+            $conn->commit();
+        } catch (Throwable $error) {
+            $conn->rollback();
+            error_log('Admin business save failed: ' . $error->getMessage());
             $message = 'Business could not be saved. Check for a duplicate email address.';
-        } else {
+        }
+
+        if (!$message) {
             header('Location: dashboard.php?message=business_saved');
             exit();
         }
@@ -59,6 +79,10 @@ $business = $stmt->get_result()->fetch_assoc();
 if (!$business) {
     header('Location: dashboard.php');
     exit();
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $business_hours = craftcrawl_business_hours_for_form($conn, $business_id);
 }
 ?>
 <!DOCTYPE html>
@@ -129,8 +153,30 @@ if (!$business) {
                 <label for="about">About</label>
                 <textarea id="about" name="about" rows="6"><?php echo craftcrawl_admin_escape($business['bAbout'] ?? ''); ?></textarea>
 
-                <label for="hours">Hours</label>
-                <textarea id="hours" name="hours" rows="4"><?php echo craftcrawl_admin_escape($business['bHours'] ?? ''); ?></textarea>
+                <fieldset class="business-hours-editor">
+                    <legend>Business Hours</legend>
+                    <p class="form-help">Required for visit XP eligibility. Mark closed days or enter opening and closing times.</p>
+                    <?php foreach ($business_hours as $day => $hour) : ?>
+                        <div class="business-hours-row">
+                            <span><?php echo craftcrawl_admin_escape($hour['day_label']); ?></span>
+                            <label>
+                                <input type="checkbox" name="hours_closed[<?php echo craftcrawl_admin_escape($day); ?>]" value="1" <?php echo $hour['is_closed'] ? 'checked' : ''; ?>>
+                                Closed
+                            </label>
+                            <label>
+                                Opens
+                                <input type="time" name="hours_open[<?php echo craftcrawl_admin_escape($day); ?>]" value="<?php echo craftcrawl_admin_escape($hour['opens_at']); ?>">
+                            </label>
+                            <label>
+                                Closes
+                                <input type="time" name="hours_close[<?php echo craftcrawl_admin_escape($day); ?>]" value="<?php echo craftcrawl_admin_escape($hour['closes_at']); ?>">
+                            </label>
+                        </div>
+                    <?php endforeach; ?>
+                </fieldset>
+
+                <label for="hours">Hours Note</label>
+                <textarea id="hours" name="hours" rows="3" placeholder="Optional note, such as seasonal exceptions"><?php echo craftcrawl_admin_escape($business['bHours'] ?? ''); ?></textarea>
 
                 <label for="phone">Phone</label>
                 <input type="tel" id="phone" name="phone" value="<?php echo craftcrawl_admin_escape($business['bPhone']); ?>">

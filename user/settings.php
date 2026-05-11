@@ -180,8 +180,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <section class="settings-panel">
             <h2>Disable Account</h2>
-            <p class="form-help">Disabling your account will prevent you from logging in. This does not delete your reviews.</p>
-            <form method="POST" action="" class="settings-form" onsubmit="return confirm('Are you sure? Disabling your account will prevent you from logging in.');">
+            <p class="form-help">Disabling your account will immediately sign you out, prevent future logins, revoke remembered sessions, and invalidate active password reset links. Your reviews, visits, XP, badges, likes, and uploaded content are not deleted automatically and may remain visible unless removed separately.</p>
+            <form method="POST" action="" class="settings-form" onsubmit="return confirm('Disable this account? You will be signed out immediately, future logins will be blocked, remembered sessions and password reset links will be revoked, and existing activity or content will not be deleted automatically.');">
                 <?php echo craftcrawl_csrf_input(); ?>
                 <input type="hidden" name="form_action" value="disable_account">
                 <label for="disable_password">Password</label>

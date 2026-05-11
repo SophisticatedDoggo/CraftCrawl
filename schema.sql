@@ -64,6 +64,19 @@ CREATE TABLE IF NOT EXISTS businesses (
     UNIQUE KEY unique_business_email (bEmail)
 );
 
+CREATE TABLE IF NOT EXISTS business_hours (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    business_id INT NOT NULL,
+    day_of_week TINYINT NOT NULL,
+    opens_at TIME,
+    closes_at TIME,
+    is_closed BOOL NOT NULL DEFAULT FALSE,
+    UNIQUE KEY unique_business_hours_day (business_id, day_of_week),
+    KEY idx_business_hours_business_id (business_id),
+    CONSTRAINT fk_business_hours_businessId FOREIGN KEY (business_id)
+    REFERENCES businesses(id)
+);
+
 CREATE TABLE IF NOT EXISTS email_verification_tokens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     account_type ENUM('user', 'business') NOT NULL,

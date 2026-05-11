@@ -44,6 +44,7 @@ function render_star_rating($rating, $label = '') {
 
 require_once '../config.php';
 require_once '../lib/cloudinary_upload.php';
+require_once '../lib/business_hours.php';
 
 $business_id = (int) $_SESSION['business_id'];
 
@@ -175,6 +176,11 @@ if (!$business) {
     craftcrawl_redirect('business_login.php');
 }
 
+$business_hours = craftcrawl_business_hours_for_form($conn, $business_id);
+$business_hours_text = craftcrawl_business_hours_have_saved_hours($business_hours)
+    ? craftcrawl_format_business_hours($business_hours)
+    : '';
+
 $rating_stmt = $conn->prepare("SELECT AVG(rating) AS average_rating, COUNT(*) AS review_count FROM reviews WHERE business_id=?");
 $rating_stmt->bind_param("i", $business_id);
 $rating_stmt->execute();
@@ -288,10 +294,15 @@ $business_photos = $photo_stmt->get_result();
                             No user reviews yet
                         <?php endif; ?>
                     </p>
-                    <?php if (!empty($business['bHours'])) : ?>
+                    <?php if ($business_hours_text !== '' || !empty($business['bHours'])) : ?>
                         <div class="business-hours">
                             <strong>Hours</strong>
-                            <p><?php echo nl2br(escape_output($business['bHours'])); ?></p>
+                            <?php if ($business_hours_text !== '') : ?>
+                                <p><?php echo nl2br(escape_output($business_hours_text)); ?></p>
+                            <?php endif; ?>
+                            <?php if (!empty($business['bHours'])) : ?>
+                                <p><?php echo nl2br(escape_output($business['bHours'])); ?></p>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
                     <?php if (!empty($business['bPhone'])) : ?>

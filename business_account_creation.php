@@ -5,6 +5,7 @@ include 'db.php';
 include 'config.php';
 require_once 'lib/hcaptcha.php';
 require_once 'lib/email_verification.php';
+require_once 'lib/business_hours.php';
 
 $message = null;
 $success = false;
@@ -13,6 +14,7 @@ $business_name = "";
 $phone = "";
 $website = "";
 $hours = "";
+$business_hours = craftcrawl_default_business_hours();
 
 function clean_text($value) {
     return trim(strip_tags($value ?? ''));
@@ -29,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $phone = clean_text($_POST['phone'] ?? '');
     $website = filter_var(trim($_POST['website'] ?? ''), FILTER_SANITIZE_URL);
     $hours = clean_text($_POST['hours'] ?? '');
+    $business_hours = craftcrawl_business_hours_from_post($_POST);
     $password = (string) ($_POST['password'] ?? '');
     $verify_password = (string) ($_POST['verify_password'] ?? '');
     $captcha_token = $_POST['h-captcha-response'] ?? '';
@@ -48,8 +51,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $captcha_valid = false;
     }
 
+    $hours_message = craftcrawl_validate_business_hours($business_hours);
+
     if (!$captcha_valid) {
         $message = "Please complete the hCaptcha challenge.";
+    } elseif ($hours_message) {
+        $message = $hours_message;
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $message = "Please enter a valid email address.";
     } else {
@@ -92,15 +99,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
             if (!isset($message)) {
-                $stmt = $conn->prepare("INSERT INTO businesses (bName, bEmail, bType, bPhone, bWebsite, bHours, password_hash, street_address, apt_suite, city, state, zip, latitude, longitude, createdAt, emailVerifiedAt, approved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)");
-                $stmt->bind_param("ssssssssssssddsi", $business_name, $email, $type, $phone, $website, $hours, $hash, $address, $apt_suite, $city, $state, $zip, $latitude, $longitude, $date, $approved);
-                $stmt->execute();
-                $business_id = $stmt->insert_id;
-                $email_sent = craftcrawl_issue_email_verification($conn, 'business', $business_id, $email);
-                $message = $email_sent
-                    ? "Account created. Please check your email to verify your address before logging in."
-                    : "Account created, but the verification email could not be sent. Please contact support.";
-                $success = true;
+                $conn->begin_transaction();
+
+                try {
+                    $stmt = $conn->prepare("INSERT INTO businesses (bName, bEmail, bType, bPhone, bWebsite, bHours, password_hash, street_address, apt_suite, city, state, zip, latitude, longitude, createdAt, emailVerifiedAt, approved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)");
+                    $stmt->bind_param("ssssssssssssddsi", $business_name, $email, $type, $phone, $website, $hours, $hash, $address, $apt_suite, $city, $state, $zip, $latitude, $longitude, $date, $approved);
+                    $stmt->execute();
+                    $business_id = $stmt->insert_id;
+                    craftcrawl_save_business_hours($conn, $business_id, $business_hours);
+                    $conn->commit();
+
+                    $email_sent = craftcrawl_issue_email_verification($conn, 'business', $business_id, $email);
+                    $message = $email_sent
+                        ? "Account created. Please check your email to verify your address before logging in."
+                        : "Account created, but the verification email could not be sent. Please contact support.";
+                    $success = true;
+                } catch (Throwable $error) {
+                    $conn->rollback();
+                    error_log('Business account creation failed: ' . $error->getMessage());
+                    $message = "Account could not be created. Please try again.";
+                }
             }
         } else {
             $message = "An account already exists with that Email";
@@ -149,9 +167,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="tel" id="phone" name="phone" placeholder="Optional" value="<?php echo escape_output($phone) ?>"><br><br>
             <label for="website">Business Website:</label>
             <input type="url" id="website" name="website" placeholder="Optional" value="<?php echo escape_output($website) ?>"><br><br>
-            <label for="hours">Business Hours:</label>
-            <textarea id="hours" name="hours" rows="4" placeholder="Optional"><?php echo escape_output($hours) ?></textarea>
-            <p class="form-help">Optional. Example: Mon-Thu 4-10 PM, Fri-Sat 12-11 PM, Sun 12-8 PM.</p>
+            <fieldset class="business-hours-editor">
+                <legend>Business Hours</legend>
+                <p class="form-help">Required for visit XP eligibility. Mark closed days or enter opening and closing times.</p>
+                <?php foreach ($business_hours as $day => $hour) : ?>
+                    <div class="business-hours-row">
+                        <span><?php echo escape_output($hour['day_label']); ?></span>
+                        <label>
+                            <input type="checkbox" name="hours_closed[<?php echo escape_output($day); ?>]" value="1" <?php echo $hour['is_closed'] ? 'checked' : ''; ?>>
+                            Closed
+                        </label>
+                        <label>
+                            Opens
+                            <input type="time" name="hours_open[<?php echo escape_output($day); ?>]" value="<?php echo escape_output($hour['opens_at']); ?>">
+                        </label>
+                        <label>
+                            Closes
+                            <input type="time" name="hours_close[<?php echo escape_output($day); ?>]" value="<?php echo escape_output($hour['closes_at']); ?>">
+                        </label>
+                    </div>
+                <?php endforeach; ?>
+            </fieldset>
+
+            <label for="hours">Hours Note:</label>
+            <textarea id="hours" name="hours" rows="3" placeholder="Optional note, such as seasonal exceptions"><?php echo escape_output($hours) ?></textarea>
 
             <h3>Business Address</h3>
             <input id="street_address" name="address" autocomplete="address-line1" placeholder="Address" required>

@@ -2,6 +2,7 @@
 require 'login_check.php';
 include 'db.php';
 require_once 'lib/leveling.php';
+require_once 'lib/business_hours.php';
 
 header('Content-Type: application/json');
 
@@ -61,13 +62,20 @@ while ($business = $businesses->fetch_assoc()) {
     $visit_count = (int) ($visit_info['visit_count'] ?? 0);
     $last_xp_checkin = $visit_info['last_xp_checkin'] ?? null;
     $visit_type = $visit_count > 0 ? 'repeat' : 'first_time';
-    $eligible = true;
+    $is_open = craftcrawl_business_is_open_now($conn, (int) $business['id']);
+    $eligible = $is_open;
     $eligible_at = null;
+    $unavailable_reason = $is_open ? null : 'Currently closed';
     $xp_awarded = $visit_type === 'first_time' ? CRAFTCRAWL_XP_FIRST_TIME_VISIT : CRAFTCRAWL_XP_REPEAT_VISIT;
 
     if ($visit_type === 'repeat' && $last_xp_checkin && strtotime($last_xp_checkin) > strtotime('-' . CRAFTCRAWL_REPEAT_VISIT_COOLDOWN_DAYS . ' days')) {
         $eligible = false;
         $eligible_at = date('M j, Y', strtotime($last_xp_checkin . ' +' . CRAFTCRAWL_REPEAT_VISIT_COOLDOWN_DAYS . ' days'));
+        $unavailable_reason = $is_open ? 'Repeat XP available ' . $eligible_at : $unavailable_reason;
+        $xp_awarded = 0;
+    }
+
+    if (!$is_open) {
         $xp_awarded = 0;
     }
 
@@ -81,6 +89,8 @@ while ($business = $businesses->fetch_assoc()) {
         'visit_type' => $visit_type,
         'eligible' => $eligible,
         'eligible_at' => $eligible_at,
+        'is_open' => $is_open,
+        'unavailable_reason' => $unavailable_reason,
         'xp_awarded' => $xp_awarded
     ];
 }

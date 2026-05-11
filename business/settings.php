@@ -159,8 +159,8 @@ $business = $stmt->get_result()->fetch_assoc();
 
         <section class="settings-panel">
             <h2>Disable Account</h2>
-            <p class="form-help">Disabling your account will prevent you from logging in and remove access to your business portal.</p>
-            <form method="POST" action="" class="settings-form" onsubmit="return confirm('Are you sure? Disabling your account will prevent you from logging in.');">
+            <p class="form-help">Disabling your account will immediately sign you out, prevent future logins, revoke remembered sessions, invalidate active password reset links, and remove access to the business portal. Your business profile, events, photos, reviews, and public content are not deleted automatically and may remain visible unless removed or unapproved separately.</p>
+            <form method="POST" action="" class="settings-form" onsubmit="return confirm('Disable this business account? You will be signed out immediately, future logins will be blocked, remembered sessions and password reset links will be revoked, and existing public business content will not be deleted automatically.');">
                 <?php echo craftcrawl_csrf_input(); ?>
                 <input type="hidden" name="form_action" value="disable_account">
                 <label for="disable_password">Password</label>

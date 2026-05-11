@@ -39,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $captcha_valid = craftcrawl_hcaptcha_verify($captcha_token, $_SERVER['REMOTE_ADDR'] ?? null);
     } catch (Throwable $error) {
+        error_log('Business login hCaptcha verification error: ' . $error->getMessage());
         $captcha_valid = false;
     }
 
@@ -95,6 +96,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: business/business_portal.php");
             exit();
         } else {
+            error_log(sprintf(
+                'Business login credential failure: email=%s email_found=%s password_empty=%s remember_me=%s captcha_token_length=%d',
+                $email,
+                $business ? 'yes' : 'no',
+                $password === '' ? 'yes' : 'no',
+                $remember_me ? 'yes' : 'no',
+                strlen($captcha_token)
+            ));
             $_SESSION['business_login_feedback'] = [
                 'login_error' => true,
                 'email' => $email
@@ -120,12 +129,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="auth-card">
         <img class="site-logo auth-logo" src="images/Logo.webp" alt="CraftCrawl logo">
         <h1>Business Login</h1>
-        <form action="" method="POST">
+        <form id="business_login_form" action="" method="POST">
             <?php echo craftcrawl_csrf_input(); ?>
             <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required value="<?php echo escape_output($email) ?>"><br><br>
+            <input type="email" id="email" name="email" autocomplete="username" required value="<?php echo escape_output($email) ?>"><br><br>
             <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required><br><br>
+            <input type="password" id="password" name="password" autocomplete="current-password" required><br><br>
             <label class="remember-login-toggle">
                 <input type="checkbox" name="remember_me" value="1">
                 Stay signed in

@@ -74,6 +74,7 @@ function add_recurring_event_occurrences(&$events, $event, $start_date, $end_dat
 require_once 'config.php';
 require_once 'lib/cloudinary_upload.php';
 require_once 'lib/leveling.php';
+require_once 'lib/business_hours.php';
 
 if (!$business_id) {
     header('Location: user/portal.php');
@@ -90,6 +91,11 @@ if (!$business) {
     header('Location: user/portal.php');
     exit();
 }
+
+$business_hours = craftcrawl_business_hours_for_form($conn, $business_id);
+$business_hours_text = craftcrawl_business_hours_have_saved_hours($business_hours)
+    ? craftcrawl_format_business_hours($business_hours)
+    : '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
@@ -354,10 +360,15 @@ function format_event_time_range($event) {
                 <p><?php echo escape_output($business['bPhone']); ?></p>
             <?php endif; ?>
 
-            <?php if (!empty($business['bHours'])) : ?>
+            <?php if ($business_hours_text !== '' || !empty($business['bHours'])) : ?>
                 <div class="business-hours">
                     <strong>Hours</strong>
-                    <p><?php echo nl2br(escape_output($business['bHours'])); ?></p>
+                    <?php if ($business_hours_text !== '') : ?>
+                        <p><?php echo nl2br(escape_output($business_hours_text)); ?></p>
+                    <?php endif; ?>
+                    <?php if (!empty($business['bHours'])) : ?>
+                        <p><?php echo nl2br(escape_output($business['bHours'])); ?></p>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
 

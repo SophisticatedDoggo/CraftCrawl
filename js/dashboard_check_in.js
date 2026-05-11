@@ -74,11 +74,11 @@
 
             const visitText = location.visit_type === 'first_time'
                 ? `First-time check-in · +${location.xp_awarded} XP`
-                : (location.eligible ? `Repeat check-in · +${location.xp_awarded} XP` : `Repeat XP available ${location.eligible_at}`);
+                : `Repeat check-in · +${location.xp_awarded} XP`;
 
-            meta.textContent = `${formatBusinessType(location.type)} · ${location.city}, ${location.state} · ${formatDistance(location.distance_meters)} · ${visitText}`;
+            meta.textContent = `${formatBusinessType(location.type)} · ${location.city}, ${location.state} · ${formatDistance(location.distance_meters)} · ${location.eligible ? visitText : location.unavailable_reason}`;
             action.type = 'button';
-            action.textContent = location.eligible ? 'Check In' : 'On Cooldown';
+            action.textContent = location.eligible ? 'Check In' : (location.is_open ? 'On Cooldown' : 'Closed');
             action.disabled = !location.eligible;
 
             action.addEventListener('click', () => {

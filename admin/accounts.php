@@ -267,7 +267,7 @@ foreach ($account_queries as $type => $sql) {
                             </form>
                         <?php endif; ?>
                         <?php if (empty($account['disabledAt']) && !($account['account_type'] === 'admin' && (int) $account['id'] === $current_admin_id)) : ?>
-                            <form method="POST" action="" onsubmit="return confirm('Are you sure? Disabling this account will prevent it from logging in.');">
+                            <form method="POST" action="" onsubmit="return confirm('Disable this account? It will be blocked from future logins. Existing remembered sessions and active password reset links may be revoked by account-specific disable flows, but existing content is not deleted automatically.');">
                                 <?php echo craftcrawl_csrf_input(); ?>
                                 <input type="hidden" name="form_action" value="disable_account">
                                 <input type="hidden" name="account_type" value="<?php echo craftcrawl_admin_escape($account['account_type']); ?>">

@@ -2,6 +2,7 @@
 require 'login_check.php';
 include 'db.php';
 require_once 'lib/leveling.php';
+require_once 'lib/business_hours.php';
 
 header('Content-Type: application/json');
 
@@ -53,6 +54,14 @@ if ($distance_meters > CRAFTCRAWL_CHECKIN_RADIUS_METERS) {
         'ok' => false,
         'message' => 'You need to be closer to this location to check in.',
         'distance_meters' => round($distance_meters)
+    ]);
+    exit();
+}
+
+if (!craftcrawl_business_is_open_now($conn, $business_id)) {
+    echo json_encode([
+        'ok' => false,
+        'message' => 'Visit XP is only available while this business is open.'
     ]);
     exit();
 }

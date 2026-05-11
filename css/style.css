@@ -1337,6 +1337,41 @@ label {
     font-size: 14px;
 }
 
+.business-hours-editor {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+}
+
+.business-hours-editor legend {
+    padding: 0 6px;
+    font-weight: 700;
+}
+
+.business-hours-row {
+    display: grid;
+    grid-template-columns: minmax(90px, 1fr) minmax(86px, auto) minmax(120px, 150px) minmax(120px, 150px);
+    gap: 10px;
+    align-items: center;
+}
+
+.business-hours-row > span {
+    font-weight: 700;
+}
+
+.business-hours-row label {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin: 0;
+}
+
+.business-hours-row input[type="checkbox"] {
+    width: auto;
+}
+
 .captcha-field {
     margin: 0 0 16px;
 }
@@ -2388,6 +2423,14 @@ a.event-calendar-event {
     .business-form-row,
     .business-form-row-address {
         grid-template-columns: 1fr;
+    }
+
+    .business-hours-row {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .business-hours-row > span {
+        grid-column: 1 / -1;
     }
 
     .portal-body {
