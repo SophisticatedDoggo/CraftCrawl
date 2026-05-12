@@ -2,9 +2,9 @@
 require_once __DIR__ . '/lib/env.php';
 
 $db_host = getenv('CRAFTCRAWL_DB_HOST') ?: 'localhost';
-$db_user = getenv('CRAFTCRAWL_DB_USER') ?: 'craft_crawl';
+$db_user = getenv('CRAFTCRAWL_DB_USER') ?: '';
 $db_password = getenv('CRAFTCRAWL_DB_PASSWORD') ?: '';
-$db_name = getenv('CRAFTCRAWL_DB_NAME') ?: 'craft_crawl';
+$db_name = getenv('CRAFTCRAWL_DB_NAME') ?: '';
 
 mysqli_report(MYSQLI_REPORT_OFF);
 $conn = @new mysqli($db_host, $db_user, $db_password, $db_name);
