@@ -69,13 +69,40 @@ jobs:
             } >> "$GITHUB_ENV"
           fi
 
+      - name: Validate deployment variables
+        run: |
+          missing=0
+
+          for var_name in SSH_HOST SSH_USER DEPLOY_PATH SSH_KEY; do
+            if [ -z "${!var_name}" ]; then
+              echo "::error::$var_name is empty. Check the ${DEPLOY_TARGET} GitHub repository secret for this value."
+              missing=1
+            fi
+          done
+
+          if [ -z "$SSH_PORT" ]; then
+            echo "SSH_PORT=22" >> "$GITHUB_ENV"
+          fi
+
+          exit "$missing"
+
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/craftcrawl_deploy_key
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/craftcrawl_deploy_key
           chmod 600 ~/.ssh/craftcrawl_deploy_key
           ssh-keyscan -p "${SSH_PORT:-22}" "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Test SSH connection
+        run: |
+          ssh \
+            -i ~/.ssh/craftcrawl_deploy_key \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -p "${SSH_PORT:-22}" \
+            "$SSH_USER@$SSH_HOST" \
+            "test -d '$DEPLOY_PATH' && test -w '$DEPLOY_PATH'"
 
       - name: Deploy files with rsync
         run: |
@@ -91,5 +118,5 @@ jobs:
             --exclude 'data/' \
             --exclude 'files/' \
             --exclude 'scripts/' \
-            -e "ssh -i ~/.ssh/craftcrawl_deploy_key -p ${SSH_PORT:-22}" \
+            -e "ssh -i ~/.ssh/craftcrawl_deploy_key -o IdentitiesOnly=yes -o BatchMode=yes -p ${SSH_PORT:-22}" \
             ./ "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/"
