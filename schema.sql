@@ -1,5 +1,5 @@
---CREATE DATABASE IF NOT EXISTS craft_crawl;
---USE craft_crawl;
+-- CREATE DATABASE IF NOT EXISTS craft_crawl;
+-- USE craft_crawl;
 
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
