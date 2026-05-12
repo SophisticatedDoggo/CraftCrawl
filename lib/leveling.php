@@ -7,8 +7,39 @@ const CRAFTCRAWL_MAX_LEVEL = 100;
 const CRAFTCRAWL_REPEAT_VISIT_COOLDOWN_DAYS = 7;
 const CRAFTCRAWL_CHECKIN_RADIUS_METERS = 402;
 
+function craftcrawl_level_xp_required($level) {
+    $level = max(1, min(CRAFTCRAWL_MAX_LEVEL, (int) $level));
+    return $level >= CRAFTCRAWL_MAX_LEVEL ? 0 : $level * CRAFTCRAWL_XP_FIRST_TIME_VISIT;
+}
+
+function craftcrawl_level_state_from_total_xp($total_xp) {
+    $level = 1;
+    $level_xp = max(0, (int) $total_xp);
+
+    while ($level < CRAFTCRAWL_MAX_LEVEL) {
+        $required_xp = craftcrawl_level_xp_required($level);
+
+        if ($level_xp < $required_xp) {
+            break;
+        }
+
+        $level_xp -= $required_xp;
+        $level++;
+    }
+
+    if ($level >= CRAFTCRAWL_MAX_LEVEL) {
+        $level_xp = 0;
+    }
+
+    return [
+        'level' => $level,
+        'level_xp' => $level_xp
+    ];
+}
+
 function craftcrawl_level_from_xp($total_xp) {
-    return min(CRAFTCRAWL_MAX_LEVEL, (int) floor(max(0, (int) $total_xp) / 100) + 1);
+    $state = craftcrawl_level_state_from_total_xp($total_xp);
+    return $state['level'];
 }
 
 function craftcrawl_level_title($level) {
@@ -39,18 +70,26 @@ function craftcrawl_level_title($level) {
     return $titles[$index];
 }
 
-function craftcrawl_level_progress($total_xp) {
+function craftcrawl_level_progress($total_xp, $level = null, $level_xp = null) {
     $total_xp = max(0, (int) $total_xp);
-    $level = craftcrawl_level_from_xp($total_xp);
-    $level_floor_xp = ($level - 1) * 100;
+    if ($level === null || $level_xp === null) {
+        $state = craftcrawl_level_state_from_total_xp($total_xp);
+        $level = $state['level'];
+        $level_xp = $state['level_xp'];
+    }
+
+    $level = max(1, min(CRAFTCRAWL_MAX_LEVEL, (int) $level));
+    $level_xp = max(0, (int) $level_xp);
+    $next_level_xp = craftcrawl_level_xp_required($level);
 
     if ($level >= CRAFTCRAWL_MAX_LEVEL) {
         return [
             'total_xp' => $total_xp,
             'level' => CRAFTCRAWL_MAX_LEVEL,
             'title' => craftcrawl_level_title(CRAFTCRAWL_MAX_LEVEL),
-            'current_level_xp' => 9900,
-            'next_level_xp' => 9900,
+            'level_xp' => 0,
+            'current_level_xp' => 0,
+            'next_level_xp' => 0,
             'progress_percent' => 100,
             'max_level' => true
         ];
@@ -60,20 +99,25 @@ function craftcrawl_level_progress($total_xp) {
         'total_xp' => $total_xp,
         'level' => $level,
         'title' => craftcrawl_level_title($level),
-        'current_level_xp' => $level_floor_xp,
-        'next_level_xp' => $level * 100,
-        'progress_percent' => min(100, max(0, (($total_xp - $level_floor_xp) / 100) * 100)),
+        'level_xp' => $level_xp,
+        'current_level_xp' => $level_xp,
+        'next_level_xp' => $next_level_xp,
+        'progress_percent' => min(100, max(0, ($level_xp / $next_level_xp) * 100)),
         'max_level' => false
     ];
 }
 
 function craftcrawl_user_level_progress($conn, $user_id) {
-    $stmt = $conn->prepare("SELECT total_xp FROM users WHERE id=?");
+    $stmt = $conn->prepare("SELECT total_xp, level, level_xp FROM users WHERE id=?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $user = $stmt->get_result()->fetch_assoc();
 
-    return craftcrawl_level_progress((int) ($user['total_xp'] ?? 0));
+    return craftcrawl_level_progress(
+        (int) ($user['total_xp'] ?? 0),
+        (int) ($user['level'] ?? 1),
+        (int) ($user['level_xp'] ?? 0)
+    );
 }
 
 function craftcrawl_add_xp($conn, $user_id, $amount, $source_type, $source_id, $description = '') {
@@ -84,16 +128,48 @@ function craftcrawl_add_xp($conn, $user_id, $amount, $source_type, $source_id, $
         return false;
     }
 
-    $stmt = $conn->prepare("INSERT IGNORE INTO xp_log (user_id, amount, source_type, source_id, description, createdAt) VALUES (?, ?, ?, ?, ?, NOW())");
-    $stmt->bind_param("iisss", $user_id, $amount, $source_type, $source_id, $description);
+    $user_stmt = $conn->prepare("SELECT total_xp, level, level_xp FROM users WHERE id=? FOR UPDATE");
+    $user_stmt->bind_param("i", $user_id);
+    $user_stmt->execute();
+    $user = $user_stmt->get_result()->fetch_assoc();
+
+    if (!$user) {
+        return false;
+    }
+
+    $level_before = max(1, min(CRAFTCRAWL_MAX_LEVEL, (int) ($user['level'] ?? 1)));
+    $level_after = $level_before;
+    $level_xp_after = max(0, (int) ($user['level_xp'] ?? 0));
+
+    if ($level_after < CRAFTCRAWL_MAX_LEVEL) {
+        $level_xp_after += $amount;
+
+        while ($level_after < CRAFTCRAWL_MAX_LEVEL) {
+            $required_xp = craftcrawl_level_xp_required($level_after);
+
+            if ($level_xp_after < $required_xp) {
+                break;
+            }
+
+            $level_xp_after -= $required_xp;
+            $level_after++;
+        }
+    }
+
+    if ($level_after >= CRAFTCRAWL_MAX_LEVEL) {
+        $level_xp_after = 0;
+    }
+
+    $stmt = $conn->prepare("INSERT IGNORE INTO xp_log (user_id, amount, source_type, source_id, description, level_before, level_after, level_xp_after, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+    $stmt->bind_param("iisssiii", $user_id, $amount, $source_type, $source_id, $description, $level_before, $level_after, $level_xp_after);
     $stmt->execute();
 
     if ($stmt->affected_rows < 1) {
         return false;
     }
 
-    $update_stmt = $conn->prepare("UPDATE users SET total_xp = total_xp + ? WHERE id=?");
-    $update_stmt->bind_param("ii", $amount, $user_id);
+    $update_stmt = $conn->prepare("UPDATE users SET total_xp = total_xp + ?, level=?, level_xp=? WHERE id=?");
+    $update_stmt->bind_param("iiii", $amount, $level_after, $level_xp_after, $user_id);
     $update_stmt->execute();
 
     return true;

@@ -68,6 +68,7 @@ function craftcrawl_feed_item_is_visible($conn, $user_id, $item_key) {
             SELECT xl.id
             FROM xp_log xl
             WHERE xl.id=?
+                AND xl.level_after > xl.level_before
                 AND (
                     xl.user_id=?
                     OR EXISTS (

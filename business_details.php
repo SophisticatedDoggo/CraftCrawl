@@ -490,7 +490,7 @@ function format_event_time_range($event) {
                     <?php if ($user_progress['max_level']) : ?>
                         <span>Max Level Reached</span>
                     <?php else : ?>
-                        <span><?php echo escape_output($user_progress['total_xp']); ?> / <?php echo escape_output($user_progress['next_level_xp']); ?> XP toward Level <?php echo escape_output($user_progress['level'] + 1); ?></span>
+                        <span><?php echo escape_output($user_progress['level_xp']); ?> / <?php echo escape_output($user_progress['next_level_xp']); ?> XP toward Level <?php echo escape_output($user_progress['level'] + 1); ?></span>
                     <?php endif; ?>
                 </div>
                 <div class="level-progress-bar" aria-hidden="true">

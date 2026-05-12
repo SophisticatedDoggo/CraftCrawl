@@ -597,19 +597,20 @@
         });
     });
 
-    document.querySelectorAll('[data-tab="friends-panel"], [data-app-tab="friends-panel"]').forEach((button) => {
-        button.addEventListener('click', () => {
-            if (currentStatus.badgeCount > 0) {
-                window.location.href = 'friends.php';
-            }
-        });
-    });
-
     if (managerPage) {
         refreshFriendsData();
-    } else {
+    } else if (panel) {
         loadRequests();
-        loadFeed();
+        loadFeed()
+            .then(() => loadStatus())
+            .then(() => {
+                if (currentStatus.newFriends > 0) {
+                    return markFriendsSeen();
+                }
+
+                return null;
+            });
+    } else {
         loadStatus();
     }
 }());

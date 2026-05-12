@@ -92,28 +92,21 @@ while ($visit = $visit_result->fetch_assoc()) {
 }
 
 $xp_sql = "
-    SELECT id, user_id, amount, createdAt
+    SELECT id, user_id, level_after, createdAt
     FROM xp_log
     WHERE user_id IN ($placeholders)
-    ORDER BY user_id ASC, createdAt ASC, id ASC
+        AND level_after > level_before
+    ORDER BY createdAt DESC, id DESC
+    LIMIT 80
 ";
 $xp_stmt = $conn->prepare($xp_sql);
 craftcrawl_bind_feed_user_ids($xp_stmt, $types, $feed_user_ids);
 $xp_stmt->execute();
 $xp_result = $xp_stmt->get_result();
-$running_xp = [];
 
 while ($xp = $xp_result->fetch_assoc()) {
     $friend_id = (int) $xp['user_id'];
-    $before_xp = $running_xp[$friend_id] ?? 0;
-    $after_xp = $before_xp + (int) $xp['amount'];
-    $before_level = craftcrawl_level_from_xp($before_xp);
-    $after_level = craftcrawl_level_from_xp($after_xp);
-    $running_xp[$friend_id] = $after_xp;
-
-    if ($after_level <= $before_level) {
-        continue;
-    }
+    $after_level = (int) $xp['level_after'];
 
     $feed[] = [
         'item_key' => 'level_up:' . (int) $xp['id'],

@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = (int) $_SESSION['user_id'];
+$craftcrawl_portal_active = '';
 
 function escape_output($value) {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
@@ -33,37 +34,37 @@ $leaderboard_modes = [
     'level' => [
         'label' => 'Highest Level',
         'description' => 'Ranked by current level.',
-        'order' => 'u.total_xp DESC, stats.unique_locations DESC, stats.total_checkins DESC',
+        'order' => 'u.level DESC, u.level_xp DESC, stats.unique_locations DESC, stats.total_checkins DESC',
         'metric_label' => ''
     ],
     'unique_locations' => [
         'label' => 'Unique Locations',
         'description' => 'Ranked by distinct CraftCrawl places visited.',
-        'order' => 'stats.unique_locations DESC, u.total_xp DESC, stats.total_checkins DESC',
+        'order' => 'stats.unique_locations DESC, u.level DESC, u.level_xp DESC, stats.total_checkins DESC',
         'metric_label' => 'unique locations'
     ],
     'total_checkins' => [
         'label' => 'Total Check-ins',
         'description' => 'Ranked by all check-ins, including return visits.',
-        'order' => 'stats.total_checkins DESC, stats.unique_locations DESC, u.total_xp DESC',
+        'order' => 'stats.total_checkins DESC, stats.unique_locations DESC, u.level DESC, u.level_xp DESC',
         'metric_label' => 'check-ins'
     ],
     'recent_checkins' => [
         'label' => 'Last 30 Days',
         'description' => 'Ranked by check-ins from the past 30 days.',
-        'order' => 'stats.recent_checkins DESC, stats.total_checkins DESC, u.total_xp DESC',
+        'order' => 'stats.recent_checkins DESC, stats.total_checkins DESC, u.level DESC, u.level_xp DESC',
         'metric_label' => 'recent check-ins'
     ],
     'reviews' => [
         'label' => 'Reviews',
         'description' => 'Ranked by review count.',
-        'order' => 'review_stats.review_count DESC, u.total_xp DESC, stats.unique_locations DESC',
+        'order' => 'review_stats.review_count DESC, u.level DESC, u.level_xp DESC, stats.unique_locations DESC',
         'metric_label' => 'reviews'
     ],
     'badges' => [
         'label' => 'Badges',
         'description' => 'Ranked by earned badges.',
-        'order' => 'badge_stats.badge_count DESC, u.total_xp DESC, stats.unique_locations DESC',
+        'order' => 'badge_stats.badge_count DESC, u.level DESC, u.level_xp DESC, stats.unique_locations DESC',
         'metric_label' => 'badges'
     ],
 ];
@@ -95,6 +96,8 @@ $leaderboard_stmt = $conn->prepare("
         u.fName,
         u.lName,
         u.total_xp,
+        u.level,
+        u.level_xp,
         COALESCE(stats.unique_locations, 0) AS unique_locations,
         COALESCE(stats.total_checkins, 0) AS total_checkins,
         COALESCE(stats.recent_checkins, 0) AS recent_checkins,
@@ -150,14 +153,10 @@ $leaderboard = $leaderboard_stmt->get_result();
                     <p>Search for accounts, approve invites, and view friends' CraftCrawl progress.</p>
                 </div>
             </div>
-            <div class="business-header-actions">
+            <div class="business-header-actions user-subpage-header-actions">
                 <a href="portal.php">Back to Map</a>
                 <a href="profile.php">Profile</a>
                 <a href="settings.php">Settings</a>
-                <form action="../logout.php" method="POST">
-                    <?php echo craftcrawl_csrf_input(); ?>
-                    <button type="submit">Logout</button>
-                </form>
             </div>
         </header>
 
@@ -182,7 +181,7 @@ $leaderboard = $leaderboard_stmt->get_result();
                 <?php $rank = 1; ?>
                 <?php while ($leader = $leaderboard->fetch_assoc()) : ?>
                     <?php
-                        $level = craftcrawl_level_from_xp((int) $leader['total_xp']);
+                        $level = (int) $leader['level'];
                         $level_title = craftcrawl_level_title($level);
                         $leader_name = trim($leader['fName'] . ' ' . $leader['lName']);
                         $metric_text = $leaderboard_mode === 'level' ? '' : (int) $leader[$leaderboard_mode] . ' ' . $active_leaderboard['metric_label'];
@@ -256,7 +255,9 @@ $leaderboard = $leaderboard_stmt->get_result();
             <div class="friends-search-results" data-friends-search-results hidden></div>
         </section>
     </main>
+    <?php include __DIR__ . '/subpage_mobile_nav.php'; ?>
     <script src="../js/friends.js"></script>
+    <script src="../js/mobile_actions_menu.js"></script>
     <script src="../js/onesignal_push.js"></script>
 </body>
 </html>

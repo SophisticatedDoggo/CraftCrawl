@@ -63,10 +63,10 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
     if (preg_match('/^level_up:(\d+)$/', $item_key, $matches)) {
         $xp_id = (int) $matches[1];
         $stmt = $conn->prepare("
-            SELECT xl.id, xl.user_id, xl.amount, xl.createdAt, u.fName, u.lName
+            SELECT xl.id, xl.user_id, xl.level_after, xl.createdAt, u.fName, u.lName
             FROM xp_log xl
             INNER JOIN users u ON u.id = xl.user_id
-            WHERE xl.id=? AND u.disabledAt IS NULL
+            WHERE xl.id=? AND xl.level_after > xl.level_before AND u.disabledAt IS NULL
             LIMIT 1
         ");
         $stmt->bind_param("i", $xp_id);
@@ -77,27 +77,8 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
             return null;
         }
 
-        $previous_stmt = $conn->prepare("
-            SELECT COALESCE(SUM(amount), 0) AS previous_xp
-            FROM xp_log
-            WHERE user_id=?
-                AND (
-                    createdAt < ?
-                    OR (createdAt = ? AND id < ?)
-                )
-        ");
         $actor_id = (int) $xp['user_id'];
-        $created_at = $xp['createdAt'];
-        $previous_stmt->bind_param("issi", $actor_id, $created_at, $created_at, $xp_id);
-        $previous_stmt->execute();
-        $previous_xp = (int) ($previous_stmt->get_result()->fetch_assoc()['previous_xp'] ?? 0);
-        $after_xp = $previous_xp + (int) $xp['amount'];
-        $before_level = craftcrawl_level_from_xp($previous_xp);
-        $after_level = craftcrawl_level_from_xp($after_xp);
-
-        if ($after_level <= $before_level) {
-            return null;
-        }
+        $after_level = (int) $xp['level_after'];
 
         return [
             'item_key' => $item_key,

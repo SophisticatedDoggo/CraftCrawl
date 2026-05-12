@@ -1,13 +1,13 @@
 USE craft_crawl;
 
 -- Sample user password: Password1!
-INSERT INTO users (id, fName, lName, email, password_hash, total_xp, auto_accept_friend_invites, friendsSeenAt, createdAt, emailVerifiedAt) VALUES
-(1, 'Avery', 'Miller', 'avery@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 225, FALSE, '2026-05-09 09:00:00', '2026-05-01 09:00:00', '2026-05-01 09:05:00'),
-(2, 'Jordan', 'Parker', 'jordan@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 325, TRUE, NULL, '2026-05-01 09:10:00', '2026-05-01 09:15:00'),
-(3, 'Taylor', 'Reed', 'taylor@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 250, FALSE, NULL, '2026-05-01 09:20:00', '2026-05-01 09:25:00'),
-(4, 'Morgan', 'Chen', 'morgan@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 100, FALSE, NULL, '2026-05-01 09:30:00', '2026-05-01 09:35:00'),
-(5, 'Casey', 'Lopez', 'casey@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 0, TRUE, NULL, '2026-05-01 09:40:00', '2026-05-01 09:45:00'),
-(6, 'Riley', 'Brooks', 'riley@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 0, FALSE, NULL, '2026-05-01 09:50:00', '2026-05-01 09:55:00');
+INSERT INTO users (id, fName, lName, email, password_hash, total_xp, level, level_xp, auto_accept_friend_invites, friendsSeenAt, createdAt, emailVerifiedAt) VALUES
+(1, 'Avery', 'Miller', 'avery@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 225, 2, 125, FALSE, '2026-05-09 09:00:00', '2026-05-01 09:00:00', '2026-05-01 09:05:00'),
+(2, 'Jordan', 'Parker', 'jordan@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 325, 3, 25, TRUE, NULL, '2026-05-01 09:10:00', '2026-05-01 09:15:00'),
+(3, 'Taylor', 'Reed', 'taylor@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 250, 2, 150, FALSE, NULL, '2026-05-01 09:20:00', '2026-05-01 09:25:00'),
+(4, 'Morgan', 'Chen', 'morgan@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 100, 2, 0, FALSE, NULL, '2026-05-01 09:30:00', '2026-05-01 09:35:00'),
+(5, 'Casey', 'Lopez', 'casey@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 0, 1, 0, TRUE, NULL, '2026-05-01 09:40:00', '2026-05-01 09:45:00'),
+(6, 'Riley', 'Brooks', 'riley@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 0, 1, 0, FALSE, NULL, '2026-05-01 09:50:00', '2026-05-01 09:55:00');
 
 INSERT INTO businesses (
     id,
@@ -155,18 +155,18 @@ INSERT INTO user_visits (id, user_id, business_id, visit_type, xp_awarded, user_
 (7, 3, 11, 'first_time', 100, 40.285500, -79.503800, 6.30, '2026-05-06 19:15:00'),
 (8, 4, 4, 'first_time', 100, 40.149000, -79.541100, 4.20, '2026-05-09 14:10:00');
 
-INSERT INTO xp_log (id, user_id, amount, source_type, source_id, description, createdAt) VALUES
-(1, 1, 100, 'first_time_visit', '1', 'Iron Ridge Brewing', '2026-05-03 13:20:00'),
-(2, 1, 100, 'first_time_visit', '5', 'Summit Stillworks', '2026-05-04 15:10:00'),
-(3, 1, 25, 'review', '1', 'Review', '2026-05-04 16:00:00'),
-(4, 2, 100, 'first_time_visit', '1', 'Iron Ridge Brewing', '2026-05-06 17:05:00'),
-(5, 2, 25, 'review', '2', 'Review', '2026-05-07 12:15:00'),
-(6, 2, 100, 'first_time_visit', '2', 'Maple Run Winery', '2026-05-08 16:30:00'),
-(7, 2, 100, 'first_time_visit', '10', 'Laurel Highlands Brewing', '2026-05-10 18:40:00'),
-(8, 3, 100, 'first_time_visit', '7', 'Trailhead Tapworks', '2026-05-05 17:45:00'),
-(9, 3, 100, 'first_time_visit', '11', 'Red Barn Cider Co.', '2026-05-06 19:15:00'),
-(10, 3, 50, 'badge', 'first_review', 'First Review', '2026-05-07 10:00:00'),
-(11, 4, 100, 'first_time_visit', '4', 'Orchard Fork Cidery', '2026-05-09 14:10:00');
+INSERT INTO xp_log (id, user_id, amount, source_type, source_id, description, level_before, level_after, level_xp_after, createdAt) VALUES
+(1, 1, 100, 'first_time_visit', '1', 'Iron Ridge Brewing', 1, 2, 0, '2026-05-03 13:20:00'),
+(2, 1, 100, 'first_time_visit', '5', 'Summit Stillworks', 2, 2, 100, '2026-05-04 15:10:00'),
+(3, 1, 25, 'review', '1', 'Review', 2, 2, 125, '2026-05-04 16:00:00'),
+(4, 2, 100, 'first_time_visit', '1', 'Iron Ridge Brewing', 1, 2, 0, '2026-05-06 17:05:00'),
+(5, 2, 25, 'review', '2', 'Review', 2, 2, 25, '2026-05-07 12:15:00'),
+(6, 2, 100, 'first_time_visit', '2', 'Maple Run Winery', 2, 2, 125, '2026-05-08 16:30:00'),
+(7, 2, 100, 'first_time_visit', '10', 'Laurel Highlands Brewing', 2, 3, 25, '2026-05-10 18:40:00'),
+(8, 3, 100, 'first_time_visit', '7', 'Trailhead Tapworks', 1, 2, 0, '2026-05-05 17:45:00'),
+(9, 3, 100, 'first_time_visit', '11', 'Red Barn Cider Co.', 2, 2, 100, '2026-05-06 19:15:00'),
+(10, 3, 50, 'badge', 'first_review', 'First Review', 2, 2, 150, '2026-05-07 10:00:00'),
+(11, 4, 100, 'first_time_visit', '4', 'Orchard Fork Cidery', 1, 2, 0, '2026-05-09 14:10:00');
 
 INSERT INTO user_badges (id, user_id, badge_key, badge_name, badge_description, xp_awarded, earnedAt) VALUES
 (1, 3, 'first_review', 'First Review', 'Leave your first review.', 50, '2026-05-07 10:00:00');

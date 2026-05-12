@@ -257,7 +257,6 @@ map.on('load', function () {
 
     //get our data from php function
     getAllLocations();
-    getAllEvents();
     requestUserLocation();
 
     map.on('moveend', (event) => {
@@ -958,7 +957,7 @@ function formatEventTime(time) {
 }
 
 function setupPortalTabs() {
-    const tabs = document.querySelectorAll('.portal-tab');
+    const tabs = document.querySelectorAll('.portal-tab[data-tab]');
     const appTabs = document.querySelectorAll('.mobile-app-tab[data-app-tab]');
     const appScrollTabs = document.querySelectorAll('.mobile-app-tab[data-app-scroll-target]');
     const panels = document.querySelectorAll('.portal-panel');

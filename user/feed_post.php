@@ -9,6 +9,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = (int) $_SESSION['user_id'];
+$craftcrawl_portal_active = 'feed';
 $item_key = trim($_GET['item'] ?? $_POST['item_key'] ?? '');
 $message = $_GET['message'] ?? null;
 
@@ -198,9 +199,10 @@ if ($feed_item) {
                     <p>Reply to a CraftCrawl milestone.</p>
                 </div>
             </div>
-            <div class="business-header-actions">
-                <a href="portal.php">Back to Feed</a>
+            <div class="business-header-actions user-subpage-header-actions">
+                <a href="feed.php">Back to Feed</a>
                 <a href="friends.php">Manage Friends</a>
+                <a href="profile.php">Profile</a>
             </div>
         </header>
 
@@ -289,6 +291,9 @@ if ($feed_item) {
             </section>
         <?php endif; ?>
     </main>
+    <?php include __DIR__ . '/subpage_mobile_nav.php'; ?>
+    <script src="../js/friends.js"></script>
+    <script src="../js/mobile_actions_menu.js"></script>
     <script src="../js/onesignal_push.js"></script>
     <script>
         document.querySelectorAll('[data-reply-toggle]').forEach((button) => {

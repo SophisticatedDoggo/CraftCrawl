@@ -96,6 +96,7 @@ Run the leveling migration before using check-ins, XP, levels, and badges:
 
 ```sh
 mysql -u craft_crawl -p craft_crawl < migrations/2026_05_10_leveling_system.sql
+mysql -u craft_crawl -p craft_crawl < migrations/2026_05_12_progressive_level_state.sql
 ```
 
 Check-ins use browser GPS and server-side distance checks. Review XP is only

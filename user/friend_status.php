@@ -50,7 +50,7 @@ if (!empty($counts['notify_social_activity'])) {
                         )
                         OR EXISTS (
                             SELECT 1 FROM xp_log xl
-                            WHERE CONCAT('level_up:', xl.id)=fr.feed_item_key AND xl.user_id=?
+                            WHERE CONCAT('level_up:', xl.id)=fr.feed_item_key AND xl.user_id=? AND xl.level_after > xl.level_before
                         )
                         OR EXISTS (
                             SELECT 1 FROM event_want_to_go ew
@@ -70,7 +70,7 @@ if (!empty($counts['notify_social_activity'])) {
                         )
                         OR EXISTS (
                             SELECT 1 FROM xp_log xl
-                            WHERE CONCAT('level_up:', xl.id)=fc.feed_item_key AND xl.user_id=?
+                            WHERE CONCAT('level_up:', xl.id)=fc.feed_item_key AND xl.user_id=? AND xl.level_after > xl.level_before
                         )
                         OR EXISTS (
                             SELECT 1 FROM event_want_to_go ew

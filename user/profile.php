@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $viewer_id = (int) $_SESSION['user_id'];
+$craftcrawl_portal_active = '';
 $profile_id = filter_var($_GET['id'] ?? $viewer_id, FILTER_VALIDATE_INT) ?: $viewer_id;
 $is_own_profile = $profile_id === $viewer_id;
 $can_view_profile = $is_own_profile;
@@ -121,15 +122,12 @@ if (!$profile) {
                     <p><?php echo $profile ? 'XP, badges, and CraftCrawl milestones.' : 'This profile is not available.'; ?></p>
                 </div>
             </div>
-            <div class="business-header-actions">
+            <div class="business-header-actions user-subpage-header-actions">
                 <a href="portal.php">Back to Map</a>
+                <a href="friends.php">View Friends</a>
                 <?php if ($is_own_profile) : ?>
                     <a href="settings.php">Settings</a>
                 <?php endif; ?>
-                <form action="../logout.php" method="POST">
-                    <?php echo craftcrawl_csrf_input(); ?>
-                    <button type="submit">Logout</button>
-                </form>
             </div>
         </header>
 
@@ -146,7 +144,7 @@ if (!$profile) {
                         <?php if ($user_progress['max_level']) : ?>
                             <span>Max Level Reached</span>
                         <?php else : ?>
-                            <span><?php echo escape_output($user_progress['total_xp']); ?> / <?php echo escape_output($user_progress['next_level_xp']); ?> XP toward Level <?php echo escape_output($user_progress['level'] + 1); ?></span>
+                            <span><?php echo escape_output($user_progress['level_xp']); ?> / <?php echo escape_output($user_progress['next_level_xp']); ?> XP toward Level <?php echo escape_output($user_progress['level'] + 1); ?></span>
                         <?php endif; ?>
                     </div>
                     <div class="level-progress-bar" aria-hidden="true">
@@ -244,5 +242,9 @@ if (!$profile) {
             <?php endif; ?>
         <?php endif; ?>
     </main>
+    <?php include __DIR__ . '/subpage_mobile_nav.php'; ?>
+    <script src="../js/friends.js"></script>
+    <script src="../js/mobile_actions_menu.js"></script>
+    <script src="../js/onesignal_push.js"></script>
 </body>
 </html>

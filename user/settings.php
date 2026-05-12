@@ -11,6 +11,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $message = $_GET['message'] ?? null;
 $user_id = (int) $_SESSION['user_id'];
+$craftcrawl_portal_active = '';
 $settings_stmt = $conn->prepare("SELECT auto_accept_friend_invites, show_feed_activity, show_liked_businesses, notify_social_activity FROM users WHERE id=?");
 $settings_stmt->bind_param("i", $user_id);
 $settings_stmt->execute();
@@ -119,13 +120,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <p>Manage account preferences and privacy.</p>
                 </div>
             </div>
-            <div class="business-header-actions">
+            <div class="business-header-actions user-subpage-header-actions">
                 <a href="portal.php">Back to Map</a>
+                <a href="friends.php">View Friends</a>
                 <a href="profile.php">Profile</a>
-                <form action="../logout.php" method="POST">
-                    <?php echo craftcrawl_csrf_input(); ?>
-                    <button type="submit">Logout</button>
-                </form>
             </div>
         </header>
 
@@ -228,7 +226,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
         </section>
     </main>
+    <?php include __DIR__ . '/subpage_mobile_nav.php'; ?>
     <script src="../js/palette_switcher.js"></script>
+    <script src="../js/friends.js"></script>
+    <script src="../js/mobile_actions_menu.js"></script>
     <script src="../js/onesignal_push.js"></script>
 </body>
 </html>
