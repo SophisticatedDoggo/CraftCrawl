@@ -219,6 +219,34 @@ input[type="button"]:focus,
         var(--color-primary-dark);
 }
 
+button.is-loading,
+input[type="submit"].is-loading,
+input[type="button"].is-loading,
+.button-link.is-loading {
+    cursor: wait;
+}
+
+button.is-loading::before,
+input[type="submit"].is-loading::before,
+input[type="button"].is-loading::before,
+.button-link.is-loading::before {
+    content: "";
+    width: 1em;
+    height: 1em;
+    margin-right: 8px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: craftcrawl-loading-spin 720ms linear infinite;
+    flex: 0 0 auto;
+}
+
+@keyframes craftcrawl-loading-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .button-link-secondary {
     color: var(--brand-title);
     background:
@@ -2372,6 +2400,13 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
         animation: none;
     }
 
+    button.is-loading::before,
+    input[type="submit"].is-loading::before,
+    input[type="button"].is-loading::before,
+    .button-link.is-loading::before {
+        animation: none;
+    }
+
     .xp-reward-bar span {
         transition: none;
     }
@@ -4284,6 +4319,10 @@ a.event-calendar-event {
     }
 
     .settings-page {
+        padding-bottom: calc(104px + env(safe-area-inset-bottom));
+    }
+
+    .business-details-page {
         padding-bottom: calc(104px + env(safe-area-inset-bottom));
     }
 

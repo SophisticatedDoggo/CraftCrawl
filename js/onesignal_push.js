@@ -89,6 +89,7 @@
             enableButton.disabled = false;
             enableButton.addEventListener('click', async () => {
                 enableButton.disabled = true;
+                enableButton.classList.add('is-loading');
                 setStatus('Opening notification permission prompt...', false);
 
                 try {
@@ -98,6 +99,7 @@
                     setStatus('Notifications could not be enabled in this browser.', true);
                 } finally {
                     enableButton.disabled = false;
+                    enableButton.classList.remove('is-loading');
                 }
             });
         })

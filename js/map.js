@@ -914,6 +914,7 @@ function renderEventsFeed(events) {
             formData.append('occurrence_date', button.dataset.occurrenceDate);
             formData.append('is_saved', button.dataset.isSaved || '0');
             button.disabled = true;
+            button.classList.add('is-loading');
 
             fetch('../user/event_want_to_go_toggle.php', {
                 method: 'POST',
@@ -933,6 +934,7 @@ function renderEventsFeed(events) {
                 })
                 .finally(() => {
                     button.disabled = false;
+                    button.classList.remove('is-loading');
                 });
         });
     });

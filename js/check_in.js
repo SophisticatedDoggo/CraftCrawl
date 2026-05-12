@@ -53,6 +53,7 @@
 
         if (button) {
             button.disabled = true;
+            button.classList.add('is-loading');
             button.textContent = 'Checking location...';
         }
 
@@ -90,6 +91,7 @@
                 .finally(function () {
                     if (button) {
                         button.disabled = false;
+                        button.classList.remove('is-loading');
                         button.textContent = originalText;
                     }
                 });
@@ -98,6 +100,7 @@
 
             if (button) {
                 button.disabled = false;
+                button.classList.remove('is-loading');
                 button.textContent = originalText;
             }
         }, {

@@ -177,6 +177,7 @@ if (isset($_SESSION['user_id'])) {
                 const button = form.querySelector('button');
                 const savedInput = form.querySelector('[name="is_saved"]');
                 button.disabled = true;
+                button.classList.add('is-loading');
 
                 fetch(form.action, {
                     method: 'POST',
@@ -195,6 +196,7 @@ if (isset($_SESSION['user_id'])) {
                     })
                     .finally(() => {
                         button.disabled = false;
+                        button.classList.remove('is-loading');
                     });
             });
         });

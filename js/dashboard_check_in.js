@@ -103,6 +103,7 @@
 
             action.addEventListener('click', () => {
                 action.disabled = true;
+                action.classList.add('is-loading');
                 action.textContent = 'Checking in...';
 
                 postForm('../check_in.php', {
@@ -115,6 +116,7 @@
                         if (!data.ok) {
                             showStatus(data.message || 'Check-in failed.', true);
                             action.disabled = false;
+                            action.classList.remove('is-loading');
                             action.textContent = 'Check In';
                             return;
                         }
@@ -128,10 +130,12 @@
                             window.craftcrawlShowXpReward(data);
                         }
                         action.textContent = 'Checked In';
+                        action.classList.remove('is-loading');
                     })
                     .catch(() => {
                         showStatus('Check-in failed. Please try again.', true);
                         action.disabled = false;
+                        action.classList.remove('is-loading');
                         action.textContent = 'Check In';
                     });
             });
@@ -151,6 +155,7 @@
         }
 
         findButton.disabled = true;
+        findButton.classList.add('is-loading');
         findButton.textContent = 'Finding nearby...';
         list.hidden = true;
 
@@ -178,6 +183,7 @@
                     showStatus('Could not find nearby check-ins. Please try again.', true);
                 })
                 .finally(() => {
+                    findButton.classList.remove('is-loading');
                     findButton.disabled = false;
                     findButton.textContent = 'Find Nearby Check-ins';
                 });

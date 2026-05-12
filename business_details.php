@@ -374,6 +374,11 @@ function format_event_time_range($event) {
                     <span></span>
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
+                    <a href="user/friends.php">
+                        View Friends
+                        <span class="notification-badge" data-friends-menu-badge hidden></span>
+                    </a>
+                    <a href="user/profile.php">Profile</a>
                     <a href="user/settings.php">Settings</a>
                     <form action="logout.php" method="POST">
                         <?php echo craftcrawl_csrf_input(); ?>
@@ -723,6 +728,33 @@ function format_event_time_range($event) {
             <?php endforeach; ?>
         </section>
     </main>
+    <nav class="mobile-app-tabbar business-details-tabbar" aria-label="Account navigation">
+        <a class="mobile-app-tab" href="user/portal.php">
+            <span class="mobile-app-tab-icon mobile-app-tab-icon-map" aria-hidden="true"></span>
+            <span>Map</span>
+        </a>
+        <a class="mobile-app-tab" href="user/events.php">
+            <span class="mobile-app-tab-icon mobile-app-tab-icon-events" aria-hidden="true"></span>
+            <span>Events</span>
+        </a>
+        <a class="mobile-app-tab" href="user/feed.php">
+            <span class="mobile-app-tab-icon mobile-app-tab-icon-friends" aria-hidden="true"></span>
+            <span>Feed</span>
+            <span class="mobile-tab-badge" data-friends-tab-badge hidden></span>
+        </a>
+        <a class="mobile-app-tab" href="user/portal.php#checkin-panel">
+            <span class="mobile-app-tab-icon mobile-app-tab-icon-checkin" aria-hidden="true"></span>
+            <span>Check In</span>
+        </a>
+        <button type="button" class="mobile-app-tab mobile-app-menu-tab" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
+            <span class="mobile-app-tab-icon mobile-app-tab-icon-menu" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+            </span>
+            <span>Menu</span>
+        </button>
+    </nav>
     <div class="review-photo-lightbox" id="review-photo-lightbox" hidden>
         <div class="photo-lightbox-backdrop review-photo-lightbox-backdrop" data-lightbox-close></div>
         <div class="photo-lightbox-count review-photo-lightbox-count" id="review-photo-lightbox-count"></div>

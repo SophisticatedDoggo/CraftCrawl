@@ -176,6 +176,7 @@
             button.addEventListener('click', () => {
                 const action = button.dataset.friendAction;
                 button.disabled = true;
+                button.classList.add('is-loading');
                 button.textContent = action === 'accept' ? 'Accepting...' : 'Sending...';
 
                 const request = action === 'accept'
@@ -194,17 +195,20 @@
                         if (!data.ok) {
                             showStatus(data.message || 'Friend could not be added.', true);
                             button.disabled = false;
+                            button.classList.remove('is-loading');
                             button.textContent = action === 'accept' ? 'Accept Invite' : 'Invite';
                             return;
                         }
 
                         showStatus(data.message || 'Friend invite updated.', false);
+                        button.classList.remove('is-loading');
                         button.textContent = data.status === 'pending' ? 'Invite Sent' : 'Added';
                         refreshFriendsData();
                     })
                     .catch(() => {
                         showStatus('Friend could not be added. Please try again.', true);
                         button.disabled = false;
+                        button.classList.remove('is-loading');
                         button.textContent = action === 'accept' ? 'Accept Invite' : 'Invite';
                     });
             });
@@ -239,6 +243,7 @@
                 const response = button.dataset.response;
                 const row = button.closest('.friend-request-item');
                 button.disabled = true;
+                button.classList.add('is-loading');
                 button.textContent = response === 'accepted' ? 'Approving...' : 'Declining...';
 
                 postForm('friend_respond.php', {
@@ -250,11 +255,13 @@
                         if (!data.ok) {
                             showStatus(data.message || 'Friend invite could not be updated.', true);
                             button.disabled = false;
+                            button.classList.remove('is-loading');
                             button.textContent = response === 'accepted' ? 'Approve' : 'Decline';
                             return;
                         }
 
                         showStatus(data.message || 'Friend invite updated.', false);
+                        button.classList.remove('is-loading');
                         if (row) {
                             row.remove();
                         }
@@ -263,6 +270,7 @@
                     .catch(() => {
                         showStatus('Friend invite could not be updated.', true);
                         button.disabled = false;
+                        button.classList.remove('is-loading');
                         button.textContent = response === 'accepted' ? 'Approve' : 'Decline';
                     });
             });
@@ -311,6 +319,7 @@
                 }
 
                 button.disabled = true;
+                button.classList.add('is-loading');
                 button.textContent = 'Removing...';
 
                 postForm('friend_remove.php', {
@@ -321,16 +330,19 @@
                         if (!data.ok) {
                             showStatus(data.message || 'Friend could not be removed.', true);
                             button.disabled = false;
+                            button.classList.remove('is-loading');
                             button.textContent = 'Remove';
                             return;
                         }
 
                         showStatus(data.message || 'Friend removed.', false);
+                        button.classList.remove('is-loading');
                         refreshFriendsData();
                     })
                     .catch(() => {
                         showStatus('Friend could not be removed. Please try again.', true);
                         button.disabled = false;
+                        button.classList.remove('is-loading');
                         button.textContent = 'Remove';
                     });
             });
@@ -404,6 +416,7 @@
         feed.querySelectorAll('[data-feed-reaction]').forEach((button) => {
             button.addEventListener('click', () => {
                 button.disabled = true;
+                button.classList.add('is-loading');
                 postForm('feed_reaction_toggle.php', {
                     csrf_token: csrfToken,
                     item_key: button.dataset.itemKey,
@@ -420,6 +433,7 @@
                     .catch(() => showStatus('Reaction could not be saved.', true))
                     .finally(() => {
                         button.disabled = false;
+                        button.classList.remove('is-loading');
                     });
             });
         });
@@ -547,10 +561,16 @@
             hideStatus();
 
             const query = input.value.trim();
+            const searchButton = form.querySelector('button[type="submit"]');
 
             if (query.length < 2) {
                 showStatus('Search by at least two characters.', true);
                 return;
+            }
+
+            if (searchButton) {
+                searchButton.disabled = true;
+                searchButton.classList.add('is-loading');
             }
 
             fetch(`friend_search.php?q=${encodeURIComponent(query)}`, { credentials: 'same-origin' })
@@ -565,6 +585,12 @@
                 })
                 .catch(() => {
                     showStatus('Search failed. Please try again.', true);
+                })
+                .finally(() => {
+                    if (searchButton) {
+                        searchButton.disabled = false;
+                        searchButton.classList.remove('is-loading');
+                    }
                 });
         });
     }
@@ -576,6 +602,7 @@
     recommendationButtons.forEach((button) => {
         button.addEventListener('click', () => {
             button.disabled = true;
+            button.classList.add('is-loading');
             postForm('recommendation_update.php', {
                 csrf_token: csrfToken,
                 recommendation_id: button.dataset.recommendationId,
@@ -585,6 +612,7 @@
                     if (!data.ok) {
                         showStatus(data.message || 'Recommendation could not be updated.', true);
                         button.disabled = false;
+                        button.classList.remove('is-loading');
                         return;
                     }
 
@@ -593,6 +621,7 @@
                 .catch(() => {
                     showStatus('Recommendation could not be updated.', true);
                     button.disabled = false;
+                    button.classList.remove('is-loading');
                 });
         });
     });
