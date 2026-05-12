@@ -25,7 +25,7 @@
             script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
             script.defer = true;
             script.onload = resolve;
-            script.onerror = reject;
+            script.onerror = () => reject(new Error('OneSignal SDK could not be loaded.'));
             document.head.appendChild(script);
         });
     }
@@ -95,10 +95,11 @@
                 }
             });
         })
-        .catch(() => {
+        .catch((error) => {
+            console.error('CraftCrawl OneSignal initialization failed:', error);
             if (enableButton) {
                 enableButton.disabled = true;
-                setStatus('Push notifications could not be initialized.', true);
+                setStatus(error && error.message ? error.message : 'Push notifications could not be initialized.', true);
             }
         });
 })();
