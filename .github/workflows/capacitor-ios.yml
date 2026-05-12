@@ -1,4 +1,4 @@
-name: Capacitor Android Build
+name: Capacitor iOS Build
 
 on:
   push:
@@ -6,20 +6,20 @@ on:
       - develop
       - main
     paths:
-      - 'android/**'
+      - 'ios/**'
       - 'mobile/**'
       - 'capacitor.config.ts'
       - 'package.json'
       - 'package-lock.json'
-      - '.github/workflows/capacitor-android.yml'
+      - '.github/workflows/capacitor-ios.yml'
   pull_request:
     paths:
-      - 'android/**'
+      - 'ios/**'
       - 'mobile/**'
       - 'capacitor.config.ts'
       - 'package.json'
       - 'package-lock.json'
-      - '.github/workflows/capacitor-android.yml'
+      - '.github/workflows/capacitor-ios.yml'
   workflow_dispatch:
     inputs:
       target:
@@ -32,8 +32,8 @@ on:
         default: staging
 
 jobs:
-  android-debug-build:
-    runs-on: ubuntu-latest
+  ios-simulator-build:
+    runs-on: macos-latest
 
     env:
       CRAFTCRAWL_MOBILE_URL: ${{ (github.event_name == 'workflow_dispatch' && inputs.target == 'prod') || github.ref_name == 'main' && 'https://app.craftcrawl.site' || 'https://staging.craftcrawl.site' }}
@@ -61,26 +61,22 @@ jobs:
           node-version: '22'
           cache: npm
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
       - name: Install dependencies
         run: npm ci
 
-      - name: Create Android project when missing
-        run: test -d android || npx cap add android
+      - name: Create iOS project when missing
+        run: test -d ios || npx cap add ios
 
-      - name: Sync Capacitor Android project
-        run: npx cap sync android
+      - name: Sync Capacitor iOS project
+        run: npx cap sync ios
 
-      - name: Build debug APK
-        run: cd android && ./gradlew assembleDebug
-
-      - name: Upload debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: craftcrawl-${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref_name == 'main' && 'prod' || 'staging') }}-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+      - name: Build iOS simulator app
+        run: |
+          xcodebuild \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build

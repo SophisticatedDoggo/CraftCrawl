@@ -1,12 +1,18 @@
 # CraftCrawl Capacitor App
 
-CraftCrawl uses Capacitor as a native Android/iOS shell around the hosted PHP site. The app does not run PHP or MySQL locally. It loads the production website configured by `CRAFTCRAWL_MOBILE_URL`.
+CraftCrawl uses Capacitor as a native Android/iOS shell around the hosted PHP site. The app does not run PHP or MySQL locally. It loads the website configured by `CRAFTCRAWL_MOBILE_URL`.
 
 ## Tradeoff
 
 `server.url` lets the native app load the live site, which keeps one PHP/CSS/JS codebase. Capacitor documents this setting mainly for live reload and development, so the app must feel polished and app-like enough for store review. If the hosted site is down, the mobile app is down too.
 
 ## Local Setup
+
+Install local tooling:
+
+- Node.js 22 or newer
+- Java/JDK 17 or newer
+- Android Studio with Android SDK, Platform Tools, and an emulator or physical Android device
 
 Install Node dependencies:
 
@@ -25,6 +31,27 @@ Add native projects after dependencies are installed:
 ```sh
 npm run cap:add:android
 npm run cap:add:ios
+```
+
+For staging Android testing, use:
+
+```sh
+npm run cap:sync:staging:android
+npm run cap:open:android
+```
+
+For production Android testing before a store build, use:
+
+```sh
+npm run cap:sync:prod:android
+npm run cap:open:android
+```
+
+For staging iOS testing on macOS, use:
+
+```sh
+npm run cap:sync:staging:ios
+npm run cap:open:ios
 ```
 
 Sync config and assets after changing Capacitor settings:

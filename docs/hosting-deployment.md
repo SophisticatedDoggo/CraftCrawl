@@ -9,14 +9,24 @@ CraftCrawl needs a host that supports:
 - File uploads routed through PHP, with photos stored in Cloudinary
 - GitHub-based deploys or SSH/rsync deploys from GitHub Actions
 
+## Branch and Host Model
+
+CraftCrawl uses:
+
+- `develop` for staging at `https://staging.craftcrawl.site`.
+- `main` for prod at `https://app.craftcrawl.site`.
+
+The web deploy workflow follows this branch model automatically. See
+`docs/environments.md` for the required GitHub Environment and secret setup.
+
 ## Recommended Staging Path
 
-1. Buy a domain.
-2. Create a staging subdomain such as `staging.your-domain.com`.
-3. Deploy CraftCrawl there first.
-4. Point `CRAFTCRAWL_APP_URL` and `CRAFTCRAWL_MOBILE_URL` at staging.
-5. Test login, email verification, hCaptcha, check-ins, events, friends, feed comments, reactions, and business analytics on a real phone.
-6. Move to production at `your-domain.com`.
+1. Keep day-to-day work on `develop`.
+2. Deploy `develop` to `https://staging.craftcrawl.site`.
+3. Point staging `CRAFTCRAWL_APP_URL` and `CRAFTCRAWL_MOBILE_URL` at staging.
+4. Test login, email verification, hCaptcha, check-ins, events, friends, feed comments, reactions, and business analytics on real devices.
+5. Merge `develop` into `main` only when staging is ready.
+6. Deploy `main` to `https://app.craftcrawl.site`.
 
 ## Hosting Options
 
@@ -66,11 +76,12 @@ Tradeoffs:
 
 ## GitHub Actions Deployment Shape
 
-Once hosting is chosen, add one deploy workflow:
+The repository includes these workflows:
 
-- Shared hosting: deploy changed files over SFTP/SSH.
-- VPS: deploy with `rsync`, then run any needed migration command manually or through a protected workflow.
-- App platform: connect the GitHub repo or deploy a Docker image.
+- `PHP CI`: lints PHP files on push and pull request.
+- `Deploy Web`: deploys `develop` to staging and `main` to prod with `rsync` over SSH.
+- `Capacitor Android Build`: builds a branch-targeted debug APK.
+- `Capacitor iOS Build`: builds a branch-targeted iOS simulator app on macOS.
 
 Do not store passwords, API keys, database credentials, hCaptcha secrets, Cloudinary secrets, or signing keys in the repo. Put them in GitHub Actions secrets and host environment variables.
 
@@ -79,7 +90,7 @@ Do not store passwords, API keys, database credentials, hCaptcha secrets, Cloudi
 The Capacitor app should use HTTPS only. Android and iOS store builds should point at the final production domain once ready:
 
 ```sh
-CRAFTCRAWL_MOBILE_URL="https://your-domain.com"
+CRAFTCRAWL_MOBILE_URL="https://app.craftcrawl.site"
 ```
 
 Avoid shipping a store build pointed at localhost, a LAN IP, or an insecure `http://` URL.

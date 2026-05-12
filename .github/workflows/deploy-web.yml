@@ -1,0 +1,95 @@
+name: Deploy Web
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Deployment target
+        required: true
+        type: choice
+        options:
+          - staging
+          - prod
+        default: staging
+
+concurrency:
+  group: deploy-web-${{ github.event_name == 'workflow_dispatch' && inputs.target || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy ${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref_name == 'main' && 'prod' || 'staging') }}
+    runs-on: ubuntu-latest
+
+    env:
+      DEPLOY_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref_name == 'main' && 'prod' || 'staging') }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate manual branch target
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ "$DEPLOY_TARGET" = "prod" ] && [ "${GITHUB_REF_NAME}" != "main" ]; then
+            echo "Prod deploys must run from main."
+            exit 1
+          fi
+
+          if [ "$DEPLOY_TARGET" = "staging" ] && [ "${GITHUB_REF_NAME}" != "develop" ]; then
+            echo "Staging deploys must run from develop."
+            exit 1
+          fi
+
+      - name: Set deployment variables
+        run: |
+          if [ "$DEPLOY_TARGET" = "prod" ]; then
+            {
+              echo "SSH_HOST=${{ secrets.PROD_SSH_HOST }}"
+              echo "SSH_USER=${{ secrets.PROD_SSH_USER }}"
+              echo "SSH_PORT=${{ secrets.PROD_SSH_PORT }}"
+              echo "DEPLOY_PATH=${{ secrets.PROD_DEPLOY_PATH }}"
+              echo "SSH_KEY<<EOF"
+              echo "${{ secrets.PROD_SSH_PRIVATE_KEY }}"
+              echo "EOF"
+            } >> "$GITHUB_ENV"
+          else
+            {
+              echo "SSH_HOST=${{ secrets.STAGING_SSH_HOST }}"
+              echo "SSH_USER=${{ secrets.STAGING_SSH_USER }}"
+              echo "SSH_PORT=${{ secrets.STAGING_SSH_PORT }}"
+              echo "DEPLOY_PATH=${{ secrets.STAGING_DEPLOY_PATH }}"
+              echo "SSH_KEY<<EOF"
+              echo "${{ secrets.STAGING_SSH_PRIVATE_KEY }}"
+              echo "EOF"
+            } >> "$GITHUB_ENV"
+          fi
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/craftcrawl_deploy_key
+          chmod 600 ~/.ssh/craftcrawl_deploy_key
+          ssh-keyscan -p "${SSH_PORT:-22}" "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy files with rsync
+        run: |
+          rsync -az --delete \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude '.env' \
+            --exclude 'node_modules/' \
+            --exclude 'android/' \
+            --exclude 'ios/' \
+            --exclude 'dist/' \
+            --exclude 'www/' \
+            --exclude 'data/' \
+            --exclude 'files/' \
+            --exclude 'scripts/' \
+            -e "ssh -i ~/.ssh/craftcrawl_deploy_key -p ${SSH_PORT:-22}" \
+            ./ "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/"

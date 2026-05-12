@@ -3,16 +3,25 @@
   "version": "0.1.0",
   "private": true,
   "description": "Capacitor native shell for the hosted CraftCrawl PHP web app.",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "cap:sync": "cap sync",
+    "cap:sync:staging:android": "CRAFTCRAWL_MOBILE_URL=https://staging.craftcrawl.site cap sync android",
+    "cap:sync:prod:android": "CRAFTCRAWL_MOBILE_URL=https://app.craftcrawl.site cap sync android",
+    "cap:sync:staging:ios": "CRAFTCRAWL_MOBILE_URL=https://staging.craftcrawl.site cap sync ios",
+    "cap:sync:prod:ios": "CRAFTCRAWL_MOBILE_URL=https://app.craftcrawl.site cap sync ios",
     "cap:open:android": "cap open android",
     "cap:open:ios": "cap open ios",
     "cap:add:android": "cap add android",
     "cap:add:ios": "cap add ios",
+    "android:debug": "cd android && ./gradlew assembleDebug",
     "mobile:doctor": "cap doctor"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.0.0"
+    "@capacitor/cli": "^8.0.0",
+    "typescript": "^5.9.0"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",

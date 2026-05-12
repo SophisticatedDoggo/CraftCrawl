@@ -8,6 +8,18 @@ the hosted PHP site. Read the setup notes before generating native projects:
 
 - `docs/capacitor.md`
 - `docs/hosting-deployment.md`
+- `docs/environments.md`
+
+## Environments
+
+CraftCrawl uses `develop` for staging and `main` for prod:
+
+- Staging web/mobile target: `https://staging.craftcrawl.site`
+- Production web/mobile target: `https://app.craftcrawl.site`
+
+GitHub Actions can lint PHP, deploy web files over SSH/rsync, and build
+branch-targeted Android/iOS Capacitor shells. See `docs/environments.md` for
+the required GitHub Environment and secret setup.
 
 ## Cloudinary photos
 
