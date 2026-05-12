@@ -280,6 +280,75 @@ label {
     height: 18px;
 }
 
+.password-field {
+    position: relative;
+    display: grid;
+}
+
+.password-field input {
+    padding-right: 50px;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    border: 0;
+    color: var(--color-muted);
+    background: transparent;
+    box-shadow: none;
+    transform: translateY(-50%);
+}
+
+.password-toggle:hover,
+.password-toggle:focus {
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.password-toggle-eye {
+    position: relative;
+    width: 22px;
+    height: 14px;
+    border: 2px solid currentColor;
+    border-radius: 999px 999px 999px 999px / 80% 80% 80% 80%;
+}
+
+.password-toggle-eye::before,
+.password-toggle-eye::after {
+    content: "";
+    position: absolute;
+}
+
+.password-toggle-eye::before {
+    top: 50%;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    transform: translate(-50%, -50%);
+}
+
+.password-toggle-eye::after {
+    top: 50%;
+    left: -2px;
+    display: none;
+    width: 26px;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+    transform: rotate(-38deg);
+}
+
+.password-toggle.is-visible .password-toggle-eye::after {
+    display: block;
+}
+
 .auth-body {
     display: grid;
     place-items: center;
