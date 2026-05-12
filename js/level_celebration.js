@@ -259,13 +259,6 @@
         }
 
         closeButton.addEventListener('click', closeCelebration);
-        overlay.addEventListener('click', function (event) {
-            if (event.target === overlay) {
-                closeCelebration();
-            }
-        });
-
-        window.setTimeout(closeCelebration, levelUp ? 8500 : 6200);
     }
 
     function showLevelCelebration(levelUp) {
