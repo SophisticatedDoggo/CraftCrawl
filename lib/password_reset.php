@@ -58,13 +58,25 @@ function craftcrawl_issue_password_reset($conn, $account_type, $email) {
         . $reset_url . "\n\n"
         . "This link expires in " . CRAFTCRAWL_PASSWORD_RESET_HOURS . " hour.\n\n"
         . "If you did not request this, you can ignore this email.";
-    $headers = [
-        'From: CraftCrawl <' . craftcrawl_email_from_address() . '>',
-        'Reply-To: ' . craftcrawl_email_from_address(),
-        'Content-Type: text/plain; charset=UTF-8'
-    ];
+    $safe_reset_url = htmlspecialchars($reset_url, ENT_QUOTES, 'UTF-8');
+    $html_body = '
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #222;">
+            <h2>Reset your CraftCrawl password</h2>
+            <p>We received a request to reset your CraftCrawl password.</p>
+            <p>
+                <a href="' . $safe_reset_url . '"
+                   style="display: inline-block; padding: 12px 18px; background: #111827; color: #ffffff; text-decoration: none; border-radius: 6px;">
+                    Reset Password
+                </a>
+            </p>
+            <p>Or copy and paste this link into your browser:</p>
+            <p><a href="' . $safe_reset_url . '">' . $safe_reset_url . '</a></p>
+            <p>This link expires in ' . CRAFTCRAWL_PASSWORD_RESET_HOURS . ' hour.</p>
+            <p>If you did not request this, you can ignore this email.</p>
+        </div>
+    ';
 
-    $sent = mail($account['email'], $subject, $body, implode("\r\n", $headers));
+    $sent = craftcrawl_send_onesignal_email($account['email'], $subject, $body, $html_body);
 
     if (!$sent) {
         $delete_stmt = $conn->prepare("DELETE FROM password_reset_tokens WHERE id=?");
