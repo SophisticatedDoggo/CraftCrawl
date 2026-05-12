@@ -57,6 +57,7 @@ $login_path = $account_type === 'business' ? 'business_login.php' : 'user_login.
         </form>
 
         <p class="auth-switch"><a href="<?php echo escape_output($login_path); ?>">Back to login</a></p>
+        <?php include __DIR__ . '/legal_nav.php'; ?>
     </main>
 </body>
 </html>

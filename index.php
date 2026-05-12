@@ -70,6 +70,7 @@ if (isset($_SESSION['admin_id'])) {
         <div class="landing-admin-action">
             <a class="text-link" href="admin_login.php">Admin Portal</a>
         </div>
+        <?php include __DIR__ . '/legal_nav.php'; ?>
     </main>
 </body>
 </html>

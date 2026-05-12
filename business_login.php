@@ -165,6 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <a href="resend_verification.php?account_type=business&email=<?php echo escape_output(rawurlencode($email)); ?>">Resend verification email</a>
             </p>
         <?php endif; ?>
+        <?php include __DIR__ . '/legal_nav.php'; ?>
     </main>
 </body>
 </html>

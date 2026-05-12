@@ -371,6 +371,16 @@ label {
     margin: 18px 0 0;
 }
 
+.legal-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+}
+
 a.text-link {
     display: inline;
     min-height: 0;
@@ -2385,6 +2395,39 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 .settings-panel h2 {
     margin-top: 0;
+}
+
+.legal-page {
+    max-width: 980px;
+}
+
+.legal-header > div:first-child {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.legal-panel {
+    display: grid;
+    gap: 10px;
+}
+
+.legal-panel h2 {
+    margin: 18px 0 0;
+}
+
+.legal-panel h2:first-child {
+    margin-top: 0;
+}
+
+.legal-panel p {
+    margin: 0;
+    color: var(--color-text);
+    line-height: 1.65;
+}
+
+.legal-contact-link {
+    font-size: 1.05rem;
 }
 
 .palette-switcher-settings {

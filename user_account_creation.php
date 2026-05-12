@@ -127,6 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="submit" value="Create Account">
         </form>
         <p class="auth-switch"><a href="user_login.php">Back to login</a></p>
+        <?php include __DIR__ . '/legal_nav.php'; ?>
     </main>
 </body>
 </html>

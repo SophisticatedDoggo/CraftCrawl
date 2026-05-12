@@ -246,6 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="submit" value="Create Account">
         </form>
         <p class="auth-switch"><a href="business_login.php">Back to login</a></p>
+        <?php include __DIR__ . '/legal_nav.php'; ?>
     </main>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";

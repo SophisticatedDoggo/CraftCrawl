@@ -134,6 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </form>
         <p class="auth-switch"><a href="index.php">Back to account selection</a></p>
+        <?php include __DIR__ . '/legal_nav.php'; ?>
     </main>
 </body>
 </html>
