@@ -38,6 +38,7 @@ For staging Android testing, use:
 
 ```sh
 npm run cap:sync:staging:android
+npm run android:debug:staging
 npm run cap:open:android
 ```
 
@@ -45,6 +46,7 @@ For production Android testing before a store build, use:
 
 ```sh
 npm run cap:sync:prod:android
+npm run android:debug:prod
 npm run cap:open:android
 ```
 
@@ -63,6 +65,11 @@ npm run cap:open:ios
 - Push to `main`: prod APK pointed at `https://app.craftcrawl.site`.
 - Manual run: choose `staging` from `develop` or `prod` from `main`.
 
+Android uses build flavors:
+
+- `staging`: package id `com.craftcrawl.app.staging`, app label `CraftCrawl Staging`.
+- `prod`: package id `com.craftcrawl.app`, app label `CraftCrawl`.
+
 Download the artifact from the workflow run and install it on an emulator or
 Android test device.
 
@@ -74,6 +81,12 @@ Android test device.
 
 This validates the iOS Capacitor shell in CI, but TestFlight and physical iPhone
 distribution still require Apple Developer signing.
+
+iOS uses the Capacitor app id from `CRAFTCRAWL_APP_ENV` when the native project
+is generated:
+
+- `staging`: bundle id `com.craftcrawl.app.staging`, app name `CraftCrawl Staging`.
+- `prod`: bundle id `com.craftcrawl.app`, app name `CraftCrawl`.
 
 ## iOS TestFlight Path
 

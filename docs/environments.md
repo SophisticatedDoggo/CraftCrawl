@@ -50,6 +50,21 @@ The Capacitor app reads `CRAFTCRAWL_MOBILE_URL` when syncing native projects:
 The Android and iOS workflows set this automatically from the branch or manual
 workflow target.
 
+## Mobile Test Builds
+
+Android staging builds are installable beside prod builds:
+
+- Staging package id: `com.craftcrawl.app.staging`.
+- Prod package id: `com.craftcrawl.app`.
+
+Download the debug APK artifact from the `Capacitor Android Build` workflow.
+Use `develop`/`staging` for test devices and `main`/`prod` for release
+candidate checks.
+
+iOS simulator builds are produced by the `Capacitor iOS Build` workflow. Real
+iPhone testing or TestFlight requires an Apple Developer account and signing in
+Xcode.
+
 ## iOS Staging Setup
 
 For local iOS testing you need macOS with Xcode installed:

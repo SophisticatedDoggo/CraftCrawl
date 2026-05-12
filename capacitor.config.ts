@@ -1,10 +1,12 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
+const appEnv = process.env.CRAFTCRAWL_APP_ENV || 'prod';
+const isStaging = appEnv === 'staging';
 const liveUrl = process.env.CRAFTCRAWL_MOBILE_URL || 'https://example.com';
 
 const config: CapacitorConfig = {
-  appId: 'com.craftcrawl.app',
-  appName: 'CraftCrawl',
+  appId: isStaging ? 'com.craftcrawl.app.staging' : 'com.craftcrawl.app',
+  appName: isStaging ? 'CraftCrawl Staging' : 'CraftCrawl',
   webDir: 'mobile',
   server: {
     url: liveUrl,

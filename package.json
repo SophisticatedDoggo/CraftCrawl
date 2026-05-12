@@ -8,15 +8,17 @@
   },
   "scripts": {
     "cap:sync": "cap sync",
-    "cap:sync:staging:android": "CRAFTCRAWL_MOBILE_URL=https://staging.craftcrawl.site cap sync android",
-    "cap:sync:prod:android": "CRAFTCRAWL_MOBILE_URL=https://app.craftcrawl.site cap sync android",
-    "cap:sync:staging:ios": "CRAFTCRAWL_MOBILE_URL=https://staging.craftcrawl.site cap sync ios",
-    "cap:sync:prod:ios": "CRAFTCRAWL_MOBILE_URL=https://app.craftcrawl.site cap sync ios",
+    "cap:sync:staging:android": "CRAFTCRAWL_APP_ENV=staging CRAFTCRAWL_MOBILE_URL=https://staging.craftcrawl.site cap sync android",
+    "cap:sync:prod:android": "CRAFTCRAWL_APP_ENV=prod CRAFTCRAWL_MOBILE_URL=https://app.craftcrawl.site cap sync android",
+    "cap:sync:staging:ios": "CRAFTCRAWL_APP_ENV=staging CRAFTCRAWL_MOBILE_URL=https://staging.craftcrawl.site cap sync ios",
+    "cap:sync:prod:ios": "CRAFTCRAWL_APP_ENV=prod CRAFTCRAWL_MOBILE_URL=https://app.craftcrawl.site cap sync ios",
     "cap:open:android": "cap open android",
     "cap:open:ios": "cap open ios",
     "cap:add:android": "cap add android",
     "cap:add:ios": "cap add ios",
     "android:debug": "cd android && ./gradlew assembleDebug",
+    "android:debug:staging": "cd android && ./gradlew assembleStagingDebug",
+    "android:debug:prod": "cd android && ./gradlew assembleProdDebug",
     "mobile:doctor": "cap doctor"
   },
   "devDependencies": {
