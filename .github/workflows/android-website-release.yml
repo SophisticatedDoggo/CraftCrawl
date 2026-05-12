@@ -1,0 +1,115 @@
+name: Android Website Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: Android version name, for example 1.0.0
+        required: true
+        default: '1.0.0'
+      version_code:
+        description: Android version code, must increase for each release
+        required: true
+        default: '1'
+
+concurrency:
+  group: android-website-release
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    name: Build signed prod APK
+    runs-on: ubuntu-latest
+
+    env:
+      CRAFTCRAWL_APP_ENV: prod
+      CRAFTCRAWL_MOBILE_URL: https://app.craftcrawl.site
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      SSH_HOST: ${{ secrets.PROD_SSH_HOST }}
+      SSH_USER: ${{ secrets.PROD_SSH_USER }}
+      SSH_PORT: ${{ secrets.PROD_SSH_PORT }}
+      DEPLOY_PATH: ${{ secrets.PROD_DEPLOY_PATH }}
+      SSH_KEY: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+
+    steps:
+      - name: Require main branch
+        run: |
+          if [ "${GITHUB_REF_NAME}" != "main" ]; then
+            echo "Website Android releases must run from main."
+            exit 1
+          fi
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Decode Android signing key
+        run: |
+          if [ -z "${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}" ]; then
+            echo "::error::ANDROID_RELEASE_KEYSTORE_BASE64 is missing."
+            exit 1
+          fi
+
+          echo "${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/craftcrawl-release.keystore"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/craftcrawl-release.keystore" >> "$GITHUB_ENV"
+
+      - name: Set release version
+        run: |
+          sed -i "s/versionCode [0-9][0-9]*/versionCode ${{ inputs.version_code }}/" android/app/build.gradle
+          sed -i "s/versionName \"[^\"]*\"/versionName \"${{ inputs.version_name }}\"/" android/app/build.gradle
+
+      - name: Sync Capacitor Android project
+        run: npx cap sync android
+
+      - name: Build signed prod release APK
+        run: cd android && ./gradlew assembleProdRelease
+
+      - name: Prepare release file
+        run: |
+          mkdir -p release
+          cp android/app/build/outputs/apk/prod/release/app-prod-release.apk release/craftcrawl-prod.apk
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: craftcrawl-prod-release-apk
+          path: release/craftcrawl-prod.apk
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/craftcrawl_deploy_key
+          chmod 600 ~/.ssh/craftcrawl_deploy_key
+          ssh-keyscan -p "${SSH_PORT:-22}" "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Publish APK to website
+        run: |
+          ssh \
+            -i ~/.ssh/craftcrawl_deploy_key \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -p "${SSH_PORT:-22}" \
+            "$SSH_USER@$SSH_HOST" \
+            "mkdir -p '$DEPLOY_PATH/downloads'"
+
+          rsync -az --no-times --no-perms \
+            -e "ssh -i ~/.ssh/craftcrawl_deploy_key -o IdentitiesOnly=yes -o BatchMode=yes -p ${SSH_PORT:-22}" \
+            release/craftcrawl-prod.apk "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/downloads/craftcrawl-prod.apk"

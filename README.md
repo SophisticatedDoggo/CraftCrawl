@@ -9,6 +9,7 @@ the hosted PHP site. Read the setup notes before generating native projects:
 - `docs/capacitor.md`
 - `docs/hosting-deployment.md`
 - `docs/environments.md`
+- `docs/android-website-release.md`
 
 ## Environments
 

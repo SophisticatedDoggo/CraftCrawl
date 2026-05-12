@@ -12,3 +12,7 @@ DirectoryIndex index.php index.html
 <FilesMatch "^OneSignalSDK(Updater)?Worker\.js$">
     ForceType application/javascript
 </FilesMatch>
+
+<FilesMatch "\.apk$">
+    ForceType application/vnd.android.package-archive
+</FilesMatch>
