@@ -1,12 +1,13 @@
 <?php
 require_once __DIR__ . '/security.php';
+require_once __DIR__ . '/lib/env.php';
 
 const CRAFTCRAWL_EMAIL_VERIFICATION_HOURS = 24;
 const CRAFTCRAWL_EMAIL_VERIFICATION_RESEND_SECONDS = 60;
 const CRAFTCRAWL_EMAIL_VERIFICATION_HOURLY_LIMIT = 5;
 
 function craftcrawl_public_base_url() {
-    $configured_url = getenv('CRAFTCRAWL_APP_URL') ?: '';
+    $configured_url = craftcrawl_env('CRAFTCRAWL_APP_URL', '');
 
     if ($configured_url !== '') {
         return rtrim($configured_url, '/');
@@ -19,7 +20,60 @@ function craftcrawl_public_base_url() {
 }
 
 function craftcrawl_email_from_address() {
-    return getenv('CRAFTCRAWL_MAIL_FROM') ?: 'no-reply@craftcrawl.local';
+    return craftcrawl_env('CRAFTCRAWL_MAIL_FROM', 'no-reply@craftcrawl.site');
+}
+
+function craftcrawl_send_mailgun_email($to, $subject, $text_body, $html_body = '') {
+    $api_key = craftcrawl_env('MAILGUN_API_KEY');
+    $domain = craftcrawl_env('MAILGUN_DOMAIN');
+    $endpoint = rtrim(craftcrawl_env('MAILGUN_ENDPOINT', 'https://api.mailgun.net/v3'), '/');
+    $from = 'CraftCrawl <' . craftcrawl_email_from_address() . '>';
+
+    if ($api_key === '' || $domain === '') {
+        error_log('Mailgun configuration missing. Check MAILGUN_API_KEY and MAILGUN_DOMAIN.');
+        return false;
+    }
+
+    if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        error_log('Mailgun send failed: invalid recipient email.');
+        return false;
+    }
+
+    $post_fields = [
+        'from' => $from,
+        'to' => $to,
+        'subject' => $subject,
+        'text' => $text_body,
+    ];
+
+    if ($html_body !== '') {
+        $post_fields['html'] = $html_body;
+    }
+
+    $ch = curl_init();
+
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $endpoint . '/' . rawurlencode($domain) . '/messages',
+        CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
+        CURLOPT_USERPWD => 'api:' . $api_key,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $post_fields,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 20,
+    ]);
+
+    $response = curl_exec($ch);
+    $curl_error = curl_error($ch);
+    $http_code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+    curl_close($ch);
+
+    if ($response === false || $http_code < 200 || $http_code >= 300) {
+        error_log('Mailgun send failed. HTTP ' . $http_code . '. Error: ' . $curl_error . '. Response: ' . $response);
+        return false;
+    }
+
+    return true;
 }
 
 function craftcrawl_issue_email_verification($conn, $account_type, $account_id, $email) {
@@ -44,19 +98,35 @@ function craftcrawl_issue_email_verification($conn, $account_type, $account_id, 
     $verification_id = $stmt->insert_id;
 
     $verify_url = craftcrawl_public_base_url() . '/verify_email.php?token=' . urlencode($token);
+
     $subject = 'Verify your CraftCrawl email';
-    $body = "Welcome to CraftCrawl.\n\n"
+
+    $text_body = "Welcome to CraftCrawl.\n\n"
         . "Please verify your email address by opening this link:\n\n"
         . $verify_url . "\n\n"
         . "This link expires in " . CRAFTCRAWL_EMAIL_VERIFICATION_HOURS . " hours.\n\n"
         . "If you did not create this account, you can ignore this email.";
-    $headers = [
-        'From: CraftCrawl <' . craftcrawl_email_from_address() . '>',
-        'Reply-To: ' . craftcrawl_email_from_address(),
-        'Content-Type: text/plain; charset=UTF-8'
-    ];
 
-    $sent = mail($email, $subject, $body, implode("\r\n", $headers));
+    $safe_verify_url = htmlspecialchars($verify_url, ENT_QUOTES, 'UTF-8');
+
+    $html_body = '
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #222;">
+            <h2>Welcome to CraftCrawl</h2>
+            <p>Please verify your email address by clicking the button below.</p>
+            <p>
+                <a href="' . $safe_verify_url . '" 
+                   style="display: inline-block; padding: 12px 18px; background: #111827; color: #ffffff; text-decoration: none; border-radius: 6px;">
+                    Verify Email
+                </a>
+            </p>
+            <p>Or copy and paste this link into your browser:</p>
+            <p><a href="' . $safe_verify_url . '">' . $safe_verify_url . '</a></p>
+            <p>This link expires in ' . CRAFTCRAWL_EMAIL_VERIFICATION_HOURS . ' hours.</p>
+            <p>If you did not create this account, you can ignore this email.</p>
+        </div>
+    ';
+
+    $sent = craftcrawl_send_mailgun_email($email, $subject, $text_body, $html_body);
 
     if (!$sent) {
         $delete_stmt = $conn->prepare("DELETE FROM email_verification_tokens WHERE id=?");
@@ -209,6 +279,7 @@ function craftcrawl_mark_email_verified($conn, $token) {
         ];
     } catch (Throwable $error) {
         $conn->rollback();
+        error_log('Email verification failed: ' . $error->getMessage());
         return ['success' => false, 'reason' => 'error'];
     }
 }
