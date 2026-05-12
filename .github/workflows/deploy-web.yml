@@ -109,7 +109,7 @@ jobs:
 
       - name: Deploy files with rsync
         run: |
-          rsync -az --delete \
+          rsync -az --delete --no-times --no-perms --omit-dir-times \
             --exclude '.git/' \
             --exclude '.github/' \
             --exclude '.env' \
