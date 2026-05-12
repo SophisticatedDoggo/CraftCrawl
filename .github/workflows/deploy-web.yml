@@ -102,7 +102,7 @@ jobs:
             -o BatchMode=yes \
             -p "${SSH_PORT:-22}" \
             "$SSH_USER@$SSH_HOST" \
-            "test -d '$DEPLOY_PATH' && test -w '$DEPLOY_PATH'"
+            "if [ ! -d '$DEPLOY_PATH' ]; then echo 'Deploy path does not exist: $DEPLOY_PATH'; exit 2; fi; if [ ! -w '$DEPLOY_PATH' ]; then echo 'Deploy path is not writable: $DEPLOY_PATH'; exit 3; fi; echo 'SSH and deploy path checks passed.'"
 
       - name: Deploy files with rsync
         run: |
