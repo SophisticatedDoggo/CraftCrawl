@@ -9,6 +9,8 @@ if (!isset($_SESSION['user_id'])) {
 $business_id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT);
 $user_id = (int) $_SESSION['user_id'];
 $message = $_GET['message'] ?? null;
+$xp_reward_popup = $_SESSION['craftcrawl_xp_reward_popup'] ?? null;
+unset($_SESSION['craftcrawl_xp_reward_popup']);
 
 function escape_output($value) {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
@@ -173,6 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             try {
                 $conn->begin_transaction();
+                $progress_before = craftcrawl_user_level_progress($conn, $user_id);
 
                 $stmt = $conn->prepare("INSERT INTO reviews (rating, user_id, business_id, notes) VALUES (?, ?, ?, ?)");
                 $stmt->bind_param("iiis", $rating, $user_id, $business_id, $notes);
@@ -190,11 +193,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 $badges = craftcrawl_award_eligible_badges($conn, $user_id);
+                $progress = craftcrawl_user_level_progress($conn, $user_id);
                 $conn->commit();
 
                 $review_message = $review_xp_awarded ? 'review_saved_xp' : 'review_saved';
                 if (!empty($badges)) {
                     $review_message = 'review_saved_badge';
+                }
+
+                $xp_awarded = max(0, (int) ($progress['total_xp'] ?? 0) - (int) ($progress_before['total_xp'] ?? 0));
+                if ($xp_awarded > 0) {
+                    $_SESSION['craftcrawl_xp_reward_popup'] = [
+                        'xp_awarded' => $xp_awarded,
+                        'badges' => $badges,
+                        'level_up' => (int) $progress['level'] > (int) $progress_before['level']
+                            ? [
+                                'level' => (int) $progress['level'],
+                                'title' => $progress['title']
+                            ]
+                            : null,
+                        'progress_before' => $progress_before,
+                        'progress' => $progress
+                    ];
                 }
                 header("Location: business_details.php?id=" . $business_id . "&message=" . $review_message);
                 exit();
@@ -364,9 +384,9 @@ function format_event_time_range($event) {
         </div>
 
         <?php if ($message === 'review_saved_xp') : ?>
-            <p class="form-message form-message-success">Your review has been posted. You earned 25 XP.</p>
+            <p class="form-message form-message-success">Your review has been posted.</p>
         <?php elseif ($message === 'review_saved_badge') : ?>
-            <p class="form-message form-message-success">Your review has been posted. You earned XP and a new badge.</p>
+            <p class="form-message form-message-success">Your review has been posted. You earned a new badge.</p>
         <?php elseif ($message === 'review_saved') : ?>
             <p class="form-message form-message-success">Your review has been posted.</p>
         <?php elseif ($message === 'review_updated') : ?>
@@ -721,10 +741,16 @@ function format_event_time_range($event) {
     </div>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
+    window.CRAFTCRAWL_XP_REWARD_POPUP = <?php echo json_encode($xp_reward_popup, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
 </script>
 <script src="js/business_details_map.js"></script>
 <script src="js/directions_links.js"></script>
 <script src="js/level_celebration.js"></script>
+<script>
+    if (window.CRAFTCRAWL_XP_REWARD_POPUP && window.craftcrawlShowXpReward) {
+        window.craftcrawlShowXpReward(window.CRAFTCRAWL_XP_REWARD_POPUP);
+    }
+</script>
 <script src="js/check_in.js"></script>
 <script src="js/business_gallery.js"></script>
 <script src="js/review_photos.js"></script>

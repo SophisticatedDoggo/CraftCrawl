@@ -122,13 +122,10 @@
                         const badgeText = data.badges && data.badges.length
                             ? ` Badges earned: ${data.badges.join(', ')}.`
                             : '';
-                        const levelText = data.progress
-                            ? ` Level ${data.progress.level} - ${data.progress.title}.`
-                            : '';
 
-                        showStatus(`${data.message} +${data.xp_awarded} XP.${levelText}${badgeText}`, false);
-                        if (data.level_up && window.craftcrawlShowLevelCelebration) {
-                            window.craftcrawlShowLevelCelebration(data.level_up);
+                        showStatus(`${data.message}${badgeText}`, false);
+                        if (window.craftcrawlShowXpReward) {
+                            window.craftcrawlShowXpReward(data);
                         }
                         action.textContent = 'Checked In';
                     })

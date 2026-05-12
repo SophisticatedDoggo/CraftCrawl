@@ -826,6 +826,17 @@ a.text-link:focus {
     height: 100%;
     border-radius: inherit;
     background: var(--brand-underline);
+    transform-origin: left center;
+    animation: level-progress-fill 900ms cubic-bezier(.2, .78, .28, 1) both;
+}
+
+@keyframes level-progress-fill {
+    from {
+        transform: scaleX(0);
+    }
+    to {
+        transform: scaleX(1);
+    }
 }
 
 .business-level-summary {
@@ -2122,6 +2133,103 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     font-weight: 700;
 }
 
+.xp-reward-panel {
+    display: grid;
+    gap: 12px;
+}
+
+.xp-reward-amount {
+    display: block;
+    color: #2f7d3b;
+    font-size: 44px;
+    line-height: 1;
+}
+
+.xp-reward-progress {
+    display: grid;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 16px;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.68);
+    border: 1px solid rgba(23, 32, 51, 0.08);
+    border-radius: var(--radius-sm);
+}
+
+.xp-reward-progress-meta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 12px;
+    align-items: end;
+}
+
+.xp-reward-level {
+    color: #172033;
+    font-size: 18px;
+    line-height: 1.1;
+}
+
+.xp-reward-level-title {
+    grid-column: 1 / 2;
+    color: #6a7484;
+    font-weight: 700;
+}
+
+.xp-reward-text {
+    grid-column: 2 / 3;
+    grid-row: 1 / span 2;
+    color: #6a7484;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.xp-reward-level-number {
+    display: inline-block;
+    min-width: 2ch;
+    color: #b66d20;
+    transform-origin: center;
+}
+
+.xp-reward-level-number.is-changing {
+    animation: xp-level-number-out 180ms ease both;
+}
+
+.xp-reward-level-number.did-change {
+    animation: xp-level-number-in 360ms cubic-bezier(.18, .89, .32, 1.28) both;
+}
+
+.xp-reward-bar {
+    height: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(23, 32, 51, 0.1);
+    border-radius: 999px;
+    background: #efe8dc;
+}
+
+.xp-reward-bar span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #c47425, #f0b04f);
+    transition: width 820ms cubic-bezier(.2, .78, .28, 1);
+}
+
+.xp-reward-bar span.is-resetting {
+    transition: none;
+}
+
+@media (max-width: 480px) {
+    .xp-reward-progress-meta {
+        grid-template-columns: 1fr;
+    }
+
+    .xp-reward-text {
+        grid-column: 1;
+        grid-row: auto;
+    }
+}
+
 .level-celebration-close {
     position: absolute;
     top: 10px;
@@ -2192,6 +2300,24 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     }
 }
 
+@keyframes xp-level-number-out {
+    to {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.84);
+    }
+}
+
+@keyframes xp-level-number-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(1.32);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 @keyframes level-confetti-fall {
     to {
         transform: translate3d(var(--confetti-drift), 110vh, 0) rotate(var(--confetti-spin));
@@ -2207,9 +2333,19 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .level-progress-bar span {
+        animation: none;
+    }
+
+    .xp-reward-bar span {
+        transition: none;
+    }
+
     .level-celebration-panel,
     .level-confetti-piece,
-    .level-balloon {
+    .level-balloon,
+    .xp-reward-level-number.is-changing,
+    .xp-reward-level-number.did-change {
         animation: none;
     }
 

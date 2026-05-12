@@ -77,14 +77,11 @@
                     const badgeText = data.badges && data.badges.length
                         ? ` Badges earned: ${data.badges.join(', ')}.`
                         : '';
-                    const levelText = data.progress
-                        ? ` Level ${data.progress.level} - ${data.progress.title}.`
-                        : '';
 
-                    showFeedback(`${data.message} +${data.xp_awarded} XP.${levelText}${badgeText}`, false);
+                    showFeedback(`${data.message}${badgeText}`, false);
 
-                    if (data.level_up && window.craftcrawlShowLevelCelebration) {
-                        window.craftcrawlShowLevelCelebration(data.level_up);
+                    if (window.craftcrawlShowXpReward) {
+                        window.craftcrawlShowXpReward(data);
                     }
                 })
                 .catch(function () {

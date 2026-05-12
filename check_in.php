@@ -120,6 +120,7 @@ try {
         'xp_awarded' => $xp_awarded,
         'badges' => $badges,
         'level_up' => $level_up,
+        'progress_before' => $progress_before,
         'progress' => $progress
     ]);
 } catch (Throwable $error) {
