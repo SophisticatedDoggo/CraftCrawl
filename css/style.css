@@ -2219,6 +2219,41 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     transition: none;
 }
 
+.xp-reward-badges {
+    display: grid;
+    gap: 8px;
+    padding: 14px 16px;
+    text-align: left;
+    background: rgba(47, 125, 59, 0.08);
+    border: 1px solid rgba(47, 125, 59, 0.16);
+    border-radius: var(--radius-sm);
+}
+
+.xp-reward-badges > strong {
+    color: #2f7d3b;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+.xp-reward-badge-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.xp-reward-badge-list span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 5px 10px;
+    color: #213321;
+    background: #ffffff;
+    border: 1px solid rgba(47, 125, 59, 0.18);
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
 @media (max-width: 480px) {
     .xp-reward-progress-meta {
         grid-template-columns: 1fr;

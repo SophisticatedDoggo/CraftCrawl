@@ -197,6 +197,10 @@
         const xpText = document.createElement('span');
         const bar = document.createElement('div');
         const fill = document.createElement('span');
+        const badgeNames = Array.isArray(reward.badges)
+            ? reward.badges.filter((badgeName) => String(badgeName || '').trim() !== '')
+            : [];
+        let badgesWrap = null;
 
         overlay.className = 'level-celebration xp-reward-celebration';
         overlay.dataset.levelCelebration = 'true';
@@ -233,12 +237,34 @@
         bar.appendChild(fill);
         progressWrap.append(progressMeta, bar);
 
+        if (badgeNames.length) {
+            const badgeHeading = document.createElement('strong');
+            const badgeList = document.createElement('div');
+
+            badgesWrap = document.createElement('div');
+            badgesWrap.className = 'xp-reward-badges';
+            badgeHeading.textContent = badgeNames.length === 1 ? 'Badge Earned' : 'Badges Earned';
+            badgeList.className = 'xp-reward-badge-list';
+
+            badgeNames.forEach((badgeName) => {
+                const badge = document.createElement('span');
+
+                badge.textContent = badgeName;
+                badgeList.appendChild(badge);
+            });
+
+            badgesWrap.append(badgeHeading, badgeList);
+        }
+
         createConfetti(effects);
         if (levelUp) {
             createBalloons(effects);
         }
 
         panel.append(closeButton, kicker, heading, xpAmount, message, progressWrap);
+        if (badgesWrap) {
+            panel.appendChild(badgesWrap);
+        }
         overlay.append(effects, panel);
         document.body.appendChild(overlay);
         document.body.classList.add('level-celebration-open');
