@@ -112,7 +112,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label for="email">Email:</label>
             <input type="email" id="email" name="email" required value="<?php echo escape_output($email); ?>"><br><br>
             <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required><br><br>
+            <div class="password-field">
+                <input type="password" id="password" name="password" autocomplete="current-password" required>
+                <button type="button" class="password-toggle" data-password-toggle="password" aria-label="Show password" aria-pressed="false">
+                    <span class="password-toggle-eye" aria-hidden="true"></span>
+                </button>
+            </div><br><br>
             <label class="remember-login-toggle">
                 <input type="checkbox" name="remember_me" value="1">
                 Stay signed in
@@ -136,5 +141,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <p class="auth-switch"><a href="index.php">Back to account selection</a></p>
         <?php include __DIR__ . '/legal_nav.php'; ?>
     </main>
+    <script src="js/password_visibility.js"></script>
 </body>
 </html>

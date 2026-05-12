@@ -236,9 +236,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input name="longitude" id="longitude" type="hidden" value="0.0"><br><br>
 
             <label for="password">Password:</label>
-            <input type="password" id="password" name="password" autocomplete="new-password" required><br><br>
+            <div class="password-field">
+                <input type="password" id="password" name="password" autocomplete="new-password" required>
+                <button type="button" class="password-toggle" data-password-toggle="password" aria-label="Show password" aria-pressed="false">
+                    <span class="password-toggle-eye" aria-hidden="true"></span>
+                </button>
+            </div><br><br>
             <label for="verify_password">Verify Password:</label>
-            <input type="password" id="verify_password" name="verify_password" autocomplete="new-password" required><br><br>
+            <div class="password-field">
+                <input type="password" id="verify_password" name="verify_password" autocomplete="new-password" required>
+                <button type="button" class="password-toggle" data-password-toggle="verify_password" aria-label="Show password" aria-pressed="false">
+                    <span class="password-toggle-eye" aria-hidden="true"></span>
+                </button>
+            </div><br><br>
             <div id="pswd_validation_msg"></div>
             <div class="captcha-field">
                 <?php echo craftcrawl_hcaptcha_widget(); ?>
@@ -253,5 +263,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </script>
 <script src="js/business_account_creation.js"></script>
 <script src="js/business_hours_editor.js"></script>
+<script src="js/password_visibility.js"></script>
 </body>
 </html>
