@@ -34,17 +34,14 @@ the secret key to GitHub. Configure these values as host environment variables:
 ## Email verification
 
 New user and business accounts must verify their email address before login.
-Verification and password reset emails are sent through OneSignal. Configure
+Verification and password reset emails are sent through Mailgun. Configure
 these environment variables on the host:
 
 - `CRAFTCRAWL_APP_URL`
 - `CRAFTCRAWL_MAIL_FROM`
-- `ONESIGNAL_APP_ID`
-- `ONESIGNAL_API_KEY`
-- `ONESIGNAL_EMAIL_FROM_ADDRESS`
-- `ONESIGNAL_EMAIL_FROM_NAME`
-- `ONESIGNAL_EMAIL_REPLY_TO`
-- `ONESIGNAL_EMAIL_SENDER_DOMAIN`
+- `MAILGUN_API_KEY`
+- `MAILGUN_URL`
+- `MAILGUN_DOMAIN`
 
 Run the email verification migration for existing databases:
 

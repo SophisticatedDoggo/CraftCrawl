@@ -23,68 +23,41 @@ function craftcrawl_email_from_address() {
     return craftcrawl_env('CRAFTCRAWL_MAIL_FROM', 'no-reply@craftcrawl.site');
 }
 
-function craftcrawl_onesignal_authorization_header($api_key) {
-    if (str_starts_with($api_key, 'Key ')) {
-        return $api_key;
-    }
+function craftcrawl_send_mailgun_email($to, $subject, $text_body, $html_body = '') {
+    $api_key = craftcrawl_env('MAILGUN_API_KEY');
+    $domain = craftcrawl_env('MAILGUN_DOMAIN');
+    $endpoint = rtrim(craftcrawl_env('MAILGUN_URL', craftcrawl_env('MAILGUN_ENDPOINT', 'https://api.mailgun.net/v3')), '/');
+    $from = 'CraftCrawl <' . craftcrawl_email_from_address() . '>';
 
-    return 'Key ' . $api_key;
-}
-
-function craftcrawl_send_onesignal_email($to, $subject, $text_body, $html_body = '') {
-    $app_id = craftcrawl_env('ONESIGNAL_APP_ID');
-    $api_key = craftcrawl_env('ONESIGNAL_API_KEY');
-    $endpoint = craftcrawl_env('ONESIGNAL_EMAIL_ENDPOINT', 'https://api.onesignal.com/notifications?c=email');
-
-    if ($app_id === '' || $api_key === '') {
-        error_log('OneSignal email configuration missing. Check ONESIGNAL_APP_ID and ONESIGNAL_API_KEY.');
+    if ($api_key === '' || $domain === '') {
+        error_log('Mailgun configuration missing. Check MAILGUN_API_KEY and MAILGUN_DOMAIN.');
         return false;
     }
 
     if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
-        error_log('OneSignal email send failed: invalid recipient email.');
+        error_log('Mailgun send failed: invalid recipient email.');
         return false;
     }
 
-    $email_body = $html_body !== ''
-        ? $html_body
-        : '<pre style="font-family: Arial, sans-serif; white-space: pre-wrap;">' . htmlspecialchars($text_body, ENT_QUOTES, 'UTF-8') . '</pre>';
-
-    $payload = [
-        'app_id' => $app_id,
-        'email_to' => [$to],
-        'target_channel' => 'email',
-        'email_subject' => $subject,
-        'email_body' => $email_body,
-        'email_from_name' => craftcrawl_env('ONESIGNAL_EMAIL_FROM_NAME', 'CraftCrawl'),
-        'email_from_address' => craftcrawl_env('ONESIGNAL_EMAIL_FROM_ADDRESS', craftcrawl_email_from_address()),
-        'email_reply_to_address' => craftcrawl_env('ONESIGNAL_EMAIL_REPLY_TO', craftcrawl_email_from_address()),
-        'include_unsubscribed' => true,
+    $post_fields = [
+        'from' => $from,
+        'to' => $to,
+        'subject' => $subject,
+        'text' => $text_body,
     ];
 
-    $sender_domain = craftcrawl_env('ONESIGNAL_EMAIL_SENDER_DOMAIN');
-
-    if ($sender_domain !== '') {
-        $payload['email_sender_domain'] = $sender_domain;
-    }
-
-    $json_payload = json_encode($payload);
-
-    if ($json_payload === false) {
-        error_log('OneSignal email send failed: payload could not be encoded.');
-        return false;
+    if ($html_body !== '') {
+        $post_fields['html'] = $html_body;
     }
 
     $ch = curl_init();
 
     curl_setopt_array($ch, [
-        CURLOPT_URL => $endpoint,
-        CURLOPT_HTTPHEADER => [
-            'Authorization: ' . craftcrawl_onesignal_authorization_header($api_key),
-            'Content-Type: application/json',
-        ],
+        CURLOPT_URL => $endpoint . '/' . rawurlencode($domain) . '/messages',
+        CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
+        CURLOPT_USERPWD => 'api:' . $api_key,
         CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => $json_payload,
+        CURLOPT_POSTFIELDS => $post_fields,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => 20,
     ]);
@@ -96,7 +69,7 @@ function craftcrawl_send_onesignal_email($to, $subject, $text_body, $html_body =
     curl_close($ch);
 
     if ($response === false || $http_code < 200 || $http_code >= 300) {
-        error_log('OneSignal email send failed. HTTP ' . $http_code . '. Error: ' . $curl_error . '. Response: ' . $response);
+        error_log('Mailgun send failed. HTTP ' . $http_code . '. Error: ' . $curl_error . '. Response: ' . $response);
         return false;
     }
 
@@ -153,7 +126,7 @@ function craftcrawl_issue_email_verification($conn, $account_type, $account_id, 
         </div>
     ';
 
-    $sent = craftcrawl_send_onesignal_email($email, $subject, $text_body, $html_body);
+    $sent = craftcrawl_send_mailgun_email($email, $subject, $text_body, $html_body);
 
     if (!$sent) {
         $delete_stmt = $conn->prepare("DELETE FROM email_verification_tokens WHERE id=?");

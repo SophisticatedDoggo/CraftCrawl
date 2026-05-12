@@ -76,7 +76,7 @@ function craftcrawl_issue_password_reset($conn, $account_type, $email) {
         </div>
     ';
 
-    $sent = craftcrawl_send_onesignal_email($account['email'], $subject, $body, $html_body);
+    $sent = craftcrawl_send_mailgun_email($account['email'], $subject, $body, $html_body);
 
     if (!$sent) {
         $delete_stmt = $conn->prepare("DELETE FROM password_reset_tokens WHERE id=?");
