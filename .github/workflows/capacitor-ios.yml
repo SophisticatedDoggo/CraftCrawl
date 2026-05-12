@@ -78,5 +78,12 @@ jobs:
             -configuration Debug \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath ios/build \
             CODE_SIGNING_ALLOWED=NO \
             build
+
+      - name: Upload iOS simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: craftcrawl-${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref_name == 'main' && 'prod' || 'staging') }}-ios-simulator-app
+          path: ios/build/Build/Products/Debug-iphonesimulator/App.app

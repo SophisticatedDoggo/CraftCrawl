@@ -11,8 +11,9 @@ CraftCrawl uses Capacitor as a native Android/iOS shell around the hosted PHP si
 Install local tooling:
 
 - Node.js 22 or newer
-- Java/JDK 17 or newer
+- Java/JDK 21 or newer
 - Android Studio with Android SDK, Platform Tools, and an emulator or physical Android device
+- macOS with Xcode for iOS simulator, physical iPhone, or TestFlight builds
 
 Install Node dependencies:
 
@@ -53,6 +54,39 @@ For staging iOS testing on macOS, use:
 npm run cap:sync:staging:ios
 npm run cap:open:ios
 ```
+
+## GitHub Action Builds
+
+`Capacitor Android Build` creates a debug APK artifact:
+
+- Push to `develop`: staging APK pointed at `https://staging.craftcrawl.site`.
+- Push to `main`: prod APK pointed at `https://app.craftcrawl.site`.
+- Manual run: choose `staging` from `develop` or `prod` from `main`.
+
+Download the artifact from the workflow run and install it on an emulator or
+Android test device.
+
+`Capacitor iOS Build` creates an unsigned iOS simulator app artifact:
+
+- Push to `develop`: staging simulator app.
+- Push to `main`: prod simulator app.
+- Manual run: choose `staging` from `develop` or `prod` from `main`.
+
+This validates the iOS Capacitor shell in CI, but TestFlight and physical iPhone
+distribution still require Apple Developer signing.
+
+## iOS TestFlight Path
+
+To ship staging builds through TestFlight:
+
+1. Enroll in the Apple Developer Program.
+2. Generate the iOS project on a Mac with `npm run cap:add:ios`.
+3. Run `npm run cap:sync:staging:ios`.
+4. Open Xcode with `npm run cap:open:ios`.
+5. Set the signing team and bundle identifier.
+6. Archive and upload to App Store Connect/TestFlight.
+
+Keep the first TestFlight build pointed at `https://staging.craftcrawl.site`.
 
 Sync config and assets after changing Capacitor settings:
 
