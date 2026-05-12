@@ -39,7 +39,13 @@
                 try {
                     await OneSignal.init({
                         appId: config.app_id,
-                        allowLocalhostAsSecureOrigin: Boolean(config.allow_localhost)
+                        allowLocalhostAsSecureOrigin: Boolean(config.allow_localhost),
+                        path: '/',
+                        serviceWorkerPath: 'OneSignalSDKWorker.js',
+                        serviceWorkerUpdaterPath: 'OneSignalSDKUpdaterWorker.js',
+                        serviceWorkerParam: {
+                            scope: '/'
+                        }
                     });
                     await OneSignal.login(config.external_id);
                     resolve(OneSignal);
