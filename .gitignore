@@ -5,3 +5,7 @@ data/
 scripts/
 migrations/
 files/
+node_modules/
+dist/
+www/
+.DS_Store

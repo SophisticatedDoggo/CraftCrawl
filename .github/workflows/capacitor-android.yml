@@ -1,0 +1,49 @@
+name: Capacitor Android Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      mobile_url:
+        description: 'Production CraftCrawl URL'
+        required: true
+        default: 'https://example.com'
+
+jobs:
+  android-debug-build:
+    runs-on: ubuntu-latest
+
+    env:
+      CRAFTCRAWL_MOBILE_URL: ${{ inputs.mobile_url }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Create Android project when missing
+        run: test -d android || npx cap add android
+
+      - name: Sync Capacitor Android project
+        run: npx cap sync android
+
+      - name: Build debug APK
+        run: cd android && ./gradlew assembleDebug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: craftcrawl-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk

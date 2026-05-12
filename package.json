@@ -1,0 +1,27 @@
+{
+  "name": "craftcrawl-mobile-shell",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Capacitor native shell for the hosted CraftCrawl PHP web app.",
+  "scripts": {
+    "cap:sync": "cap sync",
+    "cap:open:android": "cap open android",
+    "cap:open:ios": "cap open ios",
+    "cap:add:android": "cap add android",
+    "cap:add:ios": "cap add ios",
+    "mobile:doctor": "cap doctor"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/browser": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/geolocation": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
+    "@capacitor/splash-screen": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0"
+  }
+}

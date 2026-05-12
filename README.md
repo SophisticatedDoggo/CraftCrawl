@@ -1,6 +1,14 @@
 # CraftCrawl
 A website to browse, review, and check in on local breweries, wineries and more
 
+## Mobile app path
+
+CraftCrawl includes a Capacitor shell scaffold for Android/iOS builds that load
+the hosted PHP site. Read the setup notes before generating native projects:
+
+- `docs/capacitor.md`
+- `docs/hosting-deployment.md`
+
 ## Cloudinary photos
 
 CraftCrawl uploads user and business photos to Cloudinary through server-side PHP.
