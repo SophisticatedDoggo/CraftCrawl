@@ -64,6 +64,7 @@ $craftcrawl_portal_show_search = true;
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="../js/map.js"></script>
 <script src="../js/directions_links.js"></script>
+<script src="../js/level_celebration.js"></script>
 <script src="../js/dashboard_check_in.js"></script>
 <script src="../js/friends.js"></script>
 <script src="../js/mobile_actions_menu.js"></script>

@@ -91,6 +91,7 @@ if ($visit_type === 'repeat') {
 
 try {
     $conn->begin_transaction();
+    $progress_before = craftcrawl_user_level_progress($conn, $user_id);
 
     $visit_stmt = $conn->prepare("INSERT INTO user_visits (user_id, business_id, visit_type, xp_awarded, user_latitude, user_longitude, distance_meters, checkedInAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
     $visit_stmt->bind_param("iisiddd", $user_id, $business_id, $visit_type, $xp_awarded, $user_latitude, $user_longitude, $distance_meters);
@@ -102,6 +103,14 @@ try {
     craftcrawl_add_xp($conn, $user_id, $xp_awarded, $source_type, $source_id, $business['bName']);
     $badges = craftcrawl_award_eligible_badges($conn, $user_id);
     $progress = craftcrawl_user_level_progress($conn, $user_id);
+    $level_up = null;
+
+    if ((int) $progress['level'] > (int) $progress_before['level']) {
+        $level_up = [
+            'level' => (int) $progress['level'],
+            'title' => $progress['title']
+        ];
+    }
 
     $conn->commit();
 
@@ -110,6 +119,7 @@ try {
         'message' => ($visit_type === 'first_time' ? 'First-time visit checked in.' : 'Repeat visit checked in.'),
         'xp_awarded' => $xp_awarded,
         'badges' => $badges,
+        'level_up' => $level_up,
         'progress' => $progress
     ]);
 } catch (Throwable $error) {

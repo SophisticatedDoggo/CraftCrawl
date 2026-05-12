@@ -127,6 +127,9 @@
                             : '';
 
                         showStatus(`${data.message} +${data.xp_awarded} XP.${levelText}${badgeText}`, false);
+                        if (data.level_up && window.craftcrawlShowLevelCelebration) {
+                            window.craftcrawlShowLevelCelebration(data.level_up);
+                        }
                         action.textContent = 'Checked In';
                     })
                     .catch(() => {

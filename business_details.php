@@ -724,6 +724,7 @@ function format_event_time_range($event) {
 </script>
 <script src="js/business_details_map.js"></script>
 <script src="js/directions_links.js"></script>
+<script src="js/level_celebration.js"></script>
 <script src="js/check_in.js"></script>
 <script src="js/business_gallery.js"></script>
 <script src="js/review_photos.js"></script>

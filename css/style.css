@@ -2053,6 +2053,172 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     background: var(--color-error-bg);
 }
 
+.level-celebration-open {
+    overflow: hidden;
+}
+
+.level-celebration {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(12, 16, 26, 0.58);
+    backdrop-filter: blur(8px);
+    overflow: hidden;
+}
+
+.level-celebration.is-closing {
+    opacity: 0;
+    transition: opacity 180ms ease;
+}
+
+.level-celebration-effects {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.level-celebration-panel {
+    position: relative;
+    z-index: 1;
+    width: min(420px, 100%);
+    padding: 34px 28px 30px;
+    text-align: center;
+    color: #172033;
+    background: #fffaf1;
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    border-radius: var(--radius-md);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+    animation: level-panel-pop 420ms cubic-bezier(.18, .89, .32, 1.28);
+}
+
+.level-celebration-panel > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 12px;
+    margin-bottom: 12px;
+    color: #703900;
+    background: #ffcf5a;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.level-celebration-panel h2 {
+    margin: 0;
+    font-size: 32px;
+    line-height: 1.08;
+}
+
+.level-celebration-panel p {
+    margin: 12px 0 0;
+    color: #4d5a70;
+    font-weight: 700;
+}
+
+.level-celebration-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 50%;
+    color: #172033;
+    background: rgba(23, 32, 51, 0.08);
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.level-confetti-piece {
+    position: absolute;
+    top: -24px;
+    border-radius: 2px;
+    opacity: 0.95;
+    animation-name: level-confetti-fall;
+    animation-timing-function: cubic-bezier(.2, .64, .58, 1);
+    animation-fill-mode: forwards;
+}
+
+.level-balloon {
+    position: absolute;
+    bottom: -120px;
+    width: 42px;
+    height: 54px;
+    border-radius: 50% 50% 46% 46%;
+    box-shadow: inset -8px -10px 0 rgba(0, 0, 0, 0.12);
+    animation-name: level-balloon-rise;
+    animation-timing-function: ease-out;
+    animation-fill-mode: forwards;
+}
+
+.level-balloon::before {
+    content: "";
+    position: absolute;
+    top: 9px;
+    left: 11px;
+    width: 10px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.48);
+}
+
+.level-balloon::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -74px;
+    width: 1px;
+    height: 76px;
+    background: rgba(255, 255, 255, 0.68);
+    transform: translateX(-50%);
+}
+
+@keyframes level-panel-pop {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes level-confetti-fall {
+    to {
+        transform: translate3d(var(--confetti-drift), 110vh, 0) rotate(var(--confetti-spin));
+        opacity: 0.2;
+    }
+}
+
+@keyframes level-balloon-rise {
+    to {
+        transform: translate3d(-18px, -115vh, 0) rotate(8deg);
+        opacity: 0.15;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .level-celebration-panel,
+    .level-confetti-piece,
+    .level-balloon {
+        animation: none;
+    }
+
+    .level-confetti-piece,
+    .level-balloon {
+        display: none;
+    }
+}
+
 .business-portal-grid {
     display: grid;
     grid-template-columns: minmax(280px, 0.8fr) minmax(360px, 1.2fr);
