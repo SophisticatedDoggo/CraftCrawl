@@ -47,6 +47,10 @@ $craftcrawl_portal_show_search = $craftcrawl_portal_show_search ?? false;
             <p>Max Level Reached</p>
         <?php else : ?>
             <p><?php echo escape_output($user_progress['level_xp']); ?> / <?php echo escape_output($user_progress['next_level_xp']); ?> XP</p>
+            <?php $portal_next_reward = craftcrawl_next_reward_preview($user_progress['level']); ?>
+            <?php if ($portal_next_reward) : ?>
+                <p class="next-reward-preview">Level <?php echo escape_output($portal_next_reward['level']); ?>: <?php echo escape_output($portal_next_reward['description']); ?></p>
+            <?php endif; ?>
         <?php endif; ?>
     </section>
 </header>
@@ -54,4 +58,5 @@ $craftcrawl_portal_show_search = $craftcrawl_portal_show_search ?? false;
     <a class="portal-tab<?php echo $craftcrawl_portal_active === 'map' ? ' is-active' : ''; ?>" href="portal.php">Map</a>
     <a class="portal-tab<?php echo $craftcrawl_portal_active === 'events' ? ' is-active' : ''; ?>" href="events.php">Events</a>
     <a class="portal-tab<?php echo $craftcrawl_portal_active === 'feed' ? ' is-active' : ''; ?>" href="feed.php">Feed</a>
+    <a class="portal-tab<?php echo $craftcrawl_portal_active === 'leaderboard' ? ' is-active' : ''; ?>" href="friends.php">Rankings</a>
 </div>

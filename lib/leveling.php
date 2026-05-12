@@ -70,7 +70,7 @@ function craftcrawl_level_title($level) {
     return $titles[$index];
 }
 
-function craftcrawl_level_progress($total_xp, $level = null, $level_xp = null) {
+function craftcrawl_level_progress($total_xp, $level = null, $level_xp = null, $selected_title_index = null) {
     $total_xp = max(0, (int) $total_xp);
     if ($level === null || $level_xp === null) {
         $state = craftcrawl_level_state_from_total_xp($total_xp);
@@ -86,7 +86,7 @@ function craftcrawl_level_progress($total_xp, $level = null, $level_xp = null) {
         return [
             'total_xp' => $total_xp,
             'level' => CRAFTCRAWL_MAX_LEVEL,
-            'title' => craftcrawl_level_title(CRAFTCRAWL_MAX_LEVEL),
+            'title' => craftcrawl_user_effective_title(CRAFTCRAWL_MAX_LEVEL, $selected_title_index),
             'level_xp' => 0,
             'current_level_xp' => 0,
             'next_level_xp' => 0,
@@ -98,7 +98,7 @@ function craftcrawl_level_progress($total_xp, $level = null, $level_xp = null) {
     return [
         'total_xp' => $total_xp,
         'level' => $level,
-        'title' => craftcrawl_level_title($level),
+        'title' => craftcrawl_user_effective_title($level, $selected_title_index),
         'level_xp' => $level_xp,
         'current_level_xp' => $level_xp,
         'next_level_xp' => $next_level_xp,
@@ -108,15 +108,19 @@ function craftcrawl_level_progress($total_xp, $level = null, $level_xp = null) {
 }
 
 function craftcrawl_user_level_progress($conn, $user_id) {
-    $stmt = $conn->prepare("SELECT total_xp, level, level_xp FROM users WHERE id=?");
+    $stmt = $conn->prepare("SELECT total_xp, level, level_xp, selected_title_index FROM users WHERE id=?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $user = $stmt->get_result()->fetch_assoc();
+    $selected_title_index = array_key_exists('selected_title_index', $user ?? []) && $user['selected_title_index'] !== null
+        ? (int) $user['selected_title_index']
+        : null;
 
     return craftcrawl_level_progress(
         (int) ($user['total_xp'] ?? 0),
         (int) ($user['level'] ?? 1),
-        (int) ($user['level_xp'] ?? 0)
+        (int) ($user['level_xp'] ?? 0),
+        $selected_title_index
     );
 }
 
@@ -529,6 +533,68 @@ function craftcrawl_user_badges($conn, $user_id) {
     $stmt->execute();
 
     return $stmt->get_result();
+}
+
+function craftcrawl_badge_showcase_slot_count($level) {
+    $level = max(1, min(CRAFTCRAWL_MAX_LEVEL, (int) $level));
+    if ($level >= 100) return 6;
+    if ($level >= 75) return 5;
+    if ($level >= 50) return 4;
+    if ($level >= 25) return 3;
+    if ($level >= 10) return 2;
+    return 1;
+}
+
+function craftcrawl_unlocked_profile_frame($level) {
+    $level = max(1, min(CRAFTCRAWL_MAX_LEVEL, (int) $level));
+    if ($level >= 100) return 'legend';
+    if ($level >= 75) return 'gold';
+    if ($level >= 50) return 'silver';
+    if ($level >= 25) return 'bronze';
+    return null;
+}
+
+function craftcrawl_unlocked_title_count($level) {
+    $level = max(1, min(CRAFTCRAWL_MAX_LEVEL, (int) $level));
+    return min(20, (int) floor(($level - 1) / 5) + 1);
+}
+
+function craftcrawl_user_effective_title($level, $selected_title_index) {
+    $titles = [
+        'New Crawler', 'First Sipper', 'Local Taster', 'Weekend Crawler', 'Flight Finder',
+        'Taproom Regular', 'Craft Explorer', 'Pour Seeker', 'Badge Hunter', 'Trail Taster',
+        'Barrel Scout', 'Regional Crawler', 'Craft Collector', 'Pour Pro', 'Taproom Traveler',
+        'Craft Connoisseur', 'Crawl Captain', 'Regional Legend', 'Master Crawler', 'Craft Crawl Legend'
+    ];
+    $unlocked = craftcrawl_unlocked_title_count($level);
+
+    if ($selected_title_index !== null
+        && (int) $selected_title_index >= 0
+        && (int) $selected_title_index < $unlocked
+        && isset($titles[(int) $selected_title_index])) {
+        return $titles[(int) $selected_title_index];
+    }
+
+    return craftcrawl_level_title($level);
+}
+
+function craftcrawl_next_reward_preview($level) {
+    $level = max(1, min(CRAFTCRAWL_MAX_LEVEL, (int) $level));
+    $milestones = [
+        10  => '2 badge showcase slots',
+        25  => 'Bronze Pour Frame + 3rd badge showcase slot',
+        50  => 'Silver Tap Frame + 4th badge showcase slot',
+        75  => 'Gold Barrel Frame + 5th badge showcase slot',
+        100 => 'Craft Crawl Legend Frame + 6th badge showcase slot',
+    ];
+
+    foreach ($milestones as $milestone_level => $description) {
+        if ($level < $milestone_level) {
+            return ['level' => $milestone_level, 'description' => $description];
+        }
+    }
+
+    return null;
 }
 
 ?>

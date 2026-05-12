@@ -96,6 +96,10 @@ $xp_sql = "
     FROM xp_log
     WHERE user_id IN ($placeholders)
         AND level_after > level_before
+        AND (
+            (MOD(level_after - 1, 5) = 0 AND level_after > 1)
+            OR level_after IN (50, 75, 100)
+        )
     ORDER BY createdAt DESC, id DESC
     LIMIT 80
 ";

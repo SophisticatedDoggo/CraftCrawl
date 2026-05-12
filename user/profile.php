@@ -28,7 +28,7 @@ if (!$can_view_profile) {
     http_response_code(403);
     $profile = null;
 } else {
-    $profile_stmt = $conn->prepare("SELECT id, fName, lName, createdAt, show_liked_businesses FROM users WHERE id=? AND disabledAt IS NULL");
+    $profile_stmt = $conn->prepare("SELECT id, fName, lName, createdAt, show_liked_businesses, level, selected_profile_frame FROM users WHERE id=? AND disabledAt IS NULL");
     $profile_stmt->bind_param("i", $profile_id);
     $profile_stmt->execute();
     $profile = $profile_stmt->get_result()->fetch_assoc();
@@ -46,6 +46,22 @@ if (!$profile) {
     $user_progress = craftcrawl_user_level_progress($conn, $profile_id);
     $user_badges = craftcrawl_user_badges($conn, $profile_id);
     $can_view_liked_businesses = $is_own_profile || !empty($profile['show_liked_businesses']);
+    $profile_level = (int) ($profile['level'] ?? 1);
+    $profile_frame = $profile['selected_profile_frame'] ?? null;
+    $slot_count = craftcrawl_badge_showcase_slot_count($profile_level);
+    $next_reward = $is_own_profile ? craftcrawl_next_reward_preview($profile_level) : null;
+
+    $showcase_stmt = $conn->prepare("
+        SELECT ubs.slot_order, ubs.badge_key, ub.badge_name, ub.badge_description, ub.badge_tier
+        FROM user_badge_showcase ubs
+        INNER JOIN user_badges ub ON ub.user_id = ubs.user_id AND ub.badge_key = ubs.badge_key
+        WHERE ubs.user_id=?
+        ORDER BY ubs.slot_order ASC
+    ");
+    $showcase_stmt->bind_param("i", $profile_id);
+    $showcase_stmt->execute();
+    $showcase_rows = $showcase_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $showcased_keys = array_column($showcase_rows, 'badge_key');
 
     $stats_stmt = $conn->prepare("
         SELECT
@@ -137,7 +153,7 @@ if (!$profile) {
                 <p class="form-help">You can only view profiles for friends you have added.</p>
             </section>
         <?php else : ?>
-            <section class="settings-panel profile-hero-panel">
+            <section class="settings-panel profile-hero-panel<?php echo $profile_frame ? ' has-frame-' . escape_output($profile_frame) : ''; ?>">
                 <div class="level-summary-card">
                     <div>
                         <strong>Level <?php echo escape_output($user_progress['level']); ?> - <?php echo escape_output($user_progress['title']); ?></strong>
@@ -150,6 +166,9 @@ if (!$profile) {
                     <div class="level-progress-bar" aria-hidden="true">
                         <span style="width: <?php echo escape_output($user_progress['progress_percent']); ?>%;"></span>
                     </div>
+                    <?php if ($next_reward) : ?>
+                        <p class="next-reward-preview">Next unlock at Level <?php echo escape_output($next_reward['level']); ?>: <?php echo escape_output($next_reward['description']); ?></p>
+                    <?php endif; ?>
                 </div>
 
                 <div class="profile-stat-grid">
@@ -172,6 +191,34 @@ if (!$profile) {
                 </div>
             </section>
 
+            <section class="settings-panel" id="badge-showcase-section" data-badge-showcase data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>" data-slot-count="<?php echo escape_output($slot_count); ?>">
+                <h2>Badge Showcase</h2>
+                <p class="form-help"><?php echo escape_output($slot_count); ?> slot<?php echo $slot_count !== 1 ? 's' : ''; ?> unlocked<?php if ($slot_count < 6) : ?> · More slots unlock as you level up<?php endif; ?></p>
+                <div class="badge-showcase-grid" data-showcase-grid>
+                    <?php
+                    $showcased_by_slot = [];
+                    foreach ($showcase_rows as $row) {
+                        $showcased_by_slot[(int) $row['slot_order']] = $row;
+                    }
+                    for ($s = 1; $s <= $slot_count; $s++) :
+                        $slot_badge = $showcased_by_slot[$s] ?? null;
+                    ?>
+                        <article class="badge-showcase-slot<?php echo $slot_badge ? ' is-filled' : ''; ?>" data-showcase-slot="<?php echo $s; ?>">
+                            <?php if ($slot_badge) : ?>
+                                <strong><?php echo escape_output($slot_badge['badge_name']); ?></strong>
+                                <span><?php echo escape_output($slot_badge['badge_description']); ?></span>
+                                <small><?php echo escape_output(ucfirst($slot_badge['badge_tier'])); ?></small>
+                                <?php if ($is_own_profile) : ?>
+                                    <button type="button" class="badge-showcase-remove" data-showcase-action="remove" data-badge-key="<?php echo escape_output($slot_badge['badge_key']); ?>">Remove</button>
+                                <?php endif; ?>
+                            <?php else : ?>
+                                <span class="badge-showcase-empty">Empty slot</span>
+                            <?php endif; ?>
+                        </article>
+                    <?php endfor; ?>
+                </div>
+            </section>
+
             <section class="settings-panel">
                 <h2>Earned Badges</h2>
                 <div class="badge-grid">
@@ -179,10 +226,16 @@ if (!$profile) {
                         <p>No badges earned yet.</p>
                     <?php endif; ?>
                     <?php while ($badge = $user_badges->fetch_assoc()) : ?>
-                        <article class="badge-card">
+                        <?php $is_showcased = in_array($badge['badge_key'], $showcased_keys, true); ?>
+                        <article class="badge-card<?php echo $is_showcased ? ' is-showcased' : ''; ?>">
                             <strong><?php echo escape_output($badge['badge_name']); ?></strong>
                             <span><?php echo escape_output($badge['badge_description']); ?></span>
                             <small><?php echo escape_output(ucfirst($badge['badge_tier'] ?? 'small')); ?> · <?php echo escape_output(str_replace('_', ' ', $badge['badge_category'] ?? 'general')); ?> · +<?php echo escape_output($badge['xp_awarded']); ?> XP</small>
+                            <?php if ($is_own_profile && !$is_showcased && count($showcase_rows) < $slot_count) : ?>
+                                <button type="button" class="badge-showcase-add" data-showcase-action="add" data-badge-key="<?php echo escape_output($badge['badge_key']); ?>" data-badge-name="<?php echo escape_output($badge['badge_name']); ?>">Feature</button>
+                            <?php elseif ($is_own_profile && $is_showcased) : ?>
+                                <button type="button" class="badge-showcase-remove" data-showcase-action="remove" data-badge-key="<?php echo escape_output($badge['badge_key']); ?>">Unfeature</button>
+                            <?php endif; ?>
                         </article>
                     <?php endwhile; ?>
                 </div>
@@ -246,5 +299,6 @@ if (!$profile) {
     <script src="../js/friends.js"></script>
     <script src="../js/mobile_actions_menu.js"></script>
     <script src="../js/onesignal_push.js"></script>
+    <script src="../js/badge_showcase.js"></script>
 </body>
 </html>

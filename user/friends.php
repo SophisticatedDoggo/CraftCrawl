@@ -98,6 +98,7 @@ $leaderboard_stmt = $conn->prepare("
         u.total_xp,
         u.level,
         u.level_xp,
+        u.selected_title_index,
         COALESCE(stats.unique_locations, 0) AS unique_locations,
         COALESCE(stats.total_checkins, 0) AS total_checkins,
         COALESCE(stats.recent_checkins, 0) AS recent_checkins,
@@ -182,7 +183,8 @@ $leaderboard = $leaderboard_stmt->get_result();
                 <?php while ($leader = $leaderboard->fetch_assoc()) : ?>
                     <?php
                         $level = (int) $leader['level'];
-                        $level_title = craftcrawl_level_title($level);
+                        $selected_idx = $leader['selected_title_index'] !== null ? (int) $leader['selected_title_index'] : null;
+                        $level_title = craftcrawl_user_effective_title($level, $selected_idx);
                         $leader_name = trim($leader['fName'] . ' ' . $leader['lName']);
                         $metric_text = $leaderboard_mode === 'level' ? '' : (int) $leader[$leaderboard_mode] . ' ' . $active_leaderboard['metric_label'];
                     ?>
