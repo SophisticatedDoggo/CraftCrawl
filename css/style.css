@@ -3568,6 +3568,10 @@ a.event-calendar-event {
         padding-bottom: calc(92px + env(safe-area-inset-bottom));
     }
 
+    .business-portal {
+        padding-bottom: calc(112px + env(safe-area-inset-bottom));
+    }
+
     .portal-header {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
@@ -3889,6 +3893,10 @@ a.event-calendar-event {
         -webkit-backdrop-filter: blur(18px) saturate(1.12);
     }
 
+    .admin-mobile-tabbar {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
     .mobile-app-tab {
         position: relative;
         display: grid;
@@ -3904,6 +3912,7 @@ a.event-calendar-event {
         font-size: 11px;
         font-weight: 650;
         text-decoration: none;
+        cursor: pointer;
     }
 
     .mobile-tab-badge {
@@ -3954,11 +3963,55 @@ a.event-calendar-event {
     .mobile-app-tab-icon-friends::before,
     .mobile-app-tab-icon-friends::after,
     .mobile-app-tab-icon-checkin::before,
-    .mobile-app-tab-icon-checkin::after {
+    .mobile-app-tab-icon-checkin::after,
+    .mobile-app-tab-icon-dashboard::before,
+    .mobile-app-tab-icon-dashboard::after,
+    .mobile-app-tab-icon-analytics::before,
+    .mobile-app-tab-icon-analytics::after,
+    .mobile-app-tab-icon-edit::before,
+    .mobile-app-tab-icon-edit::after,
+    .mobile-app-tab-icon-accounts::before,
+    .mobile-app-tab-icon-accounts::after,
+    .mobile-app-tab-icon-reviews::before,
+    .mobile-app-tab-icon-reviews::after {
         content: "";
         position: absolute;
         border-radius: 999px;
         background: currentColor;
+    }
+
+    .mobile-app-tab-icon-dashboard {
+        border: 2px solid currentColor;
+        border-radius: 5px;
+    }
+
+    .mobile-app-tab-icon-dashboard::before {
+        top: 3px;
+        bottom: 3px;
+        left: 8px;
+        width: 2px;
+    }
+
+    .mobile-app-tab-icon-dashboard::after {
+        top: 8px;
+        right: 3px;
+        left: 3px;
+        height: 2px;
+    }
+
+    .mobile-app-tab-icon-analytics::before {
+        right: 3px;
+        bottom: 3px;
+        width: 4px;
+        height: 15px;
+        box-shadow: -7px 5px 0 currentColor, -14px 9px 0 currentColor;
+    }
+
+    .mobile-app-tab-icon-analytics::after {
+        right: 1px;
+        bottom: 1px;
+        left: 1px;
+        height: 2px;
     }
 
     .mobile-app-tab-icon-events {
@@ -4013,6 +4066,63 @@ a.event-calendar-event {
         right: 4px;
         left: 4px;
         height: 2px;
+    }
+
+    .mobile-app-tab-icon-edit {
+        border-bottom: 2px solid currentColor;
+    }
+
+    .mobile-app-tab-icon-edit::before {
+        top: 3px;
+        left: 9px;
+        width: 5px;
+        height: 17px;
+        transform: rotate(42deg);
+        transform-origin: center;
+    }
+
+    .mobile-app-tab-icon-edit::after {
+        right: 2px;
+        bottom: 2px;
+        width: 7px;
+        height: 2px;
+        transform: rotate(42deg);
+    }
+
+    .mobile-app-tab-icon-accounts::before {
+        top: 4px;
+        left: 2px;
+        width: 8px;
+        height: 8px;
+        box-shadow: 10px 0 0 currentColor;
+    }
+
+    .mobile-app-tab-icon-accounts::after {
+        right: 1px;
+        bottom: 4px;
+        left: 1px;
+        height: 8px;
+        border-radius: 8px 8px 4px 4px;
+    }
+
+    .mobile-app-tab-icon-reviews {
+        border: 2px solid currentColor;
+        border-radius: 5px;
+    }
+
+    .mobile-app-tab-icon-reviews::before {
+        top: 5px;
+        right: 4px;
+        left: 4px;
+        height: 2px;
+    }
+
+    .mobile-app-tab-icon-reviews::after {
+        right: 3px;
+        bottom: -5px;
+        width: 7px;
+        height: 7px;
+        transform: rotate(45deg);
     }
 
     .mobile-app-tab-icon-settings {
@@ -4271,7 +4381,7 @@ a.event-calendar-event {
     .business-portal {
         width: 100%;
         max-width: 100%;
-        padding: 12px 10px 28px;
+        padding: 12px 10px calc(112px + env(safe-area-inset-bottom));
         overflow-x: hidden;
     }
 

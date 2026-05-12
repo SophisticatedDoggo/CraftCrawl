@@ -170,6 +170,7 @@ $business = $stmt->get_result()->fetch_assoc();
             </form>
         </section>
     </main>
+    <?php include __DIR__ . '/mobile_nav.php'; ?>
     <script src="../js/palette_switcher.js"></script>
     <script src="../js/mobile_actions_menu.js"></script>
 </body>

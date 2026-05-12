@@ -435,6 +435,7 @@ $business_photos = $photo_stmt->get_result();
             <?php endwhile; ?>
         </section>
     </main>
+    <?php include __DIR__ . '/mobile_nav.php'; ?>
     <script src="../js/business_review_responses.js"></script>
     <script src="../js/mobile_actions_menu.js"></script>
     <script src="../js/depth_animations.js"></script>

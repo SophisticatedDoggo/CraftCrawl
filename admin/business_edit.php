@@ -213,6 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             </form>
         </section>
     </main>
+    <?php include __DIR__ . '/mobile_nav.php'; ?>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo craftcrawl_admin_escape($MAPBOX_ACCESS_TOKEN); ?>";
 </script>
