@@ -2,6 +2,7 @@
 require '../login_check.php';
 include '../db.php';
 require_once '../lib/leveling.php';
+require_once '../lib/onesignal.php';
 
 header('Content-Type: application/json');
 
@@ -21,6 +22,7 @@ craftcrawl_verify_csrf();
 
 $user_id = (int) $_SESSION['user_id'];
 $friend_id = filter_var($_POST['friend_id'] ?? null, FILTER_VALIDATE_INT);
+$sender_name = craftcrawl_user_display_name_by_id($conn, $user_id);
 
 if (!$friend_id || $friend_id === $user_id) {
     http_response_code(400);
@@ -103,6 +105,13 @@ try {
     $request_stmt->execute();
 
     $conn->commit();
+    craftcrawl_send_push_to_user(
+        $conn,
+        $friend_id,
+        'New friend invite',
+        $sender_name . ' sent you a CraftCrawl friend invite.',
+        'user/friends.php'
+    );
 
     echo json_encode([
         'ok' => true,

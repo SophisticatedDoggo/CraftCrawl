@@ -2,6 +2,7 @@
 require '../login_check.php';
 include '../db.php';
 require_once '../lib/leveling.php';
+require_once '../lib/onesignal.php';
 
 header('Content-Type: application/json');
 
@@ -129,6 +130,22 @@ if ($existing) {
     $insert_stmt->bind_param("iss", $user_id, $item_key, $reaction_type);
     $insert_stmt->execute();
     craftcrawl_award_eligible_badges($conn, $user_id);
+
+    $owner_id = craftcrawl_feed_item_owner_id($conn, $item_key);
+    if ($owner_id && $owner_id !== $user_id) {
+        $reaction_labels = [
+            'cheers' => 'Cheers',
+            'nice_find' => 'Nice',
+        ];
+        $reactor_name = craftcrawl_user_display_name_by_id($conn, $user_id);
+        craftcrawl_send_push_to_user(
+            $conn,
+            $owner_id,
+            'New reaction',
+            $reactor_name . ' reacted ' . ($reaction_labels[$reaction_type] ?? 'to your post') . ' on your CraftCrawl post.',
+            'user/feed_post.php?item=' . rawurlencode($item_key)
+        );
+    }
 }
 
 $count_stmt = $conn->prepare("

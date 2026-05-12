@@ -43,6 +43,19 @@ these environment variables on the host:
 - `MAILGUN_URL`
 - `MAILGUN_DOMAIN`
 
+## OneSignal push notifications
+
+CraftCrawl can register logged-in user browsers with OneSignal Web Push and send
+targeted social notifications for friend invites, accepted invites, comments,
+replies, and reactions. Configure these environment variables on the host:
+
+- `ONESIGNAL_APP_ID`
+- `ONESIGNAL_API_KEY`
+
+The OneSignal web app must be configured for the same origin as the site, such
+as `https://staging.craftcrawl.site`, and `OneSignalSDKWorker.js` must remain
+publicly accessible from the site root.
+
 Run the email verification migration for existing databases:
 
 ```sh

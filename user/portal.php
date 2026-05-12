@@ -168,5 +168,6 @@ $user_progress = craftcrawl_user_level_progress($conn, $user_id);
 <script src="../js/friends.js"></script>
 <script src="../js/mobile_actions_menu.js"></script>
 <script src="../js/depth_animations.js"></script>
+<script src="../js/onesignal_push.js"></script>
 </body>
 </html>

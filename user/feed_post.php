@@ -2,6 +2,7 @@
 require '../login_check.php';
 include '../db.php';
 require_once '../lib/feed_items.php';
+require_once '../lib/onesignal.php';
 
 if (!isset($_SESSION['user_id'])) {
     craftcrawl_redirect('user_login.php');
@@ -114,6 +115,38 @@ if ($feed_item && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $comment_stmt = $conn->prepare("INSERT INTO feed_comments (user_id, parent_comment_id, feed_item_key, body, createdAt) VALUES (?, ?, ?, ?, NOW())");
     $comment_stmt->bind_param("iiss", $user_id, $parent_comment_id, $item_key, $body);
     $comment_stmt->execute();
+
+    $commenter_name = craftcrawl_user_display_name_by_id($conn, $user_id);
+    $thread_url = 'user/feed_post.php?item=' . rawurlencode($item_key);
+    $owner_id = craftcrawl_feed_item_owner_id($conn, $item_key);
+
+    if ($owner_id && $owner_id !== $user_id) {
+        craftcrawl_send_push_to_user(
+            $conn,
+            $owner_id,
+            $parent_comment_id ? 'New reply on your post' : 'New comment on your post',
+            $commenter_name . ($parent_comment_id ? ' replied on your CraftCrawl post.' : ' commented on your CraftCrawl post.'),
+            $thread_url
+        );
+    }
+
+    if ($parent_comment_id) {
+        $parent_owner_stmt = $conn->prepare("SELECT user_id FROM feed_comments WHERE id=? LIMIT 1");
+        $parent_owner_stmt->bind_param("i", $parent_comment_id);
+        $parent_owner_stmt->execute();
+        $parent_owner = $parent_owner_stmt->get_result()->fetch_assoc();
+        $parent_owner_id = (int) ($parent_owner['user_id'] ?? 0);
+
+        if ($parent_owner_id && $parent_owner_id !== $user_id && $parent_owner_id !== $owner_id) {
+            craftcrawl_send_push_to_user(
+                $conn,
+                $parent_owner_id,
+                'New reply to your comment',
+                $commenter_name . ' replied to your CraftCrawl comment.',
+                $thread_url
+            );
+        }
+    }
 
     craftcrawl_redirect('user/feed_post.php?item=' . rawurlencode($item_key) . '&message=' . ($parent_comment_id ? 'replied' : 'commented'));
 }
@@ -256,6 +289,7 @@ if ($feed_item) {
             </section>
         <?php endif; ?>
     </main>
+    <script src="../js/onesignal_push.js"></script>
     <script>
         document.querySelectorAll('[data-reply-toggle]').forEach((button) => {
             button.addEventListener('click', () => {

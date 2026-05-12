@@ -2,6 +2,7 @@
 require '../login_check.php';
 include '../db.php';
 require_once '../lib/leveling.php';
+require_once '../lib/onesignal.php';
 
 header('Content-Type: application/json');
 
@@ -71,6 +72,17 @@ try {
     $conn->commit();
 
     $name = trim($request['fName'] . ' ' . $request['lName']);
+
+    if ($response === 'accepted') {
+        craftcrawl_send_push_to_user(
+            $conn,
+            (int) $request['requester_user_id'],
+            'Friend invite accepted',
+            craftcrawl_user_display_name_by_id($conn, $user_id) . ' accepted your CraftCrawl friend invite.',
+            'user/friends.php'
+        );
+    }
+
     echo json_encode([
         'ok' => true,
         'message' => $response === 'accepted' ? $name . ' is now your friend.' : 'Friend invite declined.',

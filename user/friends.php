@@ -257,5 +257,6 @@ $leaderboard = $leaderboard_stmt->get_result();
         </section>
     </main>
     <script src="../js/friends.js"></script>
+    <script src="../js/onesignal_push.js"></script>
 </body>
 </html>

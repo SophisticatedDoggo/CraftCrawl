@@ -192,6 +192,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </section>
 
         <section class="settings-panel">
+            <h2>Push Notifications</h2>
+            <p class="form-help">Enable browser push notifications on this device for friend invites, comments, replies, and reactions.</p>
+            <button type="button" data-onesignal-enable disabled>Enable Push Notifications</button>
+            <p class="form-message" data-onesignal-status hidden></p>
+        </section>
+
+        <section class="settings-panel">
             <h2>Reset Password</h2>
             <form method="POST" action="" class="settings-form">
                 <?php echo craftcrawl_csrf_input(); ?>
@@ -222,5 +229,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </section>
     </main>
     <script src="../js/palette_switcher.js"></script>
+    <script src="../js/onesignal_push.js"></script>
 </body>
 </html>
