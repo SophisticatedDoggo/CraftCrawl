@@ -4766,6 +4766,10 @@ a.event-calendar-event {
         width: 100%;
     }
 
+    .business-header-actions.user-subpage-header-actions {
+        display: none;
+    }
+
     .business-header-actions.business-actions-menu {
         display: block;
         width: auto;
