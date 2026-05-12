@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/security.php';
-require_once __DIR__ . '/lib/env.php';
+require_once __DIR__ . '/env.php';
 
 const CRAFTCRAWL_EMAIL_VERIFICATION_HOURS = 24;
 const CRAFTCRAWL_EMAIL_VERIFICATION_RESEND_SECONDS = 60;
