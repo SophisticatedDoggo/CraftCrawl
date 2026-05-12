@@ -27,7 +27,7 @@ if (!$can_view_profile) {
     http_response_code(403);
     $profile = null;
 } else {
-    $profile_stmt = $conn->prepare("SELECT id, fName, lName, createdAt FROM users WHERE id=? AND disabledAt IS NULL");
+    $profile_stmt = $conn->prepare("SELECT id, fName, lName, createdAt, show_liked_businesses FROM users WHERE id=? AND disabledAt IS NULL");
     $profile_stmt->bind_param("i", $profile_id);
     $profile_stmt->execute();
     $profile = $profile_stmt->get_result()->fetch_assoc();
@@ -44,6 +44,7 @@ if (!$profile) {
     $page_title = $is_own_profile ? 'Your Profile' : trim($profile['fName'] . ' ' . $profile['lName']);
     $user_progress = craftcrawl_user_level_progress($conn, $profile_id);
     $user_badges = craftcrawl_user_badges($conn, $profile_id);
+    $can_view_liked_businesses = $is_own_profile || !empty($profile['show_liked_businesses']);
 
     $stats_stmt = $conn->prepare("
         SELECT
@@ -84,17 +85,20 @@ if (!$profile) {
         $unvisited_stmt->execute();
         $friend_unvisited_locations = $unvisited_stmt->get_result();
 
-        $want_stmt = $conn->prepare("
-            SELECT b.id, b.bName, b.bType, b.city, b.state
-            FROM want_to_go_locations wtg
-            INNER JOIN businesses b ON b.id = wtg.business_id
-            WHERE wtg.user_id=? AND wtg.visibility IN ('friends_only', 'public')
-            ORDER BY wtg.createdAt DESC
-            LIMIT 8
+    }
+
+    if ($can_view_liked_businesses) {
+        $liked_stmt = $conn->prepare("
+            SELECT b.id, b.bName, b.bType, b.city, b.state, lb.createdAt
+            FROM liked_businesses lb
+            INNER JOIN businesses b ON b.id = lb.business_id
+            WHERE lb.user_id=? AND b.approved=TRUE
+            ORDER BY lb.createdAt DESC
+            LIMIT 12
         ");
-        $want_stmt->bind_param("i", $profile_id);
-        $want_stmt->execute();
-        $friend_want_locations = $want_stmt->get_result();
+        $liked_stmt->bind_param("i", $profile_id);
+        $liked_stmt->execute();
+        $liked_businesses = $liked_stmt->get_result();
     }
 }
 ?>
@@ -180,11 +184,29 @@ if (!$profile) {
                         <article class="badge-card">
                             <strong><?php echo escape_output($badge['badge_name']); ?></strong>
                             <span><?php echo escape_output($badge['badge_description']); ?></span>
-                            <small>+<?php echo escape_output($badge['xp_awarded']); ?> XP</small>
+                            <small><?php echo escape_output(ucfirst($badge['badge_tier'] ?? 'small')); ?> · <?php echo escape_output(str_replace('_', ' ', $badge['badge_category'] ?? 'general')); ?> · +<?php echo escape_output($badge['xp_awarded']); ?> XP</small>
                         </article>
                     <?php endwhile; ?>
                 </div>
             </section>
+
+            <?php if ($can_view_liked_businesses) : ?>
+                <section class="settings-panel">
+                    <h2>Liked Businesses</h2>
+                    <div class="friend-location-grid">
+                        <?php if ($liked_businesses->num_rows === 0) : ?>
+                            <p>No liked businesses yet.</p>
+                        <?php endif; ?>
+                        <?php while ($business = $liked_businesses->fetch_assoc()) : ?>
+                            <article class="friend-location-card">
+                                <strong><?php echo escape_output($business['bName']); ?></strong>
+                                <span><?php echo escape_output($business['bType']); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
+                                <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View Business</a>
+                            </article>
+                        <?php endwhile; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
 
             <?php if (!$is_own_profile) : ?>
                 <section class="settings-panel">
@@ -219,21 +241,6 @@ if (!$profile) {
                     </div>
                 </section>
 
-                <section class="settings-panel">
-                    <h2>Want-to-Go List</h2>
-                    <div class="friend-location-grid">
-                        <?php if ($friend_want_locations->num_rows === 0) : ?>
-                            <p>No visible want-to-go locations yet.</p>
-                        <?php endif; ?>
-                        <?php while ($location = $friend_want_locations->fetch_assoc()) : ?>
-                            <article class="friend-location-card">
-                                <strong><?php echo escape_output($location['bName']); ?></strong>
-                                <span><?php echo escape_output($location['bType']); ?> · <?php echo escape_output($location['city']); ?>, <?php echo escape_output($location['state']); ?></span>
-                                <a href="../business_details.php?id=<?php echo escape_output($location['id']); ?>">View Location</a>
-                            </article>
-                        <?php endwhile; ?>
-                    </div>
-                </section>
             <?php endif; ?>
         <?php endif; ?>
     </main>

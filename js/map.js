@@ -892,10 +892,51 @@ function renderEventsFeed(events) {
                 <div class="event-feed-actions">
                     <a href="${eventUrl}">View event</a>
                     <a href="../business_details.php?id=${event.businessId}">View business</a>
+                    <button
+                        type="button"
+                        class="event-want-button ${event.isWantToGo ? 'is-active' : ''}"
+                        data-event-want
+                        data-event-id="${event.id}"
+                        data-occurrence-date="${escapeHtml(event.date)}"
+                        data-is-saved="${event.isWantToGo ? '1' : '0'}"
+                    >
+                        📍 Want to Go ${Number(event.wantToGoCount || 0)}
+                    </button>
                 </div>
             </article>
         `;
     }).join('');
+
+    feedContainer.querySelectorAll('[data-event-want]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const formData = new FormData();
+            formData.append('csrf_token', window.CRAFTCRAWL_CSRF_TOKEN || '');
+            formData.append('event_id', button.dataset.eventId);
+            formData.append('occurrence_date', button.dataset.occurrenceDate);
+            formData.append('is_saved', button.dataset.isSaved || '0');
+            button.disabled = true;
+
+            fetch('../user/event_want_to_go_toggle.php', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (!data.ok) {
+                        return;
+                    }
+
+                    button.dataset.isSaved = data.is_saved ? '1' : '0';
+                    button.classList.toggle('is-active', Boolean(data.is_saved));
+                    button.textContent = `📍 Want to Go ${Number(data.count || 0)}`;
+                    window.dispatchEvent(new CustomEvent('craftcrawl:event-want-updated'));
+                })
+                .finally(() => {
+                    button.disabled = false;
+                });
+        });
+    });
 }
 
 function escapeHtml(value) {

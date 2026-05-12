@@ -237,6 +237,10 @@ $leaderboard = $leaderboard_stmt->get_result();
 
         <section class="settings-panel friends-manager-section">
             <h2>Your Friends</h2>
+            <label class="friends-list-filter" for="current-friend-filter">
+                <span>Search your friends</span>
+                <input type="search" id="current-friend-filter" data-current-friends-filter placeholder="Search by name" autocomplete="off">
+            </label>
             <div class="friend-current-list" data-current-friends-list></div>
         </section>
 

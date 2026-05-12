@@ -1,6 +1,7 @@
 <?php
 require '../login_check.php';
 include '../db.php';
+require_once '../lib/leveling.php';
 
 header('Content-Type: application/json');
 
@@ -44,6 +45,8 @@ if (!$request) {
     exit();
 }
 
+$badges = [];
+
 try {
     $conn->begin_transaction();
 
@@ -60,6 +63,9 @@ try {
         $reverse_stmt = $conn->prepare("INSERT IGNORE INTO user_friends (user_id, friend_user_id, createdAt) VALUES (?, ?, NOW())");
         $reverse_stmt->bind_param("ii", $requester_id, $user_id);
         $reverse_stmt->execute();
+
+        $badges = craftcrawl_award_eligible_badges($conn, $user_id);
+        craftcrawl_award_eligible_badges($conn, $requester_id);
     }
 
     $conn->commit();
@@ -67,7 +73,8 @@ try {
     $name = trim($request['fName'] . ' ' . $request['lName']);
     echo json_encode([
         'ok' => true,
-        'message' => $response === 'accepted' ? $name . ' is now your friend.' : 'Friend invite declined.'
+        'message' => $response === 'accepted' ? $name . ' is now your friend.' : 'Friend invite declined.',
+        'badges' => $badges
     ]);
 } catch (Throwable $error) {
     $conn->rollback();

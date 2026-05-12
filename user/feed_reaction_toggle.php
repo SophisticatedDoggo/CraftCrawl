@@ -1,6 +1,7 @@
 <?php
 require '../login_check.php';
 include '../db.php';
+require_once '../lib/leveling.php';
 
 header('Content-Type: application/json');
 
@@ -29,9 +30,7 @@ if ($item_key === '' || !in_array($reaction_type, $allowed_reactions, true)) {
     exit();
 }
 
-$item_reaction_options = str_starts_with($item_key, 'level_up:')
-    ? ['cheers', 'nice_find']
-    : ['cheers', 'nice_find', 'want_to_go'];
+$item_reaction_options = ['cheers', 'nice_find'];
 
 if (!in_array($reaction_type, $item_reaction_options, true)) {
     http_response_code(400);
@@ -83,6 +82,29 @@ function craftcrawl_feed_item_is_visible($conn, $user_id, $item_key) {
         return (bool) $stmt->get_result()->fetch_assoc();
     }
 
+    if (preg_match('/^event_want:(\d+)$/', $item_key, $matches)) {
+        $want_id = (int) $matches[1];
+        $stmt = $conn->prepare("
+            SELECT ew.id
+            FROM event_want_to_go ew
+            INNER JOIN users u ON u.id = ew.user_id
+            WHERE ew.id=?
+                AND u.show_feed_activity=TRUE
+                AND (
+                    ew.user_id=?
+                    OR EXISTS (
+                        SELECT 1
+                        FROM user_friends uf
+                        WHERE uf.user_id=? AND uf.friend_user_id=ew.user_id
+                    )
+                )
+            LIMIT 1
+        ");
+        $stmt->bind_param("iii", $want_id, $user_id, $user_id);
+        $stmt->execute();
+        return (bool) $stmt->get_result()->fetch_assoc();
+    }
+
     return false;
 }
 
@@ -106,6 +128,7 @@ if ($existing) {
     $insert_stmt = $conn->prepare("INSERT INTO feed_reactions (user_id, feed_item_key, reaction_type, createdAt) VALUES (?, ?, ?, NOW())");
     $insert_stmt->bind_param("iss", $user_id, $item_key, $reaction_type);
     $insert_stmt->execute();
+    craftcrawl_award_eligible_badges($conn, $user_id);
 }
 
 $count_stmt = $conn->prepare("

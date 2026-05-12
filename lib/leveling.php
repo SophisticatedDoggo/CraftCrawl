@@ -113,11 +113,35 @@ function craftcrawl_distance_meters($lat1, $lng1, $lat2, $lng2) {
 
 function craftcrawl_badge_definitions() {
     return [
-        'first_review' => [
-            'name' => 'First Review',
-            'description' => 'Leave your first review.',
+        'first_stop' => [
+            'name' => 'First Stop',
+            'description' => 'Visit your first unique CraftCrawl location.',
             'xp' => 50,
             'tier' => 'small'
+        ],
+        'five_stop_flight' => [
+            'name' => 'Five Stop Flight',
+            'description' => 'Visit 5 unique CraftCrawl locations.',
+            'xp' => 50,
+            'tier' => 'small'
+        ],
+        'local_explorer' => [
+            'name' => 'Local Explorer',
+            'description' => 'Visit 10 unique CraftCrawl locations.',
+            'xp' => 100,
+            'tier' => 'medium'
+        ],
+        'craft_crawl_veteran' => [
+            'name' => 'Craft Crawl Veteran',
+            'description' => 'Visit 25 unique CraftCrawl locations.',
+            'xp' => 250,
+            'tier' => 'major'
+        ],
+        'craft_crawl_legend' => [
+            'name' => 'Craft Crawl Legend',
+            'description' => 'Visit 100 unique CraftCrawl locations.',
+            'xp' => 250,
+            'tier' => 'major'
         ],
         'return_regular' => [
             'name' => 'Return Regular',
@@ -125,17 +149,41 @@ function craftcrawl_badge_definitions() {
             'xp' => 50,
             'tier' => 'small'
         ],
-        'five_stop_flight' => [
-            'name' => 'Five Stop Flight',
-            'description' => 'Visit 5 unique locations.',
+        'familiar_face' => [
+            'name' => 'Familiar Face',
+            'description' => 'Visit the same location 5 times.',
             'xp' => 50,
             'tier' => 'small'
         ],
-        'local_explorer' => [
-            'name' => 'Local Explorer',
-            'description' => 'Visit 10 unique locations.',
+        'house_favorite' => [
+            'name' => 'House Favorite',
+            'description' => 'Visit the same location 10 times.',
             'xp' => 100,
             'tier' => 'medium'
+        ],
+        'getting_started' => [
+            'name' => 'Getting Started',
+            'description' => 'Complete 5 total visits.',
+            'xp' => 50,
+            'tier' => 'small'
+        ],
+        'on_the_trail' => [
+            'name' => 'On the Trail',
+            'description' => 'Complete 25 total visits.',
+            'xp' => 100,
+            'tier' => 'medium'
+        ],
+        'century_crawler' => [
+            'name' => 'Century Crawler',
+            'description' => 'Complete 100 total visits.',
+            'xp' => 250,
+            'tier' => 'major'
+        ],
+        'first_review' => [
+            'name' => 'First Review',
+            'description' => 'Leave your first review.',
+            'xp' => 50,
+            'tier' => 'small'
         ],
         'review_rookie' => [
             'name' => 'Review Rookie',
@@ -143,23 +191,41 @@ function craftcrawl_badge_definitions() {
             'xp' => 100,
             'tier' => 'medium'
         ],
+        'trusted_taster' => [
+            'name' => 'Trusted Taster',
+            'description' => 'Leave 25 reviews.',
+            'xp' => 250,
+            'tier' => 'major'
+        ],
+        'brewery_beginner' => [
+            'name' => 'Brewery Beginner',
+            'description' => 'Visit 1 brewery.',
+            'xp' => 50,
+            'tier' => 'small'
+        ],
+        'wine_wanderer' => [
+            'name' => 'Wine Wanderer',
+            'description' => 'Visit 1 winery.',
+            'xp' => 50,
+            'tier' => 'small'
+        ],
+        'spirit_seeker' => [
+            'name' => 'Spirit Seeker',
+            'description' => 'Visit 1 distillery.',
+            'xp' => 50,
+            'tier' => 'small'
+        ],
+        'cider_sipper' => [
+            'name' => 'Cider Sipper',
+            'description' => 'Visit 1 cidery.',
+            'xp' => 50,
+            'tier' => 'small'
+        ],
         'craft_sampler' => [
             'name' => 'Craft Sampler',
             'description' => 'Visit 3 different location types.',
             'xp' => 100,
             'tier' => 'medium'
-        ],
-        'craft_crawl_veteran' => [
-            'name' => 'Craft Crawl Veteran',
-            'description' => 'Visit 25 unique locations.',
-            'xp' => 250,
-            'tier' => 'major'
-        ],
-        'review_pro' => [
-            'name' => 'Review Pro',
-            'description' => 'Leave 25 reviews.',
-            'xp' => 250,
-            'tier' => 'major'
         ],
         'full_flight' => [
             'name' => 'Full Flight',
@@ -167,18 +233,76 @@ function craftcrawl_badge_definitions() {
             'xp' => 250,
             'tier' => 'major'
         ],
-        'regional_regular' => [
-            'name' => 'Regional Regular',
-            'description' => 'Visit 50 unique locations.',
+        'crawl_crew' => [
+            'name' => 'Crawl Crew',
+            'description' => 'Add 3 friends.',
+            'xp' => 50,
+            'tier' => 'small'
+        ],
+        'social_sipper' => [
+            'name' => 'Social Sipper',
+            'description' => 'React to 10 friend feed posts.',
+            'xp' => 50,
+            'tier' => 'small'
+        ],
+        'friendly_pour' => [
+            'name' => 'Friendly Pour',
+            'description' => 'Recommend 1 location to a friend.',
+            'xp' => 50,
+            'tier' => 'small'
+        ],
+        'shared_stop' => [
+            'name' => 'Shared Stop',
+            'description' => 'Visit a location one of your friends has visited.',
+            'xp' => 100,
+            'tier' => 'medium'
+        ],
+        'local_circle' => [
+            'name' => 'Local Circle',
+            'description' => 'Add 10 friends.',
             'xp' => 250,
             'tier' => 'major'
         ]
     ];
 }
 
+function craftcrawl_badge_category($badge_key) {
+    $categories = [
+        'first_stop' => 'unique_locations',
+        'five_stop_flight' => 'unique_locations',
+        'local_explorer' => 'unique_locations',
+        'craft_crawl_veteran' => 'unique_locations',
+        'craft_crawl_legend' => 'unique_locations',
+        'return_regular' => 'repeat_visits',
+        'familiar_face' => 'repeat_visits',
+        'house_favorite' => 'repeat_visits',
+        'getting_started' => 'total_visits',
+        'on_the_trail' => 'total_visits',
+        'century_crawler' => 'total_visits',
+        'first_review' => 'reviews',
+        'review_rookie' => 'reviews',
+        'trusted_taster' => 'reviews',
+        'brewery_beginner' => 'location_types',
+        'wine_wanderer' => 'location_types',
+        'spirit_seeker' => 'location_types',
+        'cider_sipper' => 'location_types',
+        'craft_sampler' => 'location_types',
+        'full_flight' => 'location_types',
+        'crawl_crew' => 'friends',
+        'social_sipper' => 'friends',
+        'friendly_pour' => 'friends',
+        'shared_stop' => 'shared_activity',
+        'local_circle' => 'friends'
+    ];
+
+    return $categories[$badge_key] ?? 'general';
+}
+
 function craftcrawl_award_badge($conn, $user_id, $badge_key, $badge) {
-    $stmt = $conn->prepare("INSERT IGNORE INTO user_badges (user_id, badge_key, badge_name, badge_description, xp_awarded, earnedAt) VALUES (?, ?, ?, ?, ?, NOW())");
-    $stmt->bind_param("isssi", $user_id, $badge_key, $badge['name'], $badge['description'], $badge['xp']);
+    $category = $badge['category'] ?? craftcrawl_badge_category($badge_key);
+    $tier = $badge['tier'] ?? 'small';
+    $stmt = $conn->prepare("INSERT IGNORE INTO user_badges (user_id, badge_key, badge_name, badge_description, badge_category, badge_tier, xp_awarded, earnedAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+    $stmt->bind_param("isssssi", $user_id, $badge_key, $badge['name'], $badge['description'], $category, $tier, $badge['xp']);
     $stmt->execute();
 
     if ($stmt->affected_rows < 1) {
@@ -193,10 +317,16 @@ function craftcrawl_award_eligible_badges($conn, $user_id) {
     $badges = craftcrawl_badge_definitions();
     $earned = [];
 
-    $unique_stmt = $conn->prepare("SELECT COUNT(DISTINCT business_id) AS total FROM user_visits WHERE user_id=?");
-    $unique_stmt->bind_param("i", $user_id);
-    $unique_stmt->execute();
-    $unique_visits = (int) ($unique_stmt->get_result()->fetch_assoc()['total'] ?? 0);
+    $visit_stmt = $conn->prepare("
+        SELECT COUNT(*) AS total_visits, COUNT(DISTINCT business_id) AS unique_visits
+        FROM user_visits
+        WHERE user_id=?
+    ");
+    $visit_stmt->bind_param("i", $user_id);
+    $visit_stmt->execute();
+    $visit_stats = $visit_stmt->get_result()->fetch_assoc();
+    $total_visits = (int) ($visit_stats['total_visits'] ?? 0);
+    $unique_visits = (int) ($visit_stats['unique_visits'] ?? 0);
 
     $review_stmt = $conn->prepare("SELECT COUNT(DISTINCT business_id) AS total FROM reviews WHERE user_id=?");
     $review_stmt->bind_param("i", $user_id);
@@ -204,50 +334,90 @@ function craftcrawl_award_eligible_badges($conn, $user_id) {
     $review_count = (int) ($review_stmt->get_result()->fetch_assoc()['total'] ?? 0);
 
     $type_stmt = $conn->prepare("
-        SELECT COUNT(DISTINCT CASE WHEN b.bType = 'distilery' THEN 'distillery' ELSE b.bType END) AS total
+        SELECT
+            COUNT(DISTINCT CASE WHEN b.bType = 'distilery' THEN 'distillery' ELSE b.bType END) AS total,
+            COUNT(DISTINCT CASE WHEN b.bType='brewery' THEN b.id END) AS breweries,
+            COUNT(DISTINCT CASE WHEN b.bType='winery' THEN b.id END) AS wineries,
+            COUNT(DISTINCT CASE WHEN b.bType IN ('distillery', 'distilery') THEN b.id END) AS distilleries,
+            COUNT(DISTINCT CASE WHEN b.bType='cidery' THEN b.id END) AS cideries
         FROM user_visits uv
         INNER JOIN businesses b ON b.id = uv.business_id
         WHERE uv.user_id=?
     ");
     $type_stmt->bind_param("i", $user_id);
     $type_stmt->execute();
-    $type_count = (int) ($type_stmt->get_result()->fetch_assoc()['total'] ?? 0);
+    $type_stats = $type_stmt->get_result()->fetch_assoc();
+    $type_count = (int) ($type_stats['total'] ?? 0);
+    $brewery_count = (int) ($type_stats['breweries'] ?? 0);
+    $winery_count = (int) ($type_stats['wineries'] ?? 0);
+    $distillery_count = (int) ($type_stats['distilleries'] ?? 0);
+    $cidery_count = (int) ($type_stats['cideries'] ?? 0);
 
     $repeat_stmt = $conn->prepare("
-        SELECT COUNT(*) AS total
+        SELECT COALESCE(MAX(visit_count), 0) AS max_visits
         FROM (
-            SELECT business_id
+            SELECT COUNT(*) AS visit_count
             FROM user_visits
             WHERE user_id=?
             GROUP BY business_id
-            HAVING COUNT(*) >= 3
         ) repeat_locations
     ");
     $repeat_stmt->bind_param("i", $user_id);
     $repeat_stmt->execute();
-    $repeat_location_count = (int) ($repeat_stmt->get_result()->fetch_assoc()['total'] ?? 0);
+    $max_location_visits = (int) ($repeat_stmt->get_result()->fetch_assoc()['max_visits'] ?? 0);
 
-    $full_flight_stmt = $conn->prepare("
-        SELECT COUNT(DISTINCT CASE WHEN b.bType = 'distilery' THEN 'distillery' ELSE b.bType END) AS total
+    $friend_stmt = $conn->prepare("SELECT COUNT(*) AS total FROM user_friends WHERE user_id=?");
+    $friend_stmt->bind_param("i", $user_id);
+    $friend_stmt->execute();
+    $friend_count = (int) ($friend_stmt->get_result()->fetch_assoc()['total'] ?? 0);
+
+    $reaction_stmt = $conn->prepare("SELECT COUNT(DISTINCT feed_item_key) AS total FROM feed_reactions WHERE user_id=?");
+    $reaction_stmt->bind_param("i", $user_id);
+    $reaction_stmt->execute();
+    $reaction_count = (int) ($reaction_stmt->get_result()->fetch_assoc()['total'] ?? 0);
+
+    $recommendation_stmt = $conn->prepare("SELECT COUNT(*) AS total FROM location_recommendations WHERE recommender_user_id=?");
+    $recommendation_stmt->bind_param("i", $user_id);
+    $recommendation_stmt->execute();
+    $recommendation_count = (int) ($recommendation_stmt->get_result()->fetch_assoc()['total'] ?? 0);
+
+    $shared_stmt = $conn->prepare("
+        SELECT COUNT(DISTINCT uv.business_id) AS total
         FROM user_visits uv
-        INNER JOIN businesses b ON b.id = uv.business_id
-        WHERE uv.user_id=? AND (b.bType IN ('brewery', 'winery', 'distillery', 'distilery', 'cidery'))
+        INNER JOIN user_friends uf ON uf.user_id=?
+        INNER JOIN user_visits friend_visits ON friend_visits.user_id=uf.friend_user_id AND friend_visits.business_id=uv.business_id
+        WHERE uv.user_id=?
     ");
-    $full_flight_stmt->bind_param("i", $user_id);
-    $full_flight_stmt->execute();
-    $full_flight_count = (int) ($full_flight_stmt->get_result()->fetch_assoc()['total'] ?? 0);
+    $shared_stmt->bind_param("ii", $user_id, $user_id);
+    $shared_stmt->execute();
+    $shared_location_count = (int) ($shared_stmt->get_result()->fetch_assoc()['total'] ?? 0);
 
     $requirements = [
-        'first_review' => $review_count >= 1,
-        'return_regular' => $repeat_location_count >= 1,
+        'first_stop' => $unique_visits >= 1,
         'five_stop_flight' => $unique_visits >= 5,
         'local_explorer' => $unique_visits >= 10,
-        'review_rookie' => $review_count >= 10,
-        'craft_sampler' => $type_count >= 3,
         'craft_crawl_veteran' => $unique_visits >= 25,
-        'review_pro' => $review_count >= 25,
-        'full_flight' => $full_flight_count >= 4,
-        'regional_regular' => $unique_visits >= 50
+        'craft_crawl_legend' => $unique_visits >= 100,
+        'return_regular' => $max_location_visits >= 3,
+        'familiar_face' => $max_location_visits >= 5,
+        'house_favorite' => $max_location_visits >= 10,
+        'getting_started' => $total_visits >= 5,
+        'on_the_trail' => $total_visits >= 25,
+        'century_crawler' => $total_visits >= 100,
+        'first_review' => $review_count >= 1,
+        'review_rookie' => $review_count >= 10,
+        'trusted_taster' => $review_count >= 25,
+        'brewery_beginner' => $brewery_count >= 1,
+        'wine_wanderer' => $winery_count >= 1,
+        'spirit_seeker' => $distillery_count >= 1,
+        'cider_sipper' => $cidery_count >= 1,
+        'craft_sampler' => $type_count >= 3,
+        'full_flight' => $brewery_count >= 1 && $winery_count >= 1 && $distillery_count >= 1 && $cidery_count >= 1,
+        'crawl_crew' => $friend_count >= 3,
+        'social_sipper' => $reaction_count >= 10,
+        'friendly_pour' => $recommendation_count >= 1,
+        'shared_stop' => $shared_location_count >= 1,
+        'local_circle' => $friend_count >= 10
     ];
 
     foreach ($requirements as $badge_key => $is_eligible) {
@@ -278,7 +448,7 @@ function craftcrawl_award_review_xp($conn, $user_id, $business_id) {
 }
 
 function craftcrawl_user_badges($conn, $user_id) {
-    $stmt = $conn->prepare("SELECT badge_key, badge_name, badge_description, xp_awarded, earnedAt FROM user_badges WHERE user_id=? ORDER BY earnedAt DESC, id DESC");
+    $stmt = $conn->prepare("SELECT badge_key, badge_name, badge_description, badge_category, badge_tier, xp_awarded, earnedAt FROM user_badges WHERE user_id=? ORDER BY earnedAt DESC, id DESC");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
 

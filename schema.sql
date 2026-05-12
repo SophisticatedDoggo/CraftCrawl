@@ -9,7 +9,11 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     total_xp INT NOT NULL DEFAULT 0,
     auto_accept_friend_invites BOOL NOT NULL DEFAULT FALSE,
+    show_feed_activity BOOL NOT NULL DEFAULT TRUE,
+    show_liked_businesses BOOL NOT NULL DEFAULT TRUE,
+    notify_social_activity BOOL NOT NULL DEFAULT TRUE,
     friendsSeenAt DATETIME,
+    socialNotificationsSeenAt DATETIME,
     createdAt DATETIME NOT NULL,
     emailVerifiedAt DATETIME,
     disabledAt DATETIME,
@@ -178,6 +182,21 @@ CREATE TABLE IF NOT EXISTS liked_businesses (
     REFERENCES businesses(id)
 );
 
+CREATE TABLE IF NOT EXISTS event_want_to_go (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    event_id INT NOT NULL,
+    occurrence_date DATE NOT NULL,
+    createdAt DATETIME NOT NULL,
+    UNIQUE KEY unique_event_want_to_go (user_id, event_id, occurrence_date),
+    KEY idx_event_want_to_go_event (event_id, occurrence_date),
+    KEY idx_event_want_to_go_user (user_id, createdAt),
+    CONSTRAINT fk_event_want_to_go_userId FOREIGN KEY (user_id)
+    REFERENCES users(id),
+    CONSTRAINT fk_event_want_to_go_eventId FOREIGN KEY (event_id)
+    REFERENCES events(id)
+);
+
 CREATE TABLE IF NOT EXISTS user_friends (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -321,6 +340,8 @@ CREATE TABLE IF NOT EXISTS user_badges (
     badge_key VARCHAR(64) NOT NULL,
     badge_name VARCHAR(100) NOT NULL,
     badge_description VARCHAR(255) NOT NULL,
+    badge_category VARCHAR(64) NOT NULL DEFAULT 'general',
+    badge_tier ENUM('small', 'medium', 'major') NOT NULL DEFAULT 'small',
     xp_awarded INT NOT NULL,
     earnedAt DATETIME NOT NULL,
     UNIQUE KEY unique_user_badge (user_id, badge_key),

@@ -16,7 +16,13 @@ function craftcrawl_user_can_view_feed_actor($conn, $viewer_id, $actor_id) {
         return true;
     }
 
-    $stmt = $conn->prepare("SELECT id FROM user_friends WHERE user_id=? AND friend_user_id=? LIMIT 1");
+    $stmt = $conn->prepare("
+        SELECT uf.id
+        FROM user_friends uf
+        INNER JOIN users u ON u.id = uf.friend_user_id
+        WHERE uf.user_id=? AND uf.friend_user_id=? AND u.show_feed_activity=TRUE
+        LIMIT 1
+    ");
     $stmt->bind_param("ii", $viewer_id, $actor_id);
     $stmt->execute();
     return (bool) $stmt->get_result()->fetch_assoc();
@@ -101,6 +107,43 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
             'is_self' => $actor_id === (int) $viewer_id,
             'level' => $after_level,
             'title' => craftcrawl_level_title($after_level)
+        ];
+    }
+
+    if (preg_match('/^event_want:(\d+)$/', $item_key, $matches)) {
+        $want_id = (int) $matches[1];
+        $stmt = $conn->prepare("
+            SELECT ew.id, ew.user_id, ew.event_id, ew.occurrence_date, ew.createdAt,
+                e.eName, e.startTime, b.id AS business_id, b.bName, b.city, b.state, u.fName, u.lName
+            FROM event_want_to_go ew
+            INNER JOIN events e ON e.id = ew.event_id
+            INNER JOIN businesses b ON b.id = e.business_id
+            INNER JOIN users u ON u.id = ew.user_id
+            WHERE ew.id=? AND u.disabledAt IS NULL
+            LIMIT 1
+        ");
+        $stmt->bind_param("i", $want_id);
+        $stmt->execute();
+        $want = $stmt->get_result()->fetch_assoc();
+
+        if (!$want || !craftcrawl_user_can_view_feed_actor($conn, $viewer_id, (int) $want['user_id'])) {
+            return null;
+        }
+
+        return [
+            'item_key' => $item_key,
+            'type' => 'event_want',
+            'created_at' => $want['createdAt'],
+            'friend_name' => craftcrawl_feed_actor_name($want['user_id'], $viewer_id, $want['fName'], $want['lName']),
+            'is_self' => (int) $want['user_id'] === (int) $viewer_id,
+            'event_id' => (int) $want['event_id'],
+            'event_name' => $want['eName'],
+            'event_date' => $want['occurrence_date'],
+            'event_start_time' => $want['startTime'],
+            'business_id' => (int) $want['business_id'],
+            'business_name' => $want['bName'],
+            'city' => $want['city'],
+            'state' => $want['state']
         ];
     }
 

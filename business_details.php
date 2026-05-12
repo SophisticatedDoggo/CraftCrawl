@@ -260,11 +260,6 @@ $like_stmt->bind_param("ii", $user_id, $business_id);
 $like_stmt->execute();
 $is_liked = (bool) $like_stmt->get_result()->fetch_assoc();
 
-$want_stmt = $conn->prepare("SELECT id FROM want_to_go_locations WHERE user_id=? AND business_id=?");
-$want_stmt->bind_param("ii", $user_id, $business_id);
-$want_stmt->execute();
-$is_want_to_go = (bool) $want_stmt->get_result()->fetch_assoc();
-
 $friend_options_stmt = $conn->prepare("
     SELECT u.id, u.fName, u.lName
     FROM user_friends uf
@@ -469,12 +464,6 @@ function format_event_time_range($event) {
                         <span aria-hidden="true"><?php echo $is_liked ? '&#9829;' : '&#9825;'; ?></span>
                         <span><?php echo $is_liked ? 'Unlike' : 'Like'; ?></span>
                     </button>
-                </form>
-                <form method="POST" action="user/want_to_go_toggle.php" class="like-business-form">
-                    <?php echo craftcrawl_csrf_input(); ?>
-                    <input type="hidden" name="business_id" value="<?php echo escape_output($business_id); ?>">
-                    <input type="hidden" name="is_saved" value="<?php echo $is_want_to_go ? '1' : '0'; ?>">
-                    <button type="submit"><?php echo $is_want_to_go ? 'Remove Want-to-Go' : 'Want to Go'; ?></button>
                 </form>
             </div>
             <?php if ($friend_options->num_rows > 0) : ?>

@@ -83,6 +83,21 @@ $event_date_label = date('l, F j, Y', strtotime($occurrence_date));
 $start_time_label = date('g:i A', strtotime($event['startTime']));
 $end_time_label = !empty($event['endTime']) ? date('g:i A', strtotime($event['endTime'])) : null;
 $time_label = $start_time_label . ($end_time_label ? ' - ' . $end_time_label : '');
+$event_want_count = 0;
+$event_is_wanted = false;
+
+$want_count_stmt = $conn->prepare("SELECT COUNT(*) AS total FROM event_want_to_go WHERE event_id=? AND occurrence_date=?");
+$want_count_stmt->bind_param("is", $event_id, $occurrence_date);
+$want_count_stmt->execute();
+$event_want_count = (int) ($want_count_stmt->get_result()->fetch_assoc()['total'] ?? 0);
+
+if (isset($_SESSION['user_id'])) {
+    $want_user_id = (int) $_SESSION['user_id'];
+    $want_stmt = $conn->prepare("SELECT id FROM event_want_to_go WHERE user_id=? AND event_id=? AND occurrence_date=? LIMIT 1");
+    $want_stmt->bind_param("iis", $want_user_id, $event_id, $occurrence_date);
+    $want_stmt->execute();
+    $event_is_wanted = (bool) $want_stmt->get_result()->fetch_assoc();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -143,9 +158,47 @@ $time_label = $start_time_label . ($end_time_label ? ' - ' . $end_time_label : '
                 <?php if ($is_business_owner) : ?>
                     <a href="business/event_edit.php?month=<?php echo escape_output(date('Y-m', strtotime($occurrence_date))); ?>&edit=<?php echo escape_output($event['id']); ?>&date=<?php echo escape_output($occurrence_date); ?>">Edit Event</a>
                 <?php endif; ?>
+                <?php if (isset($_SESSION['user_id'])) : ?>
+                    <form method="POST" action="user/event_want_to_go_toggle.php" class="event-detail-want-form" data-event-detail-want>
+                        <?php echo craftcrawl_csrf_input(); ?>
+                        <input type="hidden" name="event_id" value="<?php echo escape_output($event_id); ?>">
+                        <input type="hidden" name="occurrence_date" value="<?php echo escape_output($occurrence_date); ?>">
+                        <input type="hidden" name="is_saved" value="<?php echo $event_is_wanted ? '1' : '0'; ?>">
+                        <button type="submit" class="event-want-button <?php echo $event_is_wanted ? 'is-active' : ''; ?>">📍 Want to Go <?php echo escape_output($event_want_count); ?></button>
+                    </form>
+                <?php endif; ?>
             </div>
         </article>
     </main>
+    <script>
+        document.querySelectorAll('[data-event-detail-want]').forEach((form) => {
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const button = form.querySelector('button');
+                const savedInput = form.querySelector('[name="is_saved"]');
+                button.disabled = true;
+
+                fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    credentials: 'same-origin'
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (!data.ok) {
+                            return;
+                        }
+                        savedInput.value = data.is_saved ? '1' : '0';
+                        button.classList.toggle('is-active', Boolean(data.is_saved));
+                        button.textContent = `📍 Want to Go ${Number(data.count || 0)}`;
+                        window.dispatchEvent(new CustomEvent('craftcrawl:event-want-updated'));
+                    })
+                    .finally(() => {
+                        button.disabled = false;
+                    });
+            });
+        });
+    </script>
     <script src="js/depth_animations.js"></script>
 </body>
 </html>

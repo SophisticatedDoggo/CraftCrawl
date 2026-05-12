@@ -18,7 +18,7 @@ $seen_stmt->execute();
 $seen_at = $seen_stmt->get_result()->fetch_assoc()['friendsSeenAt'] ?? null;
 
 $friend_stmt = $conn->prepare("
-    SELECT u.id, u.fName, u.lName, uf.createdAt
+    SELECT u.id, u.fName, u.lName, u.show_feed_activity, uf.createdAt
     FROM user_friends uf
     INNER JOIN users u ON u.id = uf.friend_user_id
     WHERE uf.user_id=? AND u.disabledAt IS NULL
@@ -34,14 +34,18 @@ while ($friend = $friend_result->fetch_assoc()) {
     $friend_id = (int) $friend['id'];
     $friends[$friend_id] = [
         'name' => trim($friend['fName'] . ' ' . $friend['lName']),
+        'show_feed_activity' => !empty($friend['show_feed_activity']),
         'created_at' => $friend['createdAt']
     ];
-    $friend_ids[] = $friend_id;
+    if (!empty($friend['show_feed_activity'])) {
+        $friend_ids[] = $friend_id;
+    }
 }
 
 $people = $friends;
 $people[$user_id] = [
     'name' => 'You',
+    'show_feed_activity' => true,
     'created_at' => null
 ];
 $feed_user_ids = array_values(array_unique(array_merge([$user_id], $friend_ids)));
@@ -119,6 +123,40 @@ while ($xp = $xp_result->fetch_assoc()) {
         'is_self' => $friend_id === $user_id,
         'level' => $after_level,
         'title' => craftcrawl_level_title($after_level)
+    ];
+}
+
+$event_want_sql = "
+    SELECT ew.id, ew.user_id, ew.event_id, ew.occurrence_date, ew.createdAt,
+        e.eName, e.startTime, b.id AS business_id, b.bName, b.city, b.state
+    FROM event_want_to_go ew
+    INNER JOIN events e ON e.id = ew.event_id
+    INNER JOIN businesses b ON b.id = e.business_id
+    WHERE ew.user_id IN ($placeholders)
+    ORDER BY ew.createdAt DESC
+    LIMIT 80
+";
+$event_want_stmt = $conn->prepare($event_want_sql);
+craftcrawl_bind_feed_user_ids($event_want_stmt, $types, $feed_user_ids);
+$event_want_stmt->execute();
+$event_want_result = $event_want_stmt->get_result();
+
+while ($event_want = $event_want_result->fetch_assoc()) {
+    $actor_id = (int) $event_want['user_id'];
+    $feed[] = [
+        'item_key' => 'event_want:' . (int) $event_want['id'],
+        'type' => 'event_want',
+        'created_at' => $event_want['createdAt'],
+        'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
+        'is_self' => $actor_id === $user_id,
+        'event_id' => (int) $event_want['event_id'],
+        'event_name' => $event_want['eName'],
+        'event_date' => $event_want['occurrence_date'],
+        'event_start_time' => $event_want['startTime'],
+        'business_id' => (int) $event_want['business_id'],
+        'business_name' => $event_want['bName'],
+        'city' => $event_want['city'],
+        'state' => $event_want['state']
     ];
 }
 

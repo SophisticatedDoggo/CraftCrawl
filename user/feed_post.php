@@ -30,10 +30,23 @@ function render_feed_thread_post($item) {
     if (($item['type'] ?? '') === 'level_up') {
         return '
             <article class="friends-feed-item feed-thread-post">
-                <div class="friends-feed-icon">LV</div>
+                <div class="friends-feed-icon">🎉</div>
                 <div>
                     <strong>' . escape_output($item['friend_name']) . ' reached Level ' . escape_output($item['level']) . '</strong>
                     <p>' . escape_output($item['title']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
+                </div>
+            </article>
+        ';
+    }
+
+    if (($item['type'] ?? '') === 'event_want') {
+        return '
+            <article class="friends-feed-item feed-thread-post">
+                <div class="friends-feed-icon">📍</div>
+                <div>
+                    <strong>' . escape_output($item['friend_name']) . ' wants to go to ' . escape_output($item['event_name']) . '</strong>
+                    <p>' . escape_output($item['business_name']) . ' · ' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
+                    <a href="../event_details.php?id=' . escape_output($item['event_id']) . '&date=' . escape_output($item['event_date']) . '">View event</a>
                 </div>
             </article>
         ';
@@ -59,6 +72,10 @@ $feed_item = craftcrawl_feed_item_by_key($conn, $user_id, $item_key);
 
 if (!$feed_item) {
     http_response_code(404);
+} elseif (!empty($feed_item['is_self'])) {
+    $seen_stmt = $conn->prepare("UPDATE users SET socialNotificationsSeenAt=NOW() WHERE id=?");
+    $seen_stmt->bind_param("i", $user_id);
+    $seen_stmt->execute();
 }
 
 if ($feed_item && $_SERVER['REQUEST_METHOD'] === 'POST') {

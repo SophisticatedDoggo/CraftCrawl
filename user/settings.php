@@ -11,11 +11,14 @@ if (!isset($_SESSION['user_id'])) {
 
 $message = $_GET['message'] ?? null;
 $user_id = (int) $_SESSION['user_id'];
-$settings_stmt = $conn->prepare("SELECT auto_accept_friend_invites FROM users WHERE id=?");
+$settings_stmt = $conn->prepare("SELECT auto_accept_friend_invites, show_feed_activity, show_liked_businesses, notify_social_activity FROM users WHERE id=?");
 $settings_stmt->bind_param("i", $user_id);
 $settings_stmt->execute();
 $user_settings = $settings_stmt->get_result()->fetch_assoc();
 $auto_accept_friend_invites = !empty($user_settings['auto_accept_friend_invites']);
+$show_feed_activity = !isset($user_settings['show_feed_activity']) || !empty($user_settings['show_feed_activity']);
+$show_liked_businesses = !isset($user_settings['show_liked_businesses']) || !empty($user_settings['show_liked_businesses']);
+$notify_social_activity = !isset($user_settings['notify_social_activity']) || !empty($user_settings['notify_social_activity']);
 
 function escape_output($value) {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
@@ -50,9 +53,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($form_action === 'privacy') {
         $auto_accept_friend_invites = isset($_POST['auto_accept_friend_invites']);
+        $show_feed_activity = isset($_POST['show_feed_activity']);
+        $show_liked_businesses = isset($_POST['show_liked_businesses']);
+        $notify_social_activity = isset($_POST['notify_social_activity']);
         $auto_accept_value = $auto_accept_friend_invites ? 1 : 0;
-        $privacy_stmt = $conn->prepare("UPDATE users SET auto_accept_friend_invites=? WHERE id=?");
-        $privacy_stmt->bind_param("ii", $auto_accept_value, $user_id);
+        $show_feed_value = $show_feed_activity ? 1 : 0;
+        $show_liked_value = $show_liked_businesses ? 1 : 0;
+        $notify_social_value = $notify_social_activity ? 1 : 0;
+        $privacy_stmt = $conn->prepare("UPDATE users SET auto_accept_friend_invites=?, show_feed_activity=?, show_liked_businesses=?, notify_social_activity=? WHERE id=?");
+        $privacy_stmt->bind_param("iiiii", $auto_accept_value, $show_feed_value, $show_liked_value, $notify_social_value, $user_id);
         $privacy_stmt->execute();
         header('Location: settings.php?message=privacy_saved');
         exit();
@@ -155,6 +164,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span>
                         <strong>Auto Accept Friend Invites</strong>
                         <small>Turn this off to approve new friends before they are added.</small>
+                    </span>
+                </label>
+                <label class="settings-toggle">
+                    <input type="checkbox" name="show_feed_activity" value="1" <?php echo $show_feed_activity ? 'checked' : ''; ?>>
+                    <span>
+                        <strong>Show My Activity in Friends Feed</strong>
+                        <small>Allow friends to see your level-ups, first-time visits, and event plans.</small>
+                    </span>
+                </label>
+                <label class="settings-toggle">
+                    <input type="checkbox" name="show_liked_businesses" value="1" <?php echo $show_liked_businesses ? 'checked' : ''; ?>>
+                    <span>
+                        <strong>Show Liked Businesses on Profile</strong>
+                        <small>Allow friends to see businesses you have liked.</small>
+                    </span>
+                </label>
+                <label class="settings-toggle">
+                    <input type="checkbox" name="notify_social_activity" value="1" <?php echo $notify_social_activity ? 'checked' : ''; ?>>
+                    <span>
+                        <strong>Notify Me About Comments and Reactions</strong>
+                        <small>Show a badge when friends comment on or react to your feed posts.</small>
                     </span>
                 </label>
                 <button type="submit">Save Privacy Settings</button>

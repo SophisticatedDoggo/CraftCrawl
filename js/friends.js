@@ -7,6 +7,7 @@
     const results = root.querySelector('[data-friends-search-results]');
     const requestsList = root.querySelector('[data-friend-requests-list]');
     const currentFriendsList = root.querySelector('[data-current-friends-list]');
+    const currentFriendsFilter = root.querySelector('[data-current-friends-filter]');
     const recommendationButtons = root.querySelectorAll('[data-recommendation-id]');
     const feed = panel?.querySelector('[data-friends-feed]');
     const status = root.querySelector('[data-friends-status]');
@@ -19,14 +20,15 @@
         newFriends: 0,
         badgeCount: 0
     };
+    let currentFriendsCache = [];
     const reactionLabels = {
         cheers: '🍻 Cheers',
-        nice_find: '🔥 Nice',
-        want_to_go: '📍 Want to Go'
+        nice_find: '🔥 Nice'
     };
     const reactionTypesByItemType = {
-        first_visit: ['cheers', 'nice_find', 'want_to_go'],
-        level_up: ['cheers', 'nice_find']
+        first_visit: ['cheers', 'nice_find'],
+        level_up: ['cheers', 'nice_find'],
+        event_want: ['cheers', 'nice_find']
     };
 
     if (!panel && !managerPage && !menuBadge && !tabBadge) {
@@ -277,7 +279,17 @@
             return;
         }
 
-        currentFriendsList.innerHTML = friends.map((friend) => `
+        const query = (currentFriendsFilter?.value || '').trim().toLowerCase();
+        const visibleFriends = query
+            ? friends.filter((friend) => String(friend.name || '').toLowerCase().includes(query))
+            : friends;
+
+        if (!visibleFriends.length) {
+            currentFriendsList.innerHTML = '<p>No friends match that search.</p>';
+            return;
+        }
+
+        currentFriendsList.innerHTML = visibleFriends.map((friend) => `
             <article class="friend-current-item">
                 <div>
                     <strong>${escapeHtml(friend.name)}</strong>
@@ -328,6 +340,7 @@
     function renderFeed(data) {
         const friends = data.friends || [];
         const items = data.feed || [];
+        currentFriendsCache = friends;
 
         if (count) {
             count.textContent = friends.length === 1 ? '1 friend' : `${friends.length} friends`;
@@ -348,16 +361,29 @@
 
         feed.innerHTML = items.map((item) => {
             const date = formatDate(item.created_at);
-            const reactions = renderReactions(item);
+            const actions = renderFeedActions(item);
 
             if (item.type === 'level_up') {
                 return `
                     <article class="friends-feed-item">
-                        <div class="friends-feed-icon">LV</div>
+                        <div class="friends-feed-icon">🎉</div>
                         <div>
                             <strong>${escapeHtml(item.friend_name)} reached Level ${escapeHtml(item.level)}</strong>
                             <p>${escapeHtml(item.title)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
-                            ${reactions}
+                            ${actions}
+                        </div>
+                    </article>
+                `;
+            }
+
+            if (item.type === 'event_want') {
+                return `
+                    <article class="friends-feed-item">
+                        <div class="friends-feed-icon">📍</div>
+                        <div>
+                            <strong>${escapeHtml(item.friend_name)} wants to go to ${escapeHtml(item.event_name)}</strong>
+                            <p>${escapeHtml(item.business_name)} · ${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
+                            ${actions}
                         </div>
                     </article>
                 `;
@@ -369,8 +395,7 @@
                     <div>
                         <strong>${escapeHtml(item.friend_name)} visited ${escapeHtml(item.business_name)} for the first time</strong>
                         <p>${escapeHtml(item.city)}, ${escapeHtml(item.state)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
-                        <a href="../business_details.php?id=${encodeURIComponent(item.business_id)}">View business</a>
-                        ${reactions}
+                        ${actions}
                     </div>
                 </article>
             `;
@@ -399,23 +424,9 @@
             });
         });
 
-        feed.querySelectorAll('[data-reaction-details-toggle]').forEach((button) => {
-            button.addEventListener('click', () => {
-                const target = feed.querySelector(`#${button.getAttribute('aria-controls')}`);
-                const isExpanded = button.getAttribute('aria-expanded') === 'true';
-
-                button.setAttribute('aria-expanded', String(!isExpanded));
-                button.querySelector('[data-reaction-toggle-arrow]').textContent = isExpanded ? '>' : 'v';
-                button.querySelector('[data-reaction-toggle-label]').textContent = isExpanded ? 'Show Reactions' : 'Hide Reactions';
-
-                if (target) {
-                    target.hidden = isExpanded;
-                }
-            });
-        });
     }
 
-    function renderReactions(item) {
+    function renderFeedActions(item) {
         if (!item.item_key) {
             return '';
         }
@@ -428,22 +439,23 @@
             reactionMap[reaction.type] = reaction;
         });
 
-        const commentsLink = renderCommentsLink(item);
-        const summary = renderReactionSummary(availableReactions, reactionMap, item.item_key);
-
         return `
-            <div class="feed-reactions">
-                ${availableReactions.map((type) => {
-                    const reaction = reactionMap[type] || { count: 0, reacted: false };
-                    return `
-                        <button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(item.item_key)}" data-reaction-type="${type}">
-                            ${reactionLabels[type]}${reaction.count > 0 ? ` ${reaction.count}` : ''}
-                        </button>
-                    `;
-                }).join('')}
+            <div class="feed-action-row">
+                <div class="feed-primary-actions">
+                    ${renderCommentsLink(item)}
+                    ${renderFeedDetailLink(item)}
+                </div>
+                <div class="feed-reactions">
+                    ${availableReactions.map((type) => {
+                        const reaction = reactionMap[type] || { count: 0, reacted: false };
+                        return `
+                            <button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(item.item_key)}" data-reaction-type="${type}">
+                                ${reactionLabels[type]}${reaction.count > 0 ? ` ${reaction.count}` : ''}
+                            </button>
+                        `;
+                    }).join('')}
+                </div>
             </div>
-            ${commentsLink}
-            ${summary}
         `;
     }
 
@@ -453,65 +465,26 @@
         }
 
         const commentCount = Number(item.comment_count || 0);
-        const label = commentCount === 1 ? 'Show Comments (1)' : `Show Comments${commentCount > 0 ? ` (${commentCount})` : ''}`;
+        const label = commentCount > 0 ? String(commentCount) : '';
 
         return `
-            <a class="feed-comments-link" href="feed_post.php?item=${encodeURIComponent(item.item_key)}">
+            <a class="feed-comments-link" href="feed_post.php?item=${encodeURIComponent(item.item_key)}" aria-label="Show comments">
                 <span aria-hidden="true">💬</span>
-                <span>${label}</span>
+                ${label ? `<span>${label}</span>` : ''}
             </a>
         `;
     }
 
-    function renderReactionSummary(availableReactions, reactionMap, itemKey) {
-        const rows = availableReactions
-            .map((type) => {
-                const reaction = reactionMap[type];
-                const reactors = reaction?.reactors || [];
-
-                if (!reactors.length) {
-                    return '';
-                }
-
-                const shownReactors = reactors.slice(0, 3);
-                const remaining = reactors.length - shownReactors.length;
-                const rows = shownReactors.map((reactor) => `
-                    <span>
-                        <strong>${reactionLabels[type]}</strong>
-                        <span aria-hidden="true">-</span>
-                        ${escapeHtml(reactor.name || 'Someone')}
-                    </span>
-                `);
-
-                if (remaining > 0) {
-                    rows.push(`
-                        <span>
-                            <strong>${reactionLabels[type]}</strong>
-                            <span aria-hidden="true">-</span>
-                            +${remaining} more
-                        </span>
-                    `);
-                }
-
-                return rows.join('');
-            })
-            .filter(Boolean);
-
-        if (!rows.length) {
-            return '';
+    function renderFeedDetailLink(item) {
+        if (item.type === 'event_want') {
+            return `<a class="feed-detail-link" href="../event_details.php?id=${encodeURIComponent(item.event_id)}&date=${encodeURIComponent(item.event_date)}">View Event</a>`;
         }
 
-        const summaryId = `reaction-details-${escapeHtml(itemKey).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+        if (item.type === 'first_visit') {
+            return `<a class="feed-detail-link" href="../business_details.php?id=${encodeURIComponent(item.business_id)}">View Business</a>`;
+        }
 
-        return `
-            <button type="button" class="reaction-details-toggle" data-reaction-details-toggle aria-expanded="false" aria-controls="${summaryId}">
-                <span data-reaction-toggle-arrow aria-hidden="true">&gt;</span>
-                <span data-reaction-toggle-label>Show Reactions</span>
-            </button>
-            <div class="feed-reaction-summary" id="${summaryId}" hidden>
-                ${rows.join('')}
-            </div>
-        `;
+        return '';
     }
 
     function loadFeed() {
@@ -530,6 +503,10 @@
                 showStatus('Friends feed could not be loaded.', true);
             });
     }
+
+    window.addEventListener('craftcrawl:event-want-updated', () => {
+        loadFeed();
+    });
 
     function loadRequests() {
         if (!requestsList) {
@@ -590,6 +567,10 @@
                     showStatus('Search failed. Please try again.', true);
                 });
         });
+    }
+
+    if (currentFriendsFilter) {
+        currentFriendsFilter.addEventListener('input', () => renderCurrentFriends(currentFriendsCache));
     }
 
     recommendationButtons.forEach((button) => {

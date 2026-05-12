@@ -40,7 +40,7 @@ $user_progress = craftcrawl_user_level_progress($conn, $user_id);
             <div class="mobile-actions-panel" data-mobile-actions-panel>
                 <a href="profile.php">Profile</a>
                 <a href="friends.php">
-                    Manage Friends
+                    View Friends
                     <span class="notification-badge" data-friends-menu-badge hidden></span>
                 </a>
                 <a class="settings-icon-link" href="settings.php" aria-label="Settings">
@@ -159,6 +159,7 @@ $user_progress = craftcrawl_user_level_progress($conn, $user_id);
     </nav>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
+    window.CRAFTCRAWL_CSRF_TOKEN = "<?php echo escape_output(craftcrawl_csrf_token()); ?>";
 </script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="../js/map.js"></script>

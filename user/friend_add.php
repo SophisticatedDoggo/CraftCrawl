@@ -1,6 +1,7 @@
 <?php
 require '../login_check.php';
 include '../db.php';
+require_once '../lib/leveling.php';
 
 header('Content-Type: application/json');
 
@@ -83,12 +84,15 @@ try {
         $reverse_stmt->bind_param("ii", $friend_id, $user_id);
         $reverse_stmt->execute();
 
+        $badges = craftcrawl_award_eligible_badges($conn, $user_id);
+        craftcrawl_award_eligible_badges($conn, $friend_id);
         $conn->commit();
 
         echo json_encode([
             'ok' => true,
             'status' => 'friends',
-            'message' => trim($friend['fName'] . ' ' . $friend['lName']) . ' is now your friend.'
+            'message' => trim($friend['fName'] . ' ' . $friend['lName']) . ' is now your friend.',
+            'badges' => $badges
         ]);
         exit();
     }

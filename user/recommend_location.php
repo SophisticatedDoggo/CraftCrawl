@@ -1,6 +1,7 @@
 <?php
 require '../login_check.php';
 include '../db.php';
+require_once '../lib/leveling.php';
 
 if (!isset($_SESSION['user_id'])) {
     craftcrawl_redirect('user_login.php');
@@ -46,6 +47,7 @@ $stmt = $conn->prepare("
 ");
 $stmt->bind_param("iiiss", $user_id, $friend_id, $business_id, $message, $pending);
 $stmt->execute();
+craftcrawl_award_eligible_badges($conn, $user_id);
 
 craftcrawl_redirect('business_details.php?id=' . $business_id . '&message=recommended');
 ?>
