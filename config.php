@@ -1,14 +1,14 @@
 <?php
 require_once __DIR__ . '/lib/env.php';
 
-$MAPBOX_ACCESS_TOKEN = getenv('MAPBOX_ACCESS_TOKEN') ?: '';
+$MAPBOX_ACCESS_TOKEN = craftcrawl_env('MAPBOX_ACCESS_TOKEN');
 
-$CLOUDINARY_CLOUD_NAME = getenv('CLOUDINARY_CLOUD_NAME') ?: '';
-$CLOUDINARY_API_KEY = getenv('CLOUDINARY_API_KEY') ?: '';
-$CLOUDINARY_API_SECRET = getenv('CLOUDINARY_API_SECRET') ?: '';
+$CLOUDINARY_CLOUD_NAME = craftcrawl_env('CLOUDINARY_CLOUD_NAME');
+$CLOUDINARY_API_KEY = craftcrawl_env('CLOUDINARY_API_KEY');
+$CLOUDINARY_API_SECRET = craftcrawl_env('CLOUDINARY_API_SECRET');
 
-$HCAPTCHA_SITE_KEY = getenv('HCAPTCHA_SITE_KEY') ?: '';
-$HCAPTCHA_SECRET_KEY = getenv('HCAPTCHA_SECRET_KEY') ?: '';
+$HCAPTCHA_SITE_KEY = craftcrawl_env('HCAPTCHA_SITE_KEY');
+$HCAPTCHA_SECRET_KEY = craftcrawl_env('HCAPTCHA_SECRET_KEY');
 
 if (!function_exists('escape_output')) {
     function escape_output($value) {

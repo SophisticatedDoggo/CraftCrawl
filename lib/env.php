@@ -20,7 +20,7 @@ function craftcrawl_load_env($path = null) {
         $key = trim($key);
         $value = trim($value);
 
-        if ($key === '' || getenv($key) !== false) {
+        if ($key === '') {
             continue;
         }
 
@@ -31,9 +31,26 @@ function craftcrawl_load_env($path = null) {
             $value = substr($value, 1, -1);
         }
 
-        putenv($key . '=' . $value);
         $_ENV[$key] = $value;
+        $_SERVER[$key] = $value;
     }
+}
+
+function craftcrawl_env($key, $default = '') {
+    if (isset($_ENV[$key]) && $_ENV[$key] !== '') {
+        return $_ENV[$key];
+    }
+
+    if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') {
+        return $_SERVER[$key];
+    }
+
+    $value = getenv($key);
+    if ($value !== false && $value !== '') {
+        return $value;
+    }
+
+    return $default;
 }
 
 craftcrawl_load_env();

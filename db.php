@@ -1,10 +1,16 @@
 <?php
 require_once __DIR__ . '/lib/env.php';
 
-$db_host = getenv('CRAFTCRAWL_DB_HOST') ?: 'localhost';
-$db_user = getenv('CRAFTCRAWL_DB_USER') ?: '';
-$db_password = getenv('CRAFTCRAWL_DB_PASSWORD') ?: '';
-$db_name = getenv('CRAFTCRAWL_DB_NAME') ?: '';
+$db_host = craftcrawl_env('CRAFTCRAWL_DB_HOST', 'localhost');
+$db_user = craftcrawl_env('CRAFTCRAWL_DB_USER');
+$db_password = craftcrawl_env('CRAFTCRAWL_DB_PASSWORD');
+$db_name = craftcrawl_env('CRAFTCRAWL_DB_NAME');
+
+if (!$db_user || !$db_name) {
+    error_log("Database environment variables missing. Check .env path and values.");
+    http_response_code(500);
+    exit("Database configuration error.");
+}
 
 mysqli_report(MYSQLI_REPORT_OFF);
 $conn = @new mysqli($db_host, $db_user, $db_password, $db_name);
