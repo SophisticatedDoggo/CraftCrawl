@@ -4454,6 +4454,7 @@ a.event-calendar-event {
             var(--glass-surface),
             color-mix(in srgb, var(--color-surface) 92%, transparent);
         box-shadow: 0 -12px 28px rgba(15, 23, 42, 0.18);
+        touch-action: manipulation;
         backdrop-filter: blur(18px) saturate(1.12);
         -webkit-backdrop-filter: blur(18px) saturate(1.12);
     }
@@ -4482,6 +4483,7 @@ a.event-calendar-event {
         font-size: 10px;
         font-weight: 650;
         text-decoration: none;
+        touch-action: manipulation;
         cursor: pointer;
     }
 
