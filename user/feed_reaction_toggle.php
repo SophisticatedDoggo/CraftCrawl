@@ -201,6 +201,53 @@ if (!craftcrawl_feed_item_is_visible($conn, $user_id, $item_key)) {
     exit();
 }
 
+function craftcrawl_feed_item_allows_interactions($conn, $item_key) {
+    // Business posts are always interactive
+    if (preg_match('/^(business_post|announcement):/', $item_key)) {
+        return true;
+    }
+
+    $owner_user_id = 0;
+
+    if (preg_match('/^first_visit:(\d+)$/', $item_key, $m)) {
+        $s = $conn->prepare("SELECT user_id FROM user_visits WHERE id=? LIMIT 1");
+        $s->bind_param("i", (int) $m[1]); $s->execute();
+        $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
+    } elseif (preg_match('/^level_up:(\d+)$/', $item_key, $m)) {
+        $s = $conn->prepare("SELECT user_id FROM xp_log WHERE id=? LIMIT 1");
+        $s->bind_param("i", (int) $m[1]); $s->execute();
+        $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
+    } elseif (preg_match('/^event_want:(\d+)$/', $item_key, $m)) {
+        $s = $conn->prepare("SELECT user_id FROM event_want_to_go WHERE id=? LIMIT 1");
+        $s->bind_param("i", (int) $m[1]); $s->execute();
+        $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
+    } elseif (preg_match('/^location_want:(\d+)$/', $item_key, $m)) {
+        $s = $conn->prepare("SELECT user_id FROM want_to_go_locations WHERE id=? LIMIT 1");
+        $s->bind_param("i", (int) $m[1]); $s->execute();
+        $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
+    } elseif (preg_match('/^badge_earned:(\d+)$/', $item_key, $m)) {
+        $s = $conn->prepare("SELECT user_id FROM user_badges WHERE id=? LIMIT 1");
+        $s->bind_param("i", (int) $m[1]); $s->execute();
+        $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
+    }
+
+    if (!$owner_user_id) {
+        return true; // Fail open if owner can't be determined
+    }
+
+    $pref = $conn->prepare("SELECT allow_post_interactions FROM users WHERE id=? LIMIT 1");
+    $pref->bind_param("i", $owner_user_id);
+    $pref->execute();
+    $row = $pref->get_result()->fetch_assoc();
+    return !isset($row['allow_post_interactions']) || !empty($row['allow_post_interactions']);
+}
+
+if (!craftcrawl_feed_item_allows_interactions($conn, $item_key)) {
+    http_response_code(403);
+    echo json_encode(['ok' => false, 'message' => 'Reactions are not enabled on this post.']);
+    exit();
+}
+
 $existing_stmt = $conn->prepare("SELECT id FROM feed_reactions WHERE user_id=? AND feed_item_key=? AND reaction_type=?");
 $existing_stmt->bind_param("iss", $user_id, $item_key, $reaction_type);
 $existing_stmt->execute();

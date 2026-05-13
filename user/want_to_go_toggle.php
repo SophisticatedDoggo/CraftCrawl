@@ -27,7 +27,12 @@ if ($is_saved) {
     craftcrawl_redirect('business_details.php?id=' . $business_id . '&message=want_removed');
 }
 
-$visibility = 'friends_only';
+$pref_stmt = $conn->prepare("SELECT show_want_to_go FROM users WHERE id=? LIMIT 1");
+$pref_stmt->bind_param("i", $user_id);
+$pref_stmt->execute();
+$pref = $pref_stmt->get_result()->fetch_assoc();
+$visibility = (!isset($pref['show_want_to_go']) || !empty($pref['show_want_to_go'])) ? 'friends_only' : 'private';
+
 $stmt = $conn->prepare("INSERT IGNORE INTO want_to_go_locations (user_id, business_id, visibility, createdAt) VALUES (?, ?, ?, NOW())");
 $stmt->bind_param("iis", $user_id, $business_id, $visibility);
 $stmt->execute();

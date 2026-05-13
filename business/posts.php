@@ -110,6 +110,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
+    if ($form_action === 'edit_post') {
+        $edit_post_id = filter_var($_POST['post_id'] ?? null, FILTER_VALIDATE_INT);
+        $new_title = clean_text($_POST['title'] ?? '');
+        $new_body = clean_text($_POST['body'] ?? '');
+        $new_body = $new_body !== '' ? $new_body : null;
+
+        if (!$edit_post_id || !$new_title) {
+            header('Location: posts.php?message=edit_error');
+            exit();
+        }
+
+        $upd_stmt = $conn->prepare("UPDATE business_posts SET title=?, body=?, updated_at=NOW() WHERE id=? AND business_id=?");
+        $upd_stmt->bind_param("ssii", $new_title, $new_body, $edit_post_id, $business_id);
+        $upd_stmt->execute();
+        header('Location: posts.php?message=post_updated#post-' . $edit_post_id);
+        exit();
+    }
+
+    if ($form_action === 'comment_post') {
+        $comment_post_id = filter_var($_POST['post_id'] ?? null, FILTER_VALIDATE_INT);
+        $body = clean_text($_POST['body'] ?? '');
+
+        if (!$comment_post_id || $body === '') {
+            header('Location: posts.php?message=comment_error');
+            exit();
+        }
+
+        if (function_exists('mb_strlen') && mb_strlen($body) > 500) {
+            $body = mb_substr($body, 0, 500);
+        } elseif (strlen($body) > 500) {
+            $body = substr($body, 0, 500);
+        }
+
+        $own_stmt = $conn->prepare("SELECT id FROM business_posts WHERE id=? AND business_id=? LIMIT 1");
+        $own_stmt->bind_param("ii", $comment_post_id, $business_id);
+        $own_stmt->execute();
+
+        if (!$own_stmt->get_result()->fetch_assoc()) {
+            header('Location: posts.php?message=comment_error');
+            exit();
+        }
+
+        $item_key = 'business_post:' . $comment_post_id;
+        $cmt_stmt = $conn->prepare("
+            INSERT INTO feed_comments (feed_item_key, business_id, body, createdAt)
+            VALUES (?, ?, ?, NOW())
+        ");
+        $cmt_stmt->bind_param("sis", $item_key, $business_id, $body);
+        $cmt_stmt->execute();
+        header('Location: posts.php?message=comment_saved#post-' . $comment_post_id);
+        exit();
+    }
+
     if ($form_action === 'reply_comment') {
         $parent_comment_id = filter_var($_POST['comment_id'] ?? null, FILTER_VALIDATE_INT);
         $body = clean_text($_POST['body'] ?? '');
@@ -321,6 +374,16 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '📍 Want to Go'
             <p class="form-message form-message-error">Please enter a question for the poll.</p>
         <?php elseif ($message === 'poll_options_error') : ?>
             <p class="form-message form-message-error">Please provide at least 2 poll options.</p>
+        <?php elseif ($message === 'post_updated') : ?>
+            <p class="form-message form-message-success">Post updated.</p>
+        <?php elseif ($message === 'comment_saved') : ?>
+            <p class="form-message form-message-success">Comment posted.</p>
+        <?php elseif ($message === 'reply_saved') : ?>
+            <p class="form-message form-message-success">Reply posted.</p>
+        <?php elseif ($message === 'edit_error') : ?>
+            <p class="form-message form-message-error">Post could not be updated. Title is required.</p>
+        <?php elseif ($message === 'comment_error') : ?>
+            <p class="form-message form-message-error">Comment could not be posted.</p>
         <?php elseif ($message === 'reply_error') : ?>
             <p class="form-message form-message-error">Reply could not be posted.</p>
         <?php endif; ?>
@@ -422,11 +485,55 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '📍 Want to Go'
                         <?php endif; ?>
                     </p>
 
-                    <form method="POST" action="">
+                    <div class="portal-post-card-actions">
+                        <button
+                            type="button"
+                            class="portal-reply-toggle"
+                            data-edit-toggle
+                            aria-expanded="false"
+                            aria-controls="edit-form-<?php echo escape_output($post_id); ?>"
+                        >Edit</button>
+                        <form method="POST" action="" style="display:inline">
+                            <?php echo craftcrawl_csrf_input(); ?>
+                            <input type="hidden" name="form_action" value="delete_post">
+                            <input type="hidden" name="post_id" value="<?php echo escape_output($post_id); ?>">
+                            <button type="submit" class="button-link-secondary">Delete</button>
+                        </form>
+                    </div>
+
+                    <form
+                        method="POST"
+                        action=""
+                        class="portal-edit-form"
+                        id="edit-form-<?php echo escape_output($post_id); ?>"
+                        hidden
+                    >
                         <?php echo craftcrawl_csrf_input(); ?>
-                        <input type="hidden" name="form_action" value="delete_post">
+                        <input type="hidden" name="form_action" value="edit_post">
                         <input type="hidden" name="post_id" value="<?php echo escape_output($post_id); ?>">
-                        <button type="submit" class="button-link-secondary">Delete Post</button>
+                        <label for="edit-title-<?php echo escape_output($post_id); ?>">Title</label>
+                        <input
+                            type="text"
+                            id="edit-title-<?php echo escape_output($post_id); ?>"
+                            name="title"
+                            maxlength="255"
+                            required
+                            value="<?php echo escape_output($ppost['title']); ?>"
+                        >
+                        <label for="edit-body-<?php echo escape_output($post_id); ?>">Details (optional)</label>
+                        <textarea
+                            id="edit-body-<?php echo escape_output($post_id); ?>"
+                            name="body"
+                            rows="3"
+                            maxlength="2000"
+                        ><?php echo escape_output($ppost['body'] ?? ''); ?></textarea>
+                        <?php if ($ppost['post_type'] === 'poll') : ?>
+                            <p class="form-help">Poll options and expiry cannot be changed after creation.</p>
+                        <?php endif; ?>
+                        <div class="portal-reply-actions">
+                            <button type="submit">Save Changes</button>
+                            <button type="button" class="button-link-secondary" data-edit-cancel>Cancel</button>
+                        </div>
                     </form>
 
                     <?php if ($ppost['post_type'] === 'poll' && !empty($post_opts)) : ?>
@@ -509,6 +616,32 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '📍 Want to Go'
                     <?php else : ?>
                         <p class="portal-no-comments">No comments yet.</p>
                     <?php endif; ?>
+
+                    <div class="portal-post-comment-section">
+                        <button
+                            type="button"
+                            class="portal-reply-toggle"
+                            data-comment-toggle
+                            aria-expanded="false"
+                            aria-controls="comment-form-<?php echo escape_output($post_id); ?>"
+                        >Add a Comment</button>
+                        <form
+                            method="POST"
+                            action=""
+                            class="portal-reply-form"
+                            id="comment-form-<?php echo escape_output($post_id); ?>"
+                            hidden
+                        >
+                            <?php echo craftcrawl_csrf_input(); ?>
+                            <input type="hidden" name="form_action" value="comment_post">
+                            <input type="hidden" name="post_id" value="<?php echo escape_output($post_id); ?>">
+                            <textarea name="body" maxlength="500" rows="2" required placeholder="Add a comment as the business owner..."></textarea>
+                            <div class="portal-reply-actions">
+                                <button type="submit">Post Comment</button>
+                                <button type="button" class="button-link-secondary" data-comment-cancel>Cancel</button>
+                            </div>
+                        </form>
+                    </div>
                 </article>
             <?php endforeach; ?>
         </section>
@@ -554,6 +687,62 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '📍 Want to Go'
                 if (toggle) {
                     toggle.setAttribute('aria-expanded', 'false');
                     toggle.textContent = 'Reply';
+                }
+            });
+        });
+
+        // Edit post toggle
+        document.querySelectorAll('[data-edit-toggle]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const form = document.getElementById(button.getAttribute('aria-controls'));
+                const isExpanded = button.getAttribute('aria-expanded') === 'true';
+                button.setAttribute('aria-expanded', String(!isExpanded));
+                button.textContent = isExpanded ? 'Edit' : 'Cancel Edit';
+                if (form) {
+                    form.hidden = isExpanded;
+                    if (!isExpanded) {
+                        form.querySelector('input[name="title"]')?.focus();
+                    }
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-edit-cancel]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const form = button.closest('.portal-edit-form');
+                const toggle = form ? document.querySelector('[aria-controls="' + form.id + '"]') : null;
+                if (form) form.hidden = true;
+                if (toggle) {
+                    toggle.setAttribute('aria-expanded', 'false');
+                    toggle.textContent = 'Edit';
+                }
+            });
+        });
+
+        // Add comment toggle
+        document.querySelectorAll('[data-comment-toggle]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const form = document.getElementById(button.getAttribute('aria-controls'));
+                const isExpanded = button.getAttribute('aria-expanded') === 'true';
+                button.setAttribute('aria-expanded', String(!isExpanded));
+                button.textContent = isExpanded ? 'Add a Comment' : 'Cancel';
+                if (form) {
+                    form.hidden = isExpanded;
+                    if (!isExpanded) {
+                        form.querySelector('textarea')?.focus();
+                    }
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-comment-cancel]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const form = button.closest('.portal-reply-form');
+                const toggle = form ? document.querySelector('[aria-controls="' + form.id + '"]') : null;
+                if (form) form.hidden = true;
+                if (toggle) {
+                    toggle.setAttribute('aria-expanded', 'false');
+                    toggle.textContent = 'Add a Comment';
                 }
             });
         });

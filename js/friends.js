@@ -673,6 +673,10 @@
             return '';
         }
 
+        if (item.allow_interactions === false && item.type !== 'business_post') {
+            return '';
+        }
+
         const reactions = item.reactions || [];
         const reactionMap = {};
         const availableReactions = reactionTypesByItemType[item.type] || Object.keys(reactionLabels);

@@ -13,14 +13,16 @@ if (!isset($_SESSION['user_id'])) {
 $message = $_GET['message'] ?? null;
 $user_id = (int) $_SESSION['user_id'];
 $craftcrawl_portal_active = '';
-$settings_stmt = $conn->prepare("SELECT auto_accept_friend_invites, show_feed_activity, show_liked_businesses, notify_social_activity, level, selected_title_index, selected_profile_frame FROM users WHERE id=?");
+$settings_stmt = $conn->prepare("SELECT auto_accept_friend_invites, show_feed_activity, show_liked_businesses, show_want_to_go, notify_social_activity, allow_post_interactions, level, selected_title_index, selected_profile_frame FROM users WHERE id=?");
 $settings_stmt->bind_param("i", $user_id);
 $settings_stmt->execute();
 $user_settings = $settings_stmt->get_result()->fetch_assoc();
-$auto_accept_friend_invites = !empty($user_settings['auto_accept_friend_invites']);
-$show_feed_activity = !isset($user_settings['show_feed_activity']) || !empty($user_settings['show_feed_activity']);
-$show_liked_businesses = !isset($user_settings['show_liked_businesses']) || !empty($user_settings['show_liked_businesses']);
-$notify_social_activity = !isset($user_settings['notify_social_activity']) || !empty($user_settings['notify_social_activity']);
+$auto_accept_friend_invites  = !empty($user_settings['auto_accept_friend_invites']);
+$show_feed_activity          = !isset($user_settings['show_feed_activity'])         || !empty($user_settings['show_feed_activity']);
+$show_liked_businesses       = !isset($user_settings['show_liked_businesses'])      || !empty($user_settings['show_liked_businesses']);
+$show_want_to_go             = !isset($user_settings['show_want_to_go'])            || !empty($user_settings['show_want_to_go']);
+$notify_social_activity      = !isset($user_settings['notify_social_activity'])     || !empty($user_settings['notify_social_activity']);
+$allow_post_interactions     = !isset($user_settings['allow_post_interactions'])    || !empty($user_settings['allow_post_interactions']);
 $user_level = (int) ($user_settings['level'] ?? 1);
 $selected_title_index = $user_settings['selected_title_index'] !== null ? (int) $user_settings['selected_title_index'] : null;
 $selected_profile_frame = $user_settings['selected_profile_frame'] ?? null;
@@ -92,17 +94,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($form_action === 'privacy') {
-        $auto_accept_friend_invites = isset($_POST['auto_accept_friend_invites']);
-        $show_feed_activity = isset($_POST['show_feed_activity']);
-        $show_liked_businesses = isset($_POST['show_liked_businesses']);
-        $notify_social_activity = isset($_POST['notify_social_activity']);
-        $auto_accept_value = $auto_accept_friend_invites ? 1 : 0;
-        $show_feed_value = $show_feed_activity ? 1 : 0;
-        $show_liked_value = $show_liked_businesses ? 1 : 0;
-        $notify_social_value = $notify_social_activity ? 1 : 0;
-        $privacy_stmt = $conn->prepare("UPDATE users SET auto_accept_friend_invites=?, show_feed_activity=?, show_liked_businesses=?, notify_social_activity=? WHERE id=?");
-        $privacy_stmt->bind_param("iiiii", $auto_accept_value, $show_feed_value, $show_liked_value, $notify_social_value, $user_id);
+        $auto_accept_friend_invites  = isset($_POST['auto_accept_friend_invites']);
+        $show_feed_activity          = isset($_POST['show_feed_activity']);
+        $show_liked_businesses       = isset($_POST['show_liked_businesses']);
+        $show_want_to_go_new         = isset($_POST['show_want_to_go']);
+        $notify_social_activity      = isset($_POST['notify_social_activity']);
+        $allow_post_interactions_new = isset($_POST['allow_post_interactions']);
+
+        $prev_show_wtg = !empty($user_settings['show_want_to_go']);
+
+        $privacy_stmt = $conn->prepare("UPDATE users SET auto_accept_friend_invites=?, show_feed_activity=?, show_liked_businesses=?, show_want_to_go=?, notify_social_activity=?, allow_post_interactions=? WHERE id=?");
+        $privacy_stmt->bind_param("iiiiiii",
+            $auto_accept_friend_invites ? 1 : 0,
+            $show_feed_activity ? 1 : 0,
+            $show_liked_businesses ? 1 : 0,
+            $show_want_to_go_new ? 1 : 0,
+            $notify_social_activity ? 1 : 0,
+            $allow_post_interactions_new ? 1 : 0,
+            $user_id
+        );
         $privacy_stmt->execute();
+
+        if ((bool) $show_want_to_go_new !== $prev_show_wtg) {
+            $new_vis = $show_want_to_go_new ? 'friends_only' : 'private';
+            $wtg_upd = $conn->prepare("UPDATE want_to_go_locations SET visibility=? WHERE user_id=?");
+            $wtg_upd->bind_param("si", $new_vis, $user_id);
+            $wtg_upd->execute();
+        }
+
         header('Location: settings.php?message=privacy_saved');
         exit();
     }
@@ -266,14 +285,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="checkbox" name="show_feed_activity" value="1" <?php echo $show_feed_activity ? 'checked' : ''; ?>>
                     <span>
                         <strong>Show My Activity in Friends Feed</strong>
-                        <small>Allow friends to see your level-ups, first-time visits, and event plans.</small>
+                        <small>Allow friends to see your check-ins, level-ups, badge earnings, Want-to-Go saves, and event RSVPs.</small>
                     </span>
                 </label>
                 <label class="settings-toggle">
                     <input type="checkbox" name="show_liked_businesses" value="1" <?php echo $show_liked_businesses ? 'checked' : ''; ?>>
                     <span>
-                        <strong>Show Liked Businesses on Profile</strong>
-                        <small>Allow friends to see businesses you have liked.</small>
+                        <strong>Businesses You Follow on Profile</strong>
+                        <small>Allow friends to see businesses you follow.</small>
+                    </span>
+                </label>
+                <label class="settings-toggle">
+                    <input type="checkbox" name="show_want_to_go" value="1" <?php echo $show_want_to_go ? 'checked' : ''; ?>>
+                    <span>
+                        <strong>Share Want-to-Go Activity with Friends</strong>
+                        <small>Allow friends to see businesses you've saved to your Want-to-Go list.</small>
                     </span>
                 </label>
                 <label class="settings-toggle">
@@ -281,6 +307,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span>
                         <strong>Notify Me About Comments and Reactions</strong>
                         <small>Show a badge when friends comment on or react to your feed posts.</small>
+                    </span>
+                </label>
+                <label class="settings-toggle">
+                    <input type="checkbox" name="allow_post_interactions" value="1" <?php echo $allow_post_interactions ? 'checked' : ''; ?>>
+                    <span>
+                        <strong>Allow Reactions and Comments on My Activity</strong>
+                        <small>Let friends react to and comment on your check-ins, level-ups, and other feed posts.</small>
                     </span>
                 </label>
                 <button type="submit">Save Privacy Settings</button>

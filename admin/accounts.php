@@ -186,6 +186,7 @@ foreach ($account_queries as $type => $sql) {
                     <a href="dashboard.php">Dashboard</a>
                     <a href="accounts.php">Accounts</a>
                     <a href="reviews.php">Reviews</a>
+                    <a href="content.php">Content</a>
                     <form action="../logout.php" method="POST">
                         <?php echo craftcrawl_csrf_input(); ?>
                         <button type="submit">Logout</button>

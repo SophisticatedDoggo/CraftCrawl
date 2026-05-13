@@ -3679,6 +3679,8 @@ a.event-calendar-event {
 }
 
 .admin-page {
+    display: flex;
+    flex-direction: column;
     gap: 24px;
 }
 
@@ -4396,29 +4398,38 @@ a.event-calendar-event {
     }
 
     .admin-mobile-tabbar {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
     }
 
     .business-mobile-tabbar {
         grid-template-columns: repeat(6, minmax(0, 1fr));
     }
 
-    .mobile-app-tab {
+    a.mobile-app-tab,
+    button.mobile-app-tab {
         position: relative;
         display: grid;
-        gap: 3px;
+        gap: 2px;
         justify-items: center;
         min-height: 52px;
-        padding: 7px 4px;
+        padding: 7px 2px;
         border: 0;
         border-radius: var(--radius-sm);
         color: var(--color-muted);
         background: transparent;
         box-shadow: none;
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 650;
         text-decoration: none;
         cursor: pointer;
+    }
+
+    a.mobile-app-tab > span:last-child,
+    button.mobile-app-tab > span:last-child {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
     }
 
     .mobile-tab-badge {
@@ -4426,9 +4437,12 @@ a.event-calendar-event {
         right: calc(50% - 24px);
     }
 
-    .mobile-app-tab:hover,
-    .mobile-app-tab:focus,
-    .mobile-app-tab.is-active {
+    a.mobile-app-tab:hover,
+    a.mobile-app-tab:focus-visible,
+    a.mobile-app-tab.is-active,
+    button.mobile-app-tab:hover,
+    button.mobile-app-tab:focus-visible,
+    button.mobile-app-tab.is-active {
         color: var(--color-primary);
         background: color-mix(in srgb, var(--color-primary) 10%, transparent);
     }
@@ -4505,19 +4519,29 @@ a.event-calendar-event {
         height: 2px;
     }
 
+    .mobile-app-tab-icon-analytics {
+        border-bottom: 2px solid currentColor;
+    }
+
     .mobile-app-tab-icon-analytics::before {
-        right: 3px;
-        bottom: 3px;
-        width: 4px;
-        height: 15px;
-        box-shadow: -7px 5px 0 currentColor, -14px 9px 0 currentColor;
+        /* First upswing + second upswing (box-shadow copy at same angle) */
+        bottom: 5px;
+        left: 1px;
+        width: 9px;
+        height: 2px;
+        transform: rotate(-48deg);
+        transform-origin: 0% 50%;
+        box-shadow: 11px -3px 0 currentColor;
     }
 
     .mobile-app-tab-icon-analytics::after {
-        right: 1px;
-        bottom: 1px;
-        left: 1px;
+        /* Valley connecting the two upswings */
+        bottom: 12px;
+        left: 7px;
+        width: 7px;
         height: 2px;
+        transform: rotate(35deg);
+        transform-origin: 0% 50%;
     }
 
     .mobile-app-tab-icon-events {
@@ -4612,23 +4636,26 @@ a.event-calendar-event {
     }
 
     .mobile-app-tab-icon-reviews {
-        border: 2px solid currentColor;
-        border-radius: 5px;
+        background: currentColor;
+        border: 0;
+        border-radius: 0;
+        clip-path: polygon(
+            50% 0%,
+            61% 35%,
+            98% 35%,
+            68% 57%,
+            79% 91%,
+            50% 70%,
+            21% 91%,
+            32% 57%,
+            2%  35%,
+            39% 35%
+        );
     }
 
-    .mobile-app-tab-icon-reviews::before {
-        top: 5px;
-        right: 4px;
-        left: 4px;
-        height: 2px;
-    }
-
+    .mobile-app-tab-icon-reviews::before,
     .mobile-app-tab-icon-reviews::after {
-        right: 3px;
-        bottom: -5px;
-        width: 7px;
-        height: 7px;
-        transform: rotate(45deg);
+        display: none;
     }
 
     .mobile-app-tab-icon-settings {
@@ -5453,6 +5480,32 @@ a.event-calendar-event {
     font-size: 0.88em;
     color: var(--color-muted);
     margin-top: 12px;
+}
+
+.portal-post-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.portal-post-card-actions form {
+    margin: 0;
+}
+
+.portal-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
+}
+
+.portal-post-comment-section {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
 }
 
 .load-more-posts-button {

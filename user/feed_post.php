@@ -111,6 +111,21 @@ if ($feed_item && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $body = substr($body, 0, 500);
     }
 
+    // Block comments when item owner has disabled interactions
+    $item_type_prefix = explode(':', $item_key)[0];
+    if (in_array($item_type_prefix, ['first_visit', 'level_up', 'event_want', 'location_want', 'badge_earned'], true)) {
+        $item_owner_id = craftcrawl_feed_item_owner_id($conn, $item_key);
+        if ($item_owner_id) {
+            $interact_stmt = $conn->prepare("SELECT allow_post_interactions FROM users WHERE id=? LIMIT 1");
+            $interact_stmt->bind_param("i", $item_owner_id);
+            $interact_stmt->execute();
+            $interact_row = $interact_stmt->get_result()->fetch_assoc();
+            if (isset($interact_row['allow_post_interactions']) && empty($interact_row['allow_post_interactions'])) {
+                craftcrawl_redirect('user/feed_post.php?item=' . rawurlencode($item_key) . '&message=interactions_disabled');
+            }
+        }
+    }
+
     if ($parent_comment_id) {
         $parent_stmt = $conn->prepare("
             SELECT id
@@ -237,6 +252,8 @@ if ($feed_item) {
                 <p class="form-message form-message-error">Write a comment before posting.</p>
             <?php elseif ($message === 'reply_error') : ?>
                 <p class="form-message form-message-error">That comment is no longer available.</p>
+            <?php elseif ($message === 'interactions_disabled') : ?>
+                <p class="form-message form-message-error">Comments are not enabled on this post.</p>
             <?php endif; ?>
 
             <section class="settings-panel feed-thread-panel">

@@ -81,9 +81,11 @@ function craftcrawl_bind_feed_user_ids_before($stmt, $types, $feed_user_ids, &$b
 
 $before_clause_checkin = $before_dt ? ' AND uv.checkedInAt < ?' : '';
 $visit_sql = "
-    SELECT uv.id, uv.user_id, uv.checkedInAt, b.id AS business_id, b.bName, b.city, b.state
+    SELECT uv.id, uv.user_id, uv.checkedInAt, b.id AS business_id, b.bName, b.city, b.state,
+        u.allow_post_interactions
     FROM user_visits uv
     INNER JOIN businesses b ON b.id = uv.business_id
+    INNER JOIN users u ON u.id = uv.user_id
     WHERE uv.visit_type='first_time' AND uv.user_id IN ($placeholders)
     $before_clause_checkin
     ORDER BY uv.checkedInAt DESC
@@ -104,6 +106,7 @@ while ($visit = $visit_result->fetch_assoc()) {
         'created_at' => $visit['checkedInAt'],
         'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
         'is_self' => $actor_id === $user_id,
+        'allow_interactions' => (bool) $visit['allow_post_interactions'],
         'business_id' => (int) $visit['business_id'],
         'business_name' => $visit['bName'],
         'city' => $visit['city'],
@@ -113,16 +116,17 @@ while ($visit = $visit_result->fetch_assoc()) {
 
 $before_clause_created = $before_dt ? ' AND createdAt < ?' : '';
 $xp_sql = "
-    SELECT id, user_id, level_after, createdAt
-    FROM xp_log
-    WHERE user_id IN ($placeholders)
-        AND level_after > level_before
+    SELECT xl.id, xl.user_id, xl.level_after, xl.createdAt, u.allow_post_interactions
+    FROM xp_log xl
+    INNER JOIN users u ON u.id = xl.user_id
+    WHERE xl.user_id IN ($placeholders)
+        AND xl.level_after > xl.level_before
         AND (
-            (MOD(level_after - 1, 5) = 0 AND level_after > 1)
-            OR level_after IN (50, 75, 100)
+            (MOD(xl.level_after - 1, 5) = 0 AND xl.level_after > 1)
+            OR xl.level_after IN (50, 75, 100)
         )
     $before_clause_created
-    ORDER BY createdAt DESC, id DESC
+    ORDER BY xl.createdAt DESC, xl.id DESC
     LIMIT 80
 ";
 $xp_stmt = $conn->prepare($xp_sql);
@@ -142,6 +146,7 @@ while ($xp = $xp_result->fetch_assoc()) {
         'created_at' => $xp['createdAt'],
         'friend_name' => $people[$friend_id]['name'] ?? 'A friend',
         'is_self' => $friend_id === $user_id,
+        'allow_interactions' => (bool) $xp['allow_post_interactions'],
         'level' => $after_level,
         'title' => craftcrawl_level_title($after_level)
     ];
@@ -150,10 +155,12 @@ while ($xp = $xp_result->fetch_assoc()) {
 $before_clause_ew = $before_dt ? ' AND ew.createdAt < ?' : '';
 $event_want_sql = "
     SELECT ew.id, ew.user_id, ew.event_id, ew.occurrence_date, ew.createdAt,
-        e.eName, e.startTime, b.id AS business_id, b.bName, b.city, b.state
+        e.eName, e.startTime, b.id AS business_id, b.bName, b.city, b.state,
+        u.allow_post_interactions
     FROM event_want_to_go ew
     INNER JOIN events e ON e.id = ew.event_id
     INNER JOIN businesses b ON b.id = e.business_id
+    INNER JOIN users u ON u.id = ew.user_id
     WHERE ew.user_id IN ($placeholders)
     $before_clause_ew
     ORDER BY ew.createdAt DESC
@@ -174,6 +181,7 @@ while ($event_want = $event_want_result->fetch_assoc()) {
         'created_at' => $event_want['createdAt'],
         'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
         'is_self' => $actor_id === $user_id,
+        'allow_interactions' => (bool) $event_want['allow_post_interactions'],
         'event_id' => (int) $event_want['event_id'],
         'event_name' => $event_want['eName'],
         'event_date' => $event_want['occurrence_date'],
@@ -187,10 +195,12 @@ while ($event_want = $event_want_result->fetch_assoc()) {
 
 $before_clause_wtg = $before_dt ? ' AND wtg.createdAt < ?' : '';
 $location_want_sql = "
-    SELECT wtg.id, wtg.user_id, wtg.createdAt, b.id AS business_id, b.bName, b.bType, b.city, b.state
+    SELECT wtg.id, wtg.user_id, wtg.createdAt, b.id AS business_id, b.bName, b.bType, b.city, b.state,
+        u.allow_post_interactions
     FROM want_to_go_locations wtg
     INNER JOIN businesses b ON b.id = wtg.business_id
-    WHERE wtg.user_id IN ($placeholders) AND b.approved=TRUE
+    INNER JOIN users u ON u.id = wtg.user_id
+    WHERE wtg.user_id IN ($placeholders) AND b.approved=TRUE AND wtg.visibility = 'friends_only'
     $before_clause_wtg
     ORDER BY wtg.createdAt DESC
     LIMIT 80
@@ -210,6 +220,7 @@ while ($location_want = $location_want_result->fetch_assoc()) {
         'created_at' => $location_want['createdAt'],
         'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
         'is_self' => $actor_id === $user_id,
+        'allow_interactions' => (bool) $location_want['allow_post_interactions'],
         'business_id' => (int) $location_want['business_id'],
         'business_name' => $location_want['bName'],
         'business_type' => $location_want['bType'],
@@ -220,8 +231,10 @@ while ($location_want = $location_want_result->fetch_assoc()) {
 
 $before_clause_badge = $before_dt ? ' AND ub.earnedAt < ?' : '';
 $badge_sql = "
-    SELECT ub.id, ub.user_id, ub.badge_name, ub.badge_description, ub.badge_tier, ub.earnedAt
+    SELECT ub.id, ub.user_id, ub.badge_name, ub.badge_description, ub.badge_tier, ub.earnedAt,
+        u.allow_post_interactions
     FROM user_badges ub
+    INNER JOIN users u ON u.id = ub.user_id
     WHERE ub.user_id IN ($placeholders)
     $before_clause_badge
     ORDER BY ub.earnedAt DESC
@@ -242,6 +255,7 @@ while ($badge = $badge_result->fetch_assoc()) {
         'created_at' => $badge['earnedAt'],
         'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
         'is_self' => $actor_id === $user_id,
+        'allow_interactions' => (bool) $badge['allow_post_interactions'],
         'badge_name' => $badge['badge_name'],
         'badge_description' => $badge['badge_description'],
         'badge_tier' => $badge['badge_tier']
