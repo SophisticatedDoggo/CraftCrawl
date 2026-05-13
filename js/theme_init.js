@@ -138,11 +138,16 @@ function shouldShowCraftCrawlPageLoaderForLink(link, event) {
 
 function continueCraftCrawlLinkNavigation(link) {
     const destination = link.href;
+    const capacitor = window.Capacitor;
+    const isNative = capacitor
+        && typeof capacitor.isNativePlatform === 'function'
+        && capacitor.isNativePlatform();
+    const transitionDelay = isNative ? 360 : 110;
 
     window.requestAnimationFrame(function () {
         window.setTimeout(function () {
             window.location.assign(destination);
-        }, 90);
+        }, transitionDelay);
     });
 }
 

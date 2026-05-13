@@ -8,6 +8,14 @@ let renderedMapItemCount = 0;
 const mapRadiusModeMinZoom = 8;
 const mapRadiusMeters = 50 * 1609.344;
 const mapClusterMaxZoom = 12;
+const isMobileMapViewport = window.matchMedia('(max-width: 700px), (pointer: coarse)').matches;
+const mapMarkerCircleRadius = isMobileMapViewport ? 20 : 15;
+const mapMarkerTextSize = isMobileMapViewport ? 18 : 14;
+const mapTitleTextSize = isMobileMapViewport ? 16 : 13;
+const mapTitleOffset = isMobileMapViewport ? [0, -1.85] : [0, -1.5];
+const mapClusterCircleRadius = isMobileMapViewport ? [22, 26, 30] : [17, 21, 25];
+const mapClusterRingRadius = isMobileMapViewport ? [30, 35, 40] : [24, 28, 32];
+const mapClusterTextSize = isMobileMapViewport ? 16 : 13;
 
 mapboxgl.accessToken = window.MAPBOX_ACCESS_TOKEN;
 // creates the map, setting the container to the id of the div you added in step 2, and setting the initial center and zoom level of the map
@@ -58,9 +66,9 @@ map.on('load', function () {
             'circle-radius': [
                 'step',
                 ['get', 'point_count'],
-                24,
-                5, 28,
-                10, 32
+                mapClusterRingRadius[0],
+                5, mapClusterRingRadius[1],
+                10, mapClusterRingRadius[2]
             ],
             'circle-opacity': 0.2,
             'circle-stroke-width': 0
@@ -78,9 +86,9 @@ map.on('load', function () {
             'circle-radius': [
                 'step',
                 ['get', 'point_count'],
-                17,
-                5, 21,
-                10, 25
+                mapClusterCircleRadius[0],
+                5, mapClusterCircleRadius[1],
+                10, mapClusterCircleRadius[2]
             ],
             'circle-stroke-width': 3,
             'circle-stroke-color': '#ffffff'
@@ -96,7 +104,7 @@ map.on('load', function () {
         layout: {
             'text-field': ['concat', ['get', 'point_count_abbreviated'], '+'],
             'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-            'text-size': 13,
+            'text-size': mapClusterTextSize,
             'text-allow-overlap': true,
             'text-ignore-placement': true
         },
@@ -114,7 +122,7 @@ map.on('load', function () {
         source: 'places',
         filter: ['!', ['has', 'point_count']],
         paint: {
-            'circle-radius': 15,
+            'circle-radius': mapMarkerCircleRadius,
             'circle-color': [
                 'match',
                 ['get', 'businessType'],
@@ -125,7 +133,7 @@ map.on('load', function () {
                 'meadery', '#facc15',
                 '#6b7280'
             ],
-            'circle-stroke-width': 3,
+            'circle-stroke-width': isMobileMapViewport ? 4 : 3,
             'circle-stroke-color': '#ffffff'
         }
     });
@@ -138,7 +146,7 @@ map.on('load', function () {
         layout: {
             'text-field': ['get', 'listNumber'],
             'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-            'text-size': 14,
+            'text-size': mapMarkerTextSize,
             'text-allow-overlap': true,
             'text-ignore-placement': true
         },
@@ -157,8 +165,8 @@ map.on('load', function () {
         layout: {
             'text-field': ['get', 'title'],
             'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-            'text-size': 13,
-            'text-offset': [0, -1.5],
+            'text-size': mapTitleTextSize,
+            'text-offset': mapTitleOffset,
             'text-anchor': 'bottom',
             'text-allow-overlap': true,
             'text-ignore-placement': true

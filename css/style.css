@@ -4904,7 +4904,10 @@ a.event-calendar-event {
     }
 
     .business-list-item {
-        grid-template-columns: 44px 1fr;
+        grid-template-columns: 56px minmax(0, 1fr);
+        align-items: stretch;
+        gap: 12px 18px;
+        padding: 18px 14px;
     }
 
     .business-list-toolbar {
@@ -4918,7 +4921,36 @@ a.event-calendar-event {
 
     .business-list-item > a {
         grid-column: 2;
-        justify-self: start;
+        justify-self: end;
+        align-self: end;
+        min-width: 140px;
+        min-height: 42px;
+        padding: 9px 18px;
+        font-size: 0.95rem;
+        text-align: center;
+    }
+
+    .business-list-number {
+        grid-row: 1 / span 2;
+        align-self: center;
+        justify-self: center;
+        width: 44px;
+        height: 44px;
+        font-size: 21px;
+        line-height: 1;
+    }
+
+    .business-list-details {
+        min-width: 0;
+        align-self: start;
+    }
+
+    .business-list-details strong {
+        line-height: 1.2;
+    }
+
+    .business-list-details span {
+        line-height: 1.35;
     }
 
     .event-feed-item:not(.event-feed-item-with-cover) {
