@@ -115,7 +115,7 @@ foreach ($events_by_date as $date => $events) {
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
                     <a href="business_portal.php">Back to Preview</a>
-                    <a href="analytics.php">Analytics</a>
+                    <a href="analytics.php">Stats</a>
                     <a href="event_edit.php?month=<?php echo escape_output($calendar_month); ?>">Add Event</a>
                     <a href="settings.php">Settings</a>
                     <form action="../logout.php" method="POST">
@@ -140,10 +140,12 @@ foreach ($events_by_date as $date => $events) {
                 <a href="event_edit.php?month=<?php echo escape_output($calendar_month); ?>">Add Event</a>
             </div>
 
-                <div class="calendar-header">
-                    <a href="events.php?month=<?php echo escape_output($previous_month); ?>">Previous</a>
-                    <h2><?php echo escape_output(date('F Y', $month_timestamp)); ?></h2>
-                    <a href="events.php?month=<?php echo escape_output($next_month); ?>">Next</a>
+                <div class="calendar-header calendar-header-compact">
+                    <div class="calendar-period-control" aria-label="Change calendar month">
+                        <a href="events.php?month=<?php echo escape_output($previous_month); ?>" aria-label="Previous month">‹</a>
+                        <span><?php echo escape_output(date('F Y', $month_timestamp)); ?></span>
+                        <a href="events.php?month=<?php echo escape_output($next_month); ?>" aria-label="Next month">›</a>
+                    </div>
                 </div>
 
                 <div class="event-calendar-scroll">

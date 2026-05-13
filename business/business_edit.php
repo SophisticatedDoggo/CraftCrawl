@@ -97,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             <div>
                 <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
                 <div>
-                    <h1>Edit Business Information</h1>
+                    <h1>Edit Info</h1>
                     <p><?php echo escape_output($business['bName']); ?></p>
                 </div>
             </div>
@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
                     <a href="business_portal.php">Back to Preview</a>
-                    <a href="analytics.php">Analytics</a>
+                    <a href="analytics.php">Stats</a>
                     <a href="settings.php">Settings</a>
                     <form action="../logout.php" method="POST">
                         <?php echo craftcrawl_csrf_input(); ?>

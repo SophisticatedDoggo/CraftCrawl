@@ -43,7 +43,9 @@ $summary_stmt = $conn->prepare("
         COALESCE(SUM(xp_awarded), 0) AS total_xp,
         COALESCE(SUM(DATE(checkedInAt)=CURDATE()), 0) AS today_checkins,
         COALESCE(SUM(DATE(checkedInAt)=CURDATE() AND visit_type='first_time'), 0) AS today_first_time,
-        COALESCE(SUM(DATE(checkedInAt)=CURDATE() AND visit_type='repeat'), 0) AS today_repeat
+        COALESCE(SUM(DATE(checkedInAt)=CURDATE() AND visit_type='repeat'), 0) AS today_repeat,
+        COUNT(DISTINCT CASE WHEN DATE(checkedInAt)=CURDATE() THEN user_id END) AS today_unique_visitors,
+        COALESCE(SUM(CASE WHEN DATE(checkedInAt)=CURDATE() THEN xp_awarded ELSE 0 END), 0) AS today_xp
     FROM user_visits
     WHERE business_id=?
 ");
@@ -59,47 +61,9 @@ $total_xp = (int) ($summary['total_xp'] ?? 0);
 $today_checkins = (int) ($summary['today_checkins'] ?? 0);
 $today_first_time = (int) ($summary['today_first_time'] ?? 0);
 $today_repeat = (int) ($summary['today_repeat'] ?? 0);
-$first_time_rate = $total_checkins > 0 ? round(($first_time_checkins / $total_checkins) * 100) : 0;
-
-$daily_metrics = [];
-for ($days_ago = 13; $days_ago >= 0; $days_ago--) {
-    $day_key = date('Y-m-d', strtotime("-{$days_ago} days"));
-    $daily_metrics[$day_key] = [
-        'label' => date('M j', strtotime($day_key)),
-        'total' => 0,
-        'first_time' => 0,
-        'repeat_visits' => 0
-    ];
-}
-
-$trend_stmt = $conn->prepare("
-    SELECT
-        DATE(checkedInAt) AS checkin_day,
-        COUNT(*) AS total,
-        COALESCE(SUM(visit_type='first_time'), 0) AS first_time,
-        COALESCE(SUM(visit_type='repeat'), 0) AS repeat_visits
-    FROM user_visits
-    WHERE business_id=?
-    AND checkedInAt >= DATE_SUB(CURDATE(), INTERVAL 13 DAY)
-    GROUP BY DATE(checkedInAt)
-    ORDER BY checkin_day
-");
-$trend_stmt->bind_param("i", $business_id);
-$trend_stmt->execute();
-$trend_result = $trend_stmt->get_result();
-while ($row = $trend_result->fetch_assoc()) {
-    $day_key = $row['checkin_day'];
-    if (isset($daily_metrics[$day_key])) {
-        $daily_metrics[$day_key]['total'] = (int) $row['total'];
-        $daily_metrics[$day_key]['first_time'] = (int) $row['first_time'];
-        $daily_metrics[$day_key]['repeat_visits'] = (int) $row['repeat_visits'];
-    }
-}
-
-$max_daily_checkins = 1;
-foreach ($daily_metrics as $metric) {
-    $max_daily_checkins = max($max_daily_checkins, $metric['total']);
-}
+$today_unique_visitors = (int) ($summary['today_unique_visitors'] ?? 0);
+$today_xp = (int) ($summary['today_xp'] ?? 0);
+$today_first_time_rate = $today_checkins > 0 ? round(($today_first_time / $today_checkins) * 100) : 0;
 
 $recent_stmt = $conn->prepare("
     SELECT uv.visit_type, uv.xp_awarded, uv.distance_meters, uv.checkedInAt, u.fName, u.lName
@@ -113,30 +77,13 @@ $recent_stmt->bind_param("i", $business_id);
 $recent_stmt->execute();
 $recent_checkins = $recent_stmt->get_result();
 
-$top_visitors_stmt = $conn->prepare("
-    SELECT u.fName, u.lName, COUNT(*) AS visit_count, MAX(uv.checkedInAt) AS last_checkin
-    FROM user_visits uv
-    INNER JOIN users u ON u.id = uv.user_id
-    WHERE uv.business_id=?
-    GROUP BY uv.user_id, u.fName, u.lName
-    ORDER BY visit_count DESC, last_checkin DESC
-    LIMIT 5
-");
-$top_visitors_stmt->bind_param("i", $business_id);
-$top_visitors_stmt->execute();
-$top_visitors = $top_visitors_stmt->get_result();
-
-$follower_stmt = $conn->prepare("SELECT COUNT(*) AS follower_count FROM liked_businesses WHERE business_id=?");
-$follower_stmt->bind_param("i", $business_id);
-$follower_stmt->execute();
-$follower_count = (int) ($follower_stmt->get_result()->fetch_assoc()['follower_count'] ?? 0);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CraftCrawl | Business Analytics</title>
+    <title>CraftCrawl | Business Stats</title>
     <script src="../js/theme_init.js"></script>
     <link rel="stylesheet" href="../css/style.css">
 </head>
@@ -146,7 +93,7 @@ $follower_count = (int) ($follower_stmt->get_result()->fetch_assoc()['follower_c
             <div>
                 <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
                 <div>
-                    <h1>Analytics</h1>
+                    <h1>Stats</h1>
                     <p><?php echo escape_output($business['bName']); ?></p>
                 </div>
             </div>
@@ -158,7 +105,7 @@ $follower_count = (int) ($follower_stmt->get_result()->fetch_assoc()['follower_c
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
                     <a href="business_portal.php">Back to Portal</a>
-                    <a href="events.php">Manage Events</a>
+                    <a href="events.php">Events</a>
                     <a href="settings.php">Settings</a>
                     <form action="../logout.php" method="POST">
                         <?php echo craftcrawl_csrf_input(); ?>
@@ -174,61 +121,46 @@ $follower_count = (int) ($follower_stmt->get_result()->fetch_assoc()['follower_c
                 <h2><?php echo escape_output(format_metric_number($today_checkins)); ?> check-ins</h2>
                 <p><?php echo escape_output(format_metric_number($today_first_time)); ?> first-time and <?php echo escape_output(format_metric_number($today_repeat)); ?> repeat visits today.</p>
             </div>
-            <div class="analytics-hero-stat">
-                <strong><?php echo escape_output($first_time_rate); ?>%</strong>
-                <span>first-time visitor rate</span>
+            <div class="analytics-hero-stats" aria-label="Today quick stats">
+                <div class="analytics-hero-stat">
+                    <strong><?php echo escape_output($today_first_time_rate); ?>%</strong>
+                    <span>first-time rate</span>
+                </div>
+                <div class="analytics-hero-stat">
+                    <strong><?php echo escape_output(format_metric_number($today_unique_visitors)); ?></strong>
+                    <span>unique visitors</span>
+                </div>
+                <div class="analytics-hero-stat">
+                    <strong><?php echo escape_output(format_metric_number($today_xp)); ?></strong>
+                    <span>XP awarded</span>
+                </div>
             </div>
         </section>
 
-        <section class="analytics-metric-grid" aria-label="Check-in summary">
-            <article class="analytics-card">
-                <span>Total Check-ins</span>
-                <strong><?php echo escape_output(format_metric_number($total_checkins)); ?></strong>
-                <p>All recorded visits.</p>
-            </article>
-            <article class="analytics-card">
-                <span>First-Time Check-ins</span>
-                <strong><?php echo escape_output(format_metric_number($first_time_checkins)); ?></strong>
-                <p>Visitors earning first-visit XP.</p>
-            </article>
-            <article class="analytics-card">
-                <span>Repeat Check-ins</span>
-                <strong><?php echo escape_output(format_metric_number($repeat_checkins)); ?></strong>
-                <p>Return visits from existing visitors.</p>
-            </article>
-            <article class="analytics-card">
-                <span>Unique Visitors</span>
-                <strong><?php echo escape_output(format_metric_number($unique_visitors)); ?></strong>
-                <p>Total distinct users checked in.</p>
-            </article>
-            <article class="analytics-card">
-                <span>XP Awarded</span>
-                <strong><?php echo escape_output(format_metric_number($total_xp)); ?></strong>
-                <p>XP your business has generated.</p>
-            </article>
-            <article class="analytics-card">
-                <span>Followers</span>
-                <strong><?php echo escape_output(format_metric_number($follower_count)); ?></strong>
-                <p>Users following your business for updates.</p>
-            </article>
-        </section>
-
         <section class="analytics-layout">
-            <article class="analytics-panel">
-                <div class="business-section-header">
-                    <h2>Last 14 Days</h2>
+            <article class="analytics-panel analytics-interactive-panel" data-analytics-widget data-analytics-endpoint="analytics_data.php" data-analytics-mode="month">
+                <div class="business-section-header analytics-widget-header">
+                    <div>
+                        <h2>Check-ins Over Time</h2>
+                    </div>
                 </div>
-                <div class="analytics-trend">
-                    <?php foreach ($daily_metrics as $metric) : ?>
-                        <?php $bar_width = (int) round(($metric['total'] / $max_daily_checkins) * 100); ?>
-                        <div class="analytics-trend-row">
-                            <span><?php echo escape_output($metric['label']); ?></span>
-                            <div class="analytics-trend-bar" aria-label="<?php echo escape_output($metric['label'] . ': ' . $metric['total'] . ' check-ins'); ?>">
-                                <span style="width: <?php echo escape_output($bar_width); ?>%;"></span>
-                            </div>
-                            <strong><?php echo escape_output(format_metric_number($metric['total'])); ?></strong>
-                        </div>
-                    <?php endforeach; ?>
+                <div class="analytics-mode-tabs" aria-label="Stats range">
+                    <button type="button" data-analytics-mode="day">Day</button>
+                    <button type="button" data-analytics-mode="week">Week</button>
+                    <button type="button" data-analytics-mode="month" class="is-active">Month</button>
+                    <button type="button" data-analytics-mode="year">Year</button>
+                    <button type="button" data-analytics-mode="lifetime">Lifetime</button>
+                </div>
+                <div class="analytics-chart-period" aria-label="Change analytics period">
+                    <button type="button" data-analytics-previous aria-label="Previous period">‹</button>
+                    <p><span data-analytics-period-label>This month</span> &middot; <strong data-analytics-total-label>Loading</strong></p>
+                    <button type="button" data-analytics-next aria-label="Next period" disabled>›</button>
+                </div>
+                <div class="analytics-line-chart" data-analytics-chart>
+                    <p class="analytics-empty">Loading analytics.</p>
+                </div>
+                <div class="analytics-metric-grid analytics-range-metrics" data-analytics-summary-cards aria-label="Selected range summary">
+                    <p class="analytics-empty">Loading summary.</p>
                 </div>
             </article>
 
@@ -236,21 +168,9 @@ $follower_count = (int) ($follower_stmt->get_result()->fetch_assoc()['follower_c
                 <div class="business-section-header">
                     <h2>Top Visitors</h2>
                 </div>
-                <?php if ($top_visitors->num_rows === 0) : ?>
-                    <p class="analytics-empty">Top visitors will appear after check-ins are recorded.</p>
-                <?php else : ?>
-                    <div class="analytics-list">
-                        <?php while ($visitor = $top_visitors->fetch_assoc()) : ?>
-                            <div class="analytics-list-item">
-                                <div>
-                                    <strong><?php echo escape_output(trim($visitor['fName'] . ' ' . $visitor['lName'])); ?></strong>
-                                    <span><?php echo escape_output(format_checkin_time($visitor['last_checkin'])); ?></span>
-                                </div>
-                                <b><?php echo escape_output(format_metric_number($visitor['visit_count'])); ?></b>
-                            </div>
-                        <?php endwhile; ?>
-                    </div>
-                <?php endif; ?>
+                <div class="analytics-list" data-analytics-top-visitors>
+                    <p class="analytics-empty">Loading top visitors.</p>
+                </div>
             </article>
         </section>
 
@@ -280,5 +200,6 @@ $follower_count = (int) ($follower_stmt->get_result()->fetch_assoc()['follower_c
     </main>
     <?php include __DIR__ . '/mobile_nav.php'; ?>
     <script src="../js/mobile_actions_menu.js"></script>
+    <script src="../js/business_analytics.js"></script>
 </body>
 </html>

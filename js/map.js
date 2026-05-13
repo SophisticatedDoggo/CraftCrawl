@@ -16,6 +16,8 @@ const mapTitleOffset = isMobileMapViewport ? [0, -1.85] : [0, -1.5];
 const mapClusterCircleRadius = isMobileMapViewport ? [22, 26, 30] : [17, 21, 25];
 const mapClusterRingRadius = isMobileMapViewport ? [30, 35, 40] : [24, 28, 32];
 const mapClusterTextSize = isMobileMapViewport ? 16 : 13;
+const mapMarkerHitboxRadius = isMobileMapViewport ? 34 : 24;
+const mapClusterHitboxRadius = isMobileMapViewport ? [38, 44, 50] : [28, 34, 40];
 
 mapboxgl.accessToken = window.MAPBOX_ACCESS_TOKEN;
 // creates the map, setting the container to the id of the div you added in step 2, and setting the initial center and zoom level of the map
@@ -115,6 +117,26 @@ map.on('load', function () {
         }
     });
 
+    map.addLayer({
+        id: 'cluster-hitboxes',
+        type: 'circle',
+        source: 'places',
+        filter: ['has', 'point_count'],
+        maxzoom: mapClusterMaxZoom + 1,
+        paint: {
+            'circle-color': '#ffffff',
+            'circle-radius': [
+                'step',
+                ['get', 'point_count'],
+                mapClusterHitboxRadius[0],
+                5, mapClusterHitboxRadius[1],
+                10, mapClusterHitboxRadius[2]
+            ],
+            'circle-opacity': 0.01,
+            'circle-stroke-opacity': 0
+        }
+    });
+
     //add place object to map
     map.addLayer({
         id: 'place-badges',
@@ -135,6 +157,19 @@ map.on('load', function () {
             ],
             'circle-stroke-width': isMobileMapViewport ? 4 : 3,
             'circle-stroke-color': '#ffffff'
+        }
+    });
+
+    map.addLayer({
+        id: 'place-hitboxes',
+        type: 'circle',
+        source: 'places',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+            'circle-color': '#ffffff',
+            'circle-radius': mapMarkerHitboxRadius,
+            'circle-opacity': 0.01,
+            'circle-stroke-opacity': 0
         }
     });
 
@@ -220,10 +255,15 @@ map.on('load', function () {
 
 
     //Handle popups
-    map.on('click', 'clusters', (e) => {
+    const zoomToCluster = (e) => {
         const features = map.queryRenderedFeatures(e.point, {
-            layers: ['clusters']
+            layers: ['cluster-hitboxes', 'clusters']
         });
+
+        if (!features.length) {
+            return;
+        }
+
         const clusterId = features[0].properties.cluster_id;
 
         map.getSource('places').getClusterExpansionZoom(clusterId, (error, zoom) => {
@@ -236,9 +276,9 @@ map.on('load', function () {
                 zoom: zoom
             });
         });
-    });
+    };
 
-    map.on('click', 'places', (e) => {
+    const openBusinessPopup = (e) => {
         const coordinates = e.features[0].geometry.coordinates.slice();
         const properties = e.features[0].properties;
 
@@ -246,21 +286,23 @@ map.on('load', function () {
             .setLngLat(coordinates)
             .setHTML(getBusinessPopupHTML(properties, coordinates))
             .addTo(map);
-    });
+    };
+
+    map.on('click', 'clusters', zoomToCluster);
+    map.on('click', 'cluster-hitboxes', zoomToCluster);
+    map.on('click', 'places', openBusinessPopup);
+    map.on('click', 'place-titles', openBusinessPopup);
+    map.on('click', 'place-hitboxes', openBusinessPopup);
 
 
     //Handle pointer styles
-    map.on('mouseenter', 'clusters', () => {
-        map.getCanvas().style.cursor = 'pointer';
-    });
-    map.on('mouseleave', 'clusters', () => {
-        map.getCanvas().style.cursor = '';
-    });
-    map.on('mouseenter', 'places', () => {
-        map.getCanvas().style.cursor = 'pointer';
-    });
-    map.on('mouseleave', 'places', () => {
-        map.getCanvas().style.cursor = '';
+    ['clusters', 'cluster-hitboxes', 'places', 'place-titles', 'place-hitboxes'].forEach((layerId) => {
+        map.on('mouseenter', layerId, () => {
+            map.getCanvas().style.cursor = 'pointer';
+        });
+        map.on('mouseleave', layerId, () => {
+            map.getCanvas().style.cursor = '';
+        });
     });
 
     //get our data from php function
@@ -597,6 +639,7 @@ function setupBusinessListMapLinks(listContainer) {
                 return;
             }
 
+            item.blur();
             focusBusinessOnMap(item.dataset.businessId);
         });
 

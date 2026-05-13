@@ -119,9 +119,12 @@ foreach ($events_by_date as $date => $events) {
 
         <section class="event-calendar-panel">
             <div class="calendar-header">
-                <a href="business_calendar.php?id=<?php echo escape_output($business_id); ?>&month=<?php echo escape_output($previous_month); ?>">Previous</a>
-                <h1><?php echo escape_output($business['bName']); ?> - <?php echo escape_output(date('F Y', $month_timestamp)); ?></h1>
-                <a href="business_calendar.php?id=<?php echo escape_output($business_id); ?>&month=<?php echo escape_output($next_month); ?>">Next</a>
+                <h1><?php echo escape_output($business['bName']); ?> Events</h1>
+                <div class="calendar-period-control" aria-label="Change calendar month">
+                    <a href="business_calendar.php?id=<?php echo escape_output($business_id); ?>&month=<?php echo escape_output($previous_month); ?>" aria-label="Previous month">‹</a>
+                    <span><?php echo escape_output(date('F Y', $month_timestamp)); ?></span>
+                    <a href="business_calendar.php?id=<?php echo escape_output($business_id); ?>&month=<?php echo escape_output($next_month); ?>" aria-label="Next month">›</a>
+                </div>
             </div>
 
             <div class="event-calendar-scroll">

@@ -132,7 +132,7 @@ $display_palette = in_array($business['display_palette'] ?? '', $allowed_display
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
                     <a href="business_portal.php">Back to Portal</a>
-                    <a href="analytics.php">Analytics</a>
+                    <a href="analytics.php">Stats</a>
                     <form action="../logout.php" method="POST">
                         <?php echo craftcrawl_csrf_input(); ?>
                         <button type="submit">Logout</button>

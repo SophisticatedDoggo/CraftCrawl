@@ -350,7 +350,7 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '📍 Want to Go'
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
                     <a href="business_portal.php">Back to Portal</a>
-                    <a href="analytics.php">Analytics</a>
+                    <a href="analytics.php">Stats</a>
                     <a href="settings.php">Settings</a>
                     <form action="../logout.php" method="POST">
                         <?php echo craftcrawl_csrf_input(); ?>
