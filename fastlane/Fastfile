@@ -17,8 +17,8 @@ def app_store_connect_key
     in_house: false
   }
 
-  if ENV["APP_STORE_CONNECT_API_KEY_PATH"]
-    key_options[:key_filepath] = ENV.fetch("APP_STORE_CONNECT_API_KEY_PATH")
+  if ENV["CRAFTCRAWL_ASC_API_KEY_PATH"]
+    key_options[:key_filepath] = ENV.fetch("CRAFTCRAWL_ASC_API_KEY_PATH")
   else
     key_options[:key_content] = ENV.fetch("APP_STORE_CONNECT_API_KEY_BASE64")
     key_options[:is_key_content_base64] = true
