@@ -289,7 +289,7 @@ require_once 'lib/business_post_render.php';
 
 $posts_fetch_limit = 2;
 $posts_stmt = $conn->prepare("
-    SELECT id, post_type, title, body, created_at
+    SELECT id, post_type, title, body, created_at, ends_at
     FROM business_posts
     WHERE business_id=?
     ORDER BY created_at DESC

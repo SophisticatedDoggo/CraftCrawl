@@ -54,6 +54,21 @@ function render_feed_thread_post($item) {
         ';
     }
 
+    if (($item['type'] ?? '') === 'business_post') {
+        $is_poll = ($item['post_type'] ?? '') === 'poll';
+        return '
+            <article class="friends-feed-item feed-thread-post">
+                <div class="friends-feed-icon">' . ($is_poll ? '📊' : '📢') . '</div>
+                <div>
+                    <strong>' . escape_output($item['business_name']) . '</strong>
+                    <p>' . escape_output($item['title']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
+                    ' . (!empty($item['body']) ? '<p>' . nl2br(escape_output($item['body'])) . '</p>' : '') . '
+                    <a href="../business_details.php?id=' . escape_output($item['business_id']) . '">View Business</a>
+                </div>
+            </article>
+        ';
+    }
+
     return '
         <article class="friends-feed-item feed-thread-post">
             <div class="friends-feed-icon">1st</div>

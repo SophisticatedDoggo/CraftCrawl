@@ -185,6 +185,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        $duration_hours = filter_var($_POST['duration'] ?? '', FILTER_VALIDATE_INT);
+        $poll_ends_at = null;
+        if ($duration_hours && in_array($duration_hours, [24, 48, 72, 168], true)) {
+            $poll_ends_at = date('Y-m-d H:i:s', strtotime('+' . $duration_hours . ' hours'));
+        }
+
         if (!$poll_title) {
             header('Location: business_portal.php?message=poll_error');
             exit();
@@ -197,8 +203,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $conn->begin_transaction();
         $type = 'poll';
-        $ins_stmt = $conn->prepare("INSERT INTO business_posts (business_id, post_type, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())");
-        $ins_stmt->bind_param("isss", $business_id, $type, $poll_title, $poll_body);
+        $ins_stmt = $conn->prepare("INSERT INTO business_posts (business_id, post_type, title, body, ends_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())");
+        $ins_stmt->bind_param("issss", $business_id, $type, $poll_title, $poll_body, $poll_ends_at);
         $ins_stmt->execute();
         $new_post_id = $ins_stmt->insert_id;
 
@@ -284,14 +290,27 @@ $photo_stmt->execute();
 $business_photos = $photo_stmt->get_result();
 
 $portal_posts_stmt = $conn->prepare("
-    SELECT bp.id, bp.post_type, bp.title, bp.body, bp.created_at,
-        COALESCE(vc.total, 0) AS vote_count
+    SELECT bp.id, bp.post_type, bp.title, bp.body, bp.created_at, bp.ends_at,
+        COALESCE(vc.total, 0) AS vote_count,
+        COALESCE(cc.total, 0) AS comment_count,
+        COALESCE(rc.total, 0) AS reaction_count
     FROM business_posts bp
     LEFT JOIN (
         SELECT post_id, COUNT(*) AS total
         FROM business_poll_votes
         GROUP BY post_id
     ) vc ON vc.post_id = bp.id
+    LEFT JOIN (
+        SELECT feed_item_key, COUNT(*) AS total
+        FROM feed_comments
+        WHERE deletedAt IS NULL
+        GROUP BY feed_item_key
+    ) cc ON cc.feed_item_key = CONCAT('business_post:', bp.id)
+    LEFT JOIN (
+        SELECT feed_item_key, COUNT(*) AS total
+        FROM feed_reactions
+        GROUP BY feed_item_key
+    ) rc ON rc.feed_item_key = CONCAT('business_post:', bp.id)
     WHERE bp.business_id=?
     ORDER BY bp.created_at DESC
     LIMIT 30
@@ -509,6 +528,14 @@ $portal_posts = $portal_posts_stmt->get_result();
                     <input type="text" name="option_4" maxlength="255" placeholder="Option 4 (optional)">
                     <input type="text" name="option_5" maxlength="255" placeholder="Option 5 (optional)">
                 </div>
+                <label for="poll_duration">Poll duration</label>
+                <select id="poll_duration" name="duration">
+                    <option value="">No expiration</option>
+                    <option value="24">24 hours</option>
+                    <option value="48">48 hours</option>
+                    <option value="72">3 days</option>
+                    <option value="168">1 week</option>
+                </select>
                 <button type="submit">Create Poll</button>
             </form>
 
@@ -527,8 +554,17 @@ $portal_posts = $portal_posts_stmt->get_result();
                     <?php endif; ?>
                     <p class="business-review-response-date">
                         <?php echo escape_output(date('M j, Y', strtotime($ppost['created_at']))); ?>
+                        &middot; <?php echo escape_output((int) $ppost['comment_count']); ?> comment<?php echo (int) $ppost['comment_count'] !== 1 ? 's' : ''; ?>
+                        &middot; <?php echo escape_output((int) $ppost['reaction_count']); ?> reaction<?php echo (int) $ppost['reaction_count'] !== 1 ? 's' : ''; ?>
                         <?php if ($ppost['post_type'] === 'poll') : ?>
                             &middot; <?php echo escape_output((int) $ppost['vote_count']); ?> vote<?php echo (int) $ppost['vote_count'] !== 1 ? 's' : ''; ?>
+                            <?php if (!empty($ppost['ends_at'])) : ?>
+                                <?php if (strtotime($ppost['ends_at']) < time()) : ?>
+                                    &middot; <span class="poll-expiry-label is-closed">Closed</span>
+                                <?php else : ?>
+                                    &middot; <span class="poll-expiry-label">Closes <?php echo escape_output(date('M j, g:i A', strtotime($ppost['ends_at']))); ?></span>
+                                <?php endif; ?>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </p>
                     <form method="POST" action="">

@@ -28,21 +28,22 @@ if (!$post_id || !$option_id) {
     exit();
 }
 
-// Verify the option belongs to the post and the post is a poll on an approved business
+// Verify the option belongs to the post, it's a poll on an approved business, and it hasn't expired
 $verify_stmt = $conn->prepare("
     SELECT bpo.id
     FROM business_poll_options bpo
     INNER JOIN business_posts bp ON bp.id = bpo.post_id AND bp.post_type = 'poll'
     INNER JOIN businesses b ON b.id = bp.business_id AND b.approved = TRUE
     WHERE bpo.id=? AND bpo.post_id=?
+        AND (bp.ends_at IS NULL OR bp.ends_at > NOW())
     LIMIT 1
 ");
 $verify_stmt->bind_param("ii", $option_id, $post_id);
 $verify_stmt->execute();
 
 if (!$verify_stmt->get_result()->fetch_assoc()) {
-    http_response_code(404);
-    echo json_encode(['ok' => false, 'message' => 'Poll not found.']);
+    http_response_code(422);
+    echo json_encode(['ok' => false, 'message' => 'This poll has closed.']);
     exit();
 }
 

@@ -358,6 +358,32 @@
         });
     }
 
+    function renderFeedPollOptions(itemKey, options) {
+        const buttons = options.map(function (opt) {
+            return '<button type="button" class="business-poll-option-btn" data-feed-poll-vote'
+                + ' data-item-key="' + escapeHtml(itemKey) + '" data-option-id="' + opt.id + '">'
+                + escapeHtml(opt.option_text) + '</button>';
+        }).join('');
+        return '<div class="business-poll-vote-options">' + buttons + '</div>';
+    }
+
+    function renderFeedPollResults(options, userVotedOptionId, totalVotes) {
+        const items = options.map(function (opt) {
+            const pct = totalVotes > 0 ? Math.round((opt.vote_count / totalVotes) * 100) : 0;
+            const isVoted = opt.id === userVotedOptionId;
+            return '<div class="business-poll-result' + (isVoted ? ' is-voted' : '') + '">'
+                + '<div class="business-poll-result-label"><span>' + escapeHtml(opt.option_text) + '</span>'
+                + (isVoted ? '<span class="business-poll-voted-indicator">Your vote</span>' : '') + '</div>'
+                + '<div class="business-poll-bar"><span style="width:' + pct + '%"></span></div>'
+                + '<span class="business-poll-result-count">' + pct + '% (' + opt.vote_count + ')</span>'
+                + '</div>';
+        }).join('');
+        return '<div class="business-poll-results" data-poll-results>'
+            + items
+            + '<p class="business-poll-total">' + totalVotes + ' vote' + (totalVotes !== 1 ? 's' : '') + '</p>'
+            + '</div>';
+    }
+
     function renderFeedItem(item) {
         const date = formatDate(item.created_at);
         const actions = renderFeedActions(item);
@@ -416,6 +442,20 @@
 
         if (item.type === 'business_post') {
             const isPoll = item.post_type === 'poll';
+            let pollSection = '';
+
+            if (isPoll) {
+                let pollContent = '';
+                if (item.user_voted_option_id != null) {
+                    pollContent = renderFeedPollResults(item.options || [], item.user_voted_option_id, item.total_votes || 0);
+                } else if (item.is_expired) {
+                    pollContent = '<p class="business-poll-expiry is-closed">Poll closed</p>';
+                } else {
+                    pollContent = renderFeedPollOptions(item.item_key, item.options || []);
+                }
+                pollSection = '<div data-feed-poll-section>' + pollContent + '</div>';
+            }
+
             return `
                 <article class="friends-feed-item">
                     <div class="friends-feed-icon">${isPoll ? '📊' : '📢'}</div>
@@ -423,6 +463,7 @@
                         <strong>${escapeHtml(item.business_name)}</strong>
                         <p>${escapeHtml(item.title)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
                         ${item.body ? `<p class="feed-announcement-body">${escapeHtml(item.body)}</p>` : ''}
+                        ${pollSection}
                         ${actions}
                     </div>
                 </article>
@@ -521,6 +562,55 @@
                 .finally(() => {
                     button.disabled = false;
                     button.classList.remove('is-loading');
+                });
+        });
+    }
+
+    // Delegated poll vote handler for feed items
+    if (feed) {
+        feed.addEventListener('click', function (event) {
+            const voteBtn = event.target.closest('[data-feed-poll-vote]');
+            if (!voteBtn || voteBtn.disabled) {
+                return;
+            }
+
+            const pollSection = voteBtn.closest('[data-feed-poll-section]');
+            if (!pollSection) {
+                return;
+            }
+
+            pollSection.querySelectorAll('[data-feed-poll-vote]').forEach(function (btn) {
+                btn.disabled = true;
+            });
+
+            const formData = new FormData();
+            formData.append('csrf_token', csrfToken);
+            formData.append('post_id', voteBtn.dataset.itemKey.split(':')[1]);
+            formData.append('option_id', voteBtn.dataset.optionId);
+
+            fetch('business_poll_vote.php', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (!data.ok) {
+                        pollSection.querySelectorAll('[data-feed-poll-vote]').forEach(function (btn) {
+                            btn.disabled = false;
+                        });
+                        return;
+                    }
+                    pollSection.innerHTML = renderFeedPollResults(
+                        data.options,
+                        data.user_voted_option_id,
+                        data.total_votes
+                    );
+                })
+                .catch(function () {
+                    pollSection.querySelectorAll('[data-feed-poll-vote]').forEach(function (btn) {
+                        btn.disabled = false;
+                    });
                 });
         });
     }

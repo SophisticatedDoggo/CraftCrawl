@@ -235,6 +235,41 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
         ];
     }
 
+    // Business posts are public to all logged-in users — no friend check required
+    if (preg_match('/^business_post:(\d+)$/', $item_key, $matches)) {
+        $post_id = (int) $matches[1];
+        $stmt = $conn->prepare("
+            SELECT bp.id, bp.business_id, bp.post_type, bp.title, bp.body, bp.created_at,
+                b.bName, b.bType, b.city, b.state
+            FROM business_posts bp
+            INNER JOIN businesses b ON b.id = bp.business_id AND b.approved=TRUE
+            WHERE bp.id=?
+            LIMIT 1
+        ");
+        $stmt->bind_param("i", $post_id);
+        $stmt->execute();
+        $bpost = $stmt->get_result()->fetch_assoc();
+
+        if (!$bpost) {
+            return null;
+        }
+
+        return [
+            'item_key' => $item_key,
+            'type' => 'business_post',
+            'post_type' => $bpost['post_type'],
+            'created_at' => $bpost['created_at'],
+            'is_self' => false,
+            'business_id' => (int) $bpost['business_id'],
+            'business_name' => $bpost['bName'],
+            'business_type' => $bpost['bType'],
+            'title' => $bpost['title'],
+            'body' => $bpost['body'],
+            'city' => $bpost['city'],
+            'state' => $bpost['state']
+        ];
+    }
+
     return null;
 }
 

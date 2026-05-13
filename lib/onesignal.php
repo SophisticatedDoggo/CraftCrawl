@@ -173,6 +173,10 @@ function craftcrawl_feed_item_owner_id($conn, $item_key) {
         return 0; // Business owns this; no user push notification
     }
 
+    if (preg_match('/^business_post:(\d+)$/', $item_key, $matches)) {
+        return 0; // Business owns this; no user push notification
+    }
+
     return 0;
 }
 

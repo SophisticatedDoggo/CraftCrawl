@@ -9,6 +9,11 @@
     const csrfToken = panel.dataset.csrfToken;
     const postsList = panel.querySelector('[data-posts-list]');
 
+    const reactionLabels = {
+        cheers: '🍻 Cheers',
+        want_to_go: '📍 Want to Go'
+    };
+
     function escapeHtml(value) {
         return String(value ?? '')
             .replaceAll('&', '&amp;')
@@ -37,6 +42,54 @@
             + '<p class="business-poll-total">' + totalVotes + ' vote' + (totalVotes !== 1 ? 's' : '') + '</p>'
             + '</div>';
     }
+
+    // Delegated reaction handler
+    panel.addEventListener('click', function (event) {
+        const reactionBtn = event.target.closest('[data-post-reaction]');
+        if (!reactionBtn || reactionBtn.disabled) {
+            return;
+        }
+
+        reactionBtn.disabled = true;
+
+        const formData = new FormData();
+        formData.append('csrf_token', csrfToken);
+        formData.append('item_key', reactionBtn.dataset.itemKey);
+        formData.append('reaction_type', reactionBtn.dataset.reactionType);
+
+        fetch('user/feed_reaction_toggle.php', {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                reactionBtn.disabled = false;
+                if (!data.ok) {
+                    return;
+                }
+
+                const reactionsDiv = reactionBtn.closest('.feed-reactions');
+                if (!reactionsDiv || !data.reactions) {
+                    return;
+                }
+
+                const itemKey = reactionBtn.dataset.itemKey;
+                const reactionMap = {};
+                data.reactions.forEach(function (r) { reactionMap[r.type] = r; });
+
+                reactionsDiv.innerHTML = Object.keys(reactionLabels).map(function (type) {
+                    const r = reactionMap[type] || { count: 0, reacted: false };
+                    return '<button type="button" class="' + (r.reacted ? 'is-active' : '') + '" '
+                        + 'data-post-reaction data-item-key="' + escapeHtml(itemKey) + '" data-reaction-type="' + type + '">'
+                        + reactionLabels[type] + (r.count > 0 ? ' ' + r.count : '')
+                        + '</button>';
+                }).join('');
+            })
+            .catch(function () {
+                reactionBtn.disabled = false;
+            });
+    });
 
     // Delegated vote handler
     panel.addEventListener('click', function (event) {

@@ -251,7 +251,7 @@ while ($badge = $badge_result->fetch_assoc()) {
 // Business posts from followed businesses — viewer-specific, not friend-based
 if ($before_dt) {
     $post_feed_stmt = $conn->prepare("
-        SELECT bp.id, bp.business_id, bp.post_type, bp.title, bp.body, bp.created_at,
+        SELECT bp.id, bp.business_id, bp.post_type, bp.title, bp.body, bp.created_at, bp.ends_at,
             b.bName, b.bType, b.city, b.state
         FROM business_posts bp
         INNER JOIN businesses b ON b.id = bp.business_id AND b.approved=TRUE
@@ -263,7 +263,7 @@ if ($before_dt) {
     $post_feed_stmt->bind_param("is", $user_id, $before_dt);
 } else {
     $post_feed_stmt = $conn->prepare("
-        SELECT bp.id, bp.business_id, bp.post_type, bp.title, bp.body, bp.created_at,
+        SELECT bp.id, bp.business_id, bp.post_type, bp.title, bp.body, bp.created_at, bp.ends_at,
             b.bName, b.bType, b.city, b.state
         FROM business_posts bp
         INNER JOIN businesses b ON b.id = bp.business_id AND b.approved=TRUE
@@ -288,7 +288,8 @@ while ($bpost = $post_feed_result->fetch_assoc()) {
         'title' => $bpost['title'],
         'body' => $bpost['body'],
         'city' => $bpost['city'],
-        'state' => $bpost['state']
+        'state' => $bpost['state'],
+        'ends_at' => $bpost['ends_at']
     ];
 }
 
@@ -298,6 +299,67 @@ usort($feed, function ($a, $b) {
 
 $has_more = count($feed) > 40;
 $feed = array_slice($feed, 0, 40);
+
+// Batch-load poll options + user votes for poll-type business posts in this page
+$poll_feed_idx_to_post_id = [];
+foreach ($feed as $feed_idx => $feed_item) {
+    if ($feed_item['type'] === 'business_post' && ($feed_item['post_type'] ?? '') === 'poll') {
+        $poll_feed_idx_to_post_id[$feed_idx] = (int) explode(':', $feed_item['item_key'])[1];
+    }
+}
+
+if (!empty($poll_feed_idx_to_post_id)) {
+    $distinct_poll_ids = array_values(array_unique($poll_feed_idx_to_post_id));
+    $poll_ids_ph = implode(',', array_fill(0, count($distinct_poll_ids), '?'));
+    $poll_id_types = str_repeat('i', count($distinct_poll_ids));
+
+    $opt_ids = $distinct_poll_ids;
+    $opt_stmt = $conn->prepare("
+        SELECT bpo.id, bpo.post_id, bpo.option_text, bpo.sort_order, COUNT(bpv.id) AS vote_count
+        FROM business_poll_options bpo
+        LEFT JOIN business_poll_votes bpv ON bpv.option_id = bpo.id
+        WHERE bpo.post_id IN ($poll_ids_ph)
+        GROUP BY bpo.id
+        ORDER BY bpo.sort_order
+    ");
+    $opt_params = [$poll_id_types];
+    foreach ($opt_ids as $k => $pid) { $opt_params[] = &$opt_ids[$k]; }
+    call_user_func_array([$opt_stmt, 'bind_param'], $opt_params);
+    $opt_stmt->execute();
+    $feed_poll_options = [];
+    $opt_result = $opt_stmt->get_result();
+    while ($opt = $opt_result->fetch_assoc()) {
+        $feed_poll_options[(int) $opt['post_id']][] = $opt;
+    }
+
+    $vote_ids = $distinct_poll_ids;
+    $vote_stmt = $conn->prepare("
+        SELECT post_id, option_id
+        FROM business_poll_votes
+        WHERE user_id=? AND post_id IN ($poll_ids_ph)
+    ");
+    $vote_params = ['i' . $poll_id_types, &$user_id];
+    foreach ($vote_ids as $k => $pid) { $vote_params[] = &$vote_ids[$k]; }
+    call_user_func_array([$vote_stmt, 'bind_param'], $vote_params);
+    $vote_stmt->execute();
+    $feed_user_votes = [];
+    $vote_result = $vote_stmt->get_result();
+    while ($v = $vote_result->fetch_assoc()) {
+        $feed_user_votes[(int) $v['post_id']] = (int) $v['option_id'];
+    }
+
+    foreach ($poll_feed_idx_to_post_id as $feed_idx => $post_id) {
+        $opts = $feed_poll_options[$post_id] ?? [];
+        $total = 0;
+        foreach ($opts as $o) { $total += (int) $o['vote_count']; }
+        $ends_at = $feed[$feed_idx]['ends_at'] ?? null;
+        $feed[$feed_idx]['options'] = $opts;
+        $feed[$feed_idx]['user_voted_option_id'] = $feed_user_votes[$post_id] ?? null;
+        $feed[$feed_idx]['total_votes'] = $total;
+        $feed[$feed_idx]['is_expired'] = $ends_at !== null && strtotime($ends_at) < time();
+    }
+}
+
 $feed_item_keys = array_column($feed, 'item_key');
 $reactions_by_item = [];
 $comment_counts_by_item = [];

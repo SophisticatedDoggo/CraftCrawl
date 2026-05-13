@@ -31,10 +31,11 @@ $reaction_options_by_type = [
     'location_want' => ['cheers', 'nice_find', 'want_to_go'],
     'badge_earned'  => ['cheers', 'trophy'],
     'announcement'  => ['cheers', 'want_to_go'],
+    'business_post' => ['cheers', 'want_to_go'],
 ];
 
 $item_type = null;
-if (preg_match('/^(first_visit|level_up|event_want|location_want|badge_earned|announcement):\d+$/', $item_key, $type_matches)) {
+if (preg_match('/^(first_visit|level_up|event_want|location_want|badge_earned|announcement|business_post):\d+$/', $item_key, $type_matches)) {
     $item_type = $type_matches[1];
 }
 $item_reaction_options = $reaction_options_by_type[$item_type] ?? [];
@@ -172,6 +173,21 @@ function craftcrawl_feed_item_is_visible($conn, $user_id, $item_key) {
             LIMIT 1
         ");
         $stmt->bind_param("ii", $ann_id, $user_id);
+        $stmt->execute();
+        return (bool) $stmt->get_result()->fetch_assoc();
+    }
+
+    // Business posts are public — any logged-in user can react
+    if (preg_match('/^business_post:(\d+)$/', $item_key, $matches)) {
+        $post_id = (int) $matches[1];
+        $stmt = $conn->prepare("
+            SELECT bp.id
+            FROM business_posts bp
+            INNER JOIN businesses b ON b.id = bp.business_id AND b.approved=TRUE
+            WHERE bp.id=?
+            LIMIT 1
+        ");
+        $stmt->bind_param("i", $post_id);
         $stmt->execute();
         return (bool) $stmt->get_result()->fetch_assoc();
     }

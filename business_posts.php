@@ -33,7 +33,7 @@ $fetch_limit = 11;
 
 if ($before_dt) {
     $posts_stmt = $conn->prepare("
-        SELECT id, post_type, title, body, created_at
+        SELECT id, post_type, title, body, created_at, ends_at
         FROM business_posts
         WHERE business_id=? AND created_at < ?
         ORDER BY created_at DESC
@@ -42,7 +42,7 @@ if ($before_dt) {
     $posts_stmt->bind_param("isi", $business_id, $before_dt, $fetch_limit);
 } else {
     $posts_stmt = $conn->prepare("
-        SELECT id, post_type, title, body, created_at
+        SELECT id, post_type, title, body, created_at, ends_at
         FROM business_posts
         WHERE business_id=?
         ORDER BY created_at DESC
