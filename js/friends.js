@@ -37,7 +37,7 @@
         event_want: ['cheers', 'nice_find'],
         location_want: ['cheers', 'nice_find', 'want_to_go'],
         badge_earned: ['cheers', 'trophy'],
-        announcement: ['cheers', 'want_to_go']
+        business_post: ['cheers', 'want_to_go']
     };
 
     if (!panel && !managerPage && !menuBadge && !tabBadge) {
@@ -414,10 +414,11 @@
             `;
         }
 
-        if (item.type === 'announcement') {
+        if (item.type === 'business_post') {
+            const isPoll = item.post_type === 'poll';
             return `
                 <article class="friends-feed-item">
-                    <div class="friends-feed-icon">📢</div>
+                    <div class="friends-feed-icon">${isPoll ? '📊' : '📢'}</div>
                     <div>
                         <strong>${escapeHtml(item.business_name)}</strong>
                         <p>${escapeHtml(item.title)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
@@ -630,7 +631,7 @@
             return `<a class="feed-detail-link" href="../event_details.php?id=${encodeURIComponent(item.event_id)}&date=${encodeURIComponent(item.event_date)}">View Event</a>`;
         }
 
-        if (item.type === 'first_visit' || item.type === 'location_want' || item.type === 'announcement') {
+        if (item.type === 'first_visit' || item.type === 'location_want' || item.type === 'business_post') {
             return `<a class="feed-detail-link" href="../business_details.php?id=${encodeURIComponent(item.business_id)}">View Business</a>`;
         }
 

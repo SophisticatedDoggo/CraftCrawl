@@ -285,18 +285,23 @@ $want_stmt->bind_param("ii", $user_id, $business_id);
 $want_stmt->execute();
 $is_want_to_go = (bool) $want_stmt->get_result()->fetch_assoc();
 
-$ann_stmt = $conn->prepare("
-    SELECT title, body
-    FROM business_announcements
+require_once 'lib/business_post_render.php';
+
+$posts_fetch_limit = 11;
+$posts_stmt = $conn->prepare("
+    SELECT id, post_type, title, body, created_at
+    FROM business_posts
     WHERE business_id=?
-    AND (starts_at IS NULL OR starts_at <= NOW())
-    AND (ends_at IS NULL OR ends_at >= NOW())
     ORDER BY created_at DESC
-    LIMIT 5
+    LIMIT ?
 ");
-$ann_stmt->bind_param("i", $business_id);
-$ann_stmt->execute();
-$active_announcements = $ann_stmt->get_result();
+$posts_stmt->bind_param("ii", $business_id, $posts_fetch_limit);
+$posts_stmt->execute();
+$posts_raw = $posts_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+$has_more_posts = count($posts_raw) > 10;
+$posts_raw = array_slice($posts_raw, 0, 10);
+$posts = craftcrawl_load_posts_with_poll_data($conn, $user_id, $posts_raw);
 
 $friend_options_stmt = $conn->prepare("
     SELECT u.id, u.fName, u.lName
@@ -641,17 +646,31 @@ function format_event_time_range($event) {
             <?php endforeach; ?>
         </section>
 
-        <?php if ($active_announcements->num_rows > 0) : ?>
-        <section class="business-announcements-panel">
-            <h2>Announcements</h2>
-            <?php while ($ann = $active_announcements->fetch_assoc()) : ?>
-                <article class="business-announcement-card">
-                    <strong><?php echo escape_output($ann['title']); ?></strong>
-                    <p><?php echo nl2br(escape_output($ann['body'])); ?></p>
-                </article>
-            <?php endwhile; ?>
+        <section
+            class="business-posts-panel"
+            data-business-posts-panel
+            data-business-id="<?php echo escape_output($business_id); ?>"
+            data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>"
+        >
+            <h2>Posts</h2>
+            <?php if (empty($posts)) : ?>
+                <p>No posts yet.</p>
+            <?php else : ?>
+                <div class="business-posts-list" data-posts-list>
+                    <?php foreach ($posts as $post) : ?>
+                        <?php echo craftcrawl_render_business_post($post); ?>
+                    <?php endforeach; ?>
+                </div>
+                <?php if ($has_more_posts) : ?>
+                    <button
+                        type="button"
+                        class="load-more-posts-button"
+                        data-load-more-posts
+                        data-last-date="<?php echo escape_output($posts[count($posts) - 1]['created_at']); ?>"
+                    >Load more posts</button>
+                <?php endif; ?>
+            <?php endif; ?>
         </section>
-        <?php endif; ?>
 
         <section class="review-form-panel">
             <h2><?php echo $user_has_reviewed ? 'Edit Your Review' : 'Leave a Review'; ?></h2>
@@ -822,6 +841,7 @@ function format_event_time_range($event) {
     }
 </script>
 <script src="js/check_in.js"></script>
+<script src="js/business_posts.js"></script>
 <script src="js/business_gallery.js"></script>
 <script src="js/review_photos.js"></script>
 <script src="js/review_edit_toggle.js"></script>

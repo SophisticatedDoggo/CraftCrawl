@@ -154,36 +154,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    if ($form_action === 'create_announcement') {
-        $ann_title = clean_text($_POST['title'] ?? '');
-        $ann_body = clean_text($_POST['body'] ?? '');
-        $ann_starts_at = !empty($_POST['starts_at']) ? date('Y-m-d H:i:s', strtotime($_POST['starts_at'])) : null;
-        $ann_ends_at = !empty($_POST['ends_at']) ? date('Y-m-d H:i:s', strtotime($_POST['ends_at'])) : null;
+    if ($form_action === 'create_post') {
+        $post_title = clean_text($_POST['title'] ?? '');
+        $post_body = clean_text($_POST['body'] ?? '');
+        $post_body = $post_body !== '' ? $post_body : null;
 
-        $count_stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM business_announcements WHERE business_id=?");
-        $count_stmt->bind_param("i", $business_id);
-        $count_stmt->execute();
-        $ann_count = (int) $count_stmt->get_result()->fetch_assoc()['cnt'];
-
-        if (!$ann_title || !$ann_body) {
-            header('Location: business_portal.php?message=announcement_error');
-        } elseif ($ann_count >= 10) {
-            header('Location: business_portal.php?message=announcement_limit');
-        } else {
-            $ins_stmt = $conn->prepare("INSERT INTO business_announcements (business_id, title, body, starts_at, ends_at) VALUES (?, ?, ?, ?, ?)");
-            $ins_stmt->bind_param("issss", $business_id, $ann_title, $ann_body, $ann_starts_at, $ann_ends_at);
-            $ins_stmt->execute();
-            header('Location: business_portal.php?message=announcement_saved');
+        if (!$post_title) {
+            header('Location: business_portal.php?message=post_error');
+            exit();
         }
+
+        $type = 'post';
+        $ins_stmt = $conn->prepare("INSERT INTO business_posts (business_id, post_type, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())");
+        $ins_stmt->bind_param("isss", $business_id, $type, $post_title, $post_body);
+        $ins_stmt->execute();
+        header('Location: business_portal.php?message=post_saved');
         exit();
     }
 
-    if ($form_action === 'delete_announcement') {
-        $announcement_id = (int) ($_POST['announcement_id'] ?? 0);
-        $del_stmt = $conn->prepare("DELETE FROM business_announcements WHERE id=? AND business_id=?");
-        $del_stmt->bind_param("ii", $announcement_id, $business_id);
+    if ($form_action === 'create_poll') {
+        $poll_title = clean_text($_POST['title'] ?? '');
+        $poll_body = clean_text($_POST['body'] ?? '');
+        $poll_body = $poll_body !== '' ? $poll_body : null;
+        $raw_options = [];
+
+        for ($i = 1; $i <= 5; $i++) {
+            $opt = clean_text($_POST['option_' . $i] ?? '');
+            if ($opt !== '') {
+                $raw_options[] = $opt;
+            }
+        }
+
+        if (!$poll_title) {
+            header('Location: business_portal.php?message=poll_error');
+            exit();
+        }
+
+        if (count($raw_options) < 2) {
+            header('Location: business_portal.php?message=poll_options_error');
+            exit();
+        }
+
+        $conn->begin_transaction();
+        $type = 'poll';
+        $ins_stmt = $conn->prepare("INSERT INTO business_posts (business_id, post_type, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())");
+        $ins_stmt->bind_param("isss", $business_id, $type, $poll_title, $poll_body);
+        $ins_stmt->execute();
+        $new_post_id = $ins_stmt->insert_id;
+
+        $opt_stmt = $conn->prepare("INSERT INTO business_poll_options (post_id, option_text, sort_order) VALUES (?, ?, ?)");
+        foreach ($raw_options as $sort => $opt_text) {
+            $opt_stmt->bind_param("isi", $new_post_id, $opt_text, $sort);
+            $opt_stmt->execute();
+        }
+
+        $conn->commit();
+        header('Location: business_portal.php?message=poll_saved');
+        exit();
+    }
+
+    if ($form_action === 'delete_post') {
+        $del_post_id = (int) ($_POST['post_id'] ?? 0);
+        $del_stmt = $conn->prepare("DELETE FROM business_posts WHERE id=? AND business_id=?");
+        $del_stmt->bind_param("ii", $del_post_id, $business_id);
         $del_stmt->execute();
-        header('Location: business_portal.php?message=announcement_deleted');
+        header('Location: business_portal.php?message=post_deleted');
         exit();
     }
 
@@ -248,15 +283,22 @@ $photo_stmt->bind_param("i", $business_id);
 $photo_stmt->execute();
 $business_photos = $photo_stmt->get_result();
 
-$portal_ann_stmt = $conn->prepare("
-    SELECT id, title, body, starts_at, ends_at, created_at
-    FROM business_announcements
-    WHERE business_id=?
-    ORDER BY created_at DESC
+$portal_posts_stmt = $conn->prepare("
+    SELECT bp.id, bp.post_type, bp.title, bp.body, bp.created_at,
+        COALESCE(vc.total, 0) AS vote_count
+    FROM business_posts bp
+    LEFT JOIN (
+        SELECT post_id, COUNT(*) AS total
+        FROM business_poll_votes
+        GROUP BY post_id
+    ) vc ON vc.post_id = bp.id
+    WHERE bp.business_id=?
+    ORDER BY bp.created_at DESC
+    LIMIT 30
 ");
-$portal_ann_stmt->bind_param("i", $business_id);
-$portal_ann_stmt->execute();
-$announcements = $portal_ann_stmt->get_result();
+$portal_posts_stmt->bind_param("i", $business_id);
+$portal_posts_stmt->execute();
+$portal_posts = $portal_posts_stmt->get_result();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -317,14 +359,18 @@ $announcements = $portal_ann_stmt->get_result();
             <p class="form-message form-message-error">That photo is larger than your current PHP upload limit. Increase upload_max_filesize and post_max_size, or try a smaller image.</p>
         <?php elseif ($message === 'photo_upload_error') : ?>
             <p class="form-message form-message-error">A photo could not be uploaded. Please try again with JPEG, PNG, or WebP photos under 10 MB.</p>
-        <?php elseif ($message === 'announcement_saved') : ?>
-            <p class="form-message form-message-success">Announcement posted.</p>
-        <?php elseif ($message === 'announcement_deleted') : ?>
-            <p class="form-message form-message-success">Announcement deleted.</p>
-        <?php elseif ($message === 'announcement_error') : ?>
-            <p class="form-message form-message-error">Please enter a title and message for the announcement.</p>
-        <?php elseif ($message === 'announcement_limit') : ?>
-            <p class="form-message form-message-error">You have reached the maximum of 10 announcements. Delete one before adding another.</p>
+        <?php elseif ($message === 'post_saved') : ?>
+            <p class="form-message form-message-success">Post published.</p>
+        <?php elseif ($message === 'poll_saved') : ?>
+            <p class="form-message form-message-success">Poll published.</p>
+        <?php elseif ($message === 'post_deleted') : ?>
+            <p class="form-message form-message-success">Post deleted.</p>
+        <?php elseif ($message === 'post_error') : ?>
+            <p class="form-message form-message-error">Please enter a title for the post.</p>
+        <?php elseif ($message === 'poll_error') : ?>
+            <p class="form-message form-message-error">Please enter a question for the poll.</p>
+        <?php elseif ($message === 'poll_options_error') : ?>
+            <p class="form-message form-message-error">Please provide at least 2 poll options.</p>
         <?php elseif ($message === 'checkin_message_saved') : ?>
             <p class="form-message form-message-success">Check-in message updated.</p>
         <?php endif; ?>
@@ -429,56 +475,66 @@ $announcements = $portal_ann_stmt->get_result();
 
         <section class="business-reviews-panel">
             <header>
-                <h2>Announcements</h2>
-                <p>Post updates visible on your business page and in the feed for users who follow your business.</p>
+                <h2>Business Posts</h2>
+                <p>Share updates and polls with your followers. Posts appear on your business page and in the feed.</p>
             </header>
 
-            <form method="POST" action="" class="announcement-form">
+            <div class="portal-post-create-tabs">
+                <button type="button" class="is-active" data-post-create-tab="post">New Post</button>
+                <button type="button" data-post-create-tab="poll">New Poll</button>
+            </div>
+
+            <form method="POST" action="" data-post-create-form="post">
                 <?php echo craftcrawl_csrf_input(); ?>
-                <input type="hidden" name="form_action" value="create_announcement">
-                <label for="ann_title">Title</label>
-                <input type="text" id="ann_title" name="title" maxlength="255" required placeholder="e.g. New seasonal IPA on tap">
-                <label for="ann_body">Message</label>
-                <textarea id="ann_body" name="body" rows="3" required placeholder="Details..."></textarea>
-                <div class="announcement-date-row">
-                    <div>
-                        <label for="ann_starts_at">Show from (optional)</label>
-                        <input type="datetime-local" id="ann_starts_at" name="starts_at" placeholder="YYYY-MM-DDTHH:MM">
-                    </div>
-                    <div>
-                        <label for="ann_ends_at">Show until (optional)</label>
-                        <input type="datetime-local" id="ann_ends_at" name="ends_at" placeholder="YYYY-MM-DDTHH:MM">
-                    </div>
-                </div>
-                <button type="submit">Post Announcement</button>
+                <input type="hidden" name="form_action" value="create_post">
+                <label for="post_title">Title</label>
+                <input type="text" id="post_title" name="title" maxlength="255" required placeholder="e.g. New seasonal IPA on tap">
+                <label for="post_body">Details (optional)</label>
+                <textarea id="post_body" name="body" rows="3" maxlength="2000" placeholder="More details..."></textarea>
+                <button type="submit">Post</button>
             </form>
 
-            <?php if ($announcements->num_rows === 0) : ?>
-                <p>No announcements yet.</p>
+            <form method="POST" action="" data-post-create-form="poll" hidden>
+                <?php echo craftcrawl_csrf_input(); ?>
+                <input type="hidden" name="form_action" value="create_poll">
+                <label for="poll_title">Question</label>
+                <input type="text" id="poll_title" name="title" maxlength="255" required placeholder="e.g. Which beer should come back next?">
+                <label for="poll_body">Details (optional)</label>
+                <textarea id="poll_body" name="body" rows="2" maxlength="500" placeholder="Additional context..."></textarea>
+                <div class="poll-options-inputs">
+                    <label>Options (2 required, up to 5)</label>
+                    <input type="text" name="option_1" maxlength="255" required placeholder="Option 1">
+                    <input type="text" name="option_2" maxlength="255" required placeholder="Option 2">
+                    <input type="text" name="option_3" maxlength="255" placeholder="Option 3 (optional)">
+                    <input type="text" name="option_4" maxlength="255" placeholder="Option 4 (optional)">
+                    <input type="text" name="option_5" maxlength="255" placeholder="Option 5 (optional)">
+                </div>
+                <button type="submit">Create Poll</button>
+            </form>
+
+            <?php if ($portal_posts->num_rows === 0) : ?>
+                <p>No posts yet.</p>
             <?php endif; ?>
 
-            <?php while ($ann = $announcements->fetch_assoc()) :
-                $now = time();
-                $starts = !empty($ann['starts_at']) ? strtotime($ann['starts_at']) : null;
-                $ends = !empty($ann['ends_at']) ? strtotime($ann['ends_at']) : null;
-                $ann_is_active = ($starts === null || $starts <= $now) && ($ends === null || $ends >= $now);
-            ?>
+            <?php while ($ppost = $portal_posts->fetch_assoc()) : ?>
                 <article class="business-review-card">
                     <div class="business-review-header">
-                        <strong><?php echo escape_output($ann['title']); ?></strong>
-                        <span><?php echo $ann_is_active ? 'Active' : 'Inactive'; ?></span>
+                        <strong><?php echo escape_output($ppost['title']); ?></strong>
+                        <span class="business-post-type-badge"><?php echo $ppost['post_type'] === 'poll' ? 'Poll' : 'Post'; ?></span>
                     </div>
-                    <p><?php echo nl2br(escape_output($ann['body'])); ?></p>
-                    <?php if (!empty($ann['starts_at']) || !empty($ann['ends_at'])) : ?>
-                        <p class="business-review-response-date">
-                            <?php if (!empty($ann['starts_at'])) : ?>From: <?php echo escape_output(date('M j, Y g:i A', strtotime($ann['starts_at']))); ?><?php endif; ?>
-                            <?php if (!empty($ann['ends_at'])) : ?> &middot; Until: <?php echo escape_output(date('M j, Y g:i A', strtotime($ann['ends_at']))); ?><?php endif; ?>
-                        </p>
+                    <?php if (!empty($ppost['body'])) : ?>
+                        <p><?php echo nl2br(escape_output($ppost['body'])); ?></p>
                     <?php endif; ?>
+                    <p class="business-review-response-date">
+                        <?php echo escape_output(date('M j, Y', strtotime($ppost['created_at']))); ?>
+                        <?php if ($ppost['post_type'] === 'poll') : ?>
+                            &middot; <?php echo escape_output((int) $ppost['vote_count']); ?> vote<?php echo (int) $ppost['vote_count'] !== 1 ? 's' : ''; ?>
+                        <?php endif; ?>
+                    </p>
                     <form method="POST" action="">
                         <?php echo craftcrawl_csrf_input(); ?>
-                        <input type="hidden" name="form_action" value="delete_announcement">
-                        <input type="hidden" name="announcement_id" value="<?php echo escape_output($ann['id']); ?>">
+                        <input type="hidden" name="form_action" value="delete_post">
+                        <input type="hidden" name="post_id" value="<?php echo escape_output($ppost['id']); ?>">
                         <button type="submit" class="button-link-secondary">Delete</button>
                     </form>
                 </article>
@@ -574,6 +630,19 @@ $announcements = $portal_ann_stmt->get_result();
     <?php include __DIR__ . '/mobile_nav.php'; ?>
     <script src="../js/business_review_responses.js"></script>
     <script src="../js/mobile_actions_menu.js"></script>
+    <script>
+        document.querySelectorAll('[data-post-create-tab]').forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                const type = tab.dataset.postCreateTab;
+                document.querySelectorAll('[data-post-create-tab]').forEach(function (t) {
+                    t.classList.toggle('is-active', t === tab);
+                });
+                document.querySelectorAll('[data-post-create-form]').forEach(function (form) {
+                    form.hidden = form.dataset.postCreateForm !== type;
+                });
+            });
+        });
+    </script>
     <script src="../js/depth_animations.js"></script>
 </body>
 </html>

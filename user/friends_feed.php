@@ -248,50 +248,47 @@ while ($badge = $badge_result->fetch_assoc()) {
     ];
 }
 
-// Announcements from liked businesses — viewer-specific, not friend-based
+// Business posts from followed businesses — viewer-specific, not friend-based
 if ($before_dt) {
-    $ann_feed_stmt = $conn->prepare("
-        SELECT ba.id, ba.business_id, ba.title, ba.body, ba.created_at,
+    $post_feed_stmt = $conn->prepare("
+        SELECT bp.id, bp.business_id, bp.post_type, bp.title, bp.body, bp.created_at,
             b.bName, b.bType, b.city, b.state
-        FROM business_announcements ba
-        INNER JOIN businesses b ON b.id = ba.business_id AND b.approved=TRUE
-        INNER JOIN liked_businesses lb ON lb.business_id = ba.business_id AND lb.user_id=?
-        WHERE (ba.starts_at IS NULL OR ba.starts_at <= NOW())
-        AND (ba.ends_at IS NULL OR ba.ends_at >= NOW())
-        AND ba.created_at < ?
-        ORDER BY ba.created_at DESC
+        FROM business_posts bp
+        INNER JOIN businesses b ON b.id = bp.business_id AND b.approved=TRUE
+        INNER JOIN liked_businesses lb ON lb.business_id = bp.business_id AND lb.user_id=?
+        WHERE bp.created_at < ?
+        ORDER BY bp.created_at DESC
         LIMIT 40
     ");
-    $ann_feed_stmt->bind_param("is", $user_id, $before_dt);
+    $post_feed_stmt->bind_param("is", $user_id, $before_dt);
 } else {
-    $ann_feed_stmt = $conn->prepare("
-        SELECT ba.id, ba.business_id, ba.title, ba.body, ba.created_at,
+    $post_feed_stmt = $conn->prepare("
+        SELECT bp.id, bp.business_id, bp.post_type, bp.title, bp.body, bp.created_at,
             b.bName, b.bType, b.city, b.state
-        FROM business_announcements ba
-        INNER JOIN businesses b ON b.id = ba.business_id AND b.approved=TRUE
-        INNER JOIN liked_businesses lb ON lb.business_id = ba.business_id AND lb.user_id=?
-        WHERE (ba.starts_at IS NULL OR ba.starts_at <= NOW())
-        AND (ba.ends_at IS NULL OR ba.ends_at >= NOW())
-        ORDER BY ba.created_at DESC
+        FROM business_posts bp
+        INNER JOIN businesses b ON b.id = bp.business_id AND b.approved=TRUE
+        INNER JOIN liked_businesses lb ON lb.business_id = bp.business_id AND lb.user_id=?
+        ORDER BY bp.created_at DESC
         LIMIT 40
     ");
-    $ann_feed_stmt->bind_param("i", $user_id);
+    $post_feed_stmt->bind_param("i", $user_id);
 }
-$ann_feed_stmt->execute();
-$ann_feed_result = $ann_feed_stmt->get_result();
+$post_feed_stmt->execute();
+$post_feed_result = $post_feed_stmt->get_result();
 
-while ($ann = $ann_feed_result->fetch_assoc()) {
+while ($bpost = $post_feed_result->fetch_assoc()) {
     $feed[] = [
-        'item_key' => 'announcement:' . (int) $ann['id'],
-        'type' => 'announcement',
-        'created_at' => $ann['created_at'],
-        'business_id' => (int) $ann['business_id'],
-        'business_name' => $ann['bName'],
-        'business_type' => $ann['bType'],
-        'title' => $ann['title'],
-        'body' => $ann['body'],
-        'city' => $ann['city'],
-        'state' => $ann['state']
+        'item_key' => 'business_post:' . (int) $bpost['id'],
+        'type' => 'business_post',
+        'post_type' => $bpost['post_type'],
+        'created_at' => $bpost['created_at'],
+        'business_id' => (int) $bpost['business_id'],
+        'business_name' => $bpost['bName'],
+        'business_type' => $bpost['bType'],
+        'title' => $bpost['title'],
+        'body' => $bpost['body'],
+        'city' => $bpost['city'],
+        'state' => $bpost['state']
     ];
 }
 

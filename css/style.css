@@ -5130,3 +5130,201 @@ a.event-calendar-event {
         display: none;
     }
 }
+
+/* ── Business Posts ─────────────────────────────────────────── */
+
+.business-posts-panel {
+    padding: 20px 0;
+}
+
+.business-posts-panel h2 {
+    margin-bottom: 16px;
+}
+
+.business-posts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.business-post-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.business-post-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.business-post-meta time {
+    color: var(--color-muted);
+    font-size: 0.85em;
+}
+
+.business-post-type-badge {
+    font-size: 0.75em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--color-surface-muted);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 2px 7px;
+    color: var(--color-muted);
+}
+
+.business-post-title {
+    font-weight: 600;
+    margin: 0;
+}
+
+.business-post-body {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 0.95em;
+}
+
+/* Poll voting UI */
+
+.business-poll-vote-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.business-poll-option-btn {
+    width: 100%;
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--color-surface-muted);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    font-size: 0.95em;
+}
+
+.business-poll-option-btn:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    background: var(--color-surface);
+}
+
+.business-poll-option-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+/* Poll results */
+
+.business-poll-results {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.business-poll-result {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.business-poll-result-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95em;
+}
+
+.business-poll-result.is-voted .business-poll-result-label {
+    font-weight: 600;
+}
+
+.business-poll-voted-indicator {
+    font-size: 0.78em;
+    font-weight: 400;
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    border-radius: var(--radius-sm);
+    padding: 1px 6px;
+}
+
+.business-poll-bar {
+    height: 8px;
+    background: var(--color-surface-muted);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.business-poll-bar span {
+    display: block;
+    height: 100%;
+    background: var(--color-primary);
+    border-radius: 99px;
+    transition: width 0.3s ease;
+    min-width: 2px;
+}
+
+.business-poll-result.is-voted .business-poll-bar span {
+    background: var(--color-accent);
+}
+
+.business-poll-result-count {
+    font-size: 0.82em;
+    color: var(--color-muted);
+}
+
+.business-poll-total {
+    font-size: 0.82em;
+    color: var(--color-muted);
+    margin: 2px 0 0;
+}
+
+.load-more-posts-button {
+    margin-top: 16px;
+    width: 100%;
+}
+
+/* Portal post creation tabs */
+
+.portal-post-create-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.portal-post-create-tabs button {
+    padding: 7px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-muted);
+    cursor: pointer;
+    font-size: 0.9em;
+    color: var(--color-muted);
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.portal-post-create-tabs button.is-active {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+}
+
+.poll-options-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.poll-options-inputs label {
+    margin-bottom: 0;
+}
