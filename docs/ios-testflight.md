@@ -48,6 +48,9 @@ On Linux, encode the API key with:
 base64 -w 0 AuthKey_XXXXXXXXXX.p8
 ```
 
+The output should be one long line. Paste it into the GitHub secret without
+quotes, spaces, or line breaks.
+
 For a private GitHub Match repo over HTTPS, create a fine-grained GitHub token
 with access to that repo and encode:
 

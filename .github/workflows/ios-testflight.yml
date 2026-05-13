@@ -59,5 +59,11 @@ jobs:
           ruby-version: "3.3"
           bundler-cache: true
 
+      - name: Decode App Store Connect API key
+        run: |
+          key_path="$RUNNER_TEMP/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
+          printf '%s' "$APP_STORE_CONNECT_API_KEY_BASE64" | base64 --decode > "$key_path"
+          echo "APP_STORE_CONNECT_API_KEY_PATH=$key_path" >> "$GITHUB_ENV"
+
       - name: Run Fastlane
         run: bundle exec fastlane ios ${{ inputs.lane }}

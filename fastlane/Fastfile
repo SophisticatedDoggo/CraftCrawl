@@ -11,13 +11,20 @@ def match_keychain_password
 end
 
 def app_store_connect_key
-  app_store_connect_api_key(
+  key_options = {
     key_id: ENV.fetch("APP_STORE_CONNECT_API_KEY_ID"),
     issuer_id: ENV.fetch("APP_STORE_CONNECT_API_ISSUER_ID"),
-    key_content: ENV.fetch("APP_STORE_CONNECT_API_KEY_BASE64"),
-    is_key_content_base64: true,
     in_house: false
-  )
+  }
+
+  if ENV["APP_STORE_CONNECT_API_KEY_PATH"]
+    key_options[:key_filepath] = ENV.fetch("APP_STORE_CONNECT_API_KEY_PATH")
+  else
+    key_options[:key_content] = ENV.fetch("APP_STORE_CONNECT_API_KEY_BASE64")
+    key_options[:is_key_content_base64] = true
+  end
+
+  app_store_connect_api_key(key_options)
 end
 
 def configure_ci_keychain
