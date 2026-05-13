@@ -5293,6 +5293,12 @@ a.event-calendar-event {
     width: 100%;
 }
 
+.business-posts-more-link {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 0.9em;
+}
+
 /* Portal post creation tabs */
 
 .portal-post-create-tabs {
