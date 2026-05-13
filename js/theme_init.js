@@ -22,6 +22,45 @@ const craftCrawlPalette = renamedCraftCrawlPalettes[accountCraftCrawlPalette]
 document.documentElement.dataset.palette = craftCrawlPalette;
 localStorage.setItem('craftcrawl_palette', craftCrawlPalette);
 
+function getCraftCrawlNativePlugin(name) {
+    const capacitor = window.Capacitor;
+    const plugins = capacitor && capacitor.Plugins;
+    const existingPlugin = plugins && plugins[name];
+    const isNative = capacitor
+        && typeof capacitor.isNativePlatform === 'function'
+        && capacitor.isNativePlatform();
+
+    if (existingPlugin) {
+        return existingPlugin;
+    }
+
+    if (!isNative
+        || typeof capacitor.registerPlugin !== 'function'
+        || (capacitor.isPluginAvailable && !capacitor.isPluginAvailable(name))) {
+        return null;
+    }
+
+    return capacitor.registerPlugin(name);
+}
+
+function syncCraftCrawlNativeStatusBar() {
+    const statusBar = getCraftCrawlNativePlugin('StatusBar');
+
+    if (!statusBar) {
+        return;
+    }
+
+    const isDarkPalette = document.documentElement.dataset.palette === 'ember-dark';
+
+    if (typeof statusBar.setOverlaysWebView === 'function') {
+        statusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
+    }
+
+    if (typeof statusBar.setStyle === 'function') {
+        statusBar.setStyle({ style: isDarkPalette ? 'DARK' : 'LIGHT' }).catch(() => {});
+    }
+}
+
 function lockCraftCrawlMobileViewport() {
     const viewport = document.querySelector('meta[name="viewport"]');
 
@@ -50,6 +89,7 @@ function resetCraftCrawlMobileViewportScroll() {
 }
 
 lockCraftCrawlMobileViewport();
+syncCraftCrawlNativeStatusBar();
 
 document.addEventListener('focusout', function (event) {
     const field = event.target;

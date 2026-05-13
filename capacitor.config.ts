@@ -20,8 +20,8 @@ const config: CapacitorConfig = {
       showSpinner: false
     },
     StatusBar: {
-      overlaysWebView: false,
-      style: 'LIGHT',
+      overlaysWebView: true,
+      style: 'DEFAULT',
       backgroundColor: '#f6f1e8'
     },
     Geolocation: {
