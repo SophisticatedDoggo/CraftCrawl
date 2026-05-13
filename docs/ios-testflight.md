@@ -3,6 +3,9 @@
 CraftCrawl uses GitHub Actions as the macOS build machine and Fastlane for iOS
 signing and TestFlight uploads.
 
+The TestFlight workflow runs on GitHub's `macos-26` image so uploads are built
+with Xcode 26 and the iOS 26 SDK required by App Store Connect.
+
 ## App Identity
 
 - App name: `CraftCrawl`

@@ -14,7 +14,7 @@ on:
 
 jobs:
   testflight:
-    runs-on: macos-latest
+    runs-on: macos-26
 
     env:
       CRAFTCRAWL_APP_ENV: prod
