@@ -138,6 +138,46 @@ body {
     line-height: 1.5;
 }
 
+.page-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    opacity: 0;
+    background: color-mix(in srgb, var(--color-bg) 72%, transparent);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    transition: opacity 140ms ease;
+}
+
+.page-loader.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.page-loader-spinner {
+    width: 44px;
+    height: 44px;
+    border: 4px solid color-mix(in srgb, var(--color-primary) 22%, transparent);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: page-loader-spin 780ms linear infinite;
+}
+
+@keyframes page-loader-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-loader-spinner {
+        animation-duration: 1.8s;
+    }
+}
+
 img {
     max-width: 100%;
 }
@@ -472,8 +512,14 @@ label {
     margin-bottom: 18px;
 }
 
+.social-auth-options.is-busy .social-auth-provider {
+    opacity: 0.62;
+    pointer-events: none;
+}
+
 .social-auth-provider {
     min-height: 40px;
+    transition: opacity 160ms ease;
 }
 
 .social-auth-provider-apple {
@@ -498,6 +544,14 @@ label {
     flex: 1;
     height: 1px;
     background: var(--color-border);
+}
+
+.social-auth-feedback {
+    color: var(--color-muted);
+}
+
+.social-auth-feedback.is-error {
+    color: var(--color-danger);
 }
 
 .settings-form {

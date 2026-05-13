@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <img class="site-logo auth-logo" src="images/Logo.webp" alt="CraftCrawl logo">
         <h1>Create An Account</h1>
         <?php if ($social_auth_enabled) : ?>
-            <div class="social-auth-options" aria-label="Social sign-in options">
+            <div class="social-auth-options" data-social-auth-options aria-label="Social sign-in options">
                 <?php if (!empty($GOOGLE_SIGN_IN_CLIENT_ID)) : ?>
                     <div class="social-auth-provider" data-google-signin></div>
                 <?php endif; ?>
@@ -119,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         data-type="sign up"
                     ></div>
                 <?php endif; ?>
-                <p class="form-message form-message-error" data-social-auth-feedback hidden></p>
+                <p class="form-message social-auth-feedback" data-social-auth-feedback hidden></p>
             </div>
             <div class="auth-divider"><span>or</span></div>
         <?php endif; ?>

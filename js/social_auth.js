@@ -1,19 +1,63 @@
 (function () {
     const config = window.CRAFTCRAWL_SOCIAL_AUTH || {};
+    const socialOptions = document.querySelector('[data-social-auth-options]');
     const feedback = document.querySelector('[data-social-auth-feedback]');
     let googleInitialized = false;
     let appleInitialized = false;
+    let socialAuthBusy = false;
+    let socialAuthBusyTimer = null;
+
+    function setSocialAuthBusy(isBusy, message) {
+        socialAuthBusy = isBusy;
+
+        if (socialOptions) {
+            socialOptions.classList.toggle('is-busy', isBusy);
+            socialOptions.setAttribute('aria-busy', isBusy ? 'true' : 'false');
+        }
+
+        if (feedback && message) {
+            feedback.classList.remove('is-error');
+            feedback.textContent = message;
+            feedback.hidden = false;
+        }
+    }
+
+    function holdSocialAuth(message, delay) {
+        window.clearTimeout(socialAuthBusyTimer);
+        setSocialAuthBusy(true, message);
+
+        socialAuthBusyTimer = window.setTimeout(() => {
+            setSocialAuthBusy(false);
+            if (feedback && !feedback.classList.contains('is-error')) {
+                feedback.hidden = true;
+            }
+        }, delay || 3500);
+    }
+
+    function clearSocialAuthBusy() {
+        window.clearTimeout(socialAuthBusyTimer);
+        setSocialAuthBusy(false);
+    }
 
     function showMessage(message) {
+        clearSocialAuthBusy();
+
         if (!feedback) {
             return;
         }
 
+        feedback.classList.add('is-error');
         feedback.textContent = message || 'Sign-in failed. Please try again.';
         feedback.hidden = false;
     }
 
     function submitCredential(provider, credential, extraFields) {
+        if (socialAuthBusy && provider !== 'apple') {
+            return Promise.resolve();
+        }
+
+        setSocialAuthBusy(true, 'Signing you in...');
+
         const formData = new FormData();
         formData.append('csrf_token', config.csrfToken || '');
         formData.append('provider', provider);
@@ -56,6 +100,7 @@
             client_id: config.googleClientId,
             callback: (response) => {
                 if (response && response.credential) {
+                    setSocialAuthBusy(false);
                     submitCredential('google', response.credential);
                 } else {
                     showMessage('Google sign-in did not return account credentials.');
@@ -97,6 +142,14 @@
         if (typeof AppleID.auth.renderButton === 'function') {
             AppleID.auth.renderButton();
         }
+
+        target.addEventListener('click', () => {
+            if (socialAuthBusy) {
+                return;
+            }
+
+            holdSocialAuth('Opening Apple sign-in...', 4500);
+        }, true);
 
         document.addEventListener('AppleIDSignInOnSuccess', (event) => {
             const detail = event.detail || {};

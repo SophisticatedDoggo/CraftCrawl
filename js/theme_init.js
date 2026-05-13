@@ -67,6 +67,74 @@ function syncCraftCrawlNativeStatusBar() {
 
 window.syncCraftCrawlNativeStatusBar = syncCraftCrawlNativeStatusBar;
 
+let craftCrawlPageLoaderTimer = null;
+
+function ensureCraftCrawlPageLoader() {
+    let loader = document.querySelector('[data-page-loader]');
+
+    if (loader) {
+        return loader;
+    }
+
+    loader = document.createElement('div');
+    loader.className = 'page-loader';
+    loader.setAttribute('data-page-loader', '');
+    loader.setAttribute('aria-hidden', 'true');
+    loader.innerHTML = '<div class="page-loader-spinner" aria-label="Loading"></div>';
+
+    document.body.appendChild(loader);
+    return loader;
+}
+
+function showCraftCrawlPageLoader(delay) {
+    window.clearTimeout(craftCrawlPageLoaderTimer);
+
+    craftCrawlPageLoaderTimer = window.setTimeout(function () {
+        const loader = ensureCraftCrawlPageLoader();
+        loader.classList.add('is-visible');
+        loader.setAttribute('aria-hidden', 'false');
+    }, delay || 120);
+}
+
+function hideCraftCrawlPageLoader() {
+    window.clearTimeout(craftCrawlPageLoaderTimer);
+
+    const loader = document.querySelector('[data-page-loader]');
+    if (!loader) {
+        return;
+    }
+
+    loader.classList.remove('is-visible');
+    loader.setAttribute('aria-hidden', 'true');
+}
+
+function shouldShowCraftCrawlPageLoaderForLink(link, event) {
+    if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return false;
+    }
+
+    if (link.target && link.target !== '_self') {
+        return false;
+    }
+
+    if (link.hasAttribute('download')) {
+        return false;
+    }
+
+    const href = link.getAttribute('href') || '';
+    if (href === '' || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript:')) {
+        return false;
+    }
+
+    const destination = new URL(link.href, window.location.href);
+    if (destination.origin !== window.location.origin) {
+        return false;
+    }
+
+    return destination.pathname !== window.location.pathname
+        || destination.search !== window.location.search;
+}
+
 function lockCraftCrawlMobileViewport() {
     const viewport = document.querySelector('meta[name="viewport"]');
 
@@ -128,4 +196,29 @@ document.addEventListener('submit', function (event) {
 
     submitter.classList.add('is-loading');
     submitter.setAttribute('aria-busy', 'true');
+
+    if (!form.target || form.target === '_self') {
+        window.setTimeout(function () {
+            if (!event.defaultPrevented) {
+                showCraftCrawlPageLoader(180);
+            }
+        }, 0);
+    }
+});
+
+document.addEventListener('click', function (event) {
+    const link = event.target.closest && event.target.closest('a[href]');
+
+    if (shouldShowCraftCrawlPageLoaderForLink(link, event)) {
+        window.setTimeout(function () {
+            if (!event.defaultPrevented) {
+                showCraftCrawlPageLoader(80);
+            }
+        }, 0);
+    }
+}, true);
+
+window.addEventListener('pageshow', hideCraftCrawlPageLoader);
+window.addEventListener('pagehide', function () {
+    showCraftCrawlPageLoader(0);
 });
