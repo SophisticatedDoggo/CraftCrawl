@@ -1,6 +1,6 @@
 <?php
 
-function craftcrawl_render_poll_results(array $options, int $user_voted_option_id, int $total_votes): string {
+function craftcrawl_render_poll_results(array $options, ?int $user_voted_option_id, int $total_votes): string {
     $html = '<div class="business-poll-results" data-poll-results>';
 
     foreach ($options as $option) {
@@ -8,16 +8,14 @@ function craftcrawl_render_poll_results(array $options, int $user_voted_option_i
         $opt_text = htmlspecialchars($option['option_text'] ?? '', ENT_QUOTES, 'UTF-8');
         $vote_count = (int) ($option['vote_count'] ?? 0);
         $pct = $total_votes > 0 ? (int) round(($vote_count / $total_votes) * 100) : 0;
-        $is_voted = $user_voted_option_id === $opt_id;
+        $is_voted = $user_voted_option_id !== null && $user_voted_option_id === $opt_id;
 
         $html .= '<div class="business-poll-result' . ($is_voted ? ' is-voted' : '') . '">';
-        $html .= '<div class="business-poll-result-label"><span>' . $opt_text . '</span>';
-        if ($is_voted) {
-            $html .= '<span class="business-poll-voted-indicator">Your vote</span>';
-        }
+        $html .= '<div class="business-poll-bar-btn">';
+        $html .= '<div class="business-poll-bar-fill" style="width:' . $pct . '%"></div>';
+        $html .= '<span class="business-poll-bar-label">' . $opt_text . '</span>';
         $html .= '</div>';
-        $html .= '<div class="business-poll-bar"><span style="width:' . $pct . '%"></span></div>';
-        $html .= '<span class="business-poll-result-count">' . $pct . '% (' . $vote_count . ')</span>';
+        $html .= '<span class="business-poll-bar-pct">' . $pct . '%</span>';
         $html .= '</div>';
     }
 

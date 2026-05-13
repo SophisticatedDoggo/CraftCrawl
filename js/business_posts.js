@@ -28,12 +28,11 @@
             const pct = totalVotes > 0 ? Math.round((opt.vote_count / totalVotes) * 100) : 0;
             const isVoted = opt.id === userVotedOptionId;
             return '<div class="business-poll-result' + (isVoted ? ' is-voted' : '') + '">'
-                + '<div class="business-poll-result-label">'
-                + '<span>' + escapeHtml(opt.option_text) + '</span>'
-                + (isVoted ? '<span class="business-poll-voted-indicator">Your vote</span>' : '')
+                + '<div class="business-poll-bar-btn">'
+                + '<div class="business-poll-bar-fill" style="width:' + pct + '%"></div>'
+                + '<span class="business-poll-bar-label">' + escapeHtml(opt.option_text) + '</span>'
                 + '</div>'
-                + '<div class="business-poll-bar"><span style="width:' + pct + '%"></span></div>'
-                + '<span class="business-poll-result-count">' + pct + '% (' + opt.vote_count + ')</span>'
+                + '<span class="business-poll-bar-pct">' + pct + '%</span>'
                 + '</div>';
         }).join('');
 
