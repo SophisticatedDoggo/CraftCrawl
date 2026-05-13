@@ -79,7 +79,8 @@ platform :ios do
       path: XCODEPROJ,
       team_id: ENV.fetch("APPLE_TEAM_ID"),
       bundle_identifier: APP_IDENTIFIER,
-      profile_name: "match AppStore #{APP_IDENTIFIER}"
+      profile_name: "match AppStore #{APP_IDENTIFIER}",
+      code_sign_identity: "Apple Distribution"
     )
 
     increment_build_number(
@@ -96,7 +97,15 @@ platform :ios do
       archive_path: ARCHIVE_PATH,
       output_directory: IPA_OUTPUT_DIRECTORY,
       output_name: "CraftCrawl.ipa",
+      xcargs: [
+        "DEVELOPMENT_TEAM=#{ENV.fetch("APPLE_TEAM_ID")}",
+        "CODE_SIGN_STYLE=Manual",
+        "CODE_SIGN_IDENTITY='Apple Distribution'",
+        "PROVISIONING_PROFILE_SPECIFIER='match AppStore #{APP_IDENTIFIER}'"
+      ].join(" "),
       export_options: {
+        signingStyle: "manual",
+        teamID: ENV.fetch("APPLE_TEAM_ID"),
         provisioningProfiles: {
           APP_IDENTIFIER => "match AppStore #{APP_IDENTIFIER}"
         }
