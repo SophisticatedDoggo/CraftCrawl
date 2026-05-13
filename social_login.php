@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/lib/security.php';
+require_once __DIR__ . '/lib/remember_auth.php';
 require_once __DIR__ . '/lib/social_auth.php';
 craftcrawl_secure_session_start();
 include __DIR__ . '/db.php';
@@ -43,7 +44,9 @@ try {
         $identity = craftcrawl_verify_apple_identity_token($credential, $first_name, $last_name);
     }
 
-    craftcrawl_social_sign_in_user($conn, $identity);
+    $user = craftcrawl_social_sign_in_user($conn, $identity);
+    craftcrawl_issue_remember_token($conn, 'user', (int) $user['id']);
+
     craftcrawl_social_response(true, ['redirect' => craftcrawl_app_base_path() . '/user/portal.php']);
 } catch (Throwable $error) {
     error_log('Social sign-in failed: ' . $error->getMessage());
