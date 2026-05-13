@@ -22,6 +22,47 @@ const craftCrawlPalette = renamedCraftCrawlPalettes[accountCraftCrawlPalette]
 document.documentElement.dataset.palette = craftCrawlPalette;
 localStorage.setItem('craftcrawl_palette', craftCrawlPalette);
 
+function lockCraftCrawlMobileViewport() {
+    const viewport = document.querySelector('meta[name="viewport"]');
+
+    if (!viewport) {
+        return;
+    }
+
+    const content = viewport.getAttribute('content') || '';
+    const rules = content
+        .split(',')
+        .map((rule) => rule.trim())
+        .filter(Boolean);
+    const nextRules = rules.filter((rule) => {
+        const key = rule.split('=')[0].trim();
+        return !['maximum-scale', 'user-scalable', 'viewport-fit'].includes(key);
+    });
+
+    nextRules.push('maximum-scale=1.0', 'user-scalable=no', 'viewport-fit=cover');
+    viewport.setAttribute('content', nextRules.join(', '));
+}
+
+function resetCraftCrawlMobileViewportScroll() {
+    document.documentElement.scrollLeft = 0;
+    document.body.scrollLeft = 0;
+    window.scrollTo(0, window.scrollY);
+}
+
+lockCraftCrawlMobileViewport();
+
+document.addEventListener('focusout', function (event) {
+    const field = event.target;
+
+    if (!(field instanceof HTMLInputElement)
+        && !(field instanceof HTMLTextAreaElement)
+        && !(field instanceof HTMLSelectElement)) {
+        return;
+    }
+
+    window.setTimeout(resetCraftCrawlMobileViewportScroll, 250);
+});
+
 document.addEventListener('submit', function (event) {
     if (event.defaultPrevented) {
         return;
