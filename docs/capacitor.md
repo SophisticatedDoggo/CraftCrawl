@@ -27,7 +27,7 @@ Set the hosted site URL when running Capacitor commands:
 export CRAFTCRAWL_MOBILE_URL="https://your-domain.com"
 ```
 
-Add native projects after dependencies are installed:
+If a native project is missing, add it after dependencies are installed:
 
 ```sh
 npm run cap:add:android
@@ -50,10 +50,10 @@ npm run android:debug:prod
 npm run cap:open:android
 ```
 
-For staging iOS testing on macOS, use:
+For iOS testing on macOS, use the production app target:
 
 ```sh
-npm run cap:sync:staging:ios
+npm run cap:sync:prod:ios
 npm run cap:open:ios
 ```
 
@@ -73,33 +73,31 @@ Android uses build flavors:
 Download the artifact from the workflow run and install it on an emulator or
 Android test device.
 
-`Capacitor iOS Build` creates an unsigned iOS simulator app artifact:
+`Capacitor iOS Build` creates an unsigned iOS simulator app artifact from `main`:
 
-- Push to `develop`: staging simulator app.
-- Push to `main`: prod simulator app.
-- Manual run: choose `staging` from `develop` or `prod` from `main`.
+- Push to `main`: prod simulator app pointed at `https://app.craftcrawl.site`.
+- Manual run: run from `main`.
 
 This validates the iOS Capacitor shell in CI, but TestFlight and physical iPhone
 distribution still require Apple Developer signing.
 
-iOS uses the Capacitor app id from `CRAFTCRAWL_APP_ENV` when the native project
-is generated:
-
-- `staging`: bundle id `com.craftcrawl.app.staging`, app name `CraftCrawl Staging`.
-- `prod`: bundle id `com.craftcrawl.app`, app name `CraftCrawl`.
+iOS uses bundle id `com.craftcrawl.app` and app name `CraftCrawl`.
 
 ## iOS TestFlight Path
 
-To ship staging builds through TestFlight:
+If you do not have a Mac, use the GitHub Actions and Fastlane workflow in
+`docs/ios-testflight.md`.
+
+To ship TestFlight builds:
 
 1. Enroll in the Apple Developer Program.
-2. Generate the iOS project on a Mac with `npm run cap:add:ios`.
-3. Run `npm run cap:sync:staging:ios`.
+2. Work from `main`.
+3. Run `npm run cap:sync:prod:ios`.
 4. Open Xcode with `npm run cap:open:ios`.
 5. Set the signing team and bundle identifier.
 6. Archive and upload to App Store Connect/TestFlight.
 
-Keep the first TestFlight build pointed at `https://staging.craftcrawl.site`.
+Keep TestFlight pointed at `https://app.craftcrawl.site`.
 
 Sync config and assets after changing Capacitor settings:
 

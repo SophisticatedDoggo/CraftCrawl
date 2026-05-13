@@ -3,7 +3,6 @@ name: Capacitor iOS Build
 on:
   push:
     branches:
-      - develop
       - main
     paths:
       - 'ios/**'
@@ -21,38 +20,24 @@ on:
       - 'package-lock.json'
       - '.github/workflows/capacitor-ios.yml'
   workflow_dispatch:
-    inputs:
-      target:
-        description: Build target
-        required: true
-        type: choice
-        options:
-          - staging
-          - prod
-        default: staging
 
 jobs:
   ios-simulator-build:
     runs-on: macos-latest
 
     env:
-      CRAFTCRAWL_APP_ENV: ${{ (github.event_name == 'workflow_dispatch' && inputs.target) || (github.ref_name == 'main' && 'prod' || 'staging') }}
-      CRAFTCRAWL_MOBILE_URL: ${{ (github.event_name == 'workflow_dispatch' && inputs.target == 'prod') || github.ref_name == 'main' && 'https://app.craftcrawl.site' || 'https://staging.craftcrawl.site' }}
+      CRAFTCRAWL_APP_ENV: prod
+      CRAFTCRAWL_MOBILE_URL: https://app.craftcrawl.site
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Validate manual branch target
+      - name: Validate branch
         if: github.event_name == 'workflow_dispatch'
         run: |
-          if [ "${{ inputs.target }}" = "prod" ] && [ "${GITHUB_REF_NAME}" != "main" ]; then
-            echo "Prod mobile builds must run from main."
-            exit 1
-          fi
-
-          if [ "${{ inputs.target }}" = "staging" ] && [ "${GITHUB_REF_NAME}" != "develop" ]; then
-            echo "Staging mobile builds must run from develop."
+          if [ "${GITHUB_REF_NAME}" != "main" ]; then
+            echo "iOS mobile builds must run from main."
             exit 1
           fi
 
@@ -74,7 +59,7 @@ jobs:
       - name: Build iOS simulator app
         run: |
           xcodebuild \
-            -workspace ios/App/App.xcworkspace \
+            -project ios/App/App.xcodeproj \
             -scheme App \
             -configuration Debug \
             -sdk iphonesimulator \
@@ -86,5 +71,5 @@ jobs:
       - name: Upload iOS simulator app
         uses: actions/upload-artifact@v4
         with:
-          name: craftcrawl-${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref_name == 'main' && 'prod' || 'staging') }}-ios-simulator-app
+          name: craftcrawl-prod-ios-simulator-app
           path: ios/build/Build/Products/Debug-iphonesimulator/App.app

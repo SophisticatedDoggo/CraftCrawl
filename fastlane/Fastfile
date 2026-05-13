@@ -1,0 +1,106 @@
+default_platform(:ios)
+
+APP_IDENTIFIER = "com.craftcrawl.app"
+SCHEME = "App"
+XCODEPROJ = "ios/App/App.xcodeproj"
+ARCHIVE_PATH = "ios/build/CraftCrawl.xcarchive"
+IPA_OUTPUT_DIRECTORY = "ios/build"
+
+def match_keychain_password
+  ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV.fetch("MATCH_PASSWORD")
+end
+
+def app_store_connect_key
+  app_store_connect_api_key(
+    key_id: ENV.fetch("APP_STORE_CONNECT_API_KEY_ID"),
+    issuer_id: ENV.fetch("APP_STORE_CONNECT_API_ISSUER_ID"),
+    key_content: ENV.fetch("APP_STORE_CONNECT_API_KEY_BASE64"),
+    is_key_content_base64: true,
+    in_house: false
+  )
+end
+
+def configure_ci_keychain
+  return unless is_ci
+
+  create_keychain(
+    name: "craftcrawl-build.keychain",
+    password: match_keychain_password,
+    default_keychain: true,
+    unlock: true,
+    timeout: 3600,
+    lock_when_sleeps: false
+  )
+end
+
+platform :ios do
+  desc "Create or refresh App Store signing assets in the Fastlane Match repo"
+  lane :setup_signing do
+    configure_ci_keychain
+
+    match(
+      type: "appstore",
+      app_identifier: APP_IDENTIFIER,
+      api_key: app_store_connect_key,
+      git_url: ENV.fetch("MATCH_GIT_URL"),
+      git_basic_authorization: ENV["MATCH_GIT_BASIC_AUTHORIZATION"],
+      readonly: false,
+      keychain_name: is_ci ? "craftcrawl-build.keychain" : nil,
+      keychain_password: is_ci ? match_keychain_password : nil
+    )
+  end
+
+  desc "Build CraftCrawl and upload it to TestFlight"
+  lane :beta do
+    configure_ci_keychain
+
+    api_key = app_store_connect_key
+
+    match(
+      type: "appstore",
+      app_identifier: APP_IDENTIFIER,
+      api_key: api_key,
+      git_url: ENV.fetch("MATCH_GIT_URL"),
+      git_basic_authorization: ENV["MATCH_GIT_BASIC_AUTHORIZATION"],
+      readonly: true,
+      keychain_name: is_ci ? "craftcrawl-build.keychain" : nil,
+      keychain_password: is_ci ? match_keychain_password : nil
+    )
+
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: XCODEPROJ,
+      team_id: ENV.fetch("APPLE_TEAM_ID"),
+      bundle_identifier: APP_IDENTIFIER,
+      profile_name: "match AppStore #{APP_IDENTIFIER}"
+    )
+
+    increment_build_number(
+      xcodeproj: XCODEPROJ,
+      build_number: ENV.fetch("GITHUB_RUN_NUMBER", Time.now.strftime("%Y%m%d%H%M"))
+    )
+
+    build_app(
+      project: XCODEPROJ,
+      scheme: SCHEME,
+      configuration: "Release",
+      clean: true,
+      export_method: "app-store",
+      archive_path: ARCHIVE_PATH,
+      output_directory: IPA_OUTPUT_DIRECTORY,
+      output_name: "CraftCrawl.ipa",
+      export_options: {
+        provisioningProfiles: {
+          APP_IDENTIFIER => "match AppStore #{APP_IDENTIFIER}"
+        }
+      }
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      app_identifier: APP_IDENTIFIER,
+      ipa: "#{IPA_OUTPUT_DIRECTORY}/CraftCrawl.ipa",
+      skip_waiting_for_build_processing: true
+    )
+  end
+end

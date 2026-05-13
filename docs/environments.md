@@ -5,8 +5,8 @@ CraftCrawl uses two long-lived branches and two Cloudways apps:
 - `develop` deploys to the `staging` Cloudways app at `https://staging.craftcrawl.site`.
 - `main` deploys to the `prod` Cloudways app at `https://app.craftcrawl.site`.
 
-Use staging for web QA, Android emulator/device testing, and iOS simulator or
-TestFlight testing. Use prod only for the live website and store builds.
+Use staging for web QA and Android emulator/device testing. Use prod for the
+live website, iOS simulator builds, TestFlight, and store builds.
 
 ## GitHub Secrets
 
@@ -47,8 +47,8 @@ The Capacitor app reads `CRAFTCRAWL_MOBILE_URL` when syncing native projects:
 - Staging builds use `https://staging.craftcrawl.site`.
 - Prod builds use `https://app.craftcrawl.site`.
 
-The Android and iOS workflows set this automatically from the branch or manual
-workflow target.
+The Android workflow sets this automatically from the branch or manual workflow
+target. The iOS workflow always builds prod from `main`.
 
 ## Mobile Test Builds
 
@@ -65,20 +65,19 @@ iOS simulator builds are produced by the `Capacitor iOS Build` workflow. Real
 iPhone testing or TestFlight requires an Apple Developer account and signing in
 Xcode.
 
-## iOS Staging Setup
+## iOS Production Setup
 
 For local iOS testing you need macOS with Xcode installed:
 
 ```sh
 npm ci
-npm run cap:add:ios
-npm run cap:sync:staging:ios
+npm run cap:sync:prod:ios
 npm run cap:open:ios
 ```
 
 In Xcode, select an iPhone simulator and run the `App` scheme. For physical
 device testing or TestFlight, enroll in the Apple Developer Program, set the
-team/signing settings in Xcode, and archive a build pointed at staging first.
+team/signing settings in Xcode, and archive a build pointed at prod.
 
 ## Production Readiness Checklist
 
@@ -87,7 +86,7 @@ Before merging `develop` into `main`:
 - Staging web login, account creation, check-ins, events, friends, feed, admin,
   and business portal flows have been tested.
 - Android debug build works against staging.
-- iOS simulator or TestFlight build works against staging.
+- iOS simulator or TestFlight build works against prod.
 - Prod host has its own database, `.env` values, Cloudinary, hCaptcha,
   Mailgun, and OneSignal configuration.
 - `app.craftcrawl.site` has HTTPS and OneSignal configured for that origin.
