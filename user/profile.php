@@ -42,7 +42,7 @@ if (!$profile) {
         $page_title = 'Profile Not Found';
     }
 } else {
-    $page_title = $is_own_profile ? 'Your Profile' : trim($profile['fName'] . ' ' . $profile['lName']);
+    $page_title = $is_own_profile ? 'Profile' : trim($profile['fName'] . ' ' . $profile['lName']);
     $user_progress = craftcrawl_user_level_progress($conn, $profile_id);
     $user_badges = craftcrawl_user_badges($conn, $profile_id);
     $can_view_liked_businesses = $is_own_profile || !empty($profile['show_liked_businesses']);

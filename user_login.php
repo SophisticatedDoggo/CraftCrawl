@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: user_login.php");
         exit();
     } else {
-        $stmt = $conn->prepare("SELECT id, password_hash, emailVerifiedAt, disabledAt FROM users WHERE email=?");
+        $stmt = $conn->prepare("SELECT id, password_hash, emailVerifiedAt, disabledAt, display_palette FROM users WHERE email=?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -85,6 +85,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_regenerate_id(true);
             unset($_SESSION['business_id'], $_SESSION['admin_id']);
             $_SESSION['user_id'] = $user['id'];
+            setcookie('craftcrawl_account_palette', $user['display_palette'] ?: 'trail-map', [
+                'expires' => time() + 60 * 60 * 24 * 365,
+                'path' => '/',
+                'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+                'httponly' => false,
+                'samesite' => 'Lax',
+            ]);
 
             if ($remember_me) {
                 craftcrawl_issue_remember_token($conn, 'user', (int) $user['id']);

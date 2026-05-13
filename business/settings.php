@@ -11,6 +11,7 @@ if (!isset($_SESSION['business_id'])) {
 
 $business_id = (int) $_SESSION['business_id'];
 $message = $_GET['message'] ?? null;
+$allowed_display_palettes = ['trail-map', 'trail-dark', 'ember', 'ember-dark'];
 
 function escape_output($value) {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
@@ -20,6 +21,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
 
     $form_action = $_POST['form_action'] ?? 'change_password';
+
+    if ($form_action === 'display_theme') {
+        $new_display_palette = $_POST['display_palette'] ?? 'trail-map';
+        if (!in_array($new_display_palette, $allowed_display_palettes, true)) {
+            $new_display_palette = 'trail-map';
+        }
+
+        $theme_stmt = $conn->prepare("UPDATE businesses SET display_palette=? WHERE id=?");
+        $theme_stmt->bind_param("si", $new_display_palette, $business_id);
+        $theme_stmt->execute();
+        setcookie('craftcrawl_account_palette', $new_display_palette, [
+            'expires' => time() + 60 * 60 * 24 * 365,
+            'path' => '/',
+            'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+            'httponly' => false,
+            'samesite' => 'Lax',
+        ]);
+        header('Location: settings.php?message=theme_saved');
+        exit();
+    }
 
     if ($form_action === 'disable_account') {
         $disable_password = (string) ($_POST['disable_password'] ?? '');
@@ -76,10 +97,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$stmt = $conn->prepare("SELECT bName FROM businesses WHERE id=?");
+$stmt = $conn->prepare("SELECT bName, display_palette FROM businesses WHERE id=?");
 $stmt->bind_param("i", $business_id);
 $stmt->execute();
 $business = $stmt->get_result()->fetch_assoc();
+$display_palette = in_array($business['display_palette'] ?? '', $allowed_display_palettes, true)
+    ? $business['display_palette']
+    : 'trail-map';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -127,17 +151,23 @@ $business = $stmt->get_result()->fetch_assoc();
             <p class="form-message form-message-error">Password must meet the site password rules.</p>
         <?php elseif ($message === 'disable_password_error') : ?>
             <p class="form-message form-message-error">Password is incorrect. Your account was not disabled.</p>
+        <?php elseif ($message === 'theme_saved') : ?>
+            <p class="form-message form-message-success">Display theme updated.</p>
         <?php endif; ?>
 
         <section class="settings-panel">
             <h2>Display Theme</h2>
-            <div class="palette-switcher palette-switcher-settings" aria-label="Design palette">
-                <button type="button" data-palette-option="trail-map">Trail</button>
-                <button type="button" data-palette-option="trail-dark">Trail Dark</button>
-                <button type="button" data-palette-option="ember">Ember</button>
-                <button type="button" data-palette-option="ember-dark">Ember Dark</button>
-            </div>
-            <p class="form-help">This setting is saved in your browser for now.</p>
+            <form method="POST" action="" class="settings-form display-theme-form">
+                <?php echo craftcrawl_csrf_input(); ?>
+                <input type="hidden" name="form_action" value="display_theme">
+                <div class="palette-switcher palette-switcher-settings" aria-label="Design palette">
+                    <button type="submit" name="display_palette" value="trail-map" data-palette-option="trail-map" <?php echo $display_palette === 'trail-map' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?>>Trail</button>
+                    <button type="submit" name="display_palette" value="trail-dark" data-palette-option="trail-dark" <?php echo $display_palette === 'trail-dark' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?>>Trail Dark</button>
+                    <button type="submit" name="display_palette" value="ember" data-palette-option="ember" <?php echo $display_palette === 'ember' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?>>Ember</button>
+                    <button type="submit" name="display_palette" value="ember-dark" data-palette-option="ember-dark" <?php echo $display_palette === 'ember-dark' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?>>Ember Dark</button>
+                </div>
+            </form>
+            <p class="form-help">This setting is saved to your account.</p>
         </section>
 
         <section class="settings-panel">

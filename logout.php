@@ -13,6 +13,13 @@ craftcrawl_verify_csrf();
 craftcrawl_revoke_current_remember_token($conn);
 
 $_SESSION = [];
+setcookie('craftcrawl_account_palette', '', [
+    'expires' => time() - 42000,
+    'path' => '/',
+    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    'httponly' => false,
+    'samesite' => 'Lax',
+]);
 
 if (ini_get('session.use_cookies')) {
     $params = session_get_cookie_params();

@@ -1,12 +1,26 @@
+function getCraftCrawlCookie(name) {
+    const cookie = document.cookie
+        .split('; ')
+        .find((item) => item.startsWith(`${name}=`));
+
+    return cookie ? decodeURIComponent(cookie.split('=').slice(1).join('=')) : null;
+}
+
 const savedCraftCrawlPalette = localStorage.getItem('craftcrawl_palette');
+const accountCraftCrawlPalette = getCraftCrawlCookie('craftcrawl_account_palette');
 const renamedCraftCrawlPalettes = {
     'craft-night': 'ember',
     'ember-room': 'ember',
     'night-dark': 'ember-dark'
 };
-const craftCrawlPalette = renamedCraftCrawlPalettes[savedCraftCrawlPalette] || savedCraftCrawlPalette || 'trail-map';
+const craftCrawlPalette = renamedCraftCrawlPalettes[accountCraftCrawlPalette]
+    || accountCraftCrawlPalette
+    || renamedCraftCrawlPalettes[savedCraftCrawlPalette]
+    || savedCraftCrawlPalette
+    || 'trail-map';
 
 document.documentElement.dataset.palette = craftCrawlPalette;
+localStorage.setItem('craftcrawl_palette', craftCrawlPalette);
 
 document.addEventListener('submit', function (event) {
     if (event.defaultPrevented) {

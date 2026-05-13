@@ -140,7 +140,7 @@ $leaderboard = $leaderboard_stmt->get_result();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CraftCrawl | Manage Friends</title>
+    <title>CraftCrawl | Friends</title>
     <script src="../js/theme_init.js"></script>
     <link rel="stylesheet" href="../css/style.css">
 </head>
@@ -150,7 +150,7 @@ $leaderboard = $leaderboard_stmt->get_result();
             <div>
                 <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
                 <div>
-                    <h1>Manage Friends</h1>
+                    <h1>Friends</h1>
                     <p>Search for accounts, approve invites, and view friends' CraftCrawl progress.</p>
                 </div>
             </div>

@@ -4,6 +4,7 @@ const activePalette = document.documentElement.dataset.palette || 'trail-map';
 function setPalette(palette) {
     document.documentElement.dataset.palette = palette;
     localStorage.setItem('craftcrawl_palette', palette);
+    document.cookie = `craftcrawl_account_palette=${encodeURIComponent(palette)}; path=/; max-age=31536000; samesite=lax`;
 
     paletteButtons.forEach((button) => {
         const isActive = button.dataset.paletteOption === palette;

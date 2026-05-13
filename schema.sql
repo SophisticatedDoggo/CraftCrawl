@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
     show_feed_activity BOOL NOT NULL DEFAULT TRUE,
     show_liked_businesses BOOL NOT NULL DEFAULT TRUE,
     notify_social_activity BOOL NOT NULL DEFAULT TRUE,
+    display_palette VARCHAR(20) NOT NULL DEFAULT 'trail-map',
     friendsSeenAt DATETIME,
     socialNotificationsSeenAt DATETIME,
     createdAt DATETIME NOT NULL,
@@ -68,6 +69,7 @@ CREATE TABLE IF NOT EXISTS businesses (
     createdAt DATETIME NOT NULL,
     emailVerifiedAt DATETIME,
     disabledAt DATETIME,
+    display_palette VARCHAR(20) NOT NULL DEFAULT 'trail-map',
     approved BOOL NOT NULL DEFAULT FALSE,
     UNIQUE KEY unique_business_email (bEmail)
 );
