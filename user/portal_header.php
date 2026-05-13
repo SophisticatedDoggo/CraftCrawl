@@ -58,5 +58,4 @@ $craftcrawl_portal_show_search = $craftcrawl_portal_show_search ?? false;
     <a class="portal-tab<?php echo $craftcrawl_portal_active === 'map' ? ' is-active' : ''; ?>" href="portal.php">Map</a>
     <a class="portal-tab<?php echo $craftcrawl_portal_active === 'events' ? ' is-active' : ''; ?>" href="events.php">Events</a>
     <a class="portal-tab<?php echo $craftcrawl_portal_active === 'feed' ? ' is-active' : ''; ?>" href="feed.php">Feed</a>
-    <a class="portal-tab<?php echo $craftcrawl_portal_active === 'leaderboard' ? ' is-active' : ''; ?>" href="friends.php">Rankings</a>
 </div>
