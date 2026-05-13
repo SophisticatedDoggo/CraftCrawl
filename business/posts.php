@@ -213,7 +213,8 @@ if (!empty($poll_post_ids)) {
     foreach ($pp_bind as $k => $pid) { $pp_params[] = &$pp_bind[$k]; }
     call_user_func_array([$pp_opt_stmt, 'bind_param'], $pp_params);
     $pp_opt_stmt->execute();
-    while ($opt = $pp_opt_stmt->get_result()->fetch_assoc()) {
+    $pp_opt_result = $pp_opt_stmt->get_result();
+    while ($opt = $pp_opt_result->fetch_assoc()) {
         $poll_options_data[(int) $opt['post_id']][] = $opt;
     }
 }
@@ -242,7 +243,8 @@ if (!empty($item_keys)) {
     foreach ($react_keys as $k => $key) { $react_params[] = &$react_keys[$k]; }
     call_user_func_array([$react_stmt, 'bind_param'], $react_params);
     $react_stmt->execute();
-    while ($row = $react_stmt->get_result()->fetch_assoc()) {
+    $react_result = $react_stmt->get_result();
+    while ($row = $react_result->fetch_assoc()) {
         $reactions_data[$row['feed_item_key']][$row['reaction_type']] = (int) $row['cnt'];
     }
 
@@ -260,7 +262,8 @@ if (!empty($item_keys)) {
     foreach ($comment_keys as $k => $key) { $comment_params[] = &$comment_keys[$k]; }
     call_user_func_array([$comment_stmt, 'bind_param'], $comment_params);
     $comment_stmt->execute();
-    while ($c = $comment_stmt->get_result()->fetch_assoc()) {
+    $comment_result = $comment_stmt->get_result();
+    while ($c = $comment_result->fetch_assoc()) {
         $comments_data[$c['feed_item_key']][] = $c;
     }
 }
