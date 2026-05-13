@@ -6,6 +6,10 @@ function setPalette(palette) {
     localStorage.setItem('craftcrawl_palette', palette);
     document.cookie = `craftcrawl_account_palette=${encodeURIComponent(palette)}; path=/; max-age=31536000; samesite=lax`;
 
+    if (window.syncCraftCrawlNativeStatusBar) {
+        window.syncCraftCrawlNativeStatusBar();
+    }
+
     paletteButtons.forEach((button) => {
         const isActive = button.dataset.paletteOption === palette;
         button.classList.toggle('is-active', isActive);

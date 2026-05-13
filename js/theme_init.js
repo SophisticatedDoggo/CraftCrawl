@@ -50,16 +50,22 @@ function syncCraftCrawlNativeStatusBar() {
         return;
     }
 
-    const isDarkPalette = document.documentElement.dataset.palette === 'ember-dark';
+    const isDarkPalette = ['trail-dark', 'ember-dark'].includes(document.documentElement.dataset.palette);
 
     if (typeof statusBar.setOverlaysWebView === 'function') {
-        statusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
+        statusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
     }
 
     if (typeof statusBar.setStyle === 'function') {
         statusBar.setStyle({ style: isDarkPalette ? 'DARK' : 'LIGHT' }).catch(() => {});
     }
+
+    if (typeof statusBar.setBackgroundColor === 'function') {
+        statusBar.setBackgroundColor({ color: isDarkPalette ? '#000000' : '#ffffff' }).catch(() => {});
+    }
 }
+
+window.syncCraftCrawlNativeStatusBar = syncCraftCrawlNativeStatusBar;
 
 function lockCraftCrawlMobileViewport() {
     const viewport = document.querySelector('meta[name="viewport"]');
