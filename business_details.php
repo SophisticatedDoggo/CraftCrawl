@@ -379,7 +379,7 @@ function format_event_time_range($event) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>CraftCrawl | <?php echo escape_output($business['bName']); ?></title>
     <script src="js/theme_init.js"></script>
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.21.0/mapbox-gl.css" rel="stylesheet">
@@ -830,6 +830,7 @@ function format_event_time_range($event) {
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
     window.CRAFTCRAWL_XP_REWARD_POPUP = <?php echo json_encode($xp_reward_popup, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
 </script>
+<script src="js/location.js"></script>
 <script src="js/business_details_map.js"></script>
 <script src="js/directions_links.js"></script>
 <script src="js/level_celebration.js"></script>

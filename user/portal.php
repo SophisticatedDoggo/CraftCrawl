@@ -13,7 +13,7 @@ $craftcrawl_portal_show_search = true;
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>CraftCrawl | Home</title>
     <script src="../js/theme_init.js"></script>
     <link rel="stylesheet" href="../css/style.css">
@@ -62,6 +62,7 @@ $craftcrawl_portal_show_search = true;
     window.CRAFTCRAWL_CSRF_TOKEN = "<?php echo escape_output(craftcrawl_csrf_token()); ?>";
 </script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="../js/location.js"></script>
 <script src="../js/map.js"></script>
 <script src="../js/directions_links.js"></script>
 <script src="../js/level_celebration.js"></script>

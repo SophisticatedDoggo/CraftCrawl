@@ -116,7 +116,7 @@ $comments = $comment_stmt->get_result();
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>CraftCrawl | Content Moderation</title>
     <script src="../js/theme_init.js"></script>
     <link rel="stylesheet" href="../css/style.css">

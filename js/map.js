@@ -257,7 +257,6 @@ map.on('load', function () {
 
     //get our data from php function
     getAllLocations();
-    requestUserLocation();
 
     map.on('moveend', (event) => {
         updateBusinessListForCurrentMapArea(Boolean(event.originalEvent));
@@ -330,11 +329,33 @@ function getAllLocations(){
 }
 
 function requestUserLocation() {
-    if (!navigator.geolocation) {
+    const locationProvider = window.CraftCrawlLocation || null;
+
+    if (!locationProvider && !navigator.geolocation) {
         return;
     }
 
-    navigator.geolocation.getCurrentPosition((position) => {
+    let didStartLocationRequest = true;
+
+    if (locationProvider) {
+        didStartLocationRequest = locationProvider.getCurrentPosition(handlePosition, applyLocationAwareListAndMap, {
+            enableHighAccuracy: true,
+            timeout: 12000,
+            maximumAge: 60000
+        });
+    } else {
+        navigator.geolocation.getCurrentPosition(handlePosition, applyLocationAwareListAndMap, {
+            enableHighAccuracy: true,
+            timeout: 12000,
+            maximumAge: 60000
+        });
+    }
+
+    if (!didStartLocationRequest) {
+        applyLocationAwareListAndMap();
+    }
+
+    function handlePosition(position) {
         userLocation = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude
@@ -342,13 +363,7 @@ function requestUserLocation() {
 
         updateUserLocationMarker();
         applyLocationAwareListAndMap();
-    }, () => {
-        applyLocationAwareListAndMap();
-    }, {
-        enableHighAccuracy: true,
-        timeout: 12000,
-        maximumAge: 60000
-    });
+    }
 }
 
 function applyLocationAwareListAndMap() {
@@ -601,6 +616,11 @@ function setupBusinessListSort() {
 
     sortSelect.dataset.ready = 'true';
     sortSelect.addEventListener('change', () => {
+        if (sortSelect.value === 'nearby' && !userLocation) {
+            requestUserLocation();
+            return;
+        }
+
         updateBusinessListForSort(sortSelect.value);
     });
 }

@@ -44,7 +44,9 @@
     form.addEventListener('submit', function (event) {
         event.preventDefault();
 
-        if (!navigator.geolocation) {
+        const locationProvider = window.CraftCrawlLocation || null;
+
+        if (!locationProvider && !navigator.geolocation) {
             showFeedback('Your browser does not support location check-ins.', true);
             return;
         }
@@ -57,7 +59,33 @@
             button.textContent = 'Checking location...';
         }
 
-        navigator.geolocation.getCurrentPosition(function (position) {
+        let didStartLocationRequest = true;
+
+        if (locationProvider) {
+            didStartLocationRequest = locationProvider.getCurrentPosition(handlePosition, handleLocationError, {
+                enableHighAccuracy: true,
+                timeout: 12000,
+                maximumAge: 0
+            });
+        } else {
+            navigator.geolocation.getCurrentPosition(handlePosition, handleLocationError, {
+                enableHighAccuracy: true,
+                timeout: 12000,
+                maximumAge: 0
+            });
+        }
+
+        if (!didStartLocationRequest) {
+            showFeedback('Your browser does not support location check-ins.', true);
+
+            if (button) {
+                button.disabled = false;
+                button.classList.remove('is-loading');
+                button.textContent = originalText;
+            }
+        }
+
+        function handlePosition(position) {
             latitudeInput.value = position.coords.latitude;
             longitudeInput.value = position.coords.longitude;
 
@@ -98,7 +126,9 @@
                         button.textContent = originalText;
                     }
                 });
-        }, function (error) {
+        }
+
+        function handleLocationError(error) {
             showFeedback(locationErrorMessage(error), true);
 
             if (button) {
@@ -106,10 +136,6 @@
                 button.classList.remove('is-loading');
                 button.textContent = originalText;
             }
-        }, {
-            enableHighAccuracy: true,
-            timeout: 12000,
-            maximumAge: 0
-        });
+        }
     });
 }());

@@ -149,7 +149,9 @@
     }
 
     findButton.addEventListener('click', () => {
-        if (!navigator.geolocation) {
+        const locationProvider = window.CraftCrawlLocation || null;
+
+        if (!locationProvider && !navigator.geolocation) {
             showStatus('Your browser does not support location check-ins.', true);
             return;
         }
@@ -159,7 +161,29 @@
         findButton.textContent = 'Finding nearby...';
         list.hidden = true;
 
-        navigator.geolocation.getCurrentPosition((position) => {
+        let didStartLocationRequest = true;
+
+        if (locationProvider) {
+            didStartLocationRequest = locationProvider.getCurrentPosition(handlePosition, handleLocationError, {
+                enableHighAccuracy: true,
+                timeout: 12000,
+                maximumAge: 0
+            });
+        } else {
+            navigator.geolocation.getCurrentPosition(handlePosition, handleLocationError, {
+                enableHighAccuracy: true,
+                timeout: 12000,
+                maximumAge: 0
+            });
+        }
+
+        if (!didStartLocationRequest) {
+            showStatus('Your browser does not support location check-ins.', true);
+            findButton.disabled = false;
+            findButton.textContent = 'Find Nearby Check-ins';
+        }
+
+        function handlePosition(position) {
             currentPosition = {
                 latitude: position.coords.latitude,
                 longitude: position.coords.longitude
@@ -187,14 +211,12 @@
                     findButton.disabled = false;
                     findButton.textContent = 'Find Nearby Check-ins';
                 });
-        }, (error) => {
+        }
+
+        function handleLocationError(error) {
             showStatus(locationErrorMessage(error), true);
             findButton.disabled = false;
             findButton.textContent = 'Find Nearby Check-ins';
-        }, {
-            enableHighAccuracy: true,
-            timeout: 12000,
-            maximumAge: 0
-        });
+        }
     });
 }());
