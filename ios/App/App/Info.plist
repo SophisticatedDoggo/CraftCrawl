@@ -26,6 +26,8 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>CraftCrawl uses your location to find nearby check-ins.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>CraftCrawl uses your location to find nearby check-ins while you are using the app.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
