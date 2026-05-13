@@ -64,7 +64,11 @@ function setupMomentumSafeMobileTabs() {
 
     function activateMobileTab(tab) {
         if (tab instanceof HTMLAnchorElement) {
-            window.location.href = tab.href;
+            if (typeof window.CraftCrawlNavigateWithLoader === 'function') {
+                window.CraftCrawlNavigateWithLoader(tab.href);
+            } else {
+                window.location.href = tab.href;
+            }
             return;
         }
 
