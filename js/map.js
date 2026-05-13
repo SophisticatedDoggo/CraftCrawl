@@ -257,6 +257,7 @@ map.on('load', function () {
 
     //get our data from php function
     getAllLocations();
+    requestUserLocation();
 
     map.on('moveend', (event) => {
         updateBusinessListForCurrentMapArea(Boolean(event.originalEvent));
@@ -332,19 +333,20 @@ function requestUserLocation() {
     const locationProvider = window.CraftCrawlLocation || null;
 
     if (!locationProvider && !navigator.geolocation) {
+        showLocationStatus('Your browser does not support location lookup.', true);
         return;
     }
 
     let didStartLocationRequest = true;
 
     if (locationProvider) {
-        didStartLocationRequest = locationProvider.getCurrentPosition(handlePosition, applyLocationAwareListAndMap, {
+        didStartLocationRequest = locationProvider.getCurrentPosition(handlePosition, handleLocationError, {
             enableHighAccuracy: true,
             timeout: 12000,
             maximumAge: 60000
         });
     } else {
-        navigator.geolocation.getCurrentPosition(handlePosition, applyLocationAwareListAndMap, {
+        navigator.geolocation.getCurrentPosition(handlePosition, handleLocationError, {
             enableHighAccuracy: true,
             timeout: 12000,
             maximumAge: 60000
@@ -362,6 +364,14 @@ function requestUserLocation() {
         };
 
         updateUserLocationMarker();
+        applyLocationAwareListAndMap();
+    }
+
+    function handleLocationError(error) {
+        if (error && error.code === 1) {
+            showLocationStatus('Location access is off. Enable location access for CraftCrawl to center the map near you.', true);
+        }
+
         applyLocationAwareListAndMap();
     }
 }
@@ -386,6 +396,19 @@ function applyLocationAwareListAndMap() {
     }
 
     updateBusinessListForSort(sortSelect ? sortSelect.value : 'map');
+}
+
+function showLocationStatus(message, isError) {
+    const status = document.querySelector('[data-checkin-status]');
+
+    if (!status) {
+        return;
+    }
+
+    status.textContent = message;
+    status.classList.toggle('form-message-error', isError);
+    status.classList.toggle('form-message-success', !isError);
+    status.hidden = false;
 }
 
 function updateUserLocationMarker() {
