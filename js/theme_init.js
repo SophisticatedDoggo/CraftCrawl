@@ -68,6 +68,7 @@ function syncCraftCrawlNativeStatusBar() {
 window.syncCraftCrawlNativeStatusBar = syncCraftCrawlNativeStatusBar;
 
 let craftCrawlPageLoaderTimer = null;
+let craftCrawlPageTransitionStarted = false;
 
 function ensureCraftCrawlPageLoader() {
     let loader = document.querySelector('[data-page-loader]');
@@ -93,7 +94,7 @@ function showCraftCrawlPageLoader(delay) {
         const loader = ensureCraftCrawlPageLoader();
         loader.classList.add('is-visible');
         loader.setAttribute('aria-hidden', 'false');
-    }, delay || 120);
+    }, delay ?? 120);
 }
 
 function hideCraftCrawlPageLoader() {
@@ -133,6 +134,16 @@ function shouldShowCraftCrawlPageLoaderForLink(link, event) {
 
     return destination.pathname !== window.location.pathname
         || destination.search !== window.location.search;
+}
+
+function continueCraftCrawlLinkNavigation(link) {
+    const destination = link.href;
+
+    window.requestAnimationFrame(function () {
+        window.setTimeout(function () {
+            window.location.assign(destination);
+        }, 90);
+    });
 }
 
 function lockCraftCrawlMobileViewport() {
@@ -209,16 +220,25 @@ document.addEventListener('submit', function (event) {
 document.addEventListener('click', function (event) {
     const link = event.target.closest && event.target.closest('a[href]');
 
-    if (shouldShowCraftCrawlPageLoaderForLink(link, event)) {
-        window.setTimeout(function () {
-            if (!event.defaultPrevented) {
-                showCraftCrawlPageLoader(80);
-            }
-        }, 0);
+    if (!shouldShowCraftCrawlPageLoaderForLink(link, event)) {
+        return;
     }
-}, true);
 
-window.addEventListener('pageshow', hideCraftCrawlPageLoader);
+    if (craftCrawlPageTransitionStarted) {
+        event.preventDefault();
+        return;
+    }
+
+    craftCrawlPageTransitionStarted = true;
+    event.preventDefault();
+    showCraftCrawlPageLoader(0);
+    continueCraftCrawlLinkNavigation(link);
+});
+
+window.addEventListener('pageshow', function () {
+    craftCrawlPageTransitionStarted = false;
+    hideCraftCrawlPageLoader();
+});
 window.addEventListener('pagehide', function () {
     showCraftCrawlPageLoader(0);
 });
