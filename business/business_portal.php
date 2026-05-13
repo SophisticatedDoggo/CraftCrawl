@@ -45,6 +45,7 @@ function render_star_rating($rating, $label = '') {
 require_once '../config.php';
 require_once '../lib/cloudinary_upload.php';
 require_once '../lib/business_hours.php';
+require_once '../lib/business_post_render.php';
 
 $business_id = (int) $_SESSION['business_id'];
 
@@ -317,7 +318,87 @@ $portal_posts_stmt = $conn->prepare("
 ");
 $portal_posts_stmt->bind_param("i", $business_id);
 $portal_posts_stmt->execute();
-$portal_posts = $portal_posts_stmt->get_result();
+$portal_posts_raw = $portal_posts_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+// ── Load poll options + vote counts for poll posts ────────────────────────
+$portal_poll_post_ids = [];
+foreach ($portal_posts_raw as $ppost) {
+    if ($ppost['post_type'] === 'poll') {
+        $portal_poll_post_ids[] = (int) $ppost['id'];
+    }
+}
+
+$portal_poll_options = [];
+
+if (!empty($portal_poll_post_ids)) {
+    $pp_ids_ph = implode(',', array_fill(0, count($portal_poll_post_ids), '?'));
+    $pp_types = str_repeat('i', count($portal_poll_post_ids));
+    $pp_opt_stmt = $conn->prepare("
+        SELECT bpo.id, bpo.post_id, bpo.option_text, bpo.sort_order, COUNT(bpv.id) AS vote_count
+        FROM business_poll_options bpo
+        LEFT JOIN business_poll_votes bpv ON bpv.option_id = bpo.id
+        WHERE bpo.post_id IN ($pp_ids_ph)
+        GROUP BY bpo.id
+        ORDER BY bpo.sort_order
+    ");
+    $pp_bind = $portal_poll_post_ids;
+    $pp_params = [$pp_types];
+    foreach ($pp_bind as $k => $pid) { $pp_params[] = &$pp_bind[$k]; }
+    call_user_func_array([$pp_opt_stmt, 'bind_param'], $pp_params);
+    $pp_opt_stmt->execute();
+    $pp_result = $pp_opt_stmt->get_result();
+    while ($opt = $pp_result->fetch_assoc()) {
+        $portal_poll_options[(int) $opt['post_id']][] = $opt;
+    }
+}
+
+// ── Load reactions + comments for all posts ───────────────────────────────
+$portal_item_keys = [];
+foreach ($portal_posts_raw as $ppost) {
+    $portal_item_keys[] = 'business_post:' . (int) $ppost['id'];
+}
+
+$portal_reactions = [];
+$portal_comments_by_key = [];
+
+if (!empty($portal_item_keys)) {
+    $pk_ph = implode(',', array_fill(0, count($portal_item_keys), '?'));
+    $pk_types = str_repeat('s', count($portal_item_keys));
+
+    $react_keys = $portal_item_keys;
+    $react_stmt = $conn->prepare("
+        SELECT feed_item_key, reaction_type, COUNT(*) AS cnt
+        FROM feed_reactions
+        WHERE feed_item_key IN ($pk_ph)
+        GROUP BY feed_item_key, reaction_type
+    ");
+    $react_params = [$pk_types];
+    foreach ($react_keys as $k => $key) { $react_params[] = &$react_keys[$k]; }
+    call_user_func_array([$react_stmt, 'bind_param'], $react_params);
+    $react_stmt->execute();
+    $react_result = $react_stmt->get_result();
+    while ($row = $react_result->fetch_assoc()) {
+        $portal_reactions[$row['feed_item_key']][$row['reaction_type']] = (int) $row['cnt'];
+    }
+
+    $comment_keys = $portal_item_keys;
+    $comment_stmt = $conn->prepare("
+        SELECT fc.id, fc.parent_comment_id, fc.feed_item_key, fc.body, fc.createdAt,
+            u.fName, u.lName
+        FROM feed_comments fc
+        INNER JOIN users u ON u.id = fc.user_id
+        WHERE fc.deletedAt IS NULL AND fc.feed_item_key IN ($pk_ph)
+        ORDER BY fc.feed_item_key, fc.createdAt ASC, fc.id ASC
+    ");
+    $comment_params = [$pk_types];
+    foreach ($comment_keys as $k => $key) { $comment_params[] = &$comment_keys[$k]; }
+    call_user_func_array([$comment_stmt, 'bind_param'], $comment_params);
+    $comment_stmt->execute();
+    $comment_result = $comment_stmt->get_result();
+    while ($comment = $comment_result->fetch_assoc()) {
+        $portal_comments_by_key[$comment['feed_item_key']][] = $comment;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -539,11 +620,28 @@ $portal_posts = $portal_posts_stmt->get_result();
                 <button type="submit">Create Poll</button>
             </form>
 
-            <?php if ($portal_posts->num_rows === 0) : ?>
+            <?php if (empty($portal_posts_raw)) : ?>
                 <p>No posts yet.</p>
             <?php endif; ?>
 
-            <?php while ($ppost = $portal_posts->fetch_assoc()) : ?>
+            <?php
+            $portal_reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '📍 Want to Go'];
+            foreach ($portal_posts_raw as $ppost) :
+                $post_item_key = 'business_post:' . (int) $ppost['id'];
+                $post_opts = $portal_poll_options[(int) $ppost['id']] ?? [];
+                $post_total_votes = (int) $ppost['vote_count'];
+                $post_reactions = $portal_reactions[$post_item_key] ?? [];
+                $post_raw_comments = $portal_comments_by_key[$post_item_key] ?? [];
+                $top_comments = [];
+                $replies_by_parent = [];
+                foreach ($post_raw_comments as $c) {
+                    if ($c['parent_comment_id']) {
+                        $replies_by_parent[(int) $c['parent_comment_id']][] = $c;
+                    } else {
+                        $top_comments[] = $c;
+                    }
+                }
+            ?>
                 <article class="business-review-card">
                     <div class="business-review-header">
                         <strong><?php echo escape_output($ppost['title']); ?></strong>
@@ -557,7 +655,7 @@ $portal_posts = $portal_posts_stmt->get_result();
                         &middot; <?php echo escape_output((int) $ppost['comment_count']); ?> comment<?php echo (int) $ppost['comment_count'] !== 1 ? 's' : ''; ?>
                         &middot; <?php echo escape_output((int) $ppost['reaction_count']); ?> reaction<?php echo (int) $ppost['reaction_count'] !== 1 ? 's' : ''; ?>
                         <?php if ($ppost['post_type'] === 'poll') : ?>
-                            &middot; <?php echo escape_output((int) $ppost['vote_count']); ?> vote<?php echo (int) $ppost['vote_count'] !== 1 ? 's' : ''; ?>
+                            &middot; <?php echo escape_output($post_total_votes); ?> vote<?php echo $post_total_votes !== 1 ? 's' : ''; ?>
                             <?php if (!empty($ppost['ends_at'])) : ?>
                                 <?php if (strtotime($ppost['ends_at']) < time()) : ?>
                                     &middot; <span class="poll-expiry-label is-closed">Closed</span>
@@ -573,8 +671,53 @@ $portal_posts = $portal_posts_stmt->get_result();
                         <input type="hidden" name="post_id" value="<?php echo escape_output($ppost['id']); ?>">
                         <button type="submit" class="button-link-secondary">Delete</button>
                     </form>
+
+                    <?php if ($ppost['post_type'] === 'poll' && !empty($post_opts)) : ?>
+                        <div class="portal-post-detail">
+                            <?php echo craftcrawl_render_poll_results($post_opts, null, $post_total_votes); ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php $has_reactions = array_filter($portal_reaction_labels, fn($type) => !empty($post_reactions[$type]), ARRAY_FILTER_USE_KEY); ?>
+                    <?php if (!empty($has_reactions)) : ?>
+                        <div class="portal-post-reactions">
+                            <?php foreach ($portal_reaction_labels as $type => $label) : ?>
+                                <?php if (!empty($post_reactions[$type])) : ?>
+                                    <span><?php echo $label; ?> <strong><?php echo escape_output($post_reactions[$type]); ?></strong></span>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($top_comments)) : ?>
+                        <div class="portal-post-comments">
+                            <h4>Comments</h4>
+                            <?php foreach ($top_comments as $comment) : ?>
+                                <div class="portal-comment">
+                                    <div class="portal-comment-meta">
+                                        <strong><?php echo escape_output(trim($comment['fName'] . ' ' . $comment['lName'])); ?></strong>
+                                        <span><?php echo escape_output(date('M j, g:i A', strtotime($comment['createdAt']))); ?></span>
+                                    </div>
+                                    <p><?php echo nl2br(escape_output($comment['body'])); ?></p>
+                                    <?php if (!empty($replies_by_parent[(int) $comment['id']])) : ?>
+                                        <div class="portal-comment-replies">
+                                            <?php foreach ($replies_by_parent[(int) $comment['id']] as $reply) : ?>
+                                                <div class="portal-comment portal-comment-reply">
+                                                    <div class="portal-comment-meta">
+                                                        <strong><?php echo escape_output(trim($reply['fName'] . ' ' . $reply['lName'])); ?></strong>
+                                                        <span><?php echo escape_output(date('M j, g:i A', strtotime($reply['createdAt']))); ?></span>
+                                                    </div>
+                                                    <p><?php echo nl2br(escape_output($reply['body'])); ?></p>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 </article>
-            <?php endwhile; ?>
+            <?php endforeach; ?>
         </section>
 
         <section class="business-reviews-panel">
