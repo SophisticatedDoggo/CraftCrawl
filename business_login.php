@@ -96,14 +96,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: business/business_portal.php");
             exit();
         } else {
-            error_log(sprintf(
-                'Business login credential failure: email=%s email_found=%s password_empty=%s remember_me=%s captcha_token_length=%d',
-                $email,
-                $business ? 'yes' : 'no',
-                $password === '' ? 'yes' : 'no',
-                $remember_me ? 'yes' : 'no',
-                strlen($captcha_token)
-            ));
             $_SESSION['business_login_feedback'] = [
                 'login_error' => true,
                 'email' => $email

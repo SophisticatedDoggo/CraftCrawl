@@ -30,12 +30,11 @@ $reaction_options_by_type = [
     'event_want'    => ['cheers', 'nice_find'],
     'location_want' => ['cheers', 'nice_find', 'want_to_go'],
     'badge_earned'  => ['cheers', 'trophy'],
-    'announcement'  => ['cheers', 'want_to_go'],
     'business_post' => ['cheers', 'want_to_go'],
 ];
 
 $item_type = null;
-if (preg_match('/^(first_visit|level_up|event_want|location_want|badge_earned|announcement|business_post):\d+$/', $item_key, $type_matches)) {
+if (preg_match('/^(first_visit|level_up|event_want|location_want|badge_earned|business_post):\d+$/', $item_key, $type_matches)) {
     $item_type = $type_matches[1];
 }
 $item_reaction_options = $reaction_options_by_type[$item_type] ?? [];
@@ -158,25 +157,6 @@ function craftcrawl_feed_item_is_visible($conn, $user_id, $item_key) {
         return (bool) $stmt->get_result()->fetch_assoc();
     }
 
-    if (preg_match('/^announcement:(\d+)$/', $item_key, $matches)) {
-        $ann_id = (int) $matches[1];
-        $stmt = $conn->prepare("
-            SELECT ba.id
-            FROM business_announcements ba
-            WHERE ba.id=?
-                AND (ba.starts_at IS NULL OR ba.starts_at <= NOW())
-                AND (ba.ends_at IS NULL OR ba.ends_at >= NOW())
-                AND EXISTS (
-                    SELECT 1 FROM liked_businesses lb
-                    WHERE lb.business_id = ba.business_id AND lb.user_id=?
-                )
-            LIMIT 1
-        ");
-        $stmt->bind_param("ii", $ann_id, $user_id);
-        $stmt->execute();
-        return (bool) $stmt->get_result()->fetch_assoc();
-    }
-
     // Business posts are public — any logged-in user can react
     if (preg_match('/^business_post:(\d+)$/', $item_key, $matches)) {
         $post_id = (int) $matches[1];
@@ -203,7 +183,7 @@ if (!craftcrawl_feed_item_is_visible($conn, $user_id, $item_key)) {
 
 function craftcrawl_feed_item_allows_interactions($conn, $item_key) {
     // Business posts are always interactive
-    if (preg_match('/^(business_post|announcement):/', $item_key)) {
+    if (preg_match('/^business_post:/', $item_key)) {
         return true;
     }
 

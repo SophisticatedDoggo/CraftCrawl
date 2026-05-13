@@ -1,10 +1,32 @@
 <?php
 require_once __DIR__ . '/security.php';
+require_once __DIR__ . '/remember_auth.php';
 
 function craftcrawl_require_admin() {
     craftcrawl_secure_session_start();
 
     if (!isset($_SESSION['admin_id'])) {
+        craftcrawl_redirect('admin_login.php');
+    }
+
+    global $conn;
+
+    if (!isset($conn) || !($conn instanceof mysqli)) {
+        include_once __DIR__ . '/../db.php';
+    }
+
+    $admin_id = (int) $_SESSION['admin_id'];
+    $stmt = $conn->prepare("SELECT id FROM admins WHERE id=? AND active=TRUE AND disabledAt IS NULL");
+    $stmt->bind_param("i", $admin_id);
+    $stmt->execute();
+
+    if (!$stmt->get_result()->fetch_assoc()) {
+        $_SESSION = [];
+
+        if (function_exists('craftcrawl_clear_remember_cookie')) {
+            craftcrawl_clear_remember_cookie();
+        }
+
         craftcrawl_redirect('admin_login.php');
     }
 }

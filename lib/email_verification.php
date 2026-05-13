@@ -14,7 +14,7 @@ function craftcrawl_public_base_url() {
     }
 
     $scheme = craftcrawl_is_https() ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $host = craftcrawl_trusted_request_host();
 
     return $scheme . '://' . $host . craftcrawl_app_base_path();
 }

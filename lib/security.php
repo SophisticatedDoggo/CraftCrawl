@@ -1,8 +1,17 @@
 <?php
 
 function craftcrawl_is_https() {
-    return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || (($_SERVER['SERVER_PORT'] ?? null) === '443');
+    if ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['SERVER_PORT'] ?? null) === '443')) {
+        return true;
+    }
+
+    if (function_exists('craftcrawl_env')
+        && strtolower(craftcrawl_env('CRAFTCRAWL_TRUST_PROXY_HEADERS', '')) === 'true') {
+        return strtolower($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
+    }
+
+    return false;
 }
 
 function craftcrawl_secure_session_start() {
@@ -33,6 +42,38 @@ function craftcrawl_app_base_path() {
     }
 
     return '';
+}
+
+function craftcrawl_allowed_hosts() {
+    $configured_hosts = function_exists('craftcrawl_env')
+        ? craftcrawl_env('CRAFTCRAWL_ALLOWED_HOSTS', '')
+        : '';
+
+    $hosts = array_filter(array_map('trim', explode(',', $configured_hosts)));
+
+    if (empty($hosts)) {
+        $hosts = [
+            'app.craftcrawl.site',
+            'staging.craftcrawl.site',
+            'localhost',
+            '127.0.0.1'
+        ];
+    }
+
+    return array_map('strtolower', $hosts);
+}
+
+function craftcrawl_trusted_request_host() {
+    $host = strtolower($_SERVER['HTTP_HOST'] ?? 'localhost');
+    $host = preg_replace('/:\d+$/', '', $host);
+
+    if (!in_array($host, craftcrawl_allowed_hosts(), true)) {
+        error_log('Rejected untrusted host header: ' . $host);
+        http_response_code(400);
+        exit('Invalid host.');
+    }
+
+    return $_SERVER['HTTP_HOST'] ?? $host;
 }
 
 function craftcrawl_redirect($path) {

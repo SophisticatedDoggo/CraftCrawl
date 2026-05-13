@@ -194,47 +194,6 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
         ];
     }
 
-    if (preg_match('/^announcement:(\d+)$/', $item_key, $matches)) {
-        $ann_id = (int) $matches[1];
-        $stmt = $conn->prepare("
-            SELECT ba.id, ba.business_id, ba.title, ba.body, ba.created_at,
-                b.bName, b.bType, b.city, b.state
-            FROM business_announcements ba
-            INNER JOIN businesses b ON b.id = ba.business_id AND b.approved=TRUE
-            WHERE ba.id=?
-                AND (ba.starts_at IS NULL OR ba.starts_at <= NOW())
-                AND (ba.ends_at IS NULL OR ba.ends_at >= NOW())
-            LIMIT 1
-        ");
-        $stmt->bind_param("i", $ann_id);
-        $stmt->execute();
-        $ann = $stmt->get_result()->fetch_assoc();
-
-        if (!$ann) {
-            return null;
-        }
-
-        $liked_stmt = $conn->prepare("SELECT id FROM liked_businesses WHERE user_id=? AND business_id=? LIMIT 1");
-        $liked_stmt->bind_param("ii", $viewer_id, (int) $ann['business_id']);
-        $liked_stmt->execute();
-        if (!$liked_stmt->get_result()->fetch_assoc()) {
-            return null;
-        }
-
-        return [
-            'item_key' => $item_key,
-            'type' => 'announcement',
-            'created_at' => $ann['created_at'],
-            'business_id' => (int) $ann['business_id'],
-            'business_name' => $ann['bName'],
-            'business_type' => $ann['bType'],
-            'title' => $ann['title'],
-            'body' => $ann['body'],
-            'city' => $ann['city'],
-            'state' => $ann['state']
-        ];
-    }
-
     // Business posts are public to all logged-in users — no friend check required
     if (preg_match('/^business_post:(\d+)$/', $item_key, $matches)) {
         $post_id = (int) $matches[1];

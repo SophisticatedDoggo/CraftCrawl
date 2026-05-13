@@ -463,7 +463,7 @@
                     <div>
                         <strong>${escapeHtml(item.business_name)}</strong>
                         <p>${escapeHtml(item.title)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
-                        ${item.body ? `<p class="feed-announcement-body">${escapeHtml(item.body)}</p>` : ''}
+                        ${item.body ? `<p class="feed-business-post-body">${escapeHtml(item.body)}</p>` : ''}
                         ${pollSection}
                         ${actions}
                     </div>

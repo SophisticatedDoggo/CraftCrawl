@@ -169,10 +169,6 @@ function craftcrawl_feed_item_owner_id($conn, $item_key) {
         return $badge ? (int) $badge['user_id'] : 0;
     }
 
-    if (preg_match('/^announcement:(\d+)$/', $item_key, $matches)) {
-        return 0; // Business owns this; no user push notification
-    }
-
     if (preg_match('/^business_post:(\d+)$/', $item_key, $matches)) {
         return 0; // Business owns this; no user push notification
     }
