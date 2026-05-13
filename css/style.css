@@ -4559,6 +4559,11 @@ a.event-calendar-event {
         -webkit-backdrop-filter: blur(18px) saturate(1.12);
     }
 
+    .page-loader {
+        bottom: calc(70px + env(safe-area-inset-bottom));
+        z-index: 19;
+    }
+
     .admin-mobile-tabbar {
         grid-template-columns: repeat(5, minmax(0, 1fr));
     }

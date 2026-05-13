@@ -136,15 +136,43 @@ function shouldShowCraftCrawlPageLoaderForLink(link, event) {
         || destination.search !== window.location.search;
 }
 
-function continueCraftCrawlLinkNavigation(link) {
-    const destination = link.href;
+function startCraftCrawlPageTransition(destination) {
+    const destinationUrl = new URL(destination, window.location.href);
+    const capacitor = window.Capacitor;
+    const isNative = capacitor
+        && typeof capacitor.isNativePlatform === 'function'
+        && capacitor.isNativePlatform();
+    const transitionDelay = isNative ? 360 : 110;
 
+    if (destinationUrl.origin !== window.location.origin) {
+        window.location.assign(destinationUrl.href);
+        return;
+    }
+
+    if (destinationUrl.pathname === window.location.pathname
+        && destinationUrl.search === window.location.search) {
+        window.location.assign(destinationUrl.href);
+        return;
+    }
+
+    if (craftCrawlPageTransitionStarted) {
+        return;
+    }
+
+    craftCrawlPageTransitionStarted = true;
+    showCraftCrawlPageLoader(0);
     window.requestAnimationFrame(function () {
         window.setTimeout(function () {
-            window.location.assign(destination);
-        }, 90);
+            window.location.assign(destinationUrl.href);
+        }, transitionDelay);
     });
 }
+
+function continueCraftCrawlLinkNavigation(link) {
+    startCraftCrawlPageTransition(link.href);
+}
+
+window.CraftCrawlNavigateWithLoader = startCraftCrawlPageTransition;
 
 function lockCraftCrawlMobileViewport() {
     const viewport = document.querySelector('meta[name="viewport"]');
@@ -224,14 +252,7 @@ document.addEventListener('click', function (event) {
         return;
     }
 
-    if (craftCrawlPageTransitionStarted) {
-        event.preventDefault();
-        return;
-    }
-
-    craftCrawlPageTransitionStarted = true;
     event.preventDefault();
-    showCraftCrawlPageLoader(0);
     continueCraftCrawlLinkNavigation(link);
 });
 
