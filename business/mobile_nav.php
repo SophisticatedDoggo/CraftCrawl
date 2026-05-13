@@ -3,6 +3,7 @@ $craftcrawl_business_nav_page = basename($_SERVER['SCRIPT_NAME'] ?? '');
 
 $craftcrawl_business_nav_is_portal = $craftcrawl_business_nav_page === 'business_portal.php';
 $craftcrawl_business_nav_is_analytics = $craftcrawl_business_nav_page === 'analytics.php';
+$craftcrawl_business_nav_is_posts = $craftcrawl_business_nav_page === 'posts.php';
 $craftcrawl_business_nav_is_events = in_array($craftcrawl_business_nav_page, ['events.php', 'event_edit.php'], true);
 $craftcrawl_business_nav_is_edit = $craftcrawl_business_nav_page === 'business_edit.php';
 ?>
@@ -10,6 +11,10 @@ $craftcrawl_business_nav_is_edit = $craftcrawl_business_nav_page === 'business_e
     <a class="mobile-app-tab<?php echo $craftcrawl_business_nav_is_portal ? ' is-active' : ''; ?>" href="business_portal.php">
         <span class="mobile-app-tab-icon mobile-app-tab-icon-dashboard" aria-hidden="true"></span>
         <span>Portal</span>
+    </a>
+    <a class="mobile-app-tab<?php echo $craftcrawl_business_nav_is_posts ? ' is-active' : ''; ?>" href="posts.php">
+        <span class="mobile-app-tab-icon mobile-app-tab-icon-friends" aria-hidden="true"></span>
+        <span>Posts</span>
     </a>
     <a class="mobile-app-tab<?php echo $craftcrawl_business_nav_is_analytics ? ' is-active' : ''; ?>" href="analytics.php">
         <span class="mobile-app-tab-icon mobile-app-tab-icon-analytics" aria-hidden="true"></span>

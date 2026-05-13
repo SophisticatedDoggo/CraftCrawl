@@ -159,7 +159,7 @@ a:not(.mapboxgl-ctrl-logo) {
     min-height: 36px;
     padding: 7px 12px;
     border: 1px solid var(--color-primary);
-    border-radius: var(--radius-sm);
+    border-radius: 99px;
     color: var(--color-on-primary);
     background:
         var(--glass-button),
@@ -190,7 +190,7 @@ input[type="button"],
     min-height: 40px;
     padding: 9px 14px;
     border: 1px solid var(--color-primary);
-    border-radius: var(--radius-sm);
+    border-radius: 99px;
     color: var(--color-on-primary);
     background:
         var(--glass-button),
@@ -1486,11 +1486,12 @@ a.text-link:focus {
 }
 
 .feed-action-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 8px;
-    justify-items: start;
     margin-top: 10px;
+    flex-wrap: wrap;
 }
 
 .feed-primary-actions {
@@ -4398,6 +4399,10 @@ a.event-calendar-event {
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
+    .business-mobile-tabbar {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
     .mobile-app-tab {
         position: relative;
         display: grid;
@@ -5399,6 +5404,55 @@ a.event-calendar-event {
 
 .portal-comment-reply {
     padding: 5px 0;
+}
+
+.portal-reply-toggle {
+    margin-top: 6px;
+    min-height: 28px;
+    padding: 3px 12px;
+    font-size: 0.82em;
+    font-weight: 600;
+    background: transparent;
+    border-color: var(--color-border);
+    color: var(--color-muted);
+    box-shadow: none;
+}
+
+.portal-reply-toggle:hover,
+.portal-reply-toggle:focus {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+}
+
+.portal-reply-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.portal-reply-form textarea {
+    font: inherit;
+    font-size: 0.9em;
+    resize: vertical;
+}
+
+.portal-reply-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.portal-reply-actions button {
+    min-height: 32px;
+    padding: 5px 14px;
+    font-size: 0.85em;
+}
+
+.portal-no-comments {
+    font-size: 0.88em;
+    color: var(--color-muted);
+    margin-top: 12px;
 }
 
 .load-more-posts-button {

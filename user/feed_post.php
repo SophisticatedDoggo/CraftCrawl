@@ -172,9 +172,11 @@ $replies_by_comment = [];
 
 if ($feed_item) {
     $comments_stmt = $conn->prepare("
-        SELECT fc.id, fc.parent_comment_id, fc.body, fc.createdAt, fc.user_id, u.fName, u.lName
+        SELECT fc.id, fc.parent_comment_id, fc.body, fc.createdAt, fc.user_id, fc.business_id,
+            u.fName, u.lName, b.bName
         FROM feed_comments fc
-        INNER JOIN users u ON u.id = fc.user_id
+        LEFT JOIN users u ON u.id = fc.user_id
+        LEFT JOIN businesses b ON b.id = fc.business_id
         WHERE fc.feed_item_key=? AND fc.deletedAt IS NULL
         ORDER BY fc.createdAt ASC, fc.id ASC
     ");
@@ -249,9 +251,11 @@ if ($feed_item) {
                     <?php endif; ?>
                     <?php foreach ($comments as $comment) : ?>
                         <?php
-                            $commenter_name = (int) $comment['user_id'] === $user_id
-                                ? 'You'
-                                : trim($comment['fName'] . ' ' . $comment['lName']);
+                            $commenter_name = !empty($comment['business_id'])
+                                ? trim($comment['bName']) . ' (Owner)'
+                                : ((int) $comment['user_id'] === $user_id
+                                    ? 'You'
+                                    : trim($comment['fName'] . ' ' . $comment['lName']));
                         ?>
                         <article class="feed-comment">
                             <div>
@@ -275,9 +279,11 @@ if ($feed_item) {
                                 <div class="feed-reply-list">
                                     <?php foreach ($replies_by_comment[(int) $comment['id']] as $reply) : ?>
                                         <?php
-                                            $replyer_name = (int) $reply['user_id'] === $user_id
-                                                ? 'You'
-                                                : trim($reply['fName'] . ' ' . $reply['lName']);
+                                            $replyer_name = !empty($reply['business_id'])
+                                                ? trim($reply['bName']) . ' (Owner)'
+                                                : ((int) $reply['user_id'] === $user_id
+                                                    ? 'You'
+                                                    : trim($reply['fName'] . ' ' . $reply['lName']));
                                         ?>
                                         <article class="feed-comment feed-reply">
                                             <div>
