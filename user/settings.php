@@ -35,6 +35,14 @@ function escape_output($value) {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
+function craftcrawl_settings_wants_json() {
+    $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+    $requested_with = $_SERVER['HTTP_X_REQUESTED_WITH'] ?? '';
+
+    return stripos($accept, 'application/json') !== false
+        || strtolower($requested_with) === 'xmlhttprequest';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
 
@@ -56,6 +64,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'httponly' => false,
             'samesite' => 'Lax',
         ]);
+
+        if (craftcrawl_settings_wants_json()) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'ok' => true,
+                'palette' => $new_display_palette,
+                'message' => 'Display theme updated.'
+            ]);
+            exit();
+        }
+
         header('Location: settings.php?message=theme_saved');
         exit();
     }
@@ -239,6 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <button type="submit" name="display_palette" value="ember-dark" data-palette-option="ember-dark" <?php echo $display_palette === 'ember-dark' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?>>Ember Dark</button>
                 </div>
             </form>
+            <p class="form-message" data-palette-status hidden></p>
             <p class="form-help">This setting is saved to your account.</p>
         </section>
 
