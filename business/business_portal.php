@@ -187,6 +187,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
+    if ($form_action === 'save_checkin_message') {
+        $checkin_message = clean_text($_POST['checkin_message'] ?? '');
+        $checkin_message = $checkin_message !== '' ? substr($checkin_message, 0, 500) : null;
+        $msg_stmt = $conn->prepare("UPDATE businesses SET checkin_message=? WHERE id=?");
+        $msg_stmt->bind_param("si", $checkin_message, $business_id);
+        $msg_stmt->execute();
+        header('Location: business_portal.php?message=checkin_message_saved');
+        exit();
+    }
+
     $review_id = (int) ($_POST['review_id'] ?? 0);
     $business_response = clean_text($_POST['business_response'] ?? '');
 
@@ -315,6 +325,8 @@ $announcements = $portal_ann_stmt->get_result();
             <p class="form-message form-message-error">Please enter a title and message for the announcement.</p>
         <?php elseif ($message === 'announcement_limit') : ?>
             <p class="form-message form-message-error">You have reached the maximum of 10 announcements. Delete one before adding another.</p>
+        <?php elseif ($message === 'checkin_message_saved') : ?>
+            <p class="form-message form-message-success">Check-in message updated.</p>
         <?php endif; ?>
 
         <section class="business-portal-grid business-portal-grid-single">
@@ -418,7 +430,7 @@ $announcements = $portal_ann_stmt->get_result();
         <section class="business-reviews-panel">
             <header>
                 <h2>Announcements</h2>
-                <p>Post updates visible on your business page and in the feed for users who have liked your business.</p>
+                <p>Post updates visible on your business page and in the feed for users who follow your business.</p>
             </header>
 
             <form method="POST" action="" class="announcement-form">
@@ -471,6 +483,21 @@ $announcements = $portal_ann_stmt->get_result();
                     </form>
                 </article>
             <?php endwhile; ?>
+        </section>
+
+        <section class="business-reviews-panel">
+            <header>
+                <h2>Check-In Thank-You Message</h2>
+                <p>Show a custom message to users when they check in at your business. Leave blank to use the default message.</p>
+            </header>
+            <form method="POST" action="" class="checkin-message-form">
+                <?php echo craftcrawl_csrf_input(); ?>
+                <input type="hidden" name="form_action" value="save_checkin_message">
+                <label for="checkin_message">Message</label>
+                <textarea id="checkin_message" name="checkin_message" rows="3" maxlength="500" placeholder="e.g. Thanks for checking in! Try our seasonal lager while you're here."><?php echo escape_output($business['checkin_message'] ?? ''); ?></textarea>
+                <p class="form-help">Up to 500 characters. Clear this field to remove the custom message.</p>
+                <button type="submit">Save Message</button>
+            </form>
         </section>
 
         <section class="business-reviews-panel">

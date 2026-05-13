@@ -1278,7 +1278,7 @@ a.text-link:focus {
 }
 
 .events-liked-toggle,
-.like-business-form {
+.follow-business-form {
     display: inline-flex;
     gap: 8px;
     align-items: center;
@@ -1860,7 +1860,7 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     background: var(--color-surface);
 }
 
-.like-business-form {
+.follow-business-form {
     margin: 0;
 }
 
@@ -1872,16 +1872,16 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     margin-top: 14px;
 }
 
-.like-button {
+.follow-button {
     gap: 7px;
 }
 
-.like-button span[aria-hidden="true"] {
+.follow-button span[aria-hidden="true"] {
     font-size: 18px;
     line-height: 1;
 }
 
-.like-button.is-liked span[aria-hidden="true"] {
+.follow-button.is-followed span[aria-hidden="true"] {
     color: #fef2f2;
 }
 

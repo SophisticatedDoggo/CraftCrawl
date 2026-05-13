@@ -105,7 +105,7 @@ if (!$profile) {
     }
 
     if ($can_view_liked_businesses) {
-        $liked_stmt = $conn->prepare("
+        $followed_stmt = $conn->prepare("
             SELECT b.id, b.bName, b.bType, b.city, b.state, lb.createdAt
             FROM liked_businesses lb
             INNER JOIN businesses b ON b.id = lb.business_id
@@ -113,9 +113,9 @@ if (!$profile) {
             ORDER BY lb.createdAt DESC
             LIMIT 12
         ");
-        $liked_stmt->bind_param("i", $profile_id);
-        $liked_stmt->execute();
-        $liked_businesses = $liked_stmt->get_result();
+        $followed_stmt->bind_param("i", $profile_id);
+        $followed_stmt->execute();
+        $followed_businesses = $followed_stmt->get_result();
     }
 
     $visibility_filter = $is_own_profile ? '' : "AND wtg.visibility IN ('public', 'friends_only')";
@@ -256,12 +256,12 @@ if (!$profile) {
 
             <?php if ($can_view_liked_businesses) : ?>
                 <section class="settings-panel">
-                    <h2>Liked Businesses</h2>
+                    <h2>Businesses You Follow</h2>
                     <div class="friend-location-grid">
-                        <?php if ($liked_businesses->num_rows === 0) : ?>
-                            <p>No liked businesses yet.</p>
+                        <?php if ($followed_businesses->num_rows === 0) : ?>
+                            <p>Not following any businesses yet.</p>
                         <?php endif; ?>
-                        <?php while ($business = $liked_businesses->fetch_assoc()) : ?>
+                        <?php while ($business = $followed_businesses->fetch_assoc()) : ?>
                             <article class="friend-location-card">
                                 <strong><?php echo escape_output($business['bName']); ?></strong>
                                 <span><?php echo escape_output($business['bType']); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>

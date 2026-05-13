@@ -123,21 +123,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $form_action = $_POST['form_action'] ?? 'review';
 
-    if ($form_action === 'toggle_like') {
-        $is_liked = (int) ($_POST['is_liked'] ?? 0);
+    if ($form_action === 'toggle_follow') {
+        $is_following = (int) ($_POST['is_following'] ?? 0);
 
-        if ($is_liked) {
+        if ($is_following) {
             $stmt = $conn->prepare("DELETE FROM liked_businesses WHERE user_id=? AND business_id=?");
             $stmt->bind_param("ii", $user_id, $business_id);
             $stmt->execute();
-            header("Location: business_details.php?id=" . $business_id . "&message=unliked");
+            header("Location: business_details.php?id=" . $business_id . "&message=unfollowed");
             exit();
         }
 
         $stmt = $conn->prepare("INSERT IGNORE INTO liked_businesses (user_id, business_id, createdAt) VALUES (?, ?, NOW())");
         $stmt->bind_param("ii", $user_id, $business_id);
         $stmt->execute();
-        header("Location: business_details.php?id=" . $business_id . "&message=liked");
+        header("Location: business_details.php?id=" . $business_id . "&message=followed");
         exit();
     }
 
@@ -275,10 +275,10 @@ if (!empty($review_ids)) {
     }
 }
 
-$like_stmt = $conn->prepare("SELECT id FROM liked_businesses WHERE user_id=? AND business_id=?");
-$like_stmt->bind_param("ii", $user_id, $business_id);
-$like_stmt->execute();
-$is_liked = (bool) $like_stmt->get_result()->fetch_assoc();
+$follow_stmt = $conn->prepare("SELECT id FROM liked_businesses WHERE user_id=? AND business_id=?");
+$follow_stmt->bind_param("ii", $user_id, $business_id);
+$follow_stmt->execute();
+$is_following = (bool) $follow_stmt->get_result()->fetch_assoc();
 
 $want_stmt = $conn->prepare("SELECT id FROM want_to_go_locations WHERE user_id=? AND business_id=?");
 $want_stmt->bind_param("ii", $user_id, $business_id);
@@ -414,10 +414,10 @@ function format_event_time_range($event) {
             <p class="form-message form-message-success">Your review has been posted.</p>
         <?php elseif ($message === 'review_updated') : ?>
             <p class="form-message form-message-success">Your review has been updated.</p>
-        <?php elseif ($message === 'liked') : ?>
-            <p class="form-message form-message-success">Location added to your likes.</p>
-        <?php elseif ($message === 'unliked') : ?>
-            <p class="form-message form-message-success">Location removed from your likes.</p>
+        <?php elseif ($message === 'followed') : ?>
+            <p class="form-message form-message-success">You are now following this business.</p>
+        <?php elseif ($message === 'unfollowed') : ?>
+            <p class="form-message form-message-success">You are no longer following this business.</p>
         <?php elseif ($message === 'want_saved') : ?>
             <p class="form-message form-message-success">Location added to your want-to-go list.</p>
         <?php elseif ($message === 'want_removed') : ?>
@@ -499,13 +499,13 @@ function format_event_time_range($event) {
                     <a href="<?php echo escape_output($business['bWebsite']); ?>" target="_blank" rel="noopener">Visit Website</a>
                 <?php endif; ?>
 
-                <form method="POST" action="" class="like-business-form">
+                <form method="POST" action="" class="follow-business-form">
                     <?php echo craftcrawl_csrf_input(); ?>
-                    <input type="hidden" name="form_action" value="toggle_like">
-                    <input type="hidden" name="is_liked" value="<?php echo $is_liked ? '1' : '0'; ?>">
-                    <button type="submit" class="like-button <?php echo $is_liked ? 'is-liked' : ''; ?>">
-                        <span aria-hidden="true"><?php echo $is_liked ? '&#9829;' : '&#9825;'; ?></span>
-                        <span><?php echo $is_liked ? 'Unlike' : 'Like'; ?></span>
+                    <input type="hidden" name="form_action" value="toggle_follow">
+                    <input type="hidden" name="is_following" value="<?php echo $is_following ? '1' : '0'; ?>">
+                    <button type="submit" class="follow-button <?php echo $is_following ? 'is-followed' : ''; ?>">
+                        <span aria-hidden="true"><?php echo $is_following ? '&#9829;' : '&#9825;'; ?></span>
+                        <span><?php echo $is_following ? 'Unfollow' : 'Follow'; ?></span>
                     </button>
                 </form>
                 <form method="POST" action="user/want_to_go_toggle.php" class="want-to-go-form">

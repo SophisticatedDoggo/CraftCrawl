@@ -125,6 +125,11 @@ $top_visitors_stmt = $conn->prepare("
 $top_visitors_stmt->bind_param("i", $business_id);
 $top_visitors_stmt->execute();
 $top_visitors = $top_visitors_stmt->get_result();
+
+$follower_stmt = $conn->prepare("SELECT COUNT(*) AS follower_count FROM liked_businesses WHERE business_id=?");
+$follower_stmt->bind_param("i", $business_id);
+$follower_stmt->execute();
+$follower_count = (int) ($follower_stmt->get_result()->fetch_assoc()['follower_count'] ?? 0);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -200,6 +205,11 @@ $top_visitors = $top_visitors_stmt->get_result();
                 <span>XP Awarded</span>
                 <strong><?php echo escape_output(format_metric_number($total_xp)); ?></strong>
                 <p>XP your business has generated.</p>
+            </article>
+            <article class="analytics-card">
+                <span>Followers</span>
+                <strong><?php echo escape_output(format_metric_number($follower_count)); ?></strong>
+                <p>Users following your business for updates.</p>
             </article>
         </section>
 

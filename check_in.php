@@ -31,7 +31,7 @@ if (!$business_id || $user_latitude === false || $user_longitude === false) {
     exit();
 }
 
-$business_stmt = $conn->prepare("SELECT id, bName, latitude, longitude FROM businesses WHERE id=? AND approved=TRUE AND disabledAt IS NULL");
+$business_stmt = $conn->prepare("SELECT id, bName, latitude, longitude, checkin_message FROM businesses WHERE id=? AND approved=TRUE AND disabledAt IS NULL");
 $business_stmt->bind_param("i", $business_id);
 $business_stmt->execute();
 $business = $business_stmt->get_result()->fetch_assoc();
@@ -114,9 +114,12 @@ try {
 
     $conn->commit();
 
+    $checkin_message = !empty($business['checkin_message']) ? $business['checkin_message'] : null;
+
     echo json_encode([
         'ok' => true,
         'message' => ($visit_type === 'first_time' ? 'First-time visit checked in.' : 'Repeat visit checked in.'),
+        'checkin_message' => $checkin_message,
         'xp_awarded' => $xp_awarded,
         'badges' => $badges,
         'level_up' => $level_up,

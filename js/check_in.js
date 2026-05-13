@@ -78,8 +78,11 @@
                     const badgeText = data.badges && data.badges.length
                         ? ` Badges earned: ${data.badges.join(', ')}.`
                         : '';
+                    const checkinMessageText = data.checkin_message
+                        ? ` ${data.checkin_message}`
+                        : '';
 
-                    showFeedback(`${data.message}${badgeText}`, false);
+                    showFeedback(`${data.message}${badgeText}${checkinMessageText}`, false);
 
                     if (window.craftcrawlShowXpReward) {
                         window.craftcrawlShowXpReward(data);
