@@ -23,19 +23,25 @@ craftcrawl_verify_csrf();
 $user_id = (int) $_SESSION['user_id'];
 $item_key = trim($_POST['item_key'] ?? '');
 $reaction_type = $_POST['reaction_type'] ?? '';
-$allowed_reactions = ['cheers', 'nice_find', 'want_to_go'];
 
-if ($item_key === '' || !in_array($reaction_type, $allowed_reactions, true)) {
+$reaction_options_by_type = [
+    'first_visit'   => ['cheers', 'nice_find'],
+    'level_up'      => ['cheers', 'nice_find', 'trophy'],
+    'event_want'    => ['cheers', 'nice_find'],
+    'location_want' => ['cheers', 'nice_find', 'want_to_go'],
+    'badge_earned'  => ['cheers', 'trophy'],
+    'announcement'  => ['cheers', 'want_to_go'],
+];
+
+$item_type = null;
+if (preg_match('/^(first_visit|level_up|event_want|location_want|badge_earned|announcement):\d+$/', $item_key, $type_matches)) {
+    $item_type = $type_matches[1];
+}
+$item_reaction_options = $reaction_options_by_type[$item_type] ?? [];
+
+if ($item_key === '' || !in_array($reaction_type, $item_reaction_options, true)) {
     http_response_code(400);
     echo json_encode(['ok' => false, 'message' => 'Reaction could not be saved.']);
-    exit();
-}
-
-$item_reaction_options = ['cheers', 'nice_find'];
-
-if (!in_array($reaction_type, $item_reaction_options, true)) {
-    http_response_code(400);
-    echo json_encode(['ok' => false, 'message' => 'That reaction does not fit this post.']);
     exit();
 }
 
@@ -107,6 +113,69 @@ function craftcrawl_feed_item_is_visible($conn, $user_id, $item_key) {
         return (bool) $stmt->get_result()->fetch_assoc();
     }
 
+    if (preg_match('/^location_want:(\d+)$/', $item_key, $matches)) {
+        $want_id = (int) $matches[1];
+        $stmt = $conn->prepare("
+            SELECT wtg.id
+            FROM want_to_go_locations wtg
+            INNER JOIN users u ON u.id = wtg.user_id
+            WHERE wtg.id=?
+                AND u.show_feed_activity=TRUE
+                AND (
+                    wtg.user_id=?
+                    OR EXISTS (
+                        SELECT 1 FROM user_friends uf
+                        WHERE uf.user_id=? AND uf.friend_user_id=wtg.user_id
+                    )
+                )
+            LIMIT 1
+        ");
+        $stmt->bind_param("iii", $want_id, $user_id, $user_id);
+        $stmt->execute();
+        return (bool) $stmt->get_result()->fetch_assoc();
+    }
+
+    if (preg_match('/^badge_earned:(\d+)$/', $item_key, $matches)) {
+        $badge_id = (int) $matches[1];
+        $stmt = $conn->prepare("
+            SELECT ub.id
+            FROM user_badges ub
+            INNER JOIN users u ON u.id = ub.user_id
+            WHERE ub.id=?
+                AND u.show_feed_activity=TRUE
+                AND (
+                    ub.user_id=?
+                    OR EXISTS (
+                        SELECT 1 FROM user_friends uf
+                        WHERE uf.user_id=? AND uf.friend_user_id=ub.user_id
+                    )
+                )
+            LIMIT 1
+        ");
+        $stmt->bind_param("iii", $badge_id, $user_id, $user_id);
+        $stmt->execute();
+        return (bool) $stmt->get_result()->fetch_assoc();
+    }
+
+    if (preg_match('/^announcement:(\d+)$/', $item_key, $matches)) {
+        $ann_id = (int) $matches[1];
+        $stmt = $conn->prepare("
+            SELECT ba.id
+            FROM business_announcements ba
+            WHERE ba.id=?
+                AND (ba.starts_at IS NULL OR ba.starts_at <= NOW())
+                AND (ba.ends_at IS NULL OR ba.ends_at >= NOW())
+                AND EXISTS (
+                    SELECT 1 FROM liked_businesses lb
+                    WHERE lb.business_id = ba.business_id AND lb.user_id=?
+                )
+            LIMIT 1
+        ");
+        $stmt->bind_param("ii", $ann_id, $user_id);
+        $stmt->execute();
+        return (bool) $stmt->get_result()->fetch_assoc();
+    }
+
     return false;
 }
 
@@ -137,6 +206,8 @@ if ($existing) {
         $reaction_labels = [
             'cheers' => 'Cheers',
             'nice_find' => 'Nice',
+            'want_to_go' => 'Want to Go',
+            'trophy' => 'Trophy',
         ];
         $reactor_name = craftcrawl_user_display_name_by_id($conn, $user_id);
         craftcrawl_send_push_to_user(

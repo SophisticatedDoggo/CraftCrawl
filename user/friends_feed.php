@@ -12,6 +12,10 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = (int) $_SESSION['user_id'];
+
+$before_raw = $_GET['before'] ?? null;
+$before_dt = ($before_raw && strtotime($before_raw)) ? date('Y-m-d H:i:s', strtotime($before_raw)) : null;
+
 $seen_stmt = $conn->prepare("SELECT friendsSeenAt FROM users WHERE id=?");
 $seen_stmt->bind_param("i", $user_id);
 $seen_stmt->execute();
@@ -63,16 +67,32 @@ function craftcrawl_bind_feed_user_ids($stmt, $types, $feed_user_ids) {
     call_user_func_array([$stmt, 'bind_param'], $params);
 }
 
+function craftcrawl_bind_feed_user_ids_before($stmt, $types, $feed_user_ids, &$before_dt) {
+    $all_types = $types . 's';
+    $params = [$all_types];
+
+    foreach ($feed_user_ids as $index => $feed_user_id) {
+        $params[] = &$feed_user_ids[$index];
+    }
+
+    $params[] = &$before_dt;
+    call_user_func_array([$stmt, 'bind_param'], $params);
+}
+
+$before_clause_checkin = $before_dt ? ' AND uv.checkedInAt < ?' : '';
 $visit_sql = "
     SELECT uv.id, uv.user_id, uv.checkedInAt, b.id AS business_id, b.bName, b.city, b.state
     FROM user_visits uv
     INNER JOIN businesses b ON b.id = uv.business_id
     WHERE uv.visit_type='first_time' AND uv.user_id IN ($placeholders)
+    $before_clause_checkin
     ORDER BY uv.checkedInAt DESC
     LIMIT 80
 ";
 $visit_stmt = $conn->prepare($visit_sql);
-craftcrawl_bind_feed_user_ids($visit_stmt, $types, $feed_user_ids);
+$before_dt
+    ? craftcrawl_bind_feed_user_ids_before($visit_stmt, $types, $feed_user_ids, $before_dt)
+    : craftcrawl_bind_feed_user_ids($visit_stmt, $types, $feed_user_ids);
 $visit_stmt->execute();
 $visit_result = $visit_stmt->get_result();
 
@@ -91,6 +111,7 @@ while ($visit = $visit_result->fetch_assoc()) {
     ];
 }
 
+$before_clause_created = $before_dt ? ' AND createdAt < ?' : '';
 $xp_sql = "
     SELECT id, user_id, level_after, createdAt
     FROM xp_log
@@ -100,11 +121,14 @@ $xp_sql = "
             (MOD(level_after - 1, 5) = 0 AND level_after > 1)
             OR level_after IN (50, 75, 100)
         )
+    $before_clause_created
     ORDER BY createdAt DESC, id DESC
     LIMIT 80
 ";
 $xp_stmt = $conn->prepare($xp_sql);
-craftcrawl_bind_feed_user_ids($xp_stmt, $types, $feed_user_ids);
+$before_dt
+    ? craftcrawl_bind_feed_user_ids_before($xp_stmt, $types, $feed_user_ids, $before_dt)
+    : craftcrawl_bind_feed_user_ids($xp_stmt, $types, $feed_user_ids);
 $xp_stmt->execute();
 $xp_result = $xp_stmt->get_result();
 
@@ -123,6 +147,7 @@ while ($xp = $xp_result->fetch_assoc()) {
     ];
 }
 
+$before_clause_ew = $before_dt ? ' AND ew.createdAt < ?' : '';
 $event_want_sql = "
     SELECT ew.id, ew.user_id, ew.event_id, ew.occurrence_date, ew.createdAt,
         e.eName, e.startTime, b.id AS business_id, b.bName, b.city, b.state
@@ -130,11 +155,14 @@ $event_want_sql = "
     INNER JOIN events e ON e.id = ew.event_id
     INNER JOIN businesses b ON b.id = e.business_id
     WHERE ew.user_id IN ($placeholders)
+    $before_clause_ew
     ORDER BY ew.createdAt DESC
     LIMIT 80
 ";
 $event_want_stmt = $conn->prepare($event_want_sql);
-craftcrawl_bind_feed_user_ids($event_want_stmt, $types, $feed_user_ids);
+$before_dt
+    ? craftcrawl_bind_feed_user_ids_before($event_want_stmt, $types, $feed_user_ids, $before_dt)
+    : craftcrawl_bind_feed_user_ids($event_want_stmt, $types, $feed_user_ids);
 $event_want_stmt->execute();
 $event_want_result = $event_want_stmt->get_result();
 
@@ -157,11 +185,122 @@ while ($event_want = $event_want_result->fetch_assoc()) {
     ];
 }
 
+$before_clause_wtg = $before_dt ? ' AND wtg.createdAt < ?' : '';
+$location_want_sql = "
+    SELECT wtg.id, wtg.user_id, wtg.createdAt, b.id AS business_id, b.bName, b.bType, b.city, b.state
+    FROM want_to_go_locations wtg
+    INNER JOIN businesses b ON b.id = wtg.business_id
+    WHERE wtg.user_id IN ($placeholders) AND b.approved=TRUE
+    $before_clause_wtg
+    ORDER BY wtg.createdAt DESC
+    LIMIT 80
+";
+$location_want_stmt = $conn->prepare($location_want_sql);
+$before_dt
+    ? craftcrawl_bind_feed_user_ids_before($location_want_stmt, $types, $feed_user_ids, $before_dt)
+    : craftcrawl_bind_feed_user_ids($location_want_stmt, $types, $feed_user_ids);
+$location_want_stmt->execute();
+$location_want_result = $location_want_stmt->get_result();
+
+while ($location_want = $location_want_result->fetch_assoc()) {
+    $actor_id = (int) $location_want['user_id'];
+    $feed[] = [
+        'item_key' => 'location_want:' . (int) $location_want['id'],
+        'type' => 'location_want',
+        'created_at' => $location_want['createdAt'],
+        'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
+        'is_self' => $actor_id === $user_id,
+        'business_id' => (int) $location_want['business_id'],
+        'business_name' => $location_want['bName'],
+        'business_type' => $location_want['bType'],
+        'city' => $location_want['city'],
+        'state' => $location_want['state']
+    ];
+}
+
+$before_clause_badge = $before_dt ? ' AND ub.earnedAt < ?' : '';
+$badge_sql = "
+    SELECT ub.id, ub.user_id, ub.badge_name, ub.badge_description, ub.badge_tier, ub.earnedAt
+    FROM user_badges ub
+    WHERE ub.user_id IN ($placeholders)
+    $before_clause_badge
+    ORDER BY ub.earnedAt DESC
+    LIMIT 80
+";
+$badge_stmt = $conn->prepare($badge_sql);
+$before_dt
+    ? craftcrawl_bind_feed_user_ids_before($badge_stmt, $types, $feed_user_ids, $before_dt)
+    : craftcrawl_bind_feed_user_ids($badge_stmt, $types, $feed_user_ids);
+$badge_stmt->execute();
+$badge_result = $badge_stmt->get_result();
+
+while ($badge = $badge_result->fetch_assoc()) {
+    $actor_id = (int) $badge['user_id'];
+    $feed[] = [
+        'item_key' => 'badge_earned:' . (int) $badge['id'],
+        'type' => 'badge_earned',
+        'created_at' => $badge['earnedAt'],
+        'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
+        'is_self' => $actor_id === $user_id,
+        'badge_name' => $badge['badge_name'],
+        'badge_description' => $badge['badge_description'],
+        'badge_tier' => $badge['badge_tier']
+    ];
+}
+
+// Announcements from liked businesses — viewer-specific, not friend-based
+if ($before_dt) {
+    $ann_feed_stmt = $conn->prepare("
+        SELECT ba.id, ba.business_id, ba.title, ba.body, ba.created_at,
+            b.bName, b.bType, b.city, b.state
+        FROM business_announcements ba
+        INNER JOIN businesses b ON b.id = ba.business_id AND b.approved=TRUE
+        INNER JOIN liked_businesses lb ON lb.business_id = ba.business_id AND lb.user_id=?
+        WHERE (ba.starts_at IS NULL OR ba.starts_at <= NOW())
+        AND (ba.ends_at IS NULL OR ba.ends_at >= NOW())
+        AND ba.created_at < ?
+        ORDER BY ba.created_at DESC
+        LIMIT 40
+    ");
+    $ann_feed_stmt->bind_param("is", $user_id, $before_dt);
+} else {
+    $ann_feed_stmt = $conn->prepare("
+        SELECT ba.id, ba.business_id, ba.title, ba.body, ba.created_at,
+            b.bName, b.bType, b.city, b.state
+        FROM business_announcements ba
+        INNER JOIN businesses b ON b.id = ba.business_id AND b.approved=TRUE
+        INNER JOIN liked_businesses lb ON lb.business_id = ba.business_id AND lb.user_id=?
+        WHERE (ba.starts_at IS NULL OR ba.starts_at <= NOW())
+        AND (ba.ends_at IS NULL OR ba.ends_at >= NOW())
+        ORDER BY ba.created_at DESC
+        LIMIT 40
+    ");
+    $ann_feed_stmt->bind_param("i", $user_id);
+}
+$ann_feed_stmt->execute();
+$ann_feed_result = $ann_feed_stmt->get_result();
+
+while ($ann = $ann_feed_result->fetch_assoc()) {
+    $feed[] = [
+        'item_key' => 'announcement:' . (int) $ann['id'],
+        'type' => 'announcement',
+        'created_at' => $ann['created_at'],
+        'business_id' => (int) $ann['business_id'],
+        'business_name' => $ann['bName'],
+        'business_type' => $ann['bType'],
+        'title' => $ann['title'],
+        'body' => $ann['body'],
+        'city' => $ann['city'],
+        'state' => $ann['state']
+    ];
+}
+
 usort($feed, function ($a, $b) {
     return strtotime($b['created_at']) <=> strtotime($a['created_at']);
 });
 
-$feed = array_slice($feed, 0, 60);
+$has_more = count($feed) > 40;
+$feed = array_slice($feed, 0, 40);
 $feed_item_keys = array_column($feed, 'item_key');
 $reactions_by_item = [];
 $comment_counts_by_item = [];
@@ -247,20 +386,27 @@ if (!empty($feed_item_keys)) {
     }
 }
 
-$friend_list = [];
+$response = [
+    'ok' => true,
+    'feed' => $feed,
+    'has_more' => $has_more
+];
 
-foreach ($friends as $id => $friend) {
-    $is_new = $seen_at === null || strtotime($friend['created_at']) > strtotime($seen_at);
-    $friend_list[] = [
-        'id' => $id,
-        'name' => $friend['name'],
-        'is_new' => $is_new
-    ];
+// Only send friends list on the initial load (no before cursor)
+if (!$before_dt) {
+    $friend_list = [];
+
+    foreach ($friends as $id => $friend) {
+        $is_new = $seen_at === null || strtotime($friend['created_at']) > strtotime($seen_at);
+        $friend_list[] = [
+            'id' => $id,
+            'name' => $friend['name'],
+            'is_new' => $is_new
+        ];
+    }
+
+    $response['friends'] = $friend_list;
 }
 
-echo json_encode([
-    'ok' => true,
-    'friends' => $friend_list,
-    'feed' => $feed
-]);
+echo json_encode($response);
 ?>

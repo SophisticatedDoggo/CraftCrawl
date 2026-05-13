@@ -280,6 +280,24 @@ $like_stmt->bind_param("ii", $user_id, $business_id);
 $like_stmt->execute();
 $is_liked = (bool) $like_stmt->get_result()->fetch_assoc();
 
+$want_stmt = $conn->prepare("SELECT id FROM want_to_go_locations WHERE user_id=? AND business_id=?");
+$want_stmt->bind_param("ii", $user_id, $business_id);
+$want_stmt->execute();
+$is_want_to_go = (bool) $want_stmt->get_result()->fetch_assoc();
+
+$ann_stmt = $conn->prepare("
+    SELECT title, body
+    FROM business_announcements
+    WHERE business_id=?
+    AND (starts_at IS NULL OR starts_at <= NOW())
+    AND (ends_at IS NULL OR ends_at >= NOW())
+    ORDER BY created_at DESC
+    LIMIT 5
+");
+$ann_stmt->bind_param("i", $business_id);
+$ann_stmt->execute();
+$active_announcements = $ann_stmt->get_result();
+
 $friend_options_stmt = $conn->prepare("
     SELECT u.id, u.fName, u.lName
     FROM user_friends uf
@@ -490,6 +508,14 @@ function format_event_time_range($event) {
                         <span><?php echo $is_liked ? 'Unlike' : 'Like'; ?></span>
                     </button>
                 </form>
+                <form method="POST" action="user/want_to_go_toggle.php" class="want-to-go-form">
+                    <?php echo craftcrawl_csrf_input(); ?>
+                    <input type="hidden" name="business_id" value="<?php echo escape_output($business_id); ?>">
+                    <input type="hidden" name="is_saved" value="<?php echo $is_want_to_go ? '1' : '0'; ?>">
+                    <button type="submit" class="want-to-go-button<?php echo $is_want_to_go ? ' is-saved' : ''; ?>">
+                        <?php echo $is_want_to_go ? 'Remove from Want to Go' : 'Want to Go'; ?>
+                    </button>
+                </form>
             </div>
             <?php if ($friend_options->num_rows > 0) : ?>
                 <form method="POST" action="user/recommend_location.php" class="recommend-location-form">
@@ -614,6 +640,18 @@ function format_event_time_range($event) {
                 </article>
             <?php endforeach; ?>
         </section>
+
+        <?php if ($active_announcements->num_rows > 0) : ?>
+        <section class="business-announcements-panel">
+            <h2>Announcements</h2>
+            <?php while ($ann = $active_announcements->fetch_assoc()) : ?>
+                <article class="business-announcement-card">
+                    <strong><?php echo escape_output($ann['title']); ?></strong>
+                    <p><?php echo nl2br(escape_output($ann['body'])); ?></p>
+                </article>
+            <?php endwhile; ?>
+        </section>
+        <?php endif; ?>
 
         <section class="review-form-panel">
             <h2><?php echo $user_has_reviewed ? 'Edit Your Review' : 'Leave a Review'; ?></h2>

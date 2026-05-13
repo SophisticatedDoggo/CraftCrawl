@@ -154,6 +154,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
+    if ($form_action === 'create_announcement') {
+        $ann_title = clean_text($_POST['title'] ?? '');
+        $ann_body = clean_text($_POST['body'] ?? '');
+        $ann_starts_at = !empty($_POST['starts_at']) ? date('Y-m-d H:i:s', strtotime($_POST['starts_at'])) : null;
+        $ann_ends_at = !empty($_POST['ends_at']) ? date('Y-m-d H:i:s', strtotime($_POST['ends_at'])) : null;
+
+        $count_stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM business_announcements WHERE business_id=?");
+        $count_stmt->bind_param("i", $business_id);
+        $count_stmt->execute();
+        $ann_count = (int) $count_stmt->get_result()->fetch_assoc()['cnt'];
+
+        if (!$ann_title || !$ann_body) {
+            header('Location: business_portal.php?message=announcement_error');
+        } elseif ($ann_count >= 10) {
+            header('Location: business_portal.php?message=announcement_limit');
+        } else {
+            $ins_stmt = $conn->prepare("INSERT INTO business_announcements (business_id, title, body, starts_at, ends_at) VALUES (?, ?, ?, ?, ?)");
+            $ins_stmt->bind_param("issss", $business_id, $ann_title, $ann_body, $ann_starts_at, $ann_ends_at);
+            $ins_stmt->execute();
+            header('Location: business_portal.php?message=announcement_saved');
+        }
+        exit();
+    }
+
+    if ($form_action === 'delete_announcement') {
+        $announcement_id = (int) ($_POST['announcement_id'] ?? 0);
+        $del_stmt = $conn->prepare("DELETE FROM business_announcements WHERE id=? AND business_id=?");
+        $del_stmt->bind_param("ii", $announcement_id, $business_id);
+        $del_stmt->execute();
+        header('Location: business_portal.php?message=announcement_deleted');
+        exit();
+    }
+
     $review_id = (int) ($_POST['review_id'] ?? 0);
     $business_response = clean_text($_POST['business_response'] ?? '');
 
@@ -204,6 +237,16 @@ $photo_stmt = $conn->prepare("
 $photo_stmt->bind_param("i", $business_id);
 $photo_stmt->execute();
 $business_photos = $photo_stmt->get_result();
+
+$portal_ann_stmt = $conn->prepare("
+    SELECT id, title, body, starts_at, ends_at, created_at
+    FROM business_announcements
+    WHERE business_id=?
+    ORDER BY created_at DESC
+");
+$portal_ann_stmt->bind_param("i", $business_id);
+$portal_ann_stmt->execute();
+$announcements = $portal_ann_stmt->get_result();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -264,6 +307,14 @@ $business_photos = $photo_stmt->get_result();
             <p class="form-message form-message-error">That photo is larger than your current PHP upload limit. Increase upload_max_filesize and post_max_size, or try a smaller image.</p>
         <?php elseif ($message === 'photo_upload_error') : ?>
             <p class="form-message form-message-error">A photo could not be uploaded. Please try again with JPEG, PNG, or WebP photos under 10 MB.</p>
+        <?php elseif ($message === 'announcement_saved') : ?>
+            <p class="form-message form-message-success">Announcement posted.</p>
+        <?php elseif ($message === 'announcement_deleted') : ?>
+            <p class="form-message form-message-success">Announcement deleted.</p>
+        <?php elseif ($message === 'announcement_error') : ?>
+            <p class="form-message form-message-error">Please enter a title and message for the announcement.</p>
+        <?php elseif ($message === 'announcement_limit') : ?>
+            <p class="form-message form-message-error">You have reached the maximum of 10 announcements. Delete one before adding another.</p>
         <?php endif; ?>
 
         <section class="business-portal-grid business-portal-grid-single">
@@ -362,6 +413,64 @@ $business_photos = $photo_stmt->get_result();
                     <?php endwhile; ?>
                 </div>
             <?php endif; ?>
+        </section>
+
+        <section class="business-reviews-panel">
+            <header>
+                <h2>Announcements</h2>
+                <p>Post updates visible on your business page and in the feed for users who have liked your business.</p>
+            </header>
+
+            <form method="POST" action="" class="announcement-form">
+                <?php echo craftcrawl_csrf_input(); ?>
+                <input type="hidden" name="form_action" value="create_announcement">
+                <label for="ann_title">Title</label>
+                <input type="text" id="ann_title" name="title" maxlength="255" required placeholder="e.g. New seasonal IPA on tap">
+                <label for="ann_body">Message</label>
+                <textarea id="ann_body" name="body" rows="3" required placeholder="Details..."></textarea>
+                <div class="announcement-date-row">
+                    <div>
+                        <label for="ann_starts_at">Show from (optional)</label>
+                        <input type="datetime-local" id="ann_starts_at" name="starts_at" placeholder="YYYY-MM-DDTHH:MM">
+                    </div>
+                    <div>
+                        <label for="ann_ends_at">Show until (optional)</label>
+                        <input type="datetime-local" id="ann_ends_at" name="ends_at" placeholder="YYYY-MM-DDTHH:MM">
+                    </div>
+                </div>
+                <button type="submit">Post Announcement</button>
+            </form>
+
+            <?php if ($announcements->num_rows === 0) : ?>
+                <p>No announcements yet.</p>
+            <?php endif; ?>
+
+            <?php while ($ann = $announcements->fetch_assoc()) :
+                $now = time();
+                $starts = !empty($ann['starts_at']) ? strtotime($ann['starts_at']) : null;
+                $ends = !empty($ann['ends_at']) ? strtotime($ann['ends_at']) : null;
+                $ann_is_active = ($starts === null || $starts <= $now) && ($ends === null || $ends >= $now);
+            ?>
+                <article class="business-review-card">
+                    <div class="business-review-header">
+                        <strong><?php echo escape_output($ann['title']); ?></strong>
+                        <span><?php echo $ann_is_active ? 'Active' : 'Inactive'; ?></span>
+                    </div>
+                    <p><?php echo nl2br(escape_output($ann['body'])); ?></p>
+                    <?php if (!empty($ann['starts_at']) || !empty($ann['ends_at'])) : ?>
+                        <p class="business-review-response-date">
+                            <?php if (!empty($ann['starts_at'])) : ?>From: <?php echo escape_output(date('M j, Y g:i A', strtotime($ann['starts_at']))); ?><?php endif; ?>
+                            <?php if (!empty($ann['ends_at'])) : ?> &middot; Until: <?php echo escape_output(date('M j, Y g:i A', strtotime($ann['ends_at']))); ?><?php endif; ?>
+                        </p>
+                    <?php endif; ?>
+                    <form method="POST" action="">
+                        <?php echo craftcrawl_csrf_input(); ?>
+                        <input type="hidden" name="form_action" value="delete_announcement">
+                        <input type="hidden" name="announcement_id" value="<?php echo escape_output($ann['id']); ?>">
+                        <button type="submit" class="button-link-secondary">Delete</button>
+                    </form>
+                </article>
+            <?php endwhile; ?>
         </section>
 
         <section class="business-reviews-panel">

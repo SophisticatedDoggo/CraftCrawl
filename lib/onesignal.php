@@ -149,6 +149,30 @@ function craftcrawl_feed_item_owner_id($conn, $item_key) {
         return $want ? (int) $want['user_id'] : 0;
     }
 
+    if (preg_match('/^location_want:(\d+)$/', $item_key, $matches)) {
+        $want_id = (int) $matches[1];
+        $stmt = $conn->prepare("SELECT user_id FROM want_to_go_locations WHERE id=? LIMIT 1");
+        $stmt->bind_param("i", $want_id);
+        $stmt->execute();
+        $want = $stmt->get_result()->fetch_assoc();
+
+        return $want ? (int) $want['user_id'] : 0;
+    }
+
+    if (preg_match('/^badge_earned:(\d+)$/', $item_key, $matches)) {
+        $badge_id = (int) $matches[1];
+        $stmt = $conn->prepare("SELECT user_id FROM user_badges WHERE id=? LIMIT 1");
+        $stmt->bind_param("i", $badge_id);
+        $stmt->execute();
+        $badge = $stmt->get_result()->fetch_assoc();
+
+        return $badge ? (int) $badge['user_id'] : 0;
+    }
+
+    if (preg_match('/^announcement:(\d+)$/', $item_key, $matches)) {
+        return 0; // Business owns this; no user push notification
+    }
+
     return 0;
 }
 

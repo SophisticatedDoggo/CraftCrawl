@@ -32,7 +32,9 @@ $craftcrawl_portal_show_search = false;
                 <h3>Friends Feed</h3>
                 <p data-friends-count></p>
             </div>
-            <div class="friends-feed" data-friends-feed></div>
+            <div class="friends-feed" data-friends-feed>
+                <div data-feed-sentinel hidden></div>
+            </div>
         </section>
     </main>
     <?php include __DIR__ . '/mobile_nav.php'; ?>

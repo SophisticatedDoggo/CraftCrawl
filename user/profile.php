@@ -117,6 +117,19 @@ if (!$profile) {
         $liked_stmt->execute();
         $liked_businesses = $liked_stmt->get_result();
     }
+
+    $visibility_filter = $is_own_profile ? '' : "AND wtg.visibility IN ('public', 'friends_only')";
+    $want_to_go_stmt = $conn->prepare("
+        SELECT b.id, b.bName, b.bType, b.city, b.state
+        FROM want_to_go_locations wtg
+        INNER JOIN businesses b ON b.id = wtg.business_id
+        WHERE wtg.user_id=? AND b.approved=TRUE $visibility_filter
+        ORDER BY wtg.createdAt DESC
+        LIMIT 12
+    ");
+    $want_to_go_stmt->bind_param("i", $profile_id);
+    $want_to_go_stmt->execute();
+    $want_to_go_businesses = $want_to_go_stmt->get_result();
 }
 ?>
 <!DOCTYPE html>
@@ -249,6 +262,24 @@ if (!$profile) {
                             <p>No liked businesses yet.</p>
                         <?php endif; ?>
                         <?php while ($business = $liked_businesses->fetch_assoc()) : ?>
+                            <article class="friend-location-card">
+                                <strong><?php echo escape_output($business['bName']); ?></strong>
+                                <span><?php echo escape_output($business['bType']); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
+                                <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View Business</a>
+                            </article>
+                        <?php endwhile; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <?php if ($want_to_go_businesses->num_rows > 0 || $is_own_profile) : ?>
+                <section class="settings-panel">
+                    <h2>Want to Go</h2>
+                    <div class="friend-location-grid">
+                        <?php if ($want_to_go_businesses->num_rows === 0) : ?>
+                            <p>No saved locations yet.</p>
+                        <?php endif; ?>
+                        <?php while ($business = $want_to_go_businesses->fetch_assoc()) : ?>
                             <article class="friend-location-card">
                                 <strong><?php echo escape_output($business['bName']); ?></strong>
                                 <span><?php echo escape_output($business['bType']); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>

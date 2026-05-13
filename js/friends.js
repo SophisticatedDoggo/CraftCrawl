@@ -10,6 +10,7 @@
     const currentFriendsFilter = root.querySelector('[data-current-friends-filter]');
     const recommendationButtons = root.querySelectorAll('[data-recommendation-id]');
     const feed = panel?.querySelector('[data-friends-feed]');
+    const sentinel = feed?.querySelector('[data-feed-sentinel]');
     const status = root.querySelector('[data-friends-status]');
     const count = panel?.querySelector('[data-friends-count]');
     const menuBadge = document.querySelector('[data-friends-menu-badge]');
@@ -21,14 +22,22 @@
         badgeCount: 0
     };
     let currentFriendsCache = [];
+    let lastItemDate = null;
+    let hasMore = false;
+    let loadingMore = false;
     const reactionLabels = {
         cheers: '🍻 Cheers',
-        nice_find: '🔥 Nice'
+        nice_find: '🔥 Nice',
+        want_to_go: '📍 Want to Go',
+        trophy: '🏆 Trophy'
     };
     const reactionTypesByItemType = {
         first_visit: ['cheers', 'nice_find'],
-        level_up: ['cheers', 'nice_find'],
-        event_want: ['cheers', 'nice_find']
+        level_up: ['cheers', 'nice_find', 'trophy'],
+        event_want: ['cheers', 'nice_find'],
+        location_want: ['cheers', 'nice_find', 'want_to_go'],
+        badge_earned: ['cheers', 'trophy'],
+        announcement: ['cheers', 'want_to_go']
     };
 
     if (!panel && !managerPage && !menuBadge && !tabBadge) {
@@ -349,6 +358,88 @@
         });
     }
 
+    function renderFeedItem(item) {
+        const date = formatDate(item.created_at);
+        const actions = renderFeedActions(item);
+
+        if (item.type === 'level_up') {
+            return `
+                <article class="friends-feed-item">
+                    <div class="friends-feed-icon">🎉</div>
+                    <div>
+                        <strong>${escapeHtml(item.friend_name)} reached Level ${escapeHtml(item.level)}</strong>
+                        <p>${escapeHtml(item.title)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
+                        ${actions}
+                    </div>
+                </article>
+            `;
+        }
+
+        if (item.type === 'badge_earned') {
+            return `
+                <article class="friends-feed-item">
+                    <div class="friends-feed-icon">🏅</div>
+                    <div>
+                        <strong>${escapeHtml(item.friend_name)} earned ${escapeHtml(item.badge_name)}</strong>
+                        <p>${escapeHtml(item.badge_description)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
+                        ${actions}
+                    </div>
+                </article>
+            `;
+        }
+
+        if (item.type === 'event_want') {
+            return `
+                <article class="friends-feed-item">
+                    <div class="friends-feed-icon">📍</div>
+                    <div>
+                        <strong>${escapeHtml(item.friend_name)} wants to go to ${escapeHtml(item.event_name)}</strong>
+                        <p>${escapeHtml(item.business_name)} · ${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
+                        ${actions}
+                    </div>
+                </article>
+            `;
+        }
+
+        if (item.type === 'location_want') {
+            return `
+                <article class="friends-feed-item">
+                    <div class="friends-feed-icon">🔖</div>
+                    <div>
+                        <strong>${escapeHtml(item.friend_name)} wants to visit ${escapeHtml(item.business_name)}</strong>
+                        <p>${escapeHtml(item.business_type)} · ${escapeHtml(item.city)}, ${escapeHtml(item.state)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
+                        ${actions}
+                    </div>
+                </article>
+            `;
+        }
+
+        if (item.type === 'announcement') {
+            return `
+                <article class="friends-feed-item">
+                    <div class="friends-feed-icon">📢</div>
+                    <div>
+                        <strong>${escapeHtml(item.business_name)}</strong>
+                        <p>${escapeHtml(item.title)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
+                        ${item.body ? `<p class="feed-announcement-body">${escapeHtml(item.body)}</p>` : ''}
+                        ${actions}
+                    </div>
+                </article>
+            `;
+        }
+
+        return `
+            <article class="friends-feed-item">
+                <div class="friends-feed-icon">1st</div>
+                <div>
+                    <strong>${escapeHtml(item.friend_name)} visited ${escapeHtml(item.business_name)} for the first time</strong>
+                    <p>${escapeHtml(item.city)}, ${escapeHtml(item.state)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
+                    ${actions}
+                </div>
+            </article>
+        `;
+    }
+
     function renderFeed(data) {
         const friends = data.friends || [];
         const items = data.feed || [];
@@ -368,76 +459,121 @@
             feed.innerHTML = friends.length
                 ? '<p>No friend activity yet.</p>'
                 : '<p>Add friends to see level-ups and first-time visits here.</p>';
+            if (sentinel) {
+                sentinel.hidden = true;
+                feed.appendChild(sentinel);
+            }
             return;
         }
 
-        feed.innerHTML = items.map((item) => {
-            const date = formatDate(item.created_at);
-            const actions = renderFeedActions(item);
+        feed.innerHTML = items.map(renderFeedItem).join('');
 
-            if (item.type === 'level_up') {
-                return `
-                    <article class="friends-feed-item">
-                        <div class="friends-feed-icon">🎉</div>
-                        <div>
-                            <strong>${escapeHtml(item.friend_name)} reached Level ${escapeHtml(item.level)}</strong>
-                            <p>${escapeHtml(item.title)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
-                            ${actions}
-                        </div>
-                    </article>
-                `;
+        if (sentinel) {
+            feed.appendChild(sentinel);
+        }
+
+        lastItemDate = items[items.length - 1]?.created_at || null;
+        hasMore = data.has_more === true;
+        if (sentinel) {
+            sentinel.hidden = !hasMore;
+        }
+    }
+
+    // Event delegation for reactions — works for initial and paginated items
+    if (feed) {
+        feed.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-feed-reaction]');
+            if (!button || button.disabled) {
+                return;
             }
 
-            if (item.type === 'event_want') {
-                return `
-                    <article class="friends-feed-item">
-                        <div class="friends-feed-icon">📍</div>
-                        <div>
-                            <strong>${escapeHtml(item.friend_name)} wants to go to ${escapeHtml(item.event_name)}</strong>
-                            <p>${escapeHtml(item.business_name)} · ${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
-                            ${actions}
-                        </div>
-                    </article>
-                `;
-            }
+            button.disabled = true;
+            button.classList.add('is-loading');
 
-            return `
-                <article class="friends-feed-item">
-                    <div class="friends-feed-icon">1st</div>
-                    <div>
-                        <strong>${escapeHtml(item.friend_name)} visited ${escapeHtml(item.business_name)} for the first time</strong>
-                        <p>${escapeHtml(item.city)}, ${escapeHtml(item.state)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
-                        ${actions}
-                    </div>
-                </article>
-            `;
-        }).join('');
+            postForm('feed_reaction_toggle.php', {
+                csrf_token: csrfToken,
+                item_key: button.dataset.itemKey,
+                reaction_type: button.dataset.reactionType
+            })
+                .then((data) => {
+                    if (!data.ok) {
+                        showStatus(data.message || 'Reaction could not be saved.', true);
+                        return;
+                    }
 
-        feed.querySelectorAll('[data-feed-reaction]').forEach((button) => {
-            button.addEventListener('click', () => {
-                button.disabled = true;
-                button.classList.add('is-loading');
-                postForm('feed_reaction_toggle.php', {
-                    csrf_token: csrfToken,
-                    item_key: button.dataset.itemKey,
-                    reaction_type: button.dataset.reactionType
+                    // Update reaction buttons in place without reloading the full feed
+                    const article = button.closest('article');
+                    const reactionsDiv = article?.querySelector('.feed-reactions');
+                    if (reactionsDiv && data.reactions) {
+                        const itemKey = button.dataset.itemKey;
+                        const itemType = itemKey.split(':')[0];
+                        const availableReactions = reactionTypesByItemType[itemType] || Object.keys(reactionLabels);
+                        const reactionMap = {};
+                        data.reactions.forEach((r) => { reactionMap[r.type] = r; });
+                        reactionsDiv.innerHTML = availableReactions.map((type) => {
+                            const reaction = reactionMap[type] || { count: 0, reacted: false };
+                            return `<button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(itemKey)}" data-reaction-type="${type}">${reactionLabels[type]}${reaction.count > 0 ? ` ${reaction.count}` : ''}</button>`;
+                        }).join('');
+                    }
                 })
-                    .then((data) => {
-                        if (!data.ok) {
-                            showStatus(data.message || 'Reaction could not be saved.', true);
-                            return;
-                        }
-
-                        loadFeed();
-                    })
-                    .catch(() => showStatus('Reaction could not be saved.', true))
-                    .finally(() => {
-                        button.disabled = false;
-                        button.classList.remove('is-loading');
-                    });
-            });
+                .catch(() => showStatus('Reaction could not be saved.', true))
+                .finally(() => {
+                    button.disabled = false;
+                    button.classList.remove('is-loading');
+                });
         });
+    }
 
+    function loadMore() {
+        if (!feed || !lastItemDate || !hasMore || loadingMore) {
+            return;
+        }
+
+        loadingMore = true;
+
+        fetch(`friends_feed.php?before=${encodeURIComponent(lastItemDate)}`, { credentials: 'same-origin' })
+            .then((r) => r.json())
+            .then((data) => {
+                if (!data.ok || !data.feed || !data.feed.length) {
+                    hasMore = false;
+                    if (sentinel) {
+                        sentinel.hidden = true;
+                    }
+                    return;
+                }
+
+                data.feed.forEach((item) => {
+                    const div = document.createElement('div');
+                    div.innerHTML = renderFeedItem(item).trim();
+                    const article = div.firstElementChild;
+                    if (article) {
+                        if (sentinel && sentinel.parentNode === feed) {
+                            feed.insertBefore(article, sentinel);
+                        } else {
+                            feed.appendChild(article);
+                        }
+                    }
+                });
+
+                lastItemDate = data.feed[data.feed.length - 1].created_at;
+                hasMore = data.has_more === true;
+                if (sentinel) {
+                    sentinel.hidden = !hasMore;
+                }
+            })
+            .catch(() => {})
+            .finally(() => {
+                loadingMore = false;
+            });
+    }
+
+    if (sentinel) {
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                loadMore();
+            }
+        }, { threshold: 0.1 });
+        observer.observe(sentinel);
     }
 
     function renderFeedActions(item) {
@@ -494,7 +630,7 @@
             return `<a class="feed-detail-link" href="../event_details.php?id=${encodeURIComponent(item.event_id)}&date=${encodeURIComponent(item.event_date)}">View Event</a>`;
         }
 
-        if (item.type === 'first_visit') {
+        if (item.type === 'first_visit' || item.type === 'location_want' || item.type === 'announcement') {
             return `<a class="feed-detail-link" href="../business_details.php?id=${encodeURIComponent(item.business_id)}">View Business</a>`;
         }
 
