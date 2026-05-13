@@ -8,6 +8,7 @@ require_once 'lib/email_verification.php';
 
 $message = null;
 $success = null;
+$social_auth_enabled = !empty($GOOGLE_SIGN_IN_CLIENT_ID) || !empty($APPLE_SIGN_IN_CLIENT_ID);
 
 $email = "";
 $first_name = "";
@@ -103,6 +104,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="auth-card auth-card-wide">
         <img class="site-logo auth-logo" src="images/Logo.webp" alt="CraftCrawl logo">
         <h1>Create An Account</h1>
+        <?php if ($social_auth_enabled) : ?>
+            <div class="social-auth-options" aria-label="Social sign-in options">
+                <?php if (!empty($GOOGLE_SIGN_IN_CLIENT_ID)) : ?>
+                    <div class="social-auth-provider" data-google-signin></div>
+                <?php endif; ?>
+                <?php if (!empty($APPLE_SIGN_IN_CLIENT_ID)) : ?>
+                    <div
+                        id="appleid-signin"
+                        class="social-auth-provider social-auth-provider-apple"
+                        data-apple-signin
+                        data-color="black"
+                        data-border="true"
+                        data-type="sign up"
+                    ></div>
+                <?php endif; ?>
+                <p class="form-message form-message-error" data-social-auth-feedback hidden></p>
+            </div>
+            <div class="auth-divider"><span>or</span></div>
+        <?php endif; ?>
         <form id="account_creation_form" action="" method="POST">
             <?php echo craftcrawl_csrf_input(); ?>
             <div class="form-feedback">
@@ -139,6 +159,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <p class="auth-switch"><a href="user_login.php">Back to login</a></p>
         <?php include __DIR__ . '/legal_nav.php'; ?>
     </main>
+    <?php if ($social_auth_enabled) : ?>
+        <script>
+            window.CRAFTCRAWL_SOCIAL_AUTH = {
+                csrfToken: "<?php echo escape_output(craftcrawl_csrf_token()); ?>",
+                authUrl: "social_login.php",
+                googleClientId: "<?php echo escape_output($GOOGLE_SIGN_IN_CLIENT_ID); ?>",
+                appleClientId: "<?php echo escape_output($APPLE_SIGN_IN_CLIENT_ID); ?>",
+                appleRedirectUri: "<?php echo escape_output((craftcrawl_is_https() ? 'https://' : 'http://') . craftcrawl_trusted_request_host() . craftcrawl_app_base_path() . '/user_account_creation.php'); ?>"
+            };
+        </script>
+        <?php if (!empty($GOOGLE_SIGN_IN_CLIENT_ID)) : ?>
+            <script src="https://accounts.google.com/gsi/client" async defer></script>
+        <?php endif; ?>
+        <?php if (!empty($APPLE_SIGN_IN_CLIENT_ID)) : ?>
+            <script src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js" async defer></script>
+        <?php endif; ?>
+        <script src="js/social_auth.js"></script>
+    <?php endif; ?>
     <script src="js/password_visibility.js"></script>
 </body>
 </html>

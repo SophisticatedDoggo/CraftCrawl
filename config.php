@@ -10,6 +10,9 @@ $CLOUDINARY_API_SECRET = craftcrawl_env('CLOUDINARY_API_SECRET');
 $HCAPTCHA_SITE_KEY = craftcrawl_env('HCAPTCHA_SITE_KEY');
 $HCAPTCHA_SECRET_KEY = craftcrawl_env('HCAPTCHA_SECRET_KEY');
 
+$GOOGLE_SIGN_IN_CLIENT_ID = craftcrawl_env('GOOGLE_SIGN_IN_CLIENT_ID');
+$APPLE_SIGN_IN_CLIENT_ID = craftcrawl_env('APPLE_SIGN_IN_CLIENT_ID');
+
 if (!function_exists('escape_output')) {
     function escape_output($value) {
         return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');

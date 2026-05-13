@@ -44,6 +44,28 @@ the secret key to GitHub. Configure these values as host environment variables:
 - `HCAPTCHA_SITE_KEY`
 - `HCAPTCHA_SECRET_KEY`
 
+## Google and Apple sign-in
+
+User login and account creation can show Google and Apple sign-in buttons on the
+website and in the Capacitor Android/iOS shells. Configure these values on the
+host:
+
+- `GOOGLE_SIGN_IN_CLIENT_ID`
+- `APPLE_SIGN_IN_CLIENT_ID`
+- `CRAFTCRAWL_GOOGLE_CLIENT_IDS`
+- `CRAFTCRAWL_APPLE_CLIENT_IDS`
+
+`GOOGLE_SIGN_IN_CLIENT_ID` and `APPLE_SIGN_IN_CLIENT_ID` control which buttons
+render on the page. The `CRAFTCRAWL_*_CLIENT_IDS` values are comma-separated
+allowlists accepted by the server when verifying identity tokens, which lets you
+include web, Android, and iOS client IDs.
+
+Run the social sign-in migration for existing databases:
+
+```sh
+mysql -u craft_crawl -p craft_crawl < migrations/2026_05_13_social_sign_in.sql
+```
+
 ## Email verification
 
 New user and business accounts must verify their email address before login.

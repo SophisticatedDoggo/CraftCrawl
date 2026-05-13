@@ -15,12 +15,16 @@ CREATE TABLE IF NOT EXISTS users (
     show_liked_businesses BOOL NOT NULL DEFAULT TRUE,
     notify_social_activity BOOL NOT NULL DEFAULT TRUE,
     display_palette VARCHAR(20) NOT NULL DEFAULT 'trail-map',
+    google_sub VARCHAR(255),
+    apple_sub VARCHAR(255),
     friendsSeenAt DATETIME,
     socialNotificationsSeenAt DATETIME,
     createdAt DATETIME NOT NULL,
     emailVerifiedAt DATETIME,
     disabledAt DATETIME,
-    UNIQUE KEY unique_user_email (email)
+    UNIQUE KEY unique_user_email (email),
+    UNIQUE KEY unique_user_google_sub (google_sub),
+    UNIQUE KEY unique_user_apple_sub (apple_sub)
 );
 
 CREATE TABLE IF NOT EXISTS admins (
