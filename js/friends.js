@@ -99,6 +99,20 @@
         });
     }
 
+    function renderAvatar(actor, fallbackName) {
+        const data = actor || {};
+        const frame = String(data.frame || '').replace(/[^a-z0-9_-]/gi, '');
+        const classes = `user-avatar user-avatar-medium feed-avatar ${frame ? `has-frame-${frame}` : ''}`;
+        const name = data.name || fallbackName || 'A friend';
+        const initials = data.initials || String(name).split(/\s+/).slice(0, 2).map((part) => part.charAt(0)).join('').toUpperCase() || 'CC';
+
+        if (data.avatar_url) {
+            return `<span class="${classes}"><img src="${escapeHtml(data.avatar_url)}" alt="${escapeHtml(name)} profile photo" loading="lazy"></span>`;
+        }
+
+        return `<span class="${classes}" aria-label="${escapeHtml(name)} profile photo"><span>${escapeHtml(initials)}</span></span>`;
+    }
+
     function loadStatus() {
         return fetch('friend_status.php', { credentials: 'same-origin' })
             .then((response) => response.json())
@@ -169,6 +183,7 @@
 
             return `
                 <article class="friend-search-result">
+                    ${renderAvatar(user.actor, user.name)}
                     <div>
                         <strong>${escapeHtml(user.name)}</strong>
                         <span>${escapeHtml(user.email)}</span>
@@ -236,6 +251,7 @@
 
         requestsList.innerHTML = requests.map((request) => `
             <article class="friend-request-item">
+                ${renderAvatar(request.actor, request.name)}
                 <div>
                     <strong>${escapeHtml(request.name)}</strong>
                     <span>${escapeHtml(request.email)}</span>
@@ -308,6 +324,7 @@
 
         currentFriendsList.innerHTML = visibleFriends.map((friend) => `
             <article class="friend-current-item">
+                ${renderAvatar(friend.actor, friend.name)}
                 <div class="friend-current-summary">
                     <div class="friend-current-name-row">
                         <strong>${escapeHtml(friend.name)}</strong>
@@ -391,13 +408,14 @@
     function renderFeedItem(item) {
         const date = formatDate(item.created_at);
         const actions = renderFeedActions(item);
+        const actorName = item.is_self ? 'You' : item.friend_name;
 
         if (item.type === 'level_up') {
             return `
                 <article class="friends-feed-item">
-                    <div class="friends-feed-icon">🎉</div>
+                    ${renderAvatar(item.actor, item.friend_name)}
                     <div>
-                        <strong>${escapeHtml(item.friend_name)} reached Level ${escapeHtml(item.level)}</strong>
+                        <strong>${escapeHtml(actorName)} reached Level ${escapeHtml(item.level)}</strong>
                         <p>${escapeHtml(item.title)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
                         ${actions}
                     </div>
@@ -408,9 +426,9 @@
         if (item.type === 'badge_earned') {
             return `
                 <article class="friends-feed-item">
-                    <div class="friends-feed-icon">🏅</div>
+                    ${renderAvatar(item.actor, item.friend_name)}
                     <div>
-                        <strong>${escapeHtml(item.friend_name)} earned ${escapeHtml(item.badge_name)}</strong>
+                        <strong>${escapeHtml(actorName)} earned ${escapeHtml(item.badge_name)}</strong>
                         <p>${escapeHtml(item.badge_description)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
                         ${actions}
                     </div>
@@ -421,9 +439,9 @@
         if (item.type === 'event_want') {
             return `
                 <article class="friends-feed-item">
-                    <div class="friends-feed-icon">📍</div>
+                    ${renderAvatar(item.actor, item.friend_name)}
                     <div>
-                        <strong>${escapeHtml(item.friend_name)} wants to go to ${escapeHtml(item.event_name)}</strong>
+                        <strong>${escapeHtml(item.is_self ? 'You want' : `${item.friend_name} wants`)} to go to ${escapeHtml(item.event_name)}</strong>
                         <p>${escapeHtml(item.business_name)} · ${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
                         ${actions}
                     </div>
@@ -434,9 +452,9 @@
         if (item.type === 'location_want') {
             return `
                 <article class="friends-feed-item">
-                    <div class="friends-feed-icon">🔖</div>
+                    ${renderAvatar(item.actor, item.friend_name)}
                     <div>
-                        <strong>${escapeHtml(item.friend_name)} wants to visit ${escapeHtml(item.business_name)}</strong>
+                        <strong>${escapeHtml(item.is_self ? 'You want' : `${item.friend_name} wants`)} to visit ${escapeHtml(item.business_name)}</strong>
                         <p>${escapeHtml(item.business_type)} · ${escapeHtml(item.city)}, ${escapeHtml(item.state)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
                         ${actions}
                     </div>
@@ -476,9 +494,9 @@
 
         return `
             <article class="friends-feed-item">
-                <div class="friends-feed-icon">1st</div>
+                ${renderAvatar(item.actor, item.friend_name)}
                 <div>
-                    <strong>${escapeHtml(item.friend_name)} visited ${escapeHtml(item.business_name)} for the first time</strong>
+                    <strong>${escapeHtml(actorName)} visited ${escapeHtml(item.business_name)} for the first time</strong>
                     <p>${escapeHtml(item.city)}, ${escapeHtml(item.state)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
                     ${actions}
                 </div>

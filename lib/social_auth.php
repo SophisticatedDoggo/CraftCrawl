@@ -200,6 +200,7 @@ function craftcrawl_verify_google_identity_token($credential) {
         'email' => strtolower(trim($payload['email'])),
         'first_name' => trim($payload['given_name'] ?? ''),
         'last_name' => trim($payload['family_name'] ?? ''),
+        'profile_photo_url' => trim($payload['picture'] ?? ''),
     ];
 }
 
@@ -235,6 +236,7 @@ function craftcrawl_verify_apple_identity_token($credential, $first_name = '', $
         'email' => strtolower(trim($payload['email'])),
         'first_name' => trim($first_name),
         'last_name' => trim($last_name),
+        'profile_photo_url' => '',
     ];
 }
 
@@ -262,9 +264,17 @@ function craftcrawl_social_find_or_create_user($conn, $identity) {
         $user = $stmt->get_result()->fetch_assoc();
 
         if ($user) {
-            $stmt = $conn->prepare("UPDATE users SET {$provider_column}=?, emailVerifiedAt=COALESCE(emailVerifiedAt, NOW()) WHERE id=?");
-            $user_id = (int) $user['id'];
-            $stmt->bind_param('si', $provider_sub, $user_id);
+            $profile_photo_url = filter_var($identity['profile_photo_url'] ?? '', FILTER_VALIDATE_URL) ? $identity['profile_photo_url'] : null;
+            if ($profile_photo_url !== null) {
+                $stmt = $conn->prepare("UPDATE users SET {$provider_column}=?, emailVerifiedAt=COALESCE(emailVerifiedAt, NOW()), profile_photo_url=COALESCE(profile_photo_url, ?), profile_photo_source=COALESCE(profile_photo_source, ?) WHERE id=?");
+                $user_id = (int) $user['id'];
+                $source = $identity['provider'];
+                $stmt->bind_param('sssi', $provider_sub, $profile_photo_url, $source, $user_id);
+            } else {
+                $stmt = $conn->prepare("UPDATE users SET {$provider_column}=?, emailVerifiedAt=COALESCE(emailVerifiedAt, NOW()) WHERE id=?");
+                $user_id = (int) $user['id'];
+                $stmt->bind_param('si', $provider_sub, $user_id);
+            }
             $stmt->execute();
         }
     }
@@ -275,8 +285,11 @@ function craftcrawl_social_find_or_create_user($conn, $identity) {
         $password_hash = password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT);
         $date = date('Y-m-d H:i:s');
 
-        $stmt = $conn->prepare("INSERT INTO users (fName, lName, email, password_hash, {$provider_column}, createdAt, emailVerifiedAt) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param('sssssss', $first_name, $last_name, $email, $password_hash, $provider_sub, $date, $date);
+        $profile_photo_url = filter_var($identity['profile_photo_url'] ?? '', FILTER_VALIDATE_URL) ? $identity['profile_photo_url'] : null;
+        $profile_photo_source = $profile_photo_url !== null ? $identity['provider'] : null;
+
+        $stmt = $conn->prepare("INSERT INTO users (fName, lName, email, password_hash, {$provider_column}, profile_photo_url, profile_photo_source, createdAt, emailVerifiedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param('sssssssss', $first_name, $last_name, $email, $password_hash, $provider_sub, $profile_photo_url, $profile_photo_source, $date, $date);
         $stmt->execute();
         $user = [
             'id' => $stmt->insert_id,

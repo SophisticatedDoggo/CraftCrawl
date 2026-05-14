@@ -3,6 +3,7 @@ require '../login_check.php';
 include '../db.php';
 require_once '../lib/feed_items.php';
 require_once '../lib/onesignal.php';
+require_once '../lib/user_avatar.php';
 
 if (!isset($_SESSION['user_id'])) {
     craftcrawl_redirect('user_login.php');
@@ -28,13 +29,23 @@ function format_feed_date($value) {
 
 function render_feed_thread_post($item) {
     $date = format_feed_date($item['created_at'] ?? '');
+    $actor_name = !empty($item['is_self']) ? 'You' : ($item['friend_name'] ?? 'A friend');
+    $want_phrase = !empty($item['is_self']) ? 'You want' : (($item['friend_name'] ?? 'A friend') . ' wants');
+    $avatar = !empty($item['actor'])
+        ? craftcrawl_render_user_avatar([
+            'fName' => $item['actor']['name'] ?? $item['friend_name'] ?? '',
+            'lName' => '',
+            'profile_photo_url' => $item['actor']['avatar_url'] ?? null,
+            'selected_profile_frame' => $item['actor']['frame'] ?? null
+        ], 'medium', 'feed-avatar')
+        : '';
 
     if (($item['type'] ?? '') === 'level_up') {
         return '
             <article class="friends-feed-item feed-thread-post">
-                <div class="friends-feed-icon">🎉</div>
+                ' . $avatar . '
                 <div>
-                    <strong>' . escape_output($item['friend_name']) . ' reached Level ' . escape_output($item['level']) . '</strong>
+                    <strong>' . escape_output($actor_name) . ' reached Level ' . escape_output($item['level']) . '</strong>
                     <p>' . escape_output($item['title']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
                 </div>
             </article>
@@ -44,9 +55,9 @@ function render_feed_thread_post($item) {
     if (($item['type'] ?? '') === 'event_want') {
         return '
             <article class="friends-feed-item feed-thread-post">
-                <div class="friends-feed-icon">📍</div>
+                ' . $avatar . '
                 <div>
-                    <strong>' . escape_output($item['friend_name']) . ' wants to go to ' . escape_output($item['event_name']) . '</strong>
+                    <strong>' . escape_output($want_phrase) . ' to go to ' . escape_output($item['event_name']) . '</strong>
                     <p>' . escape_output($item['business_name']) . ' · ' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
                     <a href="../event_details.php?id=' . escape_output($item['event_id']) . '&date=' . escape_output($item['event_date']) . '">View event</a>
                 </div>
@@ -71,9 +82,9 @@ function render_feed_thread_post($item) {
 
     return '
         <article class="friends-feed-item feed-thread-post">
-            <div class="friends-feed-icon">1st</div>
+            ' . $avatar . '
             <div>
-                <strong>' . escape_output($item['friend_name']) . ' visited ' . escape_output($item['business_name']) . ' for the first time</strong>
+                <strong>' . escape_output($actor_name) . ' visited ' . escape_output($item['business_name']) . ' for the first time</strong>
                 <p>' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
                 <a href="../business_details.php?id=' . escape_output($item['business_id']) . '">View business</a>
             </div>
@@ -188,9 +199,15 @@ $replies_by_comment = [];
 if ($feed_item) {
     $comments_stmt = $conn->prepare("
         SELECT fc.id, fc.parent_comment_id, fc.body, fc.createdAt, fc.user_id, fc.business_id,
-            u.fName, u.lName, b.bName
+            u.fName,
+            u.lName,
+            u.selected_profile_frame,
+            u.profile_photo_url,
+            p.object_key AS profile_photo_object_key,
+            b.bName
         FROM feed_comments fc
         LEFT JOIN users u ON u.id = fc.user_id
+        LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
         LEFT JOIN businesses b ON b.id = fc.business_id
         WHERE fc.feed_item_key=? AND fc.deletedAt IS NULL
         ORDER BY fc.createdAt ASC, fc.id ASC
@@ -275,6 +292,11 @@ if ($feed_item) {
                                     : trim($comment['fName'] . ' ' . $comment['lName']));
                         ?>
                         <article class="feed-comment">
+                            <?php if (empty($comment['business_id'])) : ?>
+                                <?php echo craftcrawl_render_user_avatar($comment, 'small'); ?>
+                            <?php else : ?>
+                                <span class="user-avatar user-avatar-small"><span>BO</span></span>
+                            <?php endif; ?>
                             <div>
                                 <strong><?php echo escape_output($commenter_name); ?></strong>
                                 <span><?php echo escape_output(format_feed_date($comment['createdAt'])); ?></span>
@@ -303,6 +325,11 @@ if ($feed_item) {
                                                     : trim($reply['fName'] . ' ' . $reply['lName']));
                                         ?>
                                         <article class="feed-comment feed-reply">
+                                            <?php if (empty($reply['business_id'])) : ?>
+                                                <?php echo craftcrawl_render_user_avatar($reply, 'small'); ?>
+                                            <?php else : ?>
+                                                <span class="user-avatar user-avatar-small"><span>BO</span></span>
+                                            <?php endif; ?>
                                             <div>
                                                 <strong><?php echo escape_output($replyer_name); ?></strong>
                                                 <span><?php echo escape_output(format_feed_date($reply['createdAt'])); ?></span>

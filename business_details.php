@@ -1,6 +1,7 @@
 <?php
 require 'login_check.php';
 include 'db.php';
+require_once 'lib/user_avatar.php';
 
 if (!isset($_SESSION['user_id'])) {
     craftcrawl_redirect('user_login.php');
@@ -239,7 +240,15 @@ $rating_stmt->execute();
 $rating_result = $rating_stmt->get_result();
 $rating_summary = $rating_result->fetch_assoc();
 
-$review_stmt = $conn->prepare("SELECT r.id, r.rating, r.notes, r.business_response, r.business_responseAt, u.fName, u.lName FROM reviews r INNER JOIN users u ON u.id = r.user_id WHERE r.business_id=? ORDER BY r.id DESC");
+$review_stmt = $conn->prepare("
+    SELECT r.id, r.rating, r.notes, r.business_response, r.business_responseAt,
+        u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+    FROM reviews r
+    INNER JOIN users u ON u.id = r.user_id
+    LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+    WHERE r.business_id=?
+    ORDER BY r.id DESC
+");
 $review_stmt->bind_param("i", $business_id);
 $review_stmt->execute();
 $review_result = $review_stmt->get_result();
@@ -313,8 +322,6 @@ $friend_options_stmt = $conn->prepare("
 $friend_options_stmt->bind_param("i", $user_id);
 $friend_options_stmt->execute();
 $friend_options = $friend_options_stmt->get_result();
-
-$user_progress = craftcrawl_user_level_progress($conn, $user_id);
 
 $business_photo_stmt = $conn->prepare("
     SELECT p.object_key, p.public_url, p.width, p.height, bp.photo_type, bp.sort_order
@@ -429,6 +436,8 @@ function format_event_time_range($event) {
             <p class="form-message form-message-success">Location removed from your want-to-go list.</p>
         <?php elseif ($message === 'recommended') : ?>
             <p class="form-message form-message-success">Recommendation sent.</p>
+        <?php elseif ($message === 'recommend_checkin_required') : ?>
+            <p class="form-message form-message-error">Check in at this location before recommending it.</p>
         <?php elseif ($message === 'recommend_error') : ?>
             <p class="form-message form-message-error">Recommendation could not be sent.</p>
         <?php elseif ($message === 'review_error') : ?>
@@ -522,7 +531,7 @@ function format_event_time_range($event) {
                     </button>
                 </form>
             </div>
-            <?php if ($friend_options->num_rows > 0) : ?>
+            <?php if ($user_has_checked_in && $friend_options->num_rows > 0) : ?>
                 <form method="POST" action="user/recommend_location.php" class="recommend-location-form">
                     <?php echo craftcrawl_csrf_input(); ?>
                     <input type="hidden" name="business_id" value="<?php echo escape_output($business_id); ?>">
@@ -538,21 +547,10 @@ function format_event_time_range($event) {
                         <button type="submit">Recommend</button>
                     </div>
                 </form>
+            <?php elseif (!$user_has_checked_in && $friend_options->num_rows > 0) : ?>
+                <p class="form-message">Check in at this location to recommend it to friends.</p>
             <?php endif; ?>
             <p class="form-message" data-check-in-feedback hidden></p>
-            <div class="level-summary-card business-level-summary">
-                <div>
-                    <strong>Level <?php echo escape_output($user_progress['level']); ?> - <?php echo escape_output($user_progress['title']); ?></strong>
-                    <?php if ($user_progress['max_level']) : ?>
-                        <span>Max Level Reached</span>
-                    <?php else : ?>
-                        <span><?php echo escape_output($user_progress['level_xp']); ?> / <?php echo escape_output($user_progress['next_level_xp']); ?> XP toward Level <?php echo escape_output($user_progress['level'] + 1); ?></span>
-                    <?php endif; ?>
-                </div>
-                <div class="level-progress-bar" aria-hidden="true">
-                    <span style="width: <?php echo escape_output($user_progress['progress_percent']); ?>%;"></span>
-                </div>
-            </div>
         </section>
 
         <section class="business-location-panel">
@@ -744,7 +742,10 @@ function format_event_time_range($event) {
             <?php foreach ($reviews as $review) : ?>
                 <article class="business-review-card">
                     <div class="business-review-header">
-                        <strong><?php echo escape_output($review['fName'] . ' ' . $review['lName']); ?></strong>
+                        <div class="business-review-author">
+                            <?php echo craftcrawl_render_user_avatar($review, 'small'); ?>
+                            <strong><?php echo escape_output($review['fName'] . ' ' . $review['lName']); ?></strong>
+                        </div>
                         <span class="rating-summary">
                             <?php echo render_star_rating($review['rating'], $review['rating'] . ' out of 5'); ?>
                             <span><?php echo escape_output(number_format((float) $review['rating'], 1)); ?></span>

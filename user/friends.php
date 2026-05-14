@@ -2,6 +2,7 @@
 require '../login_check.php';
 include '../db.php';
 require_once '../lib/leveling.php';
+require_once '../lib/user_avatar.php';
 
 if (!isset($_SESSION['user_id'])) {
     craftcrawl_redirect('user_login.php');
@@ -35,36 +36,42 @@ $leaderboard_modes = [
         'label' => 'Highest Level',
         'description' => 'Ranked by current level.',
         'order' => 'u.level DESC, u.level_xp DESC, stats.unique_locations DESC, stats.total_checkins DESC',
+        'metric_key' => '',
         'metric_label' => ''
     ],
     'unique_locations' => [
         'label' => 'Unique Locations',
         'description' => 'Ranked by distinct CraftCrawl places visited.',
         'order' => 'stats.unique_locations DESC, u.level DESC, u.level_xp DESC, stats.total_checkins DESC',
+        'metric_key' => 'unique_locations',
         'metric_label' => 'unique locations'
     ],
     'total_checkins' => [
         'label' => 'Total Check-ins',
         'description' => 'Ranked by all check-ins, including return visits.',
         'order' => 'stats.total_checkins DESC, stats.unique_locations DESC, u.level DESC, u.level_xp DESC',
+        'metric_key' => 'total_checkins',
         'metric_label' => 'check-ins'
     ],
     'recent_checkins' => [
         'label' => 'Last 30 Days',
         'description' => 'Ranked by check-ins from the past 30 days.',
         'order' => 'stats.recent_checkins DESC, stats.total_checkins DESC, u.level DESC, u.level_xp DESC',
+        'metric_key' => 'recent_checkins',
         'metric_label' => 'recent check-ins'
     ],
     'reviews' => [
         'label' => 'Reviews',
         'description' => 'Ranked by review count.',
         'order' => 'review_stats.review_count DESC, u.level DESC, u.level_xp DESC, stats.unique_locations DESC',
+        'metric_key' => 'review_count',
         'metric_label' => 'reviews'
     ],
     'badges' => [
         'label' => 'Badges',
         'description' => 'Ranked by earned badges.',
         'order' => 'badge_stats.badge_count DESC, u.level DESC, u.level_xp DESC, stats.unique_locations DESC',
+        'metric_key' => 'badge_count',
         'metric_label' => 'badges'
     ],
 ];
@@ -99,12 +106,16 @@ $leaderboard_stmt = $conn->prepare("
         u.level,
         u.level_xp,
         u.selected_title_index,
+        u.selected_profile_frame,
+        u.profile_photo_url,
+        p.object_key AS profile_photo_object_key,
         COALESCE(stats.unique_locations, 0) AS unique_locations,
         COALESCE(stats.total_checkins, 0) AS total_checkins,
         COALESCE(stats.recent_checkins, 0) AS recent_checkins,
         COALESCE(review_stats.review_count, 0) AS review_count,
         COALESCE(badge_stats.badge_count, 0) AS badge_count
     FROM users u
+    LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
     LEFT JOIN (
         SELECT
             uv.user_id,
@@ -115,7 +126,7 @@ $leaderboard_stmt = $conn->prepare("
         GROUP BY uv.user_id
     ) stats ON stats.user_id = u.id
     LEFT JOIN (
-        SELECT user_id, COUNT(*) AS review_count
+        SELECT user_id, COUNT(DISTINCT business_id) AS review_count
         FROM reviews
         GROUP BY user_id
     ) review_stats ON review_stats.user_id = u.id
@@ -186,10 +197,12 @@ $leaderboard = $leaderboard_stmt->get_result();
                         $selected_idx = $leader['selected_title_index'] !== null ? (int) $leader['selected_title_index'] : null;
                         $level_title = craftcrawl_user_effective_title($level, $selected_idx);
                         $leader_name = trim($leader['fName'] . ' ' . $leader['lName']);
-                        $metric_text = $leaderboard_mode === 'level' ? '' : (int) $leader[$leaderboard_mode] . ' ' . $active_leaderboard['metric_label'];
+                        $metric_key = $active_leaderboard['metric_key'];
+                        $metric_text = $leaderboard_mode === 'level' ? '' : (int) ($leader[$metric_key] ?? 0) . ' ' . $active_leaderboard['metric_label'];
                     ?>
                     <article>
                         <strong><?php echo escape_output(ordinal_rank($rank)); ?></strong>
+                        <?php echo craftcrawl_render_user_avatar($leader, 'medium', 'leaderboard-avatar'); ?>
                         <div>
                             <div class="leaderboard-row-top">
                                 <h3><?php echo escape_output($leader_name); ?> <span>Level <?php echo escape_output($level); ?></span></h3>

@@ -4,6 +4,8 @@ require_once '../lib/admin_auth.php';
 require_once '../lib/remember_auth.php';
 require_once '../lib/password_reset.php';
 require_once '../lib/leveling.php';
+require_once '../lib/cloudinary_upload.php';
+require_once '../lib/user_avatar.php';
 include '../db.php';
 
 if (!isset($_SESSION['user_id'])) {
@@ -13,7 +15,26 @@ if (!isset($_SESSION['user_id'])) {
 $message = $_GET['message'] ?? null;
 $user_id = (int) $_SESSION['user_id'];
 $craftcrawl_portal_active = '';
-$settings_stmt = $conn->prepare("SELECT auto_accept_friend_invites, show_feed_activity, show_liked_businesses, show_want_to_go, notify_social_activity, allow_post_interactions, level, selected_title_index, selected_profile_frame, display_palette FROM users WHERE id=?");
+$settings_stmt = $conn->prepare("
+    SELECT
+        u.auto_accept_friend_invites,
+        u.show_feed_activity,
+        u.show_liked_businesses,
+        u.show_want_to_go,
+        u.notify_social_activity,
+        u.allow_post_interactions,
+        u.level,
+        u.selected_title_index,
+        u.selected_profile_frame,
+        u.display_palette,
+        u.fName,
+        u.lName,
+        u.profile_photo_url,
+        p.object_key AS profile_photo_object_key
+    FROM users u
+    LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+    WHERE u.id=?
+");
 $settings_stmt->bind_param("i", $user_id);
 $settings_stmt->execute();
 $user_settings = $settings_stmt->get_result()->fetch_assoc();
@@ -126,14 +147,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $new_frame = null;
         }
 
-        $profile_stmt = $conn->prepare("UPDATE users SET selected_title_index=?, selected_profile_frame=? WHERE id=?");
-        $profile_stmt->bind_param("ssi", $new_title_index, $new_frame, $user_id);
-        $profile_stmt->execute();
+        try {
+            if (!empty($_POST['profile_photo_cropped_data'])) {
+                $upload_result = craftcrawl_upload_data_url_to_cloudinary(
+                    $_POST['profile_photo_cropped_data'],
+                    'profile_photos',
+                    $user_id,
+                    ['tags' => 'craftcrawl,profile_photo']
+                );
+                $photo_id = craftcrawl_insert_cloudinary_photo($conn, $upload_result, $user_id, null, 'approved');
+                $profile_stmt = $conn->prepare("UPDATE users SET selected_title_index=?, selected_profile_frame=?, profile_photo_id=?, profile_photo_url=?, profile_photo_source='upload' WHERE id=?");
+                $public_url = $upload_result['secure_url'] ?? null;
+                $profile_stmt->bind_param("ssisi", $new_title_index, $new_frame, $photo_id, $public_url, $user_id);
+                $profile_stmt->execute();
+            } elseif (!empty($_POST['remove_profile_photo'])) {
+                $profile_stmt = $conn->prepare("UPDATE users SET selected_title_index=?, selected_profile_frame=?, profile_photo_id=NULL, profile_photo_url=NULL, profile_photo_source=NULL WHERE id=?");
+                $profile_stmt->bind_param("ssi", $new_title_index, $new_frame, $user_id);
+                $profile_stmt->execute();
+            } else {
+                $profile_stmt = $conn->prepare("UPDATE users SET selected_title_index=?, selected_profile_frame=? WHERE id=?");
+                $profile_stmt->bind_param("ssi", $new_title_index, $new_frame, $user_id);
+                $profile_stmt->execute();
+            }
+        } catch (Throwable $error) {
+            $message = str_contains($error->getMessage(), 'larger') || str_contains($error->getMessage(), 'smaller')
+                ? 'profile_photo_size_error'
+                : 'profile_photo_error';
+        }
 
-        $selected_title_index = $new_title_index;
-        $selected_profile_frame = $new_frame;
-        header('Location: settings.php?message=profile_saved');
-        exit();
+        if ($message === null || !in_array($message, ['profile_photo_error', 'profile_photo_size_error'], true)) {
+            $selected_title_index = $new_title_index;
+            $selected_profile_frame = $new_frame;
+            header('Location: settings.php?message=profile_saved');
+            exit();
+        }
     }
 
     if ($form_action === 'privacy') {
@@ -244,6 +291,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p class="form-message form-message-success">Privacy settings updated.</p>
         <?php elseif ($message === 'theme_saved') : ?>
             <p class="form-message form-message-success">Display theme updated.</p>
+        <?php elseif ($message === 'profile_photo_size_error') : ?>
+            <p class="form-message form-message-error">Profile photo must be smaller than 10 MB.</p>
+        <?php elseif ($message === 'profile_photo_error') : ?>
+            <p class="form-message form-message-error">Profile photo could not be saved. Please try another image.</p>
         <?php endif; ?>
 
         <section class="settings-panel">
@@ -304,9 +355,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'legend' => 'Craft Crawl Legend Frame',
             ];
             ?>
-            <form method="POST" action="" class="settings-form">
+            <form method="POST" action="" class="settings-form" enctype="multipart/form-data" data-profile-photo-form>
                 <?php echo craftcrawl_csrf_input(); ?>
                 <input type="hidden" name="form_action" value="profile">
+                <input type="hidden" name="profile_photo_cropped_data" data-profile-photo-cropped-data>
+                <input type="hidden" name="remove_profile_photo" value="" data-remove-profile-photo>
+                <div class="profile-photo-settings">
+                    <?php echo craftcrawl_render_user_avatar($user_settings, 'large', 'profile-photo-preview'); ?>
+                    <div>
+                        <label for="profile_photo">Profile Picture</label>
+                        <input type="file" id="profile_photo" name="profile_photo" accept="image/jpeg,image/png,image/webp" data-profile-photo-input>
+                        <small class="form-help">Choose a photo, then drag and zoom it into the circular preview.</small>
+                        <?php if (!empty($user_settings['profile_photo_url']) || !empty($user_settings['profile_photo_object_key'])) : ?>
+                            <button type="button" class="button-link-secondary" data-profile-photo-remove>Remove Photo</button>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
                 <label for="selected_title_index">Display Title</label>
                 <select id="selected_title_index" name="selected_title_index">
                     <option value="">Auto (current level title)</option>
@@ -434,6 +499,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include __DIR__ . '/subpage_mobile_nav.php'; ?>
     <script src="../js/palette_switcher.js"></script>
     <script src="../js/app_icon_switcher.js"></script>
+    <script src="../js/profile_photo_crop.js"></script>
     <script src="../js/friends.js"></script>
     <script src="../js/mobile_actions_menu.js"></script>
     <script src="../js/onesignal_push.js"></script>

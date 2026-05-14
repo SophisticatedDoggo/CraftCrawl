@@ -1,6 +1,7 @@
 <?php
 require '../login_check.php';
 require_once '../lib/leveling.php';
+require_once '../lib/user_avatar.php';
 include '../db.php';
 
 if (!isset($_SESSION['user_id'])) {
@@ -28,7 +29,12 @@ if (!$can_view_profile) {
     http_response_code(403);
     $profile = null;
 } else {
-    $profile_stmt = $conn->prepare("SELECT id, fName, lName, createdAt, show_liked_businesses, level, selected_profile_frame FROM users WHERE id=? AND disabledAt IS NULL");
+    $profile_stmt = $conn->prepare("
+        SELECT u.id, u.fName, u.lName, u.createdAt, u.show_liked_businesses, u.level, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+        FROM users u
+        LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+        WHERE u.id=? AND u.disabledAt IS NULL
+    ");
     $profile_stmt->bind_param("i", $profile_id);
     $profile_stmt->execute();
     $profile = $profile_stmt->get_result()->fetch_assoc();
@@ -73,6 +79,18 @@ if (!$profile) {
     $stats_stmt->bind_param("iiii", $profile_id, $profile_id, $profile_id, $profile_id);
     $stats_stmt->execute();
     $profile_stats = $stats_stmt->get_result()->fetch_assoc();
+
+    $past_checkins_stmt = $conn->prepare("
+        SELECT uv.id, uv.visit_type, uv.xp_awarded, uv.checkedInAt, b.id AS business_id, b.bName, b.bType, b.city, b.state
+        FROM user_visits uv
+        INNER JOIN businesses b ON b.id = uv.business_id
+        WHERE uv.user_id=? AND b.approved=TRUE AND b.disabledAt IS NULL
+        ORDER BY uv.checkedInAt DESC, uv.id DESC
+        LIMIT 20
+    ");
+    $past_checkins_stmt->bind_param("i", $profile_id);
+    $past_checkins_stmt->execute();
+    $past_checkins = $past_checkins_stmt->get_result();
 
     if (!$is_own_profile) {
         $shared_stmt = $conn->prepare("
@@ -166,7 +184,14 @@ if (!$profile) {
                 <p class="form-help">You can only view profiles for friends you have added.</p>
             </section>
         <?php else : ?>
-            <section class="settings-panel profile-hero-panel<?php echo $profile_frame ? ' has-frame-' . escape_output($profile_frame) : ''; ?>">
+            <section class="settings-panel profile-hero-panel">
+                <div class="profile-identity">
+                    <?php echo craftcrawl_render_user_avatar($profile, 'large', 'profile-page-avatar'); ?>
+                    <div>
+                        <h2><?php echo escape_output(trim($profile['fName'] . ' ' . $profile['lName'])); ?></h2>
+                        <p><?php echo escape_output($user_progress['title']); ?></p>
+                    </div>
+                </div>
                 <div class="level-summary-card">
                     <div>
                         <strong>Level <?php echo escape_output($user_progress['level']); ?> - <?php echo escape_output($user_progress['title']); ?></strong>
@@ -290,6 +315,28 @@ if (!$profile) {
                     </div>
                 </section>
             <?php endif; ?>
+
+            <section class="settings-panel">
+                <h2>Past Check-ins</h2>
+                <div class="friend-location-grid">
+                    <?php if ($past_checkins->num_rows === 0) : ?>
+                        <p>No check-ins yet.</p>
+                    <?php endif; ?>
+                    <?php while ($checkin = $past_checkins->fetch_assoc()) : ?>
+                        <?php
+                            $checked_in_at = strtotime($checkin['checkedInAt']);
+                            $checked_in_text = $checked_in_at ? date('M j, Y', $checked_in_at) : '';
+                            $visit_type_text = $checkin['visit_type'] === 'first_time' ? 'First-time check-in' : 'Repeat check-in';
+                        ?>
+                        <article class="friend-location-card">
+                            <strong><?php echo escape_output($checkin['bName']); ?></strong>
+                            <span><?php echo escape_output($checkin['bType']); ?> · <?php echo escape_output($checkin['city']); ?>, <?php echo escape_output($checkin['state']); ?></span>
+                            <span><?php echo escape_output($visit_type_text); ?><?php echo $checked_in_text !== '' ? ' · ' . escape_output($checked_in_text) : ''; ?><?php echo (int) $checkin['xp_awarded'] > 0 ? ' · +' . escape_output($checkin['xp_awarded']) . ' XP' : ''; ?></span>
+                            <a href="../business_details.php?id=<?php echo escape_output($checkin['business_id']); ?>">View Location</a>
+                        </article>
+                    <?php endwhile; ?>
+                </div>
+            </section>
 
             <?php if (!$is_own_profile) : ?>
                 <section class="settings-panel">

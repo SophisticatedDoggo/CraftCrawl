@@ -2,6 +2,7 @@
 require '../login_check.php';
 include '../db.php';
 require_once '../lib/leveling.php';
+require_once '../lib/user_avatar.php';
 
 header('Content-Type: application/json');
 
@@ -22,9 +23,20 @@ $seen_stmt->execute();
 $seen_at = $seen_stmt->get_result()->fetch_assoc()['friendsSeenAt'] ?? null;
 
 $friend_stmt = $conn->prepare("
-    SELECT u.id, u.fName, u.lName, u.show_feed_activity, u.level, u.selected_title_index, uf.createdAt
+    SELECT
+        u.id,
+        u.fName,
+        u.lName,
+        u.show_feed_activity,
+        u.level,
+        u.selected_title_index,
+        u.selected_profile_frame,
+        u.profile_photo_url,
+        p.object_key AS profile_photo_object_key,
+        uf.createdAt
     FROM user_friends uf
     INNER JOIN users u ON u.id = uf.friend_user_id
+    LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
     WHERE uf.user_id=? AND u.disabledAt IS NULL
     ORDER BY u.fName, u.lName
 ");
@@ -39,10 +51,16 @@ while ($friend = $friend_result->fetch_assoc()) {
     $friend_level = (int) ($friend['level'] ?? 1);
     $selected_title_index = $friend['selected_title_index'] !== null ? (int) $friend['selected_title_index'] : null;
     $friends[$friend_id] = [
+        'id' => $friend_id,
+        'fName' => $friend['fName'],
+        'lName' => $friend['lName'],
         'name' => trim($friend['fName'] . ' ' . $friend['lName']),
         'show_feed_activity' => !empty($friend['show_feed_activity']),
         'level' => $friend_level,
         'title' => craftcrawl_user_effective_title($friend_level, $selected_title_index),
+        'selected_profile_frame' => $friend['selected_profile_frame'] ?? null,
+        'profile_photo_url' => $friend['profile_photo_url'] ?? null,
+        'profile_photo_object_key' => $friend['profile_photo_object_key'] ?? null,
         'created_at' => $friend['createdAt']
     ];
     if (!empty($friend['show_feed_activity'])) {
@@ -51,9 +69,24 @@ while ($friend = $friend_result->fetch_assoc()) {
 }
 
 $people = $friends;
+$self_stmt = $conn->prepare("
+    SELECT u.id, u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+    FROM users u
+    LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+    WHERE u.id=?
+");
+$self_stmt->bind_param("i", $user_id);
+$self_stmt->execute();
+$self = $self_stmt->get_result()->fetch_assoc() ?: [];
 $people[$user_id] = [
+    'id' => $user_id,
+    'fName' => $self['fName'] ?? '',
+    'lName' => $self['lName'] ?? '',
     'name' => 'You',
     'show_feed_activity' => true,
+    'selected_profile_frame' => $self['selected_profile_frame'] ?? null,
+    'profile_photo_url' => $self['profile_photo_url'] ?? null,
+    'profile_photo_object_key' => $self['profile_photo_object_key'] ?? null,
     'created_at' => null
 ];
 $feed_user_ids = array_values(array_unique(array_merge([$user_id], $friend_ids)));
@@ -83,6 +116,25 @@ function craftcrawl_bind_feed_user_ids_before($stmt, $types, $feed_user_ids, &$b
     call_user_func_array([$stmt, 'bind_param'], $params);
 }
 
+function craftcrawl_feed_person_payload($person) {
+    if (empty($person)) {
+        return [
+            'name' => 'A friend',
+            'initials' => 'CC',
+            'avatar_url' => null,
+            'frame' => null
+        ];
+    }
+
+    return [
+        'id' => (int) ($person['id'] ?? 0),
+        'name' => $person['name'] ?? trim(($person['fName'] ?? '') . ' ' . ($person['lName'] ?? '')),
+        'initials' => craftcrawl_user_initials($person),
+        'avatar_url' => craftcrawl_user_avatar_url($person, 96),
+        'frame' => $person['selected_profile_frame'] ?? null
+    ];
+}
+
 $before_clause_checkin = $before_dt ? ' AND uv.checkedInAt < ?' : '';
 $visit_sql = "
     SELECT uv.id, uv.user_id, uv.checkedInAt, b.id AS business_id, b.bName, b.city, b.state,
@@ -109,6 +161,7 @@ while ($visit = $visit_result->fetch_assoc()) {
         'type' => 'first_visit',
         'created_at' => $visit['checkedInAt'],
         'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
+        'actor' => craftcrawl_feed_person_payload($people[$actor_id] ?? []),
         'is_self' => $actor_id === $user_id,
         'allow_interactions' => (bool) $visit['allow_post_interactions'],
         'business_id' => (int) $visit['business_id'],
@@ -149,6 +202,7 @@ while ($xp = $xp_result->fetch_assoc()) {
         'type' => 'level_up',
         'created_at' => $xp['createdAt'],
         'friend_name' => $people[$friend_id]['name'] ?? 'A friend',
+        'actor' => craftcrawl_feed_person_payload($people[$friend_id] ?? []),
         'is_self' => $friend_id === $user_id,
         'allow_interactions' => (bool) $xp['allow_post_interactions'],
         'level' => $after_level,
@@ -184,6 +238,7 @@ while ($event_want = $event_want_result->fetch_assoc()) {
         'type' => 'event_want',
         'created_at' => $event_want['createdAt'],
         'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
+        'actor' => craftcrawl_feed_person_payload($people[$actor_id] ?? []),
         'is_self' => $actor_id === $user_id,
         'allow_interactions' => (bool) $event_want['allow_post_interactions'],
         'event_id' => (int) $event_want['event_id'],
@@ -223,6 +278,7 @@ while ($location_want = $location_want_result->fetch_assoc()) {
         'type' => 'location_want',
         'created_at' => $location_want['createdAt'],
         'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
+        'actor' => craftcrawl_feed_person_payload($people[$actor_id] ?? []),
         'is_self' => $actor_id === $user_id,
         'allow_interactions' => (bool) $location_want['allow_post_interactions'],
         'business_id' => (int) $location_want['business_id'],
@@ -258,6 +314,7 @@ while ($badge = $badge_result->fetch_assoc()) {
         'type' => 'badge_earned',
         'created_at' => $badge['earnedAt'],
         'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
+        'actor' => craftcrawl_feed_person_payload($people[$actor_id] ?? []),
         'is_self' => $actor_id === $user_id,
         'allow_interactions' => (bool) $badge['allow_post_interactions'],
         'badge_name' => $badge['badge_name'],
@@ -480,6 +537,7 @@ if (!$before_dt) {
             'name' => $friend['name'],
             'level' => $friend['level'],
             'title' => $friend['title'],
+            'actor' => craftcrawl_feed_person_payload($friend),
             'is_new' => $is_new
         ];
     }

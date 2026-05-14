@@ -39,15 +39,50 @@ if (!$business_stmt->get_result()->fetch_assoc()) {
     craftcrawl_redirect('portal.php');
 }
 
-$pending = 'pending';
-$stmt = $conn->prepare("
-    INSERT INTO location_recommendations (recommender_user_id, recipient_user_id, business_id, message, status, createdAt, updatedAt)
-    VALUES (?, ?, ?, ?, ?, NOW(), NOW())
-    ON DUPLICATE KEY UPDATE message=VALUES(message), status='pending', updatedAt=NOW()
-");
-$stmt->bind_param("iiiss", $user_id, $friend_id, $business_id, $message, $pending);
-$stmt->execute();
-craftcrawl_award_eligible_badges($conn, $user_id);
+$visit_stmt = $conn->prepare("SELECT id FROM user_visits WHERE user_id=? AND business_id=? LIMIT 1");
+$visit_stmt->bind_param("ii", $user_id, $business_id);
+$visit_stmt->execute();
+
+if (!$visit_stmt->get_result()->fetch_assoc()) {
+    craftcrawl_redirect('business_details.php?id=' . $business_id . '&message=recommend_checkin_required');
+}
+
+try {
+    $conn->begin_transaction();
+    $progress_before = craftcrawl_user_level_progress($conn, $user_id);
+
+    $pending = 'pending';
+    $stmt = $conn->prepare("
+        INSERT INTO location_recommendations (recommender_user_id, recipient_user_id, business_id, message, status, createdAt, updatedAt)
+        VALUES (?, ?, ?, ?, ?, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE message=VALUES(message), status='pending', updatedAt=NOW()
+    ");
+    $stmt->bind_param("iiiss", $user_id, $friend_id, $business_id, $message, $pending);
+    $stmt->execute();
+    $badges = craftcrawl_award_eligible_badges($conn, $user_id);
+    $progress = craftcrawl_user_level_progress($conn, $user_id);
+    $conn->commit();
+
+    $xp_awarded = max(0, (int) ($progress['total_xp'] ?? 0) - (int) ($progress_before['total_xp'] ?? 0));
+    if ($xp_awarded > 0) {
+        $_SESSION['craftcrawl_xp_reward_popup'] = [
+            'xp_awarded' => $xp_awarded,
+            'badges' => $badges,
+            'level_up' => (int) $progress['level'] > (int) $progress_before['level']
+                ? [
+                    'level' => (int) $progress['level'],
+                    'title' => $progress['title']
+                ]
+                : null,
+            'progress_before' => $progress_before,
+            'progress' => $progress
+        ];
+    }
+} catch (Throwable $error) {
+    $conn->rollback();
+    error_log('Recommendation failed: ' . $error->getMessage());
+    craftcrawl_redirect('business_details.php?id=' . $business_id . '&message=recommend_error');
+}
 
 craftcrawl_redirect('business_details.php?id=' . $business_id . '&message=recommended');
 ?>
