@@ -18,9 +18,41 @@ const craftCrawlPalette = renamedCraftCrawlPalettes[accountCraftCrawlPalette]
     || renamedCraftCrawlPalettes[savedCraftCrawlPalette]
     || savedCraftCrawlPalette
     || 'trail-map';
+const craftCrawlPaletteLogos = {
+    'trail-map': 'craft-crawl-logo-trail.png',
+    'trail-dark': 'craft-crawl-logo-trail-dark.png',
+    ember: 'craft-crawl-logo-ember.png',
+    'ember-dark': 'craft-crawl-logo-ember-dark.png'
+};
 
 document.documentElement.dataset.palette = craftCrawlPalette;
 localStorage.setItem('craftcrawl_palette', craftCrawlPalette);
+
+function craftCrawlLogoUrlFromExisting(existingSrc, logoFile) {
+    try {
+        const url = new URL(existingSrc || 'images/Logo.webp', window.location.href);
+        url.pathname = url.pathname.replace(/[^/]*$/, logoFile);
+        url.search = '';
+        url.hash = '';
+        return url.href;
+    } catch (error) {
+        return `images/${logoFile}`;
+    }
+}
+
+function syncCraftCrawlLogos() {
+    const palette = document.documentElement.dataset.palette || 'trail-map';
+    const logoFile = craftCrawlPaletteLogos[palette] || craftCrawlPaletteLogos['trail-map'];
+
+    document.querySelectorAll('img.site-logo').forEach((logo) => {
+        const nextSrc = craftCrawlLogoUrlFromExisting(logo.getAttribute('src'), logoFile);
+        if (logo.src !== nextSrc) {
+            logo.src = nextSrc;
+        }
+    });
+}
+
+window.syncCraftCrawlLogos = syncCraftCrawlLogos;
 
 function getCraftCrawlNativePlugin(name) {
     const capacitor = window.Capacitor;
@@ -203,6 +235,12 @@ function resetCraftCrawlMobileViewportScroll() {
 
 lockCraftCrawlMobileViewport();
 syncCraftCrawlNativeStatusBar();
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', syncCraftCrawlLogos);
+} else {
+    syncCraftCrawlLogos();
+}
 
 document.addEventListener('focusout', function (event) {
     const field = event.target;

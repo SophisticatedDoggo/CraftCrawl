@@ -24,6 +24,10 @@ function setPalette(palette) {
         window.syncCraftCrawlNativeStatusBar();
     }
 
+    if (window.syncCraftCrawlLogos) {
+        window.syncCraftCrawlLogos();
+    }
+
     paletteButtons.forEach((button) => {
         const isActive = button.dataset.paletteOption === palette;
         button.classList.toggle('is-active', isActive);

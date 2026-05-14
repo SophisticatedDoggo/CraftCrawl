@@ -123,7 +123,22 @@ The permission copy should explain that CraftCrawl uses location to find nearby 
 
 ## App Icons and Splash
 
-Replace the generated Capacitor icon/splash placeholders before store submission. Keep the logo readable at small sizes and test both light and dark device modes.
+CraftCrawl includes app icon options for each display theme:
+
+- Trail: `AppIcon` / `AppIcon-Trail` on iOS, `trail` or `trail-map` on Android.
+- Trail Dark: `AppIcon-TrailDark` on iOS, `trail-dark` on Android.
+- Ember: `AppIcon-Ember` on iOS, `ember` on Android.
+- Ember Dark: `AppIcon-EmberDark` on iOS, `ember-dark` on Android.
+
+iOS defaults to `AppIcon`, which uses the Trail logo. To build another icon, pass a build setting such as `CRAFTCRAWL_APP_ICON_NAME=AppIcon-Ember` in Xcode or `xcodebuild`.
+
+Android defaults to `trail`. To build another icon, set `CRAFTCRAWL_APP_ICON`, for example:
+
+```sh
+CRAFTCRAWL_APP_ICON=ember-dark npm run android:debug:prod
+```
+
+Keep the logo readable at small sizes and test both light and dark device modes before store submission.
 
 ## Store Review Notes
 

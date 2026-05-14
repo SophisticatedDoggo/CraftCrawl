@@ -1,5 +1,27 @@
 apply plugin: 'com.android.application'
 
+def craftcrawlIconStyle = (project.findProperty("craftcrawlAppIcon") ?: System.getenv("CRAFTCRAWL_APP_ICON") ?: "trail").toString()
+def craftcrawlIconSuffixes = [
+    "trail": "",
+    "trail-map": "",
+    "trail-dark": "_trail_dark",
+    "ember": "_ember",
+    "ember-dark": "_ember_dark"
+]
+
+if (!craftcrawlIconSuffixes.containsKey(craftcrawlIconStyle)) {
+    throw new GradleException("Unsupported CraftCrawl app icon '${craftcrawlIconStyle}'. Use trail, trail-map, trail-dark, ember, or ember-dark.")
+}
+
+def craftcrawlIconBase = "ic_launcher${craftcrawlIconSuffixes[craftcrawlIconStyle]}"
+def craftcrawlManifestPlaceholders = { label ->
+    [
+        appLabel: label,
+        appIcon: "@mipmap/${craftcrawlIconBase}",
+        appRoundIcon: "@mipmap/${craftcrawlIconBase}_round"
+    ]
+}
+
 android {
     namespace = "com.craftcrawl.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -20,7 +42,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
-        manifestPlaceholders = [appLabel: "CraftCrawl"]
+        manifestPlaceholders = craftcrawlManifestPlaceholders("CraftCrawl")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -34,11 +56,11 @@ android {
             dimension "environment"
             applicationIdSuffix ".staging"
             versionNameSuffix "-staging"
-            manifestPlaceholders = [appLabel: "CraftCrawl Staging"]
+            manifestPlaceholders = craftcrawlManifestPlaceholders("CraftCrawl Staging")
         }
         prod {
             dimension "environment"
-            manifestPlaceholders = [appLabel: "CraftCrawl"]
+            manifestPlaceholders = craftcrawlManifestPlaceholders("CraftCrawl")
         }
     }
     buildTypes {
