@@ -240,14 +240,16 @@ if (!$profile) {
                     <?php endif; ?>
                     <?php while ($badge = $user_badges->fetch_assoc()) : ?>
                         <?php $is_showcased = in_array($badge['badge_key'], $showcased_keys, true); ?>
-                        <article class="badge-card<?php echo $is_showcased ? ' is-showcased' : ''; ?>">
+                        <article
+                            class="badge-card<?php echo $is_showcased ? ' is-showcased' : ''; ?>"
+                            <?php if ($is_own_profile) : ?>
+                                data-earned-badge-card
+                                data-badge-key="<?php echo escape_output($badge['badge_key']); ?>"
+                            <?php endif; ?>
+                        >
                             <strong><?php echo escape_output($badge['badge_name']); ?></strong>
                             <span><?php echo escape_output($badge['badge_description']); ?></span>
                             <small><?php echo escape_output(ucfirst($badge['badge_tier'] ?? 'small')); ?> · <?php echo escape_output(str_replace('_', ' ', $badge['badge_category'] ?? 'general')); ?> · +<?php echo escape_output($badge['xp_awarded']); ?> XP</small>
-                            <?php if ($is_own_profile) : ?>
-                                <button type="button" class="badge-showcase-add" data-showcase-action="add" data-badge-key="<?php echo escape_output($badge['badge_key']); ?>" data-badge-name="<?php echo escape_output($badge['badge_name']); ?>" <?php echo ($is_showcased || count($showcase_rows) >= $slot_count) ? 'hidden' : ''; ?>>Feature</button>
-                                <button type="button" class="badge-showcase-remove" data-showcase-action="remove" data-badge-key="<?php echo escape_output($badge['badge_key']); ?>" <?php echo !$is_showcased ? 'hidden' : ''; ?>>Unfeature</button>
-                            <?php endif; ?>
                         </article>
                     <?php endwhile; ?>
                 </div>

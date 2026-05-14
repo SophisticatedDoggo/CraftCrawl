@@ -12,7 +12,7 @@ on:
           - setup_signing
         default: beta
       app_icon:
-        description: App icon style
+        description: Initial app icon style; use AppIcon for TestFlight
         required: true
         type: choice
         options:

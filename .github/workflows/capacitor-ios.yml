@@ -22,7 +22,7 @@ on:
   workflow_dispatch:
     inputs:
       app_icon:
-        description: App icon style
+        description: Initial app icon style; use AppIcon for normal builds
         required: true
         type: choice
         options:

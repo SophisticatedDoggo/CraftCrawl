@@ -5892,7 +5892,30 @@ a.event-calendar-event:focus .event-calendar-event-name {
     border-color: var(--color-primary);
 }
 
-.badge-showcase-add,
+.badge-card[data-earned-badge-card] {
+    transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.badge-card.can-feature {
+    cursor: pointer;
+}
+
+.badge-card.can-feature:hover,
+.badge-card.can-feature:focus-visible {
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface-muted));
+    transform: translateY(-1px);
+}
+
+.badge-card[aria-disabled="true"] {
+    cursor: default;
+}
+
+.badge-card.is-loading {
+    opacity: 0.72;
+    pointer-events: none;
+}
+
 .badge-showcase-remove {
     justify-self: start;
     width: auto;

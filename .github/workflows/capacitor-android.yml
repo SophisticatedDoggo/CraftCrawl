@@ -31,7 +31,7 @@ on:
           - prod
         default: staging
       app_icon:
-        description: App icon style
+        description: Initial app icon style; users can change it later in app settings
         required: true
         type: choice
         options:

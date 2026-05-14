@@ -55,9 +55,22 @@ The release workflow also reuses the existing prod deploy secrets:
 1. Merge tested changes into `main`.
 2. Open GitHub Actions.
 3. Run `Android Website Release` from the `main` branch.
-4. Enter a version name, such as `1.0.0`.
-5. Enter a version code, starting at `1` and increasing for every release.
-6. When the workflow passes, open `https://app.craftcrawl.site/download.php`.
+4. Choose `prod` for the target.
+5. Enter a version name, such as `1.0.0`.
+6. Enter a version code, starting at `1` and increasing for every release.
+7. Choose the initial app icon. Use `trail` for the normal release default;
+   users can switch to the other icons later from mobile app settings.
+8. When the workflow passes, open `https://app.craftcrawl.site/download.php`.
+
+The workflow uploads the APK to:
+
+```text
+downloads/craftcrawl-prod.apk
+```
+
+`download.php` shows the download button only when that file exists on the
+selected website target. The workflow verifies the uploaded file over SSH after
+publishing it.
 
 Android users may need to allow installs from their browser before installing
 the downloaded APK.

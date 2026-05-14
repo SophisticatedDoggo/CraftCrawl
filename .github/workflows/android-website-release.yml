@@ -3,6 +3,14 @@ name: Android Website Release
 on:
   workflow_dispatch:
     inputs:
+      target:
+        description: Website target for the APK download page
+        required: true
+        type: choice
+        options:
+          - prod
+          - staging
+        default: prod
       version_name:
         description: Android version name, for example 1.0.0
         required: true
@@ -12,7 +20,7 @@ on:
         required: true
         default: '1'
       app_icon:
-        description: App icon style
+        description: Initial app icon style; users can change it later in app settings
         required: true
         type: choice
         options:
@@ -23,37 +31,79 @@ on:
         default: trail
 
 concurrency:
-  group: android-website-release
+  group: android-website-release-${{ inputs.target }}
   cancel-in-progress: false
 
 jobs:
   build-and-publish:
-    name: Build signed prod APK
+    name: Build signed ${{ inputs.target }} APK
     runs-on: ubuntu-latest
 
     env:
-      CRAFTCRAWL_APP_ENV: prod
-      CRAFTCRAWL_MOBILE_URL: https://app.craftcrawl.site
+      DEPLOY_TARGET: ${{ inputs.target }}
+      CRAFTCRAWL_APP_ENV: ${{ inputs.target }}
+      CRAFTCRAWL_MOBILE_URL: ${{ inputs.target == 'prod' && 'https://app.craftcrawl.site' || 'https://staging.craftcrawl.site' }}
       CRAFTCRAWL_APP_ICON: ${{ inputs.app_icon }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-      SSH_HOST: ${{ secrets.PROD_SSH_HOST }}
-      SSH_USER: ${{ secrets.PROD_SSH_USER }}
-      SSH_PORT: ${{ secrets.PROD_SSH_PORT }}
-      DEPLOY_PATH: ${{ secrets.PROD_DEPLOY_PATH }}
-      SSH_KEY: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
 
     steps:
-      - name: Require main branch
+      - name: Validate branch target
         run: |
-          if [ "${GITHUB_REF_NAME}" != "main" ]; then
-            echo "Website Android releases must run from main."
+          if [ "$DEPLOY_TARGET" = "prod" ] && [ "${GITHUB_REF_NAME}" != "main" ]; then
+            echo "Production website Android releases must run from main."
+            exit 1
+          fi
+
+          if [ "$DEPLOY_TARGET" = "staging" ] && [ "${GITHUB_REF_NAME}" != "develop" ]; then
+            echo "Staging website Android releases must run from develop."
             exit 1
           fi
 
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Set deployment variables
+        run: |
+          if [ "$DEPLOY_TARGET" = "prod" ]; then
+            {
+              echo "SSH_HOST=${{ secrets.PROD_SSH_HOST }}"
+              echo "SSH_USER=${{ secrets.PROD_SSH_USER }}"
+              echo "SSH_PORT=${{ secrets.PROD_SSH_PORT }}"
+              echo "DEPLOY_PATH=${{ secrets.PROD_DEPLOY_PATH }}"
+              echo "SSH_KEY<<EOF"
+              echo "${{ secrets.PROD_SSH_PRIVATE_KEY }}"
+              echo "EOF"
+            } >> "$GITHUB_ENV"
+          else
+            {
+              echo "SSH_HOST=${{ secrets.STAGING_SSH_HOST }}"
+              echo "SSH_USER=${{ secrets.STAGING_SSH_USER }}"
+              echo "SSH_PORT=${{ secrets.STAGING_SSH_PORT }}"
+              echo "DEPLOY_PATH=${{ secrets.STAGING_DEPLOY_PATH }}"
+              echo "SSH_KEY<<EOF"
+              echo "${{ secrets.STAGING_SSH_PRIVATE_KEY }}"
+              echo "EOF"
+            } >> "$GITHUB_ENV"
+          fi
+
+      - name: Validate deployment variables
+        run: |
+          missing=0
+
+          for var_name in SSH_HOST SSH_USER DEPLOY_PATH SSH_KEY; do
+            if [ -z "${!var_name}" ]; then
+              echo "::error::$var_name is empty. Check the ${DEPLOY_TARGET} GitHub repository secret for this value."
+              missing=1
+            fi
+          done
+
+          if [ -z "$SSH_PORT" ]; then
+            echo "SSH_PORT=22" >> "$GITHUB_ENV"
+          fi
+
+          exit "$missing"
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -89,18 +139,23 @@ jobs:
       - name: Sync Capacitor Android project
         run: npx cap sync android
 
-      - name: Build signed prod release APK
-        run: cd android && ./gradlew assembleProdRelease
+      - name: Build signed release APK
+        run: |
+          if [ "$DEPLOY_TARGET" = "prod" ]; then
+            cd android && ./gradlew assembleProdRelease
+          else
+            cd android && ./gradlew assembleStagingRelease
+          fi
 
       - name: Prepare release file
         run: |
           mkdir -p release
-          cp android/app/build/outputs/apk/prod/release/app-prod-release.apk release/craftcrawl-prod.apk
+          cp "android/app/build/outputs/apk/$DEPLOY_TARGET/release/app-$DEPLOY_TARGET-release.apk" release/craftcrawl-prod.apk
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
         with:
-          name: craftcrawl-prod-release-apk
+          name: craftcrawl-${{ inputs.target }}-release-apk
           path: release/craftcrawl-prod.apk
 
       - name: Configure SSH
@@ -124,3 +179,13 @@ jobs:
           rsync -az --no-times --no-perms \
             -e "ssh -i ~/.ssh/craftcrawl_deploy_key -o IdentitiesOnly=yes -o BatchMode=yes -p ${SSH_PORT:-22}" \
             release/craftcrawl-prod.apk "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/downloads/craftcrawl-prod.apk"
+
+      - name: Verify website APK
+        run: |
+          ssh \
+            -i ~/.ssh/craftcrawl_deploy_key \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -p "${SSH_PORT:-22}" \
+            "$SSH_USER@$SSH_HOST" \
+            "test -s '$DEPLOY_PATH/downloads/craftcrawl-prod.apk' && ls -lh '$DEPLOY_PATH/downloads/craftcrawl-prod.apk'"
