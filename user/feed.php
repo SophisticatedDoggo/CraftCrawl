@@ -18,7 +18,7 @@ $craftcrawl_portal_show_search = false;
     <script src="../js/theme_init.js"></script>
     <link rel="stylesheet" href="../css/style.css">
 </head>
-<body class="portal-body">
+<body class="portal-body portal-body-compact">
     <?php include __DIR__ . '/portal_header.php'; ?>
     <main class="portal-main">
         <section id="friends-panel" class="portal-panel" data-friends-panel data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">

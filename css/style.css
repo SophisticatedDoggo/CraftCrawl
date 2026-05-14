@@ -568,6 +568,17 @@ label {
     max-width: 460px;
 }
 
+.settings-form > button {
+    justify-self: start;
+    width: auto;
+    max-width: 100%;
+}
+
+.settings-panel > button[data-onesignal-enable] {
+    width: auto;
+    max-width: 100%;
+}
+
 .settings-toggle {
     display: flex;
     gap: 10px;
@@ -1290,12 +1301,15 @@ a.text-link:focus {
 .map-popup-actions {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 8px;
     margin-top: 10px;
 }
 
 .map-popup-actions a {
-    flex: 1 1 130px;
+    flex: 0 0 auto;
+    width: auto;
+    max-width: 100%;
 }
 
 .map-action-button:hover,
@@ -1427,7 +1441,10 @@ a.text-link:focus {
 }
 
 .events-feed-header h2 {
-    margin-bottom: 4px;
+    margin: 0 0 4px;
+    color: var(--color-primary);
+    font-size: clamp(1.85rem, 5vw, 2.45rem);
+    line-height: 1.05;
 }
 
 .events-feed-header p {
@@ -1461,7 +1478,13 @@ a.text-link:focus {
     width: 100%;
 }
 
-.friends-panel-header h2,
+.friends-panel-header h2 {
+    margin: 0 0 4px;
+    color: var(--color-primary);
+    font-size: clamp(1.85rem, 5vw, 2.45rem);
+    line-height: 1.05;
+}
+
 .friends-feed-header h3 {
     margin-bottom: 4px;
 }
@@ -1474,14 +1497,30 @@ a.text-link:focus {
 
 .friends-search-form {
     display: grid;
-    gap: 8px;
-    margin: 16px 0;
+    gap: 7px;
+    margin: 12px 0 0;
+}
+
+.friends-section-header {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.friends-section-header h2 {
+    margin-bottom: 0;
+}
+
+.friends-section-header button {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 7px 14px;
 }
 
 .friends-search-form > div {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 10px;
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .friends-search-form input {
@@ -1532,6 +1571,22 @@ a.text-link:focus {
 
 .friends-manager-section + .friends-manager-section {
     margin-top: 20px;
+}
+
+.friends-page {
+    gap: 18px;
+}
+
+.friends-page .friends-manager-section + .friends-manager-section {
+    margin-top: 0;
+}
+
+.friends-add-section .friends-search-results[hidden] {
+    display: none;
+}
+
+.friends-add-section .friends-search-results {
+    margin-bottom: 0;
 }
 
 .friends-search-results,
@@ -1590,9 +1645,16 @@ a.text-link:focus {
 
 .friend-current-item {
     grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
 }
 
-.friend-current-item > div {
+.friend-current-summary {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.friend-current-name-row {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -1600,7 +1662,17 @@ a.text-link:focus {
 }
 
 .friend-current-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     justify-content: flex-end;
+}
+
+.friend-current-meta {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 13px;
+    font-weight: 700;
 }
 
 .friends-list-filter {
@@ -1614,7 +1686,7 @@ a.text-link:focus {
     font-weight: 800;
 }
 
-.friend-current-item span {
+.friend-current-new-badge {
     padding: 4px 8px;
     border-radius: 999px;
     color: var(--color-on-primary);
@@ -1969,6 +2041,14 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 .feed-comment-form button {
     justify-self: start;
+}
+
+.portal-edit-form button,
+.feed-comment-form button,
+.feed-reply-form button {
+    align-self: flex-start;
+    width: auto;
+    max-width: 100%;
 }
 
 .feed-reply-toggle {
@@ -3253,8 +3333,60 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     max-width: none;
 }
 
+.app-icon-settings[hidden] {
+    display: none;
+}
+
+.app-icon-switcher {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.app-icon-switcher button {
+    display: grid;
+    gap: 8px;
+    justify-items: center;
+    min-width: 0;
+    padding: 10px 8px;
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.app-icon-switcher button:hover,
+.app-icon-switcher button:focus,
+.app-icon-switcher button.is-active {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.app-icon-switcher button.is-active {
+    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+}
+
+.app-icon-switcher img {
+    width: 58px;
+    height: 58px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+}
+
+.app-icon-switcher span {
+    max-width: 100%;
+    font-size: 0.88rem;
+    font-weight: 800;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+}
+
 .business-edit-panel button {
     justify-self: start;
+    width: auto;
+    max-width: 100%;
     padding: 10px 14px;
 }
 
@@ -3283,6 +3415,8 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 .business-photo-upload-form button {
     justify-self: start;
+    width: auto;
+    max-width: 100%;
     padding: 10px 14px;
 }
 
@@ -3381,6 +3515,8 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 .business-review-card button {
     justify-self: start;
+    width: auto;
+    max-width: 100%;
     padding: 8px 12px;
 }
 
@@ -3564,6 +3700,8 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 .current-review-preview button {
     justify-self: start;
+    width: auto;
+    max-width: 100%;
 }
 
 .review-edit-actions {
@@ -3583,6 +3721,8 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 .review-form-panel button {
     justify-self: start;
+    width: auto;
+    max-width: 100%;
     margin-top: 4px;
     padding: 10px 14px;
 }
@@ -4046,6 +4186,12 @@ a.event-calendar-event:focus .event-calendar-event-name {
     margin-bottom: 14px;
 }
 
+.event-form-panel button {
+    justify-self: start;
+    width: auto;
+    max-width: 100%;
+}
+
 .event-form-panel input,
 .event-form-panel textarea,
 .event-form-panel select {
@@ -4267,6 +4413,16 @@ a.event-calendar-event:focus .event-calendar-event-name {
     gap: 10px;
 }
 
+.admin-search-form > button,
+.admin-review-card form > button,
+.admin-delete-form button,
+.admin-list-item form button,
+.admin-password-form > button {
+    justify-self: start;
+    width: auto;
+    max-width: 100%;
+}
+
 .admin-delete-form {
     margin-top: 12px;
 }
@@ -4480,13 +4636,17 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .portal-body {
         padding-top: 18px;
         padding-top: 12px;
-        padding-top: max(12px, calc(6px + env(safe-area-inset-top)));
+        padding-top: max(20px, calc(14px + env(safe-area-inset-top)));
         padding-right: 14px;
         padding-right: max(14px, env(safe-area-inset-right));
         padding-bottom: 112px;
         padding-bottom: calc(112px + env(safe-area-inset-bottom));
         padding-left: 14px;
         padding-left: max(14px, env(safe-area-inset-left));
+    }
+
+    .portal-body.portal-body-compact {
+        padding-top: 0;
     }
 
     .business-portal {
@@ -4508,11 +4668,14 @@ a.event-calendar-event:focus .event-calendar-event-name {
         padding-top: max(12px, calc(6px + env(safe-area-inset-top)));
     }
 
+    .site-logo {
+        display: none;
+    }
+
     .portal-header {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         grid-template-areas:
-            "brand"
             "search"
             "level";
         justify-items: stretch;
@@ -4521,7 +4684,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .portal-header > div:first-child {
-        padding-right: 56px;
+        display: none;
     }
 
     .portal-header .business-search,
@@ -4558,7 +4721,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
 
     .business-portal-header > div:first-child {
         display: grid;
-        grid-template-columns: 72px minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr);
         align-items: center;
     }
 
@@ -4585,7 +4748,8 @@ a.event-calendar-event:focus .event-calendar-event-name {
 
     .business-section-header a,
     .business-section-header button {
-        width: 100%;
+        width: auto;
+        max-width: 100%;
     }
 
     .business-event-preview {
@@ -4600,7 +4764,9 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .business-edit-panel button,
     .business-photo-upload-form button,
     .event-form-panel button {
-        width: 100%;
+        justify-self: start;
+        width: auto;
+        max-width: 100%;
         margin-top: 6px;
     }
 
@@ -4757,13 +4923,13 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .mobile-actions-panel {
         position: fixed;
         right: 10px;
-        bottom: calc(76px + env(safe-area-inset-bottom));
+        bottom: calc(104px + env(safe-area-inset-bottom));
         z-index: 30;
         display: none;
         min-width: 176px;
-        padding: 8px;
+        padding: 10px;
         border: 1px solid var(--color-border);
-        border-radius: var(--radius-md);
+        border-radius: 26px;
         background: var(--color-surface);
         box-shadow: var(--shadow-md);
     }
@@ -4777,6 +4943,11 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .mobile-actions-panel form,
     .mobile-actions-panel button {
         width: 100%;
+    }
+
+    .mobile-actions-panel a,
+    .mobile-actions-panel button {
+        border-radius: 999px;
     }
 
     .settings-page {
@@ -4841,31 +5012,61 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .mobile-app-tabbar {
+        --mobile-tab-thumb-left: 8px;
+        --mobile-tab-thumb-top: 8px;
+        --mobile-tab-thumb-width: 0px;
+        --mobile-tab-thumb-height: 58px;
+        --mobile-tab-thumb-opacity: 0;
         position: fixed;
-        right: 0;
-        right: env(safe-area-inset-right);
-        bottom: 0;
-        left: 0;
-        left: env(safe-area-inset-left);
+        right: max(14px, env(safe-area-inset-right));
+        bottom: max(14px, calc(env(safe-area-inset-bottom) + 10px));
+        left: max(14px, env(safe-area-inset-left));
         z-index: 20;
         display: grid;
         grid-template-columns: repeat(5, minmax(0, 1fr));
-        align-items: start;
-        gap: 2px;
-        padding: 8px 22px 10px;
-        padding-bottom: max(10px, calc(env(safe-area-inset-bottom) - 22px));
-        border-top: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
+        align-items: center;
+        gap: 4px;
+        max-width: 720px;
+        min-height: 76px;
+        margin: 0 auto;
+        padding: 8px;
+        border: 1px solid color-mix(in srgb, var(--color-border) 64%, var(--glass-border));
+        border-radius: 999px;
         background:
             var(--glass-surface),
-            color-mix(in srgb, var(--color-surface) 92%, transparent);
-        box-shadow: 0 -12px 28px rgba(15, 23, 42, 0.18);
+            color-mix(in srgb, var(--color-surface) 94%, transparent);
+        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.2);
         touch-action: manipulation;
-        backdrop-filter: blur(18px) saturate(1.12);
-        -webkit-backdrop-filter: blur(18px) saturate(1.12);
+        backdrop-filter: blur(22px) saturate(1.16);
+        -webkit-backdrop-filter: blur(22px) saturate(1.16);
+    }
+
+    .mobile-app-tabbar::before {
+        content: "";
+        position: absolute;
+        top: var(--mobile-tab-thumb-top);
+        left: var(--mobile-tab-thumb-left);
+        z-index: 0;
+        width: var(--mobile-tab-thumb-width);
+        height: var(--mobile-tab-thumb-height);
+        border-radius: 999px;
+        background:
+            var(--glass-button),
+            color-mix(in srgb, var(--color-primary) 10%, var(--color-surface-muted));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+        opacity: var(--mobile-tab-thumb-opacity);
+        pointer-events: none;
+    }
+
+    .mobile-app-tabbar.is-mobile-tab-thumb-ready::before {
+        transition:
+            left 220ms cubic-bezier(0.22, 1, 0.36, 1),
+            width 220ms cubic-bezier(0.22, 1, 0.36, 1),
+            opacity 150ms ease;
     }
 
     .page-loader {
-        bottom: calc(70px + env(safe-area-inset-bottom));
+        bottom: calc(104px + env(safe-area-inset-bottom));
         z-index: 19;
     }
 
@@ -4880,21 +5081,27 @@ a.event-calendar-event:focus .event-calendar-event-name {
     a.mobile-app-tab,
     button.mobile-app-tab {
         position: relative;
+        z-index: 1;
         display: grid;
-        gap: 2px;
+        align-content: center;
+        gap: 3px;
         justify-items: center;
-        min-height: 48px;
-        padding: 6px 0;
+        min-width: 0;
+        min-height: 58px;
+        padding: 7px 4px 6px;
         border: 0;
-        border-radius: var(--radius-sm);
+        border-radius: 999px;
         color: var(--color-muted);
         background: transparent;
         box-shadow: none;
-        font-size: 10px;
-        font-weight: 650;
+        font-size: 10.5px;
+        font-weight: 700;
+        line-height: 1.1;
         text-decoration: none;
         touch-action: manipulation;
         cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        appearance: none;
     }
 
     a.mobile-app-tab > span:last-child,
@@ -4912,19 +5119,36 @@ a.event-calendar-event:focus .event-calendar-event-name {
 
     a.mobile-app-tab:hover,
     a.mobile-app-tab:focus-visible,
+    a.mobile-app-tab.is-thumb-target,
     a.mobile-app-tab.is-active,
     button.mobile-app-tab:hover,
     button.mobile-app-tab:focus-visible,
+    button.mobile-app-tab.is-thumb-target,
     button.mobile-app-tab.is-active {
         color: var(--color-primary);
-        background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+        background: transparent;
+        box-shadow: none;
+    }
+
+    a.mobile-app-tab:focus-visible,
+    button.mobile-app-tab:focus-visible {
+        outline: 2px solid color-mix(in srgb, var(--color-primary) 55%, transparent);
+        outline-offset: 2px;
+    }
+
+    .mobile-app-tabbar:not(.has-mobile-tab-thumb) a.mobile-app-tab.is-active,
+    .mobile-app-tabbar:not(.has-mobile-tab-thumb) button.mobile-app-tab.is-active {
+        background:
+            var(--glass-button),
+            color-mix(in srgb, var(--color-primary) 10%, var(--color-surface-muted));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
     }
 
     .mobile-app-tab-icon {
         position: relative;
         display: block;
-        width: 22px;
-        height: 22px;
+        width: 24px;
+        height: 24px;
     }
 
     .mobile-app-tab-icon-map {
@@ -5147,7 +5371,6 @@ a.event-calendar-event:focus .event-calendar-event-name {
 
     .dashboard-checkin-panel,
     .dashboard-checkin-item,
-    .friends-search-form > div,
     .recommend-location-form > div,
     .friend-search-result,
     .friend-request-item,
@@ -5164,16 +5387,39 @@ a.event-calendar-event:focus .event-calendar-event-name {
         width: 100%;
     }
 
+    .dashboard-checkin-panel > button {
+        justify-self: start;
+        width: auto;
+        max-width: 100%;
+    }
+
+    .friends-search-form button,
+    .friend-search-result button,
+    .friend-request-item button {
+        justify-self: center;
+        width: auto;
+        max-width: 100%;
+    }
+
     .friend-request-item > div:last-child {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: auto;
+        max-width: 100%;
     }
 
     .friend-recommendation-card > div:last-child {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: auto;
+        max-width: 100%;
+    }
+
+    .friend-recommendation-card button {
+        width: auto;
+        max-width: 100%;
     }
 
     .friend-current-item {
@@ -5181,14 +5427,20 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .friend-current-actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        width: auto;
+        max-width: 100%;
     }
 
     .friend-current-actions a,
     .friend-current-actions button {
-        width: 100%;
+        min-height: 36px;
+        padding-right: 12px;
+        padding-left: 12px;
+        width: auto;
+        max-width: 100%;
     }
 
     .feed-reactions {
@@ -5403,6 +5655,26 @@ a.event-calendar-event:focus .event-calendar-event-name {
 }
 
 @media (max-width: 460px) {
+    .mobile-app-tabbar {
+        right: max(8px, env(safe-area-inset-right));
+        left: max(8px, env(safe-area-inset-left));
+        gap: 2px;
+        padding: 7px;
+    }
+
+    a.mobile-app-tab,
+    button.mobile-app-tab {
+        min-height: 56px;
+        padding-right: 2px;
+        padding-left: 2px;
+        font-size: 9.5px;
+    }
+
+    .mobile-app-tab-icon {
+        width: 23px;
+        height: 23px;
+    }
+
     .portal-header h1 {
         font-size: clamp(2.6rem, 11vw, 3rem);
     }
@@ -5440,11 +5712,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .business-portal-header > div:first-child {
-        grid-template-columns: 68px minmax(0, 1fr);
-    }
-
-    .business-portal-header .site-logo {
-        width: 68px;
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .business-portal-header h1 {
@@ -5513,6 +5781,10 @@ a.event-calendar-event:focus .event-calendar-event-name {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .app-icon-switcher {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .business-header-actions.business-actions-menu {
         display: block;
         width: auto;
@@ -5520,7 +5792,12 @@ a.event-calendar-event:focus .event-calendar-event-name {
 
     .business-header-actions a,
     .business-header-actions form,
-    .business-header-actions button,
+    .business-header-actions button {
+        justify-self: start;
+        width: auto;
+        max-width: 100%;
+    }
+
     .palette-switcher button {
         width: 100%;
     }
@@ -5617,6 +5894,9 @@ a.event-calendar-event:focus .event-calendar-event-name {
 
 .badge-showcase-add,
 .badge-showcase-remove {
+    justify-self: start;
+    width: auto;
+    max-width: 100%;
     font-size: 0.78rem;
     padding: 4px 8px;
     margin-top: 4px;
@@ -6021,7 +6301,8 @@ a.event-calendar-event:focus .event-calendar-event-name {
 
 .load-more-posts-button {
     margin-top: 16px;
-    width: 100%;
+    width: auto;
+    max-width: 100%;
 }
 
 .business-posts-more-link {

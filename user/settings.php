@@ -223,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="business-header-actions user-subpage-header-actions">
                 <a href="portal.php">Back to Map</a>
-                <a href="friends.php">View Friends</a>
+                <a href="friends.php">Friends</a>
                 <a href="profile.php">Profile</a>
             </div>
         </header>
@@ -260,6 +260,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
             <p class="form-message" data-palette-status hidden></p>
             <p class="form-help">This setting is saved to your account.</p>
+        </section>
+
+        <section class="settings-panel app-icon-settings" data-native-app-icon-settings hidden>
+            <h2>App Icon</h2>
+            <div class="app-icon-switcher" aria-label="App icon">
+                <button type="button" data-app-icon-option="trail" aria-pressed="false">
+                    <img src="../images/craft-crawl-logo-trail.png" alt="" aria-hidden="true">
+                    <span>Trail</span>
+                </button>
+                <button type="button" data-app-icon-option="trail-dark" aria-pressed="false">
+                    <img src="../images/craft-crawl-logo-trail-dark.png" alt="" aria-hidden="true">
+                    <span>Trail Dark</span>
+                </button>
+                <button type="button" data-app-icon-option="ember" aria-pressed="false">
+                    <img src="../images/craft-crawl-logo-ember.png" alt="" aria-hidden="true">
+                    <span>Ember</span>
+                </button>
+                <button type="button" data-app-icon-option="ember-dark" aria-pressed="false">
+                    <img src="../images/craft-crawl-logo-ember-dark.png" alt="" aria-hidden="true">
+                    <span>Ember Dark</span>
+                </button>
+            </div>
+            <p class="form-message" data-app-icon-status hidden></p>
+            <p class="form-help">This changes the icon shown on this device.</p>
         </section>
 
         <section class="settings-panel">
@@ -409,6 +433,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </main>
     <?php include __DIR__ . '/subpage_mobile_nav.php'; ?>
     <script src="../js/palette_switcher.js"></script>
+    <script src="../js/app_icon_switcher.js"></script>
     <script src="../js/friends.js"></script>
     <script src="../js/mobile_actions_menu.js"></script>
     <script src="../js/onesignal_push.js"></script>

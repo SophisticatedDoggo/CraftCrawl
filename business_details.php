@@ -398,7 +398,7 @@ function format_event_time_range($event) {
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
                     <a href="user/friends.php">
-                        View Friends
+                        Friends
                         <span class="notification-badge" data-friends-menu-badge hidden></span>
                     </a>
                     <a href="user/profile.php">Profile</a>

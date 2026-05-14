@@ -153,7 +153,7 @@ if (!$profile) {
             </div>
             <div class="business-header-actions user-subpage-header-actions">
                 <a href="portal.php">Back to Map</a>
-                <a href="friends.php">View Friends</a>
+                <a href="friends.php">Friends</a>
                 <?php if ($is_own_profile) : ?>
                     <a href="settings.php">Settings</a>
                 <?php endif; ?>

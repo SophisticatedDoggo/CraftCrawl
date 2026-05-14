@@ -9,7 +9,7 @@ $craftcrawl_portal_active = $craftcrawl_portal_active ?? '';
     </button>
     <div class="mobile-actions-panel" data-mobile-actions-panel>
         <a href="friends.php">
-            View Friends
+            Friends
             <span class="notification-badge" data-friends-menu-badge hidden></span>
         </a>
         <a href="profile.php">Profile</a>

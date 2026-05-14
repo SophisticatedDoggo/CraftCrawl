@@ -1,6 +1,7 @@
 <?php
 $craftcrawl_portal_active = $craftcrawl_portal_active ?? 'map';
 $craftcrawl_portal_show_search = $craftcrawl_portal_show_search ?? false;
+$craftcrawl_portal_show_level_summary = !in_array($craftcrawl_portal_active, ['events', 'feed'], true);
 ?>
 <header class="portal-header">
     <div>
@@ -22,7 +23,7 @@ $craftcrawl_portal_show_search = $craftcrawl_portal_show_search ?? false;
         </button>
         <div class="mobile-actions-panel" data-mobile-actions-panel>
             <a href="friends.php">
-                View Friends
+                Friends
                 <span class="notification-badge" data-friends-menu-badge hidden></span>
             </a>
             <a href="profile.php">Profile</a>
@@ -35,6 +36,7 @@ $craftcrawl_portal_show_search = $craftcrawl_portal_show_search ?? false;
             </form>
         </div>
     </div>
+    <?php if ($craftcrawl_portal_show_level_summary) : ?>
     <section class="portal-level-summary" aria-label="Your CraftCrawl level">
         <div>
             <strong>Level <?php echo escape_output($user_progress['level']); ?></strong>
@@ -53,6 +55,7 @@ $craftcrawl_portal_show_search = $craftcrawl_portal_show_search ?? false;
             <?php endif; ?>
         <?php endif; ?>
     </section>
+    <?php endif; ?>
 </header>
 <div class="portal-tabs">
     <a class="portal-tab<?php echo $craftcrawl_portal_active === 'map' ? ' is-active' : ''; ?>" href="portal.php">Map</a>

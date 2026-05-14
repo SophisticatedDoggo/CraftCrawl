@@ -22,7 +22,7 @@ $seen_stmt->execute();
 $seen_at = $seen_stmt->get_result()->fetch_assoc()['friendsSeenAt'] ?? null;
 
 $friend_stmt = $conn->prepare("
-    SELECT u.id, u.fName, u.lName, u.show_feed_activity, uf.createdAt
+    SELECT u.id, u.fName, u.lName, u.show_feed_activity, u.level, u.selected_title_index, uf.createdAt
     FROM user_friends uf
     INNER JOIN users u ON u.id = uf.friend_user_id
     WHERE uf.user_id=? AND u.disabledAt IS NULL
@@ -36,9 +36,13 @@ $friend_ids = [];
 
 while ($friend = $friend_result->fetch_assoc()) {
     $friend_id = (int) $friend['id'];
+    $friend_level = (int) ($friend['level'] ?? 1);
+    $selected_title_index = $friend['selected_title_index'] !== null ? (int) $friend['selected_title_index'] : null;
     $friends[$friend_id] = [
         'name' => trim($friend['fName'] . ' ' . $friend['lName']),
         'show_feed_activity' => !empty($friend['show_feed_activity']),
+        'level' => $friend_level,
+        'title' => craftcrawl_user_effective_title($friend_level, $selected_title_index),
         'created_at' => $friend['createdAt']
     ];
     if (!empty($friend['show_feed_activity'])) {
@@ -474,6 +478,8 @@ if (!$before_dt) {
         $friend_list[] = [
             'id' => $id,
             'name' => $friend['name'],
+            'level' => $friend['level'],
+            'title' => $friend['title'],
             'is_new' => $is_new
         ];
     }

@@ -79,7 +79,7 @@ require_once 'config.php';
                     <span></span>
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
-                    <a href="user/friends.php">View Friends</a>
+                    <a href="user/friends.php">Friends</a>
                     <a href="user/profile.php">Profile</a>
                     <a href="user/settings.php">Settings</a>
                     <form action="logout.php" method="POST">

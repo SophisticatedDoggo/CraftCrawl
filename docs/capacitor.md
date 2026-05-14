@@ -161,9 +161,10 @@ CRAFTCRAWL_APP_ICON=ember-dark npm run android:debug:prod
 
 The Android GitHub Actions workflows expose the same choice as an `app_icon` manual-run input.
 
-The installed native app can also switch icons after installation. In the app,
-changing and saving the Display Theme calls the native `CraftCrawlAppIcon`
-bridge:
+The installed native app can also switch icons after installation. In the native
+mobile app, Settings shows an App Icon panel that calls the native
+`CraftCrawlAppIcon` bridge. The panel stays hidden in desktop browsers because
+there is no native launcher icon to change.
 
 - iOS uses alternate app icons, so iOS shows its standard confirmation alert
   when the icon changes.

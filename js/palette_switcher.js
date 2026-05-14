@@ -28,10 +28,6 @@ function setPalette(palette, options = {}) {
         window.syncCraftCrawlLogos();
     }
 
-    if (options.syncNativeAppIcon && window.syncCraftCrawlNativeAppIcon) {
-        window.syncCraftCrawlNativeAppIcon(palette);
-    }
-
     paletteButtons.forEach((button) => {
         const isActive = button.dataset.paletteOption === palette;
         button.classList.toggle('is-active', isActive);
@@ -83,7 +79,7 @@ paletteButtons.forEach((button) => {
                     throw new Error(data.message || 'Display theme could not be saved.');
                 }
 
-                setPalette(data.palette || nextPalette, { syncNativeAppIcon: true });
+                setPalette(data.palette || nextPalette);
                 showPaletteStatus(form, data.message || 'Display theme updated.', false);
             })
             .catch((error) => {

@@ -308,9 +308,12 @@
 
         currentFriendsList.innerHTML = visibleFriends.map((friend) => `
             <article class="friend-current-item">
-                <div>
-                    <strong>${escapeHtml(friend.name)}</strong>
-                    ${friend.is_new ? '<span>New</span>' : ''}
+                <div class="friend-current-summary">
+                    <div class="friend-current-name-row">
+                        <strong>${escapeHtml(friend.name)}</strong>
+                        ${friend.is_new ? '<span class="friend-current-new-badge">New</span>' : ''}
+                    </div>
+                    <p class="friend-current-meta">Level ${escapeHtml(friend.level || 1)}${friend.title ? ` &middot; ${escapeHtml(friend.title)}` : ''}</p>
                 </div>
                 <div class="friend-current-actions">
                     <a href="profile.php?id=${encodeURIComponent(friend.id)}">View Profile</a>

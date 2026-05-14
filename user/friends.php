@@ -236,6 +236,20 @@ $leaderboard = $leaderboard_stmt->get_result();
             <div class="friend-requests-list" data-friend-requests-list></div>
         </section>
 
+        <section class="settings-panel friends-manager-section friends-add-section">
+            <div class="friends-section-header">
+                <h2>Add New Friends</h2>
+                <button type="submit" form="friend-search-form">Search</button>
+            </div>
+            <form class="friends-search-form" id="friend-search-form" data-friends-search-form>
+                <label for="friend-search-input">Search friend accounts</label>
+                <div>
+                    <input type="search" id="friend-search-input" name="q" placeholder="Search by name or email" autocomplete="off">
+                </div>
+            </form>
+            <div class="friends-search-results" data-friends-search-results hidden></div>
+        </section>
+
         <section class="settings-panel friends-manager-section">
             <h2>Your Friends</h2>
             <label class="friends-list-filter" for="current-friend-filter">
@@ -243,18 +257,6 @@ $leaderboard = $leaderboard_stmt->get_result();
                 <input type="search" id="current-friend-filter" data-current-friends-filter placeholder="Search by name" autocomplete="off">
             </label>
             <div class="friend-current-list" data-current-friends-list></div>
-        </section>
-
-        <section class="settings-panel friends-manager-section">
-            <h2>Add New Friends</h2>
-            <form class="friends-search-form" data-friends-search-form>
-                <label for="friend-search-input">Search friend accounts</label>
-                <div>
-                    <input type="search" id="friend-search-input" name="q" placeholder="Search by name or email" autocomplete="off">
-                    <button type="submit">Search</button>
-                </div>
-            </form>
-            <div class="friends-search-results" data-friends-search-results hidden></div>
         </section>
     </main>
     <?php include __DIR__ . '/subpage_mobile_nav.php'; ?>

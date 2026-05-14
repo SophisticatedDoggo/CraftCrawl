@@ -89,14 +89,14 @@ function getCraftCrawlNativePlugin(name) {
         return existingPlugin;
     }
 
-    if (!isNative
-        || typeof capacitor.registerPlugin !== 'function'
-        || (capacitor.isPluginAvailable && !capacitor.isPluginAvailable(name))) {
+    if (!isNative || typeof capacitor.registerPlugin !== 'function') {
         return null;
     }
 
     return capacitor.registerPlugin(name);
 }
+
+window.getCraftCrawlNativePlugin = getCraftCrawlNativePlugin;
 
 function syncCraftCrawlNativeStatusBar() {
     const statusBar = getCraftCrawlNativePlugin('StatusBar');
