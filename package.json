@@ -16,6 +16,8 @@
     "cap:add:android": "cap add android",
     "cap:add:ios": "cap add ios",
     "assets:icons": "tools/generate-app-icons.sh",
+    "assets:splash": "tools/generate-splash-assets.sh",
+    "assets:native": "npm run assets:icons && npm run assets:splash",
     "android:debug": "cd android && ./gradlew assembleDebug",
     "android:debug:staging": "cd android && ./gradlew assembleStagingDebug",
     "android:debug:prod": "cd android && ./gradlew assembleProdDebug",

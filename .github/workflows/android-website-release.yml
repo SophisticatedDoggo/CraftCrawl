@@ -44,6 +44,8 @@ jobs:
       CRAFTCRAWL_APP_ENV: ${{ inputs.target }}
       CRAFTCRAWL_MOBILE_URL: ${{ inputs.target == 'prod' && 'https://app.craftcrawl.site' || 'https://staging.craftcrawl.site' }}
       CRAFTCRAWL_APP_ICON: ${{ inputs.app_icon }}
+      CRAFTCRAWL_VERSION_NAME: ${{ inputs.version_name }}
+      CRAFTCRAWL_VERSION_CODE: ${{ inputs.version_code }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
@@ -131,10 +133,17 @@ jobs:
           echo "${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/craftcrawl-release.keystore"
           echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/craftcrawl-release.keystore" >> "$GITHUB_ENV"
 
-      - name: Set release version
+      - name: Validate release version
         run: |
-          sed -i "s/versionCode [0-9][0-9]*/versionCode ${{ inputs.version_code }}/" android/app/build.gradle
-          sed -i "s/versionName \"[^\"]*\"/versionName \"${{ inputs.version_name }}\"/" android/app/build.gradle
+          if [ -z "$CRAFTCRAWL_VERSION_NAME" ]; then
+            echo "::error::version_name is empty."
+            exit 1
+          fi
+
+          if ! [[ "$CRAFTCRAWL_VERSION_CODE" =~ ^[0-9]+$ ]]; then
+            echo "::error::version_code must be a positive integer. Received '$CRAFTCRAWL_VERSION_CODE'."
+            exit 1
+          fi
 
       - name: Sync Capacitor Android project
         run: npx cap sync android

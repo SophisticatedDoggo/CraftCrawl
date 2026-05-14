@@ -15,6 +15,13 @@ if (!craftcrawlIconSuffixes.containsKey(craftcrawlIconStyle)) {
 
 def craftcrawlIconBase = "ic_launcher${craftcrawlIconSuffixes[craftcrawlIconStyle]}"
 def craftcrawlRuntimeIconName = craftcrawlIconStyle == "trail-map" ? "trail" : craftcrawlIconStyle
+def craftcrawlVersionCode = (System.getenv("CRAFTCRAWL_VERSION_CODE") ?: "1").toString()
+def craftcrawlVersionName = (System.getenv("CRAFTCRAWL_VERSION_NAME") ?: "1.0").toString()
+
+if (!(craftcrawlVersionCode ==~ /^[0-9]+$/)) {
+    throw new GradleException("CRAFTCRAWL_VERSION_CODE must be a positive integer. Received '${craftcrawlVersionCode}'.")
+}
+
 def craftcrawlManifestPlaceholders = { label ->
     [
         appLabel: label,
@@ -45,8 +52,8 @@ android {
         applicationId "com.craftcrawl.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode craftcrawlVersionCode.toInteger()
+        versionName craftcrawlVersionName
         manifestPlaceholders = craftcrawlManifestPlaceholders("CraftCrawl")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

@@ -4923,7 +4923,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .mobile-actions-panel {
         position: fixed;
         right: 10px;
-        bottom: calc(104px + env(safe-area-inset-bottom));
+        bottom: calc(92px + env(safe-area-inset-bottom));
         z-index: 30;
         display: none;
         min-width: 176px;
@@ -5019,7 +5019,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
         --mobile-tab-thumb-opacity: 0;
         position: fixed;
         right: max(14px, env(safe-area-inset-right));
-        bottom: max(14px, calc(env(safe-area-inset-bottom) + 10px));
+        bottom: max(6px, calc(env(safe-area-inset-bottom) - 10px));
         left: max(14px, env(safe-area-inset-left));
         z-index: 20;
         display: grid;
@@ -5066,7 +5066,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .page-loader {
-        bottom: calc(104px + env(safe-area-inset-bottom));
+        bottom: calc(92px + env(safe-area-inset-bottom));
         z-index: 19;
     }
 

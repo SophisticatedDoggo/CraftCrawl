@@ -145,6 +145,23 @@ npm run assets:icons
 
 That command refreshes the iOS asset catalogs and all Android density-specific launcher images. It also refreshes the default `AppIcon` / `ic_launcher` assets from the Trail source.
 
+To edit the native splash screen, replace:
+
+- `images/craft-crawl-splash.png`
+
+The source image should be `2732x2732`. Then regenerate the native splash
+assets:
+
+```sh
+npm run assets:splash
+```
+
+To regenerate both app icons and splash assets together, run:
+
+```sh
+npm run assets:native
+```
+
 iOS defaults to `AppIcon`, which uses the Trail logo. Use `AppIcon` for normal
 TestFlight/App Store builds; the alternate icon assets are packaged so users can
 switch icons from mobile app settings after install. To build another initial
