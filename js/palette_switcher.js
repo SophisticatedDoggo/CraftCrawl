@@ -15,7 +15,7 @@ function showPaletteStatus(form, message, isError) {
     status.hidden = false;
 }
 
-function setPalette(palette) {
+function setPalette(palette, options = {}) {
     document.documentElement.dataset.palette = palette;
     localStorage.setItem('craftcrawl_palette', palette);
     document.cookie = `craftcrawl_account_palette=${encodeURIComponent(palette)}; path=/; max-age=31536000; samesite=lax`;
@@ -26,6 +26,10 @@ function setPalette(palette) {
 
     if (window.syncCraftCrawlLogos) {
         window.syncCraftCrawlLogos();
+    }
+
+    if (options.syncNativeAppIcon && window.syncCraftCrawlNativeAppIcon) {
+        window.syncCraftCrawlNativeAppIcon(palette);
     }
 
     paletteButtons.forEach((button) => {
@@ -79,7 +83,7 @@ paletteButtons.forEach((button) => {
                     throw new Error(data.message || 'Display theme could not be saved.');
                 }
 
-                setPalette(data.palette || nextPalette);
+                setPalette(data.palette || nextPalette, { syncNativeAppIcon: true });
                 showPaletteStatus(form, data.message || 'Display theme updated.', false);
             })
             .catch((error) => {

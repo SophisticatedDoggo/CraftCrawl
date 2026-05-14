@@ -10,6 +10,57 @@
         <string>CraftCrawl</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>AppIcon</string>
+			</array>
+			<key>UIPrerenderedIcon</key>
+			<false/>
+		</dict>
+		<key>CFBundleAlternateIcons</key>
+		<dict>
+			<key>AppIcon-Trail</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIcon-Trail</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>AppIcon-TrailDark</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIcon-TrailDark</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>AppIcon-Ember</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIcon-Ember</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>AppIcon-EmberDark</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIcon-EmberDark</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+		</dict>
+	</dict>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>

@@ -11,6 +11,16 @@ on:
         description: Android version code, must increase for each release
         required: true
         default: '1'
+      app_icon:
+        description: App icon style
+        required: true
+        type: choice
+        options:
+          - trail
+          - trail-dark
+          - ember
+          - ember-dark
+        default: trail
 
 concurrency:
   group: android-website-release
@@ -24,6 +34,7 @@ jobs:
     env:
       CRAFTCRAWL_APP_ENV: prod
       CRAFTCRAWL_MOBILE_URL: https://app.craftcrawl.site
+      CRAFTCRAWL_APP_ICON: ${{ inputs.app_icon }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}

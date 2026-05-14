@@ -18,4 +18,9 @@ class CraftCrawlBridgeViewController: CAPBridgeViewController {
         view.backgroundColor = craftCrawlBackground
         super.viewDidLoad()
     }
+
+    override func capacitorDidLoad() {
+        super.capacitorDidLoad()
+        bridge?.registerPluginInstance(CraftCrawlAppIconPlugin())
+    }
 }

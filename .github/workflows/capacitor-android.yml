@@ -30,6 +30,16 @@ on:
           - staging
           - prod
         default: staging
+      app_icon:
+        description: App icon style
+        required: true
+        type: choice
+        options:
+          - trail
+          - trail-dark
+          - ember
+          - ember-dark
+        default: trail
 
 jobs:
   android-debug-build:
@@ -38,6 +48,7 @@ jobs:
     env:
       CRAFTCRAWL_APP_ENV: ${{ (github.event_name == 'workflow_dispatch' && inputs.target) || (github.ref_name == 'main' && 'prod' || 'staging') }}
       CRAFTCRAWL_MOBILE_URL: ${{ (github.event_name == 'workflow_dispatch' && inputs.target == 'prod') || github.ref_name == 'main' && 'https://app.craftcrawl.site' || 'https://staging.craftcrawl.site' }}
+      CRAFTCRAWL_APP_ICON: ${{ github.event.inputs.app_icon || 'trail' }}
 
     steps:
       - name: Check out repository

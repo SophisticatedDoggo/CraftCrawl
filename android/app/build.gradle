@@ -14,11 +14,16 @@ if (!craftcrawlIconSuffixes.containsKey(craftcrawlIconStyle)) {
 }
 
 def craftcrawlIconBase = "ic_launcher${craftcrawlIconSuffixes[craftcrawlIconStyle]}"
+def craftcrawlRuntimeIconName = craftcrawlIconStyle == "trail-map" ? "trail" : craftcrawlIconStyle
 def craftcrawlManifestPlaceholders = { label ->
     [
         appLabel: label,
         appIcon: "@mipmap/${craftcrawlIconBase}",
-        appRoundIcon: "@mipmap/${craftcrawlIconBase}_round"
+        appRoundIcon: "@mipmap/${craftcrawlIconBase}_round",
+        appIconTrailEnabled: craftcrawlRuntimeIconName == "trail" ? "true" : "false",
+        appIconTrailDarkEnabled: craftcrawlRuntimeIconName == "trail-dark" ? "true" : "false",
+        appIconEmberEnabled: craftcrawlRuntimeIconName == "ember" ? "true" : "false",
+        appIconEmberDarkEnabled: craftcrawlRuntimeIconName == "ember-dark" ? "true" : "false"
     ]
 }
 

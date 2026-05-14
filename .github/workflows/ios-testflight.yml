@@ -11,6 +11,17 @@ on:
           - beta
           - setup_signing
         default: beta
+      app_icon:
+        description: App icon style
+        required: true
+        type: choice
+        options:
+          - AppIcon
+          - AppIcon-Trail
+          - AppIcon-TrailDark
+          - AppIcon-Ember
+          - AppIcon-EmberDark
+        default: AppIcon
 
 jobs:
   testflight:
@@ -19,6 +30,7 @@ jobs:
     env:
       CRAFTCRAWL_APP_ENV: prod
       CRAFTCRAWL_MOBILE_URL: https://app.craftcrawl.site
+      CRAFTCRAWL_APP_ICON_NAME: ${{ inputs.app_icon }}
       APPLE_ID: ${{ secrets.APPLE_ID }}
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       APP_STORE_CONNECT_TEAM_ID: ${{ secrets.APP_STORE_CONNECT_TEAM_ID }}

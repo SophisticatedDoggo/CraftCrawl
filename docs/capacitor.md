@@ -130,13 +130,46 @@ CraftCrawl includes app icon options for each display theme:
 - Ember: `AppIcon-Ember` on iOS, `ember` on Android.
 - Ember Dark: `AppIcon-EmberDark` on iOS, `ember-dark` on Android.
 
-iOS defaults to `AppIcon`, which uses the Trail logo. To build another icon, pass a build setting such as `CRAFTCRAWL_APP_ICON_NAME=AppIcon-Ember` in Xcode or `xcodebuild`.
+To edit the app icons, replace the same-named source PNGs in `images/`:
+
+- `images/craft-crawl-logo-trail.png`
+- `images/craft-crawl-logo-trail-dark.png`
+- `images/craft-crawl-logo-ember.png`
+- `images/craft-crawl-logo-ember-dark.png`
+
+Then regenerate the native icon assets:
+
+```sh
+npm run assets:icons
+```
+
+That command refreshes the iOS asset catalogs and all Android density-specific launcher images. It also refreshes the default `AppIcon` / `ic_launcher` assets from the Trail source.
+
+iOS defaults to `AppIcon`, which uses the Trail logo. To build another icon locally with `xcodebuild`, pass a build setting such as:
+
+```sh
+xcodebuild -project ios/App/App.xcodeproj -scheme App CRAFTCRAWL_APP_ICON_NAME=AppIcon-Ember build
+```
+
+In Xcode, set `CRAFTCRAWL_APP_ICON_NAME` to one of `AppIcon`, `AppIcon-Trail`, `AppIcon-TrailDark`, `AppIcon-Ember`, or `AppIcon-EmberDark`. The iOS GitHub Actions workflows also expose this as an `app_icon` manual-run input.
 
 Android defaults to `trail`. To build another icon, set `CRAFTCRAWL_APP_ICON`, for example:
 
 ```sh
 CRAFTCRAWL_APP_ICON=ember-dark npm run android:debug:prod
 ```
+
+The Android GitHub Actions workflows expose the same choice as an `app_icon` manual-run input.
+
+The installed native app can also switch icons after installation. In the app,
+changing and saving the Display Theme calls the native `CraftCrawlAppIcon`
+bridge:
+
+- iOS uses alternate app icons, so iOS shows its standard confirmation alert
+  when the icon changes.
+- Android enables the matching launcher alias and disables the other aliases.
+  Some launchers refresh immediately; others may take a moment or require
+  returning to the home screen.
 
 Keep the logo readable at small sizes and test both light and dark device modes before store submission.
 

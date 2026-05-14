@@ -15,14 +15,63 @@
             android:label="${appLabel}"
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
-            android:exported="true">
+            android:exported="true" />
 
+        <activity-alias
+            android:name=".MainActivityTrail"
+            android:enabled="${appIconTrailEnabled}"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="${appLabel}"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity-alias>
 
-        </activity>
+        <activity-alias
+            android:name=".MainActivityTrailDark"
+            android:enabled="${appIconTrailDarkEnabled}"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_trail_dark"
+            android:label="${appLabel}"
+            android:roundIcon="@mipmap/ic_launcher_trail_dark_round"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityEmber"
+            android:enabled="${appIconEmberEnabled}"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_ember"
+            android:label="${appLabel}"
+            android:roundIcon="@mipmap/ic_launcher_ember_round"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityEmberDark"
+            android:enabled="${appIconEmberDarkEnabled}"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_ember_dark"
+            android:label="${appLabel}"
+            android:roundIcon="@mipmap/ic_launcher_ember_dark_round"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <provider
             android:name="androidx.core.content.FileProvider"

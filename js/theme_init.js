@@ -24,6 +24,12 @@ const craftCrawlPaletteLogos = {
     ember: 'craft-crawl-logo-ember.png',
     'ember-dark': 'craft-crawl-logo-ember-dark.png'
 };
+const craftCrawlPaletteAppIcons = {
+    'trail-map': 'trail',
+    'trail-dark': 'trail-dark',
+    ember: 'ember',
+    'ember-dark': 'ember-dark'
+};
 
 document.documentElement.dataset.palette = craftCrawlPalette;
 localStorage.setItem('craftcrawl_palette', craftCrawlPalette);
@@ -53,6 +59,23 @@ function syncCraftCrawlLogos() {
 }
 
 window.syncCraftCrawlLogos = syncCraftCrawlLogos;
+
+function syncCraftCrawlNativeAppIcon(palette) {
+    const appIcon = getCraftCrawlNativePlugin('CraftCrawlAppIcon');
+    const iconName = craftCrawlPaletteAppIcons[palette] || craftCrawlPaletteAppIcons['trail-map'];
+
+    if (!appIcon || typeof appIcon.setIcon !== 'function') {
+        return;
+    }
+
+    appIcon.setIcon({ name: iconName })
+        .then(() => {
+            localStorage.setItem('craftcrawl_native_app_icon', iconName);
+        })
+        .catch(() => {});
+}
+
+window.syncCraftCrawlNativeAppIcon = syncCraftCrawlNativeAppIcon;
 
 function getCraftCrawlNativePlugin(name) {
     const capacitor = window.Capacitor;
