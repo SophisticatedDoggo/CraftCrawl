@@ -116,6 +116,7 @@ jobs:
             --exclude 'node_modules/' \
             --exclude 'android/' \
             --exclude 'ios/' \
+            --exclude 'downloads/' \
             --exclude 'dist/' \
             --exclude 'www/' \
             --exclude 'data/' \

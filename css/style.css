@@ -206,6 +206,12 @@ h1 {
     color: var(--color-primary);
 }
 
+.business-portal-header h1,
+.settings-header h1 {
+    font-size: clamp(2.5rem, 5.8vw, 3.6rem);
+    line-height: 1.04;
+}
+
 .business-portal-header h1::after,
 .settings-header h1::after,
 .business-details-hero h1::after,
@@ -214,7 +220,7 @@ h1 {
     content: "";
     display: block;
     width: 80%;
-    height: 3px;
+    height: 4px;
     margin-top: 7px;
     border-radius: 999px;
     background: var(--page-title-line);
@@ -475,7 +481,7 @@ label {
 
 .site-logo {
     display: block;
-    width: 58px;
+    width: 76px;
     height: auto;
     flex: 0 0 auto;
     border: 1px solid var(--color-border);
@@ -485,7 +491,7 @@ label {
 }
 
 .auth-logo {
-    width: 78px;
+    width: 96px;
     margin: 0 auto 14px;
 }
 
@@ -792,12 +798,15 @@ a.text-link:focus {
 }
 
 .portal-header .site-logo {
-    width: 64px;
+    width: 82px;
 }
 
 .portal-header h1 {
     position: relative;
-    display: inline-block;
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 82px;
     padding-bottom: 6px;
     color: var(--color-primary);
     font-size: clamp(2.4rem, 5.2vw, 3.45rem);
@@ -4533,11 +4542,13 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .portal-header .site-logo {
-        width: 58px;
+        width: 72px;
     }
 
     .portal-header h1 {
-        font-size: clamp(2rem, 9vw, 2.8rem);
+        min-height: 72px;
+        font-size: clamp(2.75rem, 11vw, 3.25rem);
+        line-height: 1;
     }
 
     .business-portal-header {
@@ -4547,14 +4558,18 @@ a.event-calendar-event:focus .event-calendar-event-name {
 
     .business-portal-header > div:first-child {
         display: grid;
-        grid-template-columns: 58px minmax(0, 1fr);
+        grid-template-columns: 72px minmax(0, 1fr);
         align-items: center;
     }
 
     .business-portal-header h1 {
-        font-size: clamp(2rem, 8vw, 2.7rem);
+        font-size: clamp(2.25rem, 8vw, 3rem);
         line-height: 1.08;
         overflow-wrap: anywhere;
+    }
+
+    .settings-header h1 {
+        font-size: clamp(2.25rem, 8vw, 3rem);
     }
 
     .business-portal-header p {
@@ -5388,6 +5403,10 @@ a.event-calendar-event:focus .event-calendar-event-name {
 }
 
 @media (max-width: 460px) {
+    .portal-header h1 {
+        font-size: clamp(2.6rem, 11vw, 3rem);
+    }
+
     .profile-stat-grid {
         grid-template-columns: 1fr;
     }
@@ -5421,15 +5440,15 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .business-portal-header > div:first-child {
-        grid-template-columns: 56px minmax(0, 1fr);
+        grid-template-columns: 68px minmax(0, 1fr);
     }
 
     .business-portal-header .site-logo {
-        width: 56px;
+        width: 68px;
     }
 
     .business-portal-header h1 {
-        font-size: clamp(1.9rem, 8vw, 2.25rem);
+        font-size: clamp(2.15rem, 9vw, 2.65rem);
     }
 
     .auth-card,

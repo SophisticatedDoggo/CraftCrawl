@@ -8,6 +8,8 @@ https://app.craftcrawl.site/downloads/craftcrawl-prod.apk
 ```
 
 This is an early release path for direct testers. Google Play can be added later.
+The web deploy workflow excludes `downloads/` so normal site deploys do not
+delete the separately published APK.
 
 ## One-Time Signing Setup
 
