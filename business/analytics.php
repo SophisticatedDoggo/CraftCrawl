@@ -1,6 +1,7 @@
 <?php
 require '../login_check.php';
 include '../db.php';
+require_once '../lib/user_avatar.php';
 
 if (!isset($_SESSION['business_id'])) {
     craftcrawl_redirect('business_login.php');
@@ -66,9 +67,11 @@ $today_xp = (int) ($summary['today_xp'] ?? 0);
 $today_first_time_rate = $today_checkins > 0 ? round(($today_first_time / $today_checkins) * 100) : 0;
 
 $recent_stmt = $conn->prepare("
-    SELECT uv.visit_type, uv.xp_awarded, uv.distance_meters, uv.checkedInAt, u.fName, u.lName
+    SELECT uv.visit_type, uv.xp_awarded, uv.distance_meters, uv.checkedInAt,
+        u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
     FROM user_visits uv
     INNER JOIN users u ON u.id = uv.user_id
+    LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
     WHERE uv.business_id=?
     ORDER BY uv.checkedInAt DESC
     LIMIT 12
@@ -184,9 +187,12 @@ $recent_checkins = $recent_stmt->get_result();
                 <div class="analytics-recent-grid">
                     <?php while ($checkin = $recent_checkins->fetch_assoc()) : ?>
                         <article class="analytics-checkin-card">
-                            <div>
-                                <strong><?php echo escape_output(trim($checkin['fName'] . ' ' . $checkin['lName'])); ?></strong>
-                                <span><?php echo escape_output(format_checkin_time($checkin['checkedInAt'])); ?></span>
+                            <div class="user-identity-row">
+                                <?php echo craftcrawl_render_user_avatar($checkin, 'small'); ?>
+                                <div>
+                                    <strong><?php echo escape_output(trim($checkin['fName'] . ' ' . $checkin['lName'])); ?></strong>
+                                    <span><?php echo escape_output(format_checkin_time($checkin['checkedInAt'])); ?></span>
+                                </div>
                             </div>
                             <p>
                                 <?php echo $checkin['visit_type'] === 'first_time' ? 'First-time check-in' : 'Repeat check-in'; ?>

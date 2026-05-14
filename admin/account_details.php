@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../lib/admin_auth.php';
 require_once __DIR__ . '/../lib/password_reset.php';
 require_once __DIR__ . '/../lib/remember_auth.php';
+require_once __DIR__ . '/../lib/user_avatar.php';
 craftcrawl_require_admin();
 include '../db.php';
 
@@ -33,7 +34,13 @@ function admin_details_account_table($account_type) {
 
 function admin_details_account_fetch($conn, $account_type, $account_id) {
     if ($account_type === 'user') {
-        $stmt = $conn->prepare("SELECT id, CONCAT(fName, ' ', lName) AS account_name, email, createdAt, emailVerifiedAt, disabledAt FROM users WHERE id=?");
+        $stmt = $conn->prepare("
+            SELECT u.id, CONCAT(u.fName, ' ', u.lName) AS account_name, u.fName, u.lName, u.email, u.createdAt, u.emailVerifiedAt, u.disabledAt,
+                u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+            FROM users u
+            LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+            WHERE u.id=?
+        ");
     } elseif ($account_type === 'business') {
         $stmt = $conn->prepare("SELECT id, bName AS account_name, bEmail AS email, createdAt, emailVerifiedAt, disabledAt, approved, city, state FROM businesses WHERE id=?");
     } elseif ($account_type === 'admin') {
@@ -160,7 +167,12 @@ if (!empty($account['disabledAt'])) {
 
         <section class="admin-panel">
             <div class="business-section-header">
-                <h2><?php echo craftcrawl_admin_escape($account['account_name']); ?></h2>
+                <div class="user-identity-row admin-account-identity">
+                    <?php if ($account_type === 'user') : ?>
+                        <?php echo craftcrawl_render_user_avatar($account, 'medium'); ?>
+                    <?php endif; ?>
+                    <h2><?php echo craftcrawl_admin_escape($account['account_name']); ?></h2>
+                </div>
                 <a href="accounts.php">Back to Accounts</a>
             </div>
             <dl class="admin-detail-list">

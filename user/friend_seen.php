@@ -1,6 +1,7 @@
 <?php
 require '../login_check.php';
 include '../db.php';
+require_once '../lib/notifications.php';
 
 header('Content-Type: application/json');
 
@@ -23,5 +24,10 @@ $stmt = $conn->prepare("UPDATE users SET friendsSeenAt=NOW() WHERE id=?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 
-echo json_encode(['ok' => true]);
+$counts = craftcrawl_user_notification_counts($conn, $user_id);
+
+echo json_encode([
+    'ok' => true,
+    'counts' => $counts
+]);
 ?>

@@ -19,6 +19,7 @@
     let currentStatus = {
         pendingInvites: 0,
         newFriends: 0,
+        newFeedItems: 0,
         badgeCount: 0
     };
     let currentFriendsCache = [];
@@ -39,6 +40,11 @@
         badge_earned: ['cheers', 'trophy'],
         business_post: ['cheers', 'want_to_go']
     };
+    const isUserPath = /\/user\/?$|\/user\//.test(window.location.pathname);
+
+    function userEndpoint(file) {
+        return isUserPath ? file : `user/${file}`;
+    }
 
     if (!panel && !managerPage && !menuBadge && !tabBadge) {
         return;
@@ -113,8 +119,22 @@
         return `<span class="${classes}" aria-label="${escapeHtml(name)} profile photo"><span>${escapeHtml(initials)}</span></span>`;
     }
 
+    function feedItemAttrs(item) {
+        return `data-feed-item-type="${escapeHtml(item.type || '')}" data-feed-is-self="${item.is_self ? 'true' : 'false'}"`;
+    }
+
+    function availableReactionTypes(item) {
+        const types = reactionTypesByItemType[item.type] || Object.keys(reactionLabels);
+
+        if (item.is_self && item.type !== 'business_post') {
+            return types.filter((type) => type !== 'want_to_go');
+        }
+
+        return types;
+    }
+
     function loadStatus() {
-        return fetch('friend_status.php', { credentials: 'same-origin' })
+        return fetch(userEndpoint('friend_status.php'), { credentials: 'same-origin' })
             .then((response) => response.json())
             .then((data) => {
                 if (!data.ok) {
@@ -125,6 +145,7 @@
                 currentStatus = {
                     pendingInvites: Number(data.pending_invites || 0),
                     newFriends: Number(data.new_friends || 0),
+                    newFeedItems: Number(data.new_feed_items || 0),
                     badgeCount
                 };
                 setBadge(menuBadge, badgeCount);
@@ -138,7 +159,7 @@
             return Promise.resolve();
         }
 
-        return postForm('friend_seen.php', {
+        return postForm(userEndpoint('friend_seen.php'), {
             csrf_token: csrfToken
         })
             .then(() => loadStatus())
@@ -204,12 +225,12 @@
                 button.textContent = action === 'accept' ? 'Accepting...' : 'Sending...';
 
                 const request = action === 'accept'
-                    ? postForm('friend_respond.php', {
+                    ? postForm(userEndpoint('friend_respond.php'), {
                         csrf_token: csrfToken,
                         request_id: button.dataset.requestId,
                         response: 'accepted'
                     })
-                    : postForm('friend_add.php', {
+                    : postForm(userEndpoint('friend_add.php'), {
                         csrf_token: csrfToken,
                         friend_id: button.dataset.friendId
                     });
@@ -271,7 +292,7 @@
                 button.classList.add('is-loading');
                 button.textContent = response === 'accepted' ? 'Approving...' : 'Declining...';
 
-                postForm('friend_respond.php', {
+                postForm(userEndpoint('friend_respond.php'), {
                     csrf_token: csrfToken,
                     request_id: button.dataset.requestId,
                     response
@@ -351,7 +372,7 @@
                 button.classList.add('is-loading');
                 button.textContent = 'Removing...';
 
-                postForm('friend_remove.php', {
+                postForm(userEndpoint('friend_remove.php'), {
                     csrf_token: csrfToken,
                     friend_id: button.dataset.removeFriendId
                 })
@@ -412,7 +433,7 @@
 
         if (item.type === 'level_up') {
             return `
-                <article class="friends-feed-item">
+                <article class="friends-feed-item" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div>
                         <strong>${escapeHtml(actorName)} reached Level ${escapeHtml(item.level)}</strong>
@@ -425,7 +446,7 @@
 
         if (item.type === 'badge_earned') {
             return `
-                <article class="friends-feed-item">
+                <article class="friends-feed-item" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div>
                         <strong>${escapeHtml(actorName)} earned ${escapeHtml(item.badge_name)}</strong>
@@ -438,7 +459,7 @@
 
         if (item.type === 'event_want') {
             return `
-                <article class="friends-feed-item">
+                <article class="friends-feed-item" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div>
                         <strong>${escapeHtml(item.is_self ? 'You want' : `${item.friend_name} wants`)} to go to ${escapeHtml(item.event_name)}</strong>
@@ -451,7 +472,7 @@
 
         if (item.type === 'location_want') {
             return `
-                <article class="friends-feed-item">
+                <article class="friends-feed-item" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div>
                         <strong>${escapeHtml(item.is_self ? 'You want' : `${item.friend_name} wants`)} to visit ${escapeHtml(item.business_name)}</strong>
@@ -479,7 +500,7 @@
             }
 
             return `
-                <article class="friends-feed-item">
+                <article class="friends-feed-item" ${feedItemAttrs(item)}>
                     <div class="friends-feed-icon">${isPoll ? '📊' : '📢'}</div>
                     <div>
                         <strong>${escapeHtml(item.business_name)}</strong>
@@ -493,7 +514,7 @@
         }
 
         return `
-            <article class="friends-feed-item">
+            <article class="friends-feed-item" ${feedItemAttrs(item)}>
                 ${renderAvatar(item.actor, item.friend_name)}
                 <div>
                     <strong>${escapeHtml(actorName)} visited ${escapeHtml(item.business_name)} for the first time</strong>
@@ -554,7 +575,7 @@
             button.disabled = true;
             button.classList.add('is-loading');
 
-            postForm('feed_reaction_toggle.php', {
+            postForm(userEndpoint('feed_reaction_toggle.php'), {
                 csrf_token: csrfToken,
                 item_key: button.dataset.itemKey,
                 reaction_type: button.dataset.reactionType
@@ -570,8 +591,11 @@
                     const reactionsDiv = article?.querySelector('.feed-reactions');
                     if (reactionsDiv && data.reactions) {
                         const itemKey = button.dataset.itemKey;
-                        const itemType = itemKey.split(':')[0];
-                        const availableReactions = reactionTypesByItemType[itemType] || Object.keys(reactionLabels);
+                        const itemType = article?.dataset.feedItemType || itemKey.split(':')[0];
+                        const availableReactions = availableReactionTypes({
+                            type: itemType,
+                            is_self: article?.dataset.feedIsSelf === 'true'
+                        });
                         const reactionMap = {};
                         data.reactions.forEach((r) => { reactionMap[r.type] = r; });
                         reactionsDiv.innerHTML = availableReactions.map((type) => {
@@ -610,7 +634,7 @@
             formData.append('post_id', voteBtn.dataset.itemKey.split(':')[1]);
             formData.append('option_id', voteBtn.dataset.optionId);
 
-            fetch('business_poll_vote.php', {
+            fetch(userEndpoint('business_poll_vote.php'), {
                 method: 'POST',
                 body: formData,
                 credentials: 'same-origin'
@@ -644,7 +668,7 @@
 
         loadingMore = true;
 
-        fetch(`friends_feed.php?before=${encodeURIComponent(lastItemDate)}`, { credentials: 'same-origin' })
+        fetch(`${userEndpoint('friends_feed.php')}?before=${encodeURIComponent(lastItemDate)}`, { credentials: 'same-origin' })
             .then((r) => r.json())
             .then((data) => {
                 if (!data.ok || !data.feed || !data.feed.length) {
@@ -700,7 +724,7 @@
 
         const reactions = item.reactions || [];
         const reactionMap = {};
-        const availableReactions = reactionTypesByItemType[item.type] || Object.keys(reactionLabels);
+        const availableReactions = availableReactionTypes(item);
 
         reactions.forEach((reaction) => {
             reactionMap[reaction.type] = reaction;
@@ -755,7 +779,7 @@
     }
 
     function loadFeed() {
-        return fetch('friends_feed.php', { credentials: 'same-origin' })
+        return fetch(userEndpoint('friends_feed.php'), { credentials: 'same-origin' })
             .then((response) => response.json())
             .then((data) => {
                 if (!data.ok) {
@@ -780,7 +804,7 @@
             return Promise.resolve();
         }
 
-        return fetch('friend_requests.php', { credentials: 'same-origin' })
+        return fetch(userEndpoint('friend_requests.php'), { credentials: 'same-origin' })
             .then((response) => response.json())
             .then((data) => {
                 if (!data.ok) {
@@ -826,7 +850,7 @@
                 searchButton.classList.add('is-loading');
             }
 
-            fetch(`friend_search.php?q=${encodeURIComponent(query)}`, { credentials: 'same-origin' })
+            fetch(`${userEndpoint('friend_search.php')}?q=${encodeURIComponent(query)}`, { credentials: 'same-origin' })
                 .then((response) => response.json())
                 .then((data) => {
                     if (!data.ok) {
@@ -856,7 +880,7 @@
         button.addEventListener('click', () => {
             button.disabled = true;
             button.classList.add('is-loading');
-            postForm('recommendation_update.php', {
+            postForm(userEndpoint('recommendation_update.php'), {
                 csrf_token: csrfToken,
                 recommendation_id: button.dataset.recommendationId,
                 status: button.dataset.recommendationStatus
@@ -870,6 +894,7 @@
                     }
 
                     button.closest('.friend-recommendation-card')?.remove();
+                    loadStatus();
                 })
                 .catch(() => {
                     showStatus('Recommendation could not be updated.', true);
@@ -884,14 +909,7 @@
     } else if (panel) {
         loadRequests();
         loadFeed()
-            .then(() => loadStatus())
-            .then(() => {
-                if (currentStatus.newFriends > 0) {
-                    return markFriendsSeen();
-                }
-
-                return null;
-            });
+            .then(() => markFriendsSeen());
     } else {
         loadStatus();
     }

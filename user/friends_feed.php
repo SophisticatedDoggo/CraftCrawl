@@ -162,6 +162,7 @@ while ($visit = $visit_result->fetch_assoc()) {
         'created_at' => $visit['checkedInAt'],
         'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
         'actor' => craftcrawl_feed_person_payload($people[$actor_id] ?? []),
+        'owner_user_id' => $actor_id,
         'is_self' => $actor_id === $user_id,
         'allow_interactions' => (bool) $visit['allow_post_interactions'],
         'business_id' => (int) $visit['business_id'],
@@ -203,6 +204,7 @@ while ($xp = $xp_result->fetch_assoc()) {
         'created_at' => $xp['createdAt'],
         'friend_name' => $people[$friend_id]['name'] ?? 'A friend',
         'actor' => craftcrawl_feed_person_payload($people[$friend_id] ?? []),
+        'owner_user_id' => $friend_id,
         'is_self' => $friend_id === $user_id,
         'allow_interactions' => (bool) $xp['allow_post_interactions'],
         'level' => $after_level,
@@ -239,6 +241,7 @@ while ($event_want = $event_want_result->fetch_assoc()) {
         'created_at' => $event_want['createdAt'],
         'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
         'actor' => craftcrawl_feed_person_payload($people[$actor_id] ?? []),
+        'owner_user_id' => $actor_id,
         'is_self' => $actor_id === $user_id,
         'allow_interactions' => (bool) $event_want['allow_post_interactions'],
         'event_id' => (int) $event_want['event_id'],
@@ -279,6 +282,7 @@ while ($location_want = $location_want_result->fetch_assoc()) {
         'created_at' => $location_want['createdAt'],
         'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
         'actor' => craftcrawl_feed_person_payload($people[$actor_id] ?? []),
+        'owner_user_id' => $actor_id,
         'is_self' => $actor_id === $user_id,
         'allow_interactions' => (bool) $location_want['allow_post_interactions'],
         'business_id' => (int) $location_want['business_id'],
@@ -315,6 +319,7 @@ while ($badge = $badge_result->fetch_assoc()) {
         'created_at' => $badge['earnedAt'],
         'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
         'actor' => craftcrawl_feed_person_payload($people[$actor_id] ?? []),
+        'owner_user_id' => $actor_id,
         'is_self' => $actor_id === $user_id,
         'allow_interactions' => (bool) $badge['allow_post_interactions'],
         'badge_name' => $badge['badge_name'],
@@ -357,6 +362,7 @@ while ($bpost = $post_feed_result->fetch_assoc()) {
         'type' => 'business_post',
         'post_type' => $bpost['post_type'],
         'created_at' => $bpost['created_at'],
+        'owner_user_id' => 0,
         'business_id' => (int) $bpost['business_id'],
         'business_name' => $bpost['bName'],
         'business_type' => $bpost['bType'],
@@ -436,6 +442,10 @@ if (!empty($poll_feed_idx_to_post_id)) {
 }
 
 $feed_item_keys = array_column($feed, 'item_key');
+$feed_owner_by_key = [];
+foreach ($feed as $feed_item) {
+    $feed_owner_by_key[$feed_item['item_key']] = (int) ($feed_item['owner_user_id'] ?? 0);
+}
 $reactions_by_item = [];
 $comment_counts_by_item = [];
 
@@ -464,6 +474,11 @@ if (!empty($feed_item_keys)) {
         $key = $reaction['feed_item_key'];
         $type = $reaction['reaction_type'];
         $reactor_id = (int) $reaction['user_id'];
+
+        if ($type === 'want_to_go' && ($feed_owner_by_key[$key] ?? 0) === $reactor_id) {
+            continue;
+        }
+
         if (!isset($reactions_by_item[$key])) {
             $reactions_by_item[$key] = [];
         }

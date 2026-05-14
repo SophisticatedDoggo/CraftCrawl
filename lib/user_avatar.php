@@ -34,6 +34,10 @@ function craftcrawl_user_initials($user) {
     return $initials !== '' ? $initials : 'CC';
 }
 
+function craftcrawl_avatar_escape($value) {
+    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
+}
+
 function craftcrawl_render_user_avatar($user, $size_class = 'medium', $extra_class = '') {
     $frame = preg_replace('/[^a-z0-9_-]/i', '', (string) ($user['selected_profile_frame'] ?? ''));
     $classes = trim('user-avatar user-avatar-' . $size_class . ' ' . ($frame !== '' ? 'has-frame-' . $frame : '') . ' ' . $extra_class);
@@ -42,10 +46,10 @@ function craftcrawl_render_user_avatar($user, $size_class = 'medium', $extra_cla
     $alt = $name !== '' ? $name . ' profile photo' : 'Profile photo';
 
     if ($url !== null) {
-        return '<span class="' . escape_output($classes) . '"><img src="' . escape_output($url) . '" alt="' . escape_output($alt) . '" loading="lazy"></span>';
+        return '<span class="' . craftcrawl_avatar_escape($classes) . '"><img src="' . craftcrawl_avatar_escape($url) . '" alt="' . craftcrawl_avatar_escape($alt) . '" loading="lazy"></span>';
     }
 
-    return '<span class="' . escape_output($classes) . '" aria-label="' . escape_output($alt) . '"><span>' . escape_output(craftcrawl_user_initials($user)) . '</span></span>';
+    return '<span class="' . craftcrawl_avatar_escape($classes) . '" aria-label="' . craftcrawl_avatar_escape($alt) . '"><span>' . craftcrawl_avatar_escape(craftcrawl_user_initials($user)) . '</span></span>';
 }
 
 ?>

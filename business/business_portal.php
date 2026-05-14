@@ -1,6 +1,7 @@
 <?php
 require '../login_check.php';
 include '../db.php';
+require_once '../lib/user_avatar.php';
 
 if (!isset($_SESSION['business_id'])) {
     craftcrawl_redirect('business_login.php');
@@ -197,7 +198,15 @@ $rating_stmt->execute();
 $rating_result = $rating_stmt->get_result();
 $rating_summary = $rating_result->fetch_assoc();
 
-$review_stmt = $conn->prepare("SELECT r.id, r.rating, r.notes, r.business_response, r.business_responseAt, u.fName, u.lName FROM reviews r INNER JOIN users u ON u.id = r.user_id WHERE r.business_id=? ORDER BY r.id DESC");
+$review_stmt = $conn->prepare("
+    SELECT r.id, r.rating, r.notes, r.business_response, r.business_responseAt,
+        u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+    FROM reviews r
+    INNER JOIN users u ON u.id = r.user_id
+    LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+    WHERE r.business_id=?
+    ORDER BY r.id DESC
+");
 $review_stmt->bind_param("i", $business_id);
 $review_stmt->execute();
 $reviews = $review_stmt->get_result();
@@ -423,7 +432,10 @@ $business_photos = $photo_stmt->get_result();
             <?php while ($review = $reviews->fetch_assoc()) : ?>
                 <article class="business-review-card">
                     <div class="business-review-header">
-                        <strong><?php echo escape_output($review['fName'] . ' ' . $review['lName']); ?></strong>
+                        <div class="business-review-author">
+                            <?php echo craftcrawl_render_user_avatar($review, 'small'); ?>
+                            <strong><?php echo escape_output($review['fName'] . ' ' . $review['lName']); ?></strong>
+                        </div>
                         <span class="rating-summary">
                             <?php echo render_star_rating($review['rating'], $review['rating'] . ' out of 5'); ?>
                             <span><?php echo escape_output(number_format((float) $review['rating'], 1)); ?></span>

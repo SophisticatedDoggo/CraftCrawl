@@ -1,6 +1,11 @@
 (function () {
     const enableButton = document.querySelector('[data-onesignal-enable]');
     const statusMessage = document.querySelector('[data-onesignal-status]');
+    const isUserPath = /\/user\/?$|\/user\//.test(window.location.pathname);
+
+    function userEndpoint(file) {
+        return isUserPath ? file : `user/${file}`;
+    }
 
     function setStatus(message, isError) {
         if (!statusMessage) {
@@ -41,8 +46,8 @@
                         appId: config.app_id,
                         allowLocalhostAsSecureOrigin: Boolean(config.allow_localhost),
                         path: '/',
-                        serviceWorkerPath: 'OneSignalSDKWorker.js',
-                        serviceWorkerUpdaterPath: 'OneSignalSDKUpdaterWorker.js',
+                        serviceWorkerPath: '/OneSignalSDKWorker.js',
+                        serviceWorkerUpdaterPath: '/OneSignalSDKUpdaterWorker.js',
                         serviceWorkerParam: {
                             scope: '/'
                         }
@@ -68,7 +73,7 @@
         return false;
     }
 
-    fetch('onesignal_config.php', { credentials: 'same-origin' })
+    fetch(userEndpoint('onesignal_config.php'), { credentials: 'same-origin' })
         .then((response) => response.ok ? response.json() : null)
         .then((config) => {
             if (!config || !config.enabled || !config.app_id) {

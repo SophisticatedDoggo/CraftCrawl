@@ -1,7 +1,23 @@
 <?php
+require_once __DIR__ . '/../lib/user_avatar.php';
+
 $craftcrawl_portal_active = $craftcrawl_portal_active ?? 'map';
 $craftcrawl_portal_show_search = $craftcrawl_portal_show_search ?? false;
 $craftcrawl_portal_show_level_summary = !in_array($craftcrawl_portal_active, ['events', 'feed'], true);
+$craftcrawl_portal_avatar = null;
+
+if ($craftcrawl_portal_show_level_summary && isset($conn, $user_id)) {
+    $avatar_stmt = $conn->prepare("
+        SELECT u.id, u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+        FROM users u
+        LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+        WHERE u.id=?
+        LIMIT 1
+    ");
+    $avatar_stmt->bind_param("i", $user_id);
+    $avatar_stmt->execute();
+    $craftcrawl_portal_avatar = $avatar_stmt->get_result()->fetch_assoc();
+}
 ?>
 <header class="portal-header">
     <div>
@@ -38,6 +54,9 @@ $craftcrawl_portal_show_level_summary = !in_array($craftcrawl_portal_active, ['e
     </div>
     <?php if ($craftcrawl_portal_show_level_summary) : ?>
     <section class="portal-level-summary" aria-label="Your CraftCrawl level">
+        <?php if ($craftcrawl_portal_avatar) : ?>
+            <?php echo craftcrawl_render_user_avatar($craftcrawl_portal_avatar, 'medium', 'portal-level-avatar'); ?>
+        <?php endif; ?>
         <div>
             <strong>Level <?php echo escape_output($user_progress['level']); ?></strong>
             <span><?php echo escape_output($user_progress['title']); ?></span>

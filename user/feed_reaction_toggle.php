@@ -181,6 +181,14 @@ if (!craftcrawl_feed_item_is_visible($conn, $user_id, $item_key)) {
     exit();
 }
 
+$owner_id = craftcrawl_feed_item_owner_id($conn, $item_key);
+
+if ($reaction_type === 'want_to_go' && $owner_id === $user_id && $item_type !== 'business_post') {
+    http_response_code(400);
+    echo json_encode(['ok' => false, 'message' => 'That reaction is not available on your own post.']);
+    exit();
+}
+
 function craftcrawl_feed_item_allows_interactions($conn, $item_key) {
     // Business posts are always interactive
     if (preg_match('/^business_post:/', $item_key)) {
@@ -244,7 +252,6 @@ if ($existing) {
     $insert_stmt->execute();
     craftcrawl_award_eligible_badges($conn, $user_id);
 
-    $owner_id = craftcrawl_feed_item_owner_id($conn, $item_key);
     if ($owner_id && $owner_id !== $user_id) {
         $reaction_labels = [
             'cheers' => 'Cheers',
@@ -278,6 +285,10 @@ $reactions = [];
 while ($reaction = $result->fetch_assoc()) {
     $type = $reaction['reaction_type'];
     $reactor_id = (int) $reaction['user_id'];
+
+    if ($type === 'want_to_go' && $owner_id === $reactor_id) {
+        continue;
+    }
 
     if (!isset($reactions[$type])) {
         $reactions[$type] = [

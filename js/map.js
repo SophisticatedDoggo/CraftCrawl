@@ -610,7 +610,7 @@ function renderBusinessList(features) {
     listContainer.innerHTML = features.map((feature) => {
         const properties = feature.properties;
         const distanceText = userLocation
-            ? ` &middot; ${formatDistance(distanceMeters(userLocation.latitude, userLocation.longitude, feature.geometry.coordinates[1], feature.geometry.coordinates[0]))} away`
+            ? `${formatDistance(distanceMeters(userLocation.latitude, userLocation.longitude, feature.geometry.coordinates[1], feature.geometry.coordinates[0]))} away`
             : '';
 
         return `
@@ -620,7 +620,8 @@ function renderBusinessList(features) {
                 </span>
                 <div class="business-list-details">
                     <strong>${escapeHtml(properties.title)}</strong>
-                    <span>${formatBusinessType(properties.businessType)} &middot; ${properties.city}, ${properties.state}${distanceText}</span>
+                    <span class="business-list-location">${formatBusinessType(properties.businessType)} &middot; ${escapeHtml(properties.city)}, ${escapeHtml(properties.state)}</span>
+                    ${distanceText ? `<span class="business-list-proximity">${escapeHtml(distanceText)}</span>` : ''}
                 </div>
                 <a href="../business_details.php?id=${properties.id}">Open details</a>
             </li>

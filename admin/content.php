@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../lib/admin_auth.php';
+require_once __DIR__ . '/../lib/user_avatar.php';
 craftcrawl_require_admin();
 include '../db.php';
 
@@ -88,9 +89,11 @@ $posts = $post_stmt->get_result();
 // ── Comments query ────────────────────────────────────────────────────────
 $comment_sql = "
     SELECT fc.id, fc.feed_item_key, fc.body, fc.createdAt, fc.user_id, fc.business_id,
-        u.fName, u.lName, u.email, b.bName
+        u.fName, u.lName, u.email, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key,
+        b.bName
     FROM feed_comments fc
     LEFT JOIN users u ON u.id = fc.user_id
+    LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
     LEFT JOIN businesses b ON b.id = fc.business_id
     WHERE fc.deletedAt IS NULL
 ";
@@ -235,11 +238,18 @@ $comments = $comment_stmt->get_result();
             ?>
                 <article class="admin-review-card">
                     <div class="admin-review-header">
-                        <div>
-                            <strong><?php echo $commenter; ?></strong>
+                        <div class="user-identity-row admin-user-identity">
+                            <?php if (empty($comment['business_id'])) : ?>
+                                <?php echo craftcrawl_render_user_avatar($comment, 'small'); ?>
+                            <?php else : ?>
+                                <span class="user-avatar user-avatar-small"><span>BO</span></span>
+                            <?php endif; ?>
+                            <div>
+                                <strong><?php echo $commenter; ?></strong>
                             <?php if (!empty($comment['email'])) : ?>
                                 <span class="admin-review-meta"><?php echo craftcrawl_admin_escape($comment['email']); ?></span>
                             <?php endif; ?>
+                            </div>
                         </div>
                         <span class="admin-review-meta">
                             <?php echo craftcrawl_admin_escape(str_replace('_', ' ', $item_type)); ?>

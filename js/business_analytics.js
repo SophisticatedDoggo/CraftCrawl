@@ -99,15 +99,26 @@
             return;
         }
 
-        visitors.innerHTML = items.map((visitor) => `
+        visitors.innerHTML = items.map((visitor) => {
+            const frame = String(visitor.frame || '').replace(/[^a-z0-9_-]/gi, '');
+            const avatarClass = `user-avatar user-avatar-small ${frame ? `has-frame-${frame}` : ''}`;
+            const avatar = visitor.avatar_url
+                ? `<span class="${avatarClass}"><img src="${escapeHtml(visitor.avatar_url)}" alt="${escapeHtml(visitor.name)} profile photo" loading="lazy"></span>`
+                : `<span class="${avatarClass}" aria-label="${escapeHtml(visitor.name)} profile photo"><span>${escapeHtml(visitor.initials || 'CC')}</span></span>`;
+
+            return `
             <div class="analytics-list-item">
-                <div>
-                    <strong>${escapeHtml(visitor.name)}</strong>
-                    <span>${escapeHtml(visitor.last_checkin)}</span>
+                <div class="user-identity-row">
+                    ${avatar}
+                    <div>
+                        <strong>${escapeHtml(visitor.name)}</strong>
+                        <span>${escapeHtml(visitor.last_checkin)}</span>
+                    </div>
                 </div>
                 <b>${escapeHtml(visitor.visit_label)}</b>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
 
     function renderSummaryCards(items) {

@@ -845,6 +845,7 @@ function format_event_time_range($event) {
 <script src="js/business_gallery.js"></script>
 <script src="js/review_photos.js"></script>
 <script src="js/review_edit_toggle.js"></script>
+<script src="js/friends.js"></script>
 <script src="js/mobile_actions_menu.js"></script>
 <script src="js/depth_animations.js"></script>
 </body>

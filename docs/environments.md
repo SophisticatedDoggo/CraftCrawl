@@ -50,6 +50,18 @@ The Capacitor app reads `CRAFTCRAWL_MOBILE_URL` when syncing native projects:
 The Android workflow sets this automatically from the branch or manual workflow
 target. The iOS workflow always builds prod from `main`.
 
+## OneSignal Push
+
+Browser push is wired through `lib/onesignal.php`, `user/onesignal_config.php`,
+and `js/onesignal_push.js`. Set these environment values per Cloudways app:
+
+- `ONESIGNAL_APP_ID`
+- `ONESIGNAL_API_KEY`
+- `CRAFTCRAWL_APP_URL`, such as `https://staging.craftcrawl.site` or `https://app.craftcrawl.site`
+
+The OneSignal service worker files must remain web-accessible at
+`/OneSignalSDKWorker.js` and `/OneSignalSDKUpdaterWorker.js`.
+
 ## Mobile Test Builds
 
 Android staging builds are installable beside prod builds:

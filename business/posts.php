@@ -19,6 +19,7 @@ function clean_text($value) {
 
 require_once '../config.php';
 require_once '../lib/business_post_render.php';
+require_once '../lib/user_avatar.php';
 
 $business_stmt = $conn->prepare("SELECT bName FROM businesses WHERE id=?");
 $business_stmt->bind_param("i", $business_id);
@@ -304,9 +305,12 @@ if (!empty($item_keys)) {
     $comment_keys = $item_keys;
     $comment_stmt = $conn->prepare("
         SELECT fc.id, fc.parent_comment_id, fc.feed_item_key, fc.body, fc.createdAt,
-            fc.user_id, fc.business_id, u.fName, u.lName, b.bName
+            fc.user_id, fc.business_id,
+            u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key,
+            b.bName
         FROM feed_comments fc
         LEFT JOIN users u ON u.id = fc.user_id
+        LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
         LEFT JOIN businesses b ON b.id = fc.business_id
         WHERE fc.deletedAt IS NULL AND fc.feed_item_key IN ($ik_ph)
         ORDER BY fc.feed_item_key, fc.createdAt ASC, fc.id ASC
@@ -564,8 +568,17 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '📍 Want to Go'
                             ?>
                                 <div class="portal-comment" id="comment-<?php echo escape_output($comment_id); ?>">
                                     <div class="portal-comment-meta">
-                                        <strong><?php echo escape_output($commenter_name); ?></strong>
-                                        <span><?php echo escape_output(date('M j, g:i A', strtotime($comment['createdAt']))); ?></span>
+                                        <div class="user-identity-row">
+                                            <?php if (empty($comment['business_id'])) : ?>
+                                                <?php echo craftcrawl_render_user_avatar($comment, 'small'); ?>
+                                            <?php else : ?>
+                                                <span class="user-avatar user-avatar-small"><span>BO</span></span>
+                                            <?php endif; ?>
+                                            <div>
+                                                <strong><?php echo escape_output($commenter_name); ?></strong>
+                                                <span><?php echo escape_output(date('M j, g:i A', strtotime($comment['createdAt']))); ?></span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <p><?php echo nl2br(escape_output($comment['body'])); ?></p>
 
@@ -578,8 +591,17 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '📍 Want to Go'
                                             ?>
                                                 <div class="portal-comment portal-comment-reply">
                                                     <div class="portal-comment-meta">
-                                                        <strong><?php echo escape_output($reply_name); ?></strong>
-                                                        <span><?php echo escape_output(date('M j, g:i A', strtotime($reply['createdAt']))); ?></span>
+                                                        <div class="user-identity-row">
+                                                            <?php if (empty($reply['business_id'])) : ?>
+                                                                <?php echo craftcrawl_render_user_avatar($reply, 'small'); ?>
+                                                            <?php else : ?>
+                                                                <span class="user-avatar user-avatar-small"><span>BO</span></span>
+                                                            <?php endif; ?>
+                                                            <div>
+                                                                <strong><?php echo escape_output($reply_name); ?></strong>
+                                                                <span><?php echo escape_output(date('M j, g:i A', strtotime($reply['createdAt']))); ?></span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                     <p><?php echo nl2br(escape_output($reply['body'])); ?></p>
                                                 </div>

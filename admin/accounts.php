@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../lib/admin_auth.php';
 require_once __DIR__ . '/../lib/email_verification.php';
 require_once __DIR__ . '/../lib/remember_auth.php';
+require_once __DIR__ . '/../lib/user_avatar.php';
 craftcrawl_require_admin();
 include '../db.php';
 
@@ -122,12 +123,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $like_search = '%' . $search . '%';
-$users_sql = "SELECT 'user' AS account_type, id, CONCAT(fName, ' ', lName) AS account_name, email, emailVerifiedAt, disabledAt FROM users";
-$business_sql = "SELECT 'business' AS account_type, id, bName AS account_name, bEmail AS email, emailVerifiedAt, disabledAt FROM businesses";
-$admins_sql = "SELECT 'admin' AS account_type, id, CONCAT(fName, ' ', lName) AS account_name, email, NULL AS emailVerifiedAt, CASE WHEN active=FALSE THEN COALESCE(disabledAt, createdAt) ELSE disabledAt END AS disabledAt FROM admins";
+$users_sql = "
+    SELECT 'user' AS account_type, u.id, CONCAT(u.fName, ' ', u.lName) AS account_name, u.fName, u.lName, u.email, u.emailVerifiedAt, u.disabledAt,
+        u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+    FROM users u
+    LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+";
+$business_sql = "SELECT 'business' AS account_type, id, bName AS account_name, NULL AS fName, NULL AS lName, bEmail AS email, emailVerifiedAt, disabledAt, NULL AS selected_profile_frame, NULL AS profile_photo_url, NULL AS profile_photo_object_key FROM businesses";
+$admins_sql = "SELECT 'admin' AS account_type, id, CONCAT(fName, ' ', lName) AS account_name, fName, lName, email, NULL AS emailVerifiedAt, CASE WHEN active=FALSE THEN COALESCE(disabledAt, createdAt) ELSE disabledAt END AS disabledAt, NULL AS selected_profile_frame, NULL AS profile_photo_url, NULL AS profile_photo_object_key FROM admins";
 
 if ($search !== '') {
-    $users_sql .= " WHERE email LIKE ? OR fName LIKE ? OR lName LIKE ?";
+    $users_sql .= " WHERE u.email LIKE ? OR u.fName LIKE ? OR u.lName LIKE ?";
     $business_sql .= " WHERE bEmail LIKE ? OR bName LIKE ? OR city LIKE ?";
     $admins_sql .= " WHERE email LIKE ? OR fName LIKE ? OR lName LIKE ?";
 }
@@ -242,19 +248,24 @@ foreach ($account_queries as $type => $sql) {
 
             <?php foreach ($accounts as $account) : ?>
                 <article class="admin-list-item">
-                    <div>
-                        <h3><?php echo craftcrawl_admin_escape($account['account_name']); ?></h3>
-                        <p>
-                            <?php echo craftcrawl_admin_escape(ucfirst($account['account_type'])); ?> ·
-                            <?php echo craftcrawl_admin_escape($account['email']); ?> ·
-                            <?php if (!empty($account['disabledAt'])) : ?>
-                                <span class="approval-status approval-status-pending">Disabled</span>
-                            <?php elseif ($account['account_type'] !== 'admin' && empty($account['emailVerifiedAt'])) : ?>
-                                <span class="approval-status approval-status-pending">Unverified</span>
-                            <?php else : ?>
-                                <span class="approval-status approval-status-approved">Active</span>
-                            <?php endif; ?>
-                        </p>
+                    <div class="user-identity-row admin-account-identity">
+                        <?php if ($account['account_type'] === 'user') : ?>
+                            <?php echo craftcrawl_render_user_avatar($account, 'small'); ?>
+                        <?php endif; ?>
+                        <div>
+                            <h3><?php echo craftcrawl_admin_escape($account['account_name']); ?></h3>
+                            <p>
+                                <?php echo craftcrawl_admin_escape(ucfirst($account['account_type'])); ?> ·
+                                <?php echo craftcrawl_admin_escape($account['email']); ?> ·
+                                <?php if (!empty($account['disabledAt'])) : ?>
+                                    <span class="approval-status approval-status-pending">Disabled</span>
+                                <?php elseif ($account['account_type'] !== 'admin' && empty($account['emailVerifiedAt'])) : ?>
+                                    <span class="approval-status approval-status-pending">Unverified</span>
+                                <?php else : ?>
+                                    <span class="approval-status approval-status-approved">Active</span>
+                                <?php endif; ?>
+                            </p>
+                        </div>
                     </div>
                     <div class="business-header-actions">
                         <a href="account_details.php?account_type=<?php echo craftcrawl_admin_escape($account['account_type']); ?>&amp;account_id=<?php echo craftcrawl_admin_escape($account['id']); ?>">Details</a>

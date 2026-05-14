@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../lib/admin_auth.php';
+require_once __DIR__ . '/../lib/user_avatar.php';
 craftcrawl_require_admin();
 include '../db.php';
 
@@ -51,9 +52,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $review_sql = "
-    SELECT r.id, r.rating, r.notes, r.business_response, r.business_responseAt, u.fName, u.lName, u.email, b.bName, b.id AS business_id
+    SELECT r.id, r.rating, r.notes, r.business_response, r.business_responseAt,
+        u.fName, u.lName, u.email, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key,
+        b.bName, b.id AS business_id
     FROM reviews r
     INNER JOIN users u ON u.id = r.user_id
+    LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
     INNER JOIN businesses b ON b.id = r.business_id
 ";
 $review_params = [];
@@ -142,7 +146,10 @@ $reviews = $review_stmt->get_result();
                 <article class="business-review-card admin-review-card">
                     <div class="business-review-header">
                         <strong><?php echo craftcrawl_admin_escape($review['bName']); ?></strong>
-                        <span><?php echo craftcrawl_admin_escape($review['fName'] . ' ' . $review['lName']); ?> · <?php echo craftcrawl_admin_escape($review['email']); ?></span>
+                        <div class="user-identity-row admin-user-identity">
+                            <?php echo craftcrawl_render_user_avatar($review, 'small'); ?>
+                            <span><?php echo craftcrawl_admin_escape($review['fName'] . ' ' . $review['lName']); ?> · <?php echo craftcrawl_admin_escape($review['email']); ?></span>
+                        </div>
                     </div>
                     <form method="POST" action="">
                         <?php echo craftcrawl_csrf_input(); ?>

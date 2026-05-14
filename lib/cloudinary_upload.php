@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/env.php';
+
 const CRAFTCRAWL_PHOTO_MAX_BYTES = 10485760;
 const CRAFTCRAWL_PHOTO_ALLOWED_MIME_TYPES = [
     'image/jpeg',
@@ -8,9 +10,9 @@ const CRAFTCRAWL_PHOTO_ALLOWED_MIME_TYPES = [
 ];
 
 function craftcrawl_cloudinary_config() {
-    $cloud_name = getenv('CLOUDINARY_CLOUD_NAME') ?: ($GLOBALS['CLOUDINARY_CLOUD_NAME'] ?? '');
-    $api_key = getenv('CLOUDINARY_API_KEY') ?: ($GLOBALS['CLOUDINARY_API_KEY'] ?? '');
-    $api_secret = getenv('CLOUDINARY_API_SECRET') ?: ($GLOBALS['CLOUDINARY_API_SECRET'] ?? '');
+    $cloud_name = craftcrawl_env('CLOUDINARY_CLOUD_NAME', $GLOBALS['CLOUDINARY_CLOUD_NAME'] ?? '');
+    $api_key = craftcrawl_env('CLOUDINARY_API_KEY', $GLOBALS['CLOUDINARY_API_KEY'] ?? '');
+    $api_secret = craftcrawl_env('CLOUDINARY_API_SECRET', $GLOBALS['CLOUDINARY_API_SECRET'] ?? '');
 
     if ($cloud_name === '' || $api_key === '' || $api_secret === '') {
         throw new RuntimeException('Cloudinary credentials are not configured.');
