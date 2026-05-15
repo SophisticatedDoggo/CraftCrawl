@@ -50,6 +50,11 @@ require_once '../lib/business_hours.php';
 $business_id = (int) $_SESSION['business_id'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (craftcrawl_request_exceeds_post_max_size()) {
+        header('Location: business_portal.php?message=photo_server_limit_error');
+        exit();
+    }
+
     craftcrawl_verify_csrf();
 
     $form_action = $_POST['form_action'] ?? 'response';
@@ -285,7 +290,7 @@ $business_photos = $photo_stmt->get_result();
         <?php elseif ($message === 'photo_server_limit_error') : ?>
             <p class="form-message form-message-error">That photo is larger than your current PHP upload limit. Increase upload_max_filesize and post_max_size, or try a smaller image.</p>
         <?php elseif ($message === 'photo_upload_error') : ?>
-            <p class="form-message form-message-error">A photo could not be uploaded. Please try again with JPEG, PNG, or WebP photos under 10 MB.</p>
+            <p class="form-message form-message-error">A photo could not be uploaded. Please try again with JPEG, PNG, or WebP photos under 12 MB.</p>
         <?php elseif ($message === 'checkin_message_saved') : ?>
             <p class="form-message form-message-success">Check-in message updated.</p>
         <?php endif; ?>
@@ -349,7 +354,7 @@ $business_photos = $photo_stmt->get_result();
                 <input type="hidden" name="form_action" value="upload_gallery_photos">
                 <label for="business_photos">Upload gallery photos</label>
                 <input type="file" id="business_photos" name="business_photos[]" accept="image/jpeg,image/png,image/webp" multiple>
-                <p class="form-help">Upload up to 6 JPEG, PNG, or WebP photos under 10 MB each.</p>
+                <p class="form-help">Upload up to 6 JPEG, PNG, or WebP photos under 12 MB each.</p>
                 <button type="submit">Upload Photos</button>
             </form>
 

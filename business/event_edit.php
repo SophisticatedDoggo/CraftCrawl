@@ -59,6 +59,10 @@ require_once '../config.php';
 require_once '../lib/cloudinary_upload.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (craftcrawl_request_exceeds_post_max_size()) {
+        redirect_to_event_form($edit_event_id ?: 0, $selected_date, $calendar_month, 'event_photo_server_limit_error');
+    }
+
     craftcrawl_verify_csrf();
 
     $form_action = $_POST['form_action'] ?? 'save_event';
@@ -199,7 +203,7 @@ $form_date = $editing_event['eventDate'] ?? $selected_date;
         <?php elseif ($message === 'event_photo_server_limit_error') : ?>
             <p class="form-message form-message-error">That photo is larger than your current PHP upload limit. Increase upload_max_filesize and post_max_size, or try a smaller image.</p>
         <?php elseif ($message === 'event_photo_error') : ?>
-            <p class="form-message form-message-error">The event cover photo could not be uploaded. Please try again with a JPEG, PNG, or WebP photo under 10 MB.</p>
+            <p class="form-message form-message-error">The event cover photo could not be uploaded. Please try again with a JPEG, PNG, or WebP photo under 12 MB.</p>
         <?php endif; ?>
 
         <section class="event-form-panel">
@@ -220,7 +224,7 @@ $form_date = $editing_event['eventDate'] ?? $selected_date;
 
                 <label for="event_cover_photo">Cover Photo</label>
                 <input type="file" id="event_cover_photo" name="event_cover_photo" accept="image/jpeg,image/png,image/webp">
-                <p class="form-help">Use a JPEG, PNG, or WebP photo under 10 MB.</p>
+                <p class="form-help">Use a JPEG, PNG, or WebP photo under 12 MB.</p>
 
                 <label for="event_date">Date</label>
                 <input type="date" id="event_date" name="event_date" required min="<?php echo escape_output(date('Y-m-d')); ?>" max="<?php echo escape_output(date('Y-m-d', strtotime('+1 year'))); ?>" value="<?php echo escape_output($form_date); ?>">

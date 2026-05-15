@@ -120,6 +120,11 @@ if ($user_has_reviewed) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (craftcrawl_request_exceeds_post_max_size()) {
+        header("Location: business_details.php?id=" . $business_id . "&message=review_photo_server_limit_error");
+        exit();
+    }
+
     craftcrawl_verify_csrf();
 
     $form_action = $_POST['form_action'] ?? 'review';
@@ -442,7 +447,7 @@ function format_event_time_range($event) {
         <?php elseif ($message === 'review_photo_server_limit_error') : ?>
             <p class="form-message form-message-error">That photo is larger than your current PHP upload limit. Increase upload_max_filesize and post_max_size, or try a smaller image.</p>
         <?php elseif ($message === 'review_photo_error') : ?>
-            <p class="form-message form-message-error">Your review photo could not be uploaded. Please try again with a JPEG, PNG, or WebP photo under 10 MB.</p>
+            <p class="form-message form-message-error">Your review photo could not be uploaded. Please try again with a JPEG, PNG, or WebP photo under 12 MB.</p>
         <?php endif; ?>
 
         <section class="business-details-hero">
@@ -714,7 +719,7 @@ function format_event_time_range($event) {
 
                     <label for="review_photos">Photos</label>
                     <input type="file" id="review_photos" name="review_photos[]" accept="image/jpeg,image/png,image/webp" multiple>
-                    <p class="form-help">Add up to 3 JPEG, PNG, or WebP photos under 10 MB each.</p>
+                    <p class="form-help">Add up to 3 JPEG, PNG, or WebP photos under 12 MB each.</p>
 
                     <button type="submit">Post Review</button>
                 </form>

@@ -237,7 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php elseif ($message === 'theme_saved') : ?>
             <p class="form-message form-message-success">Display theme updated.</p>
         <?php elseif ($message === 'profile_photo_size_error') : ?>
-            <p class="form-message form-message-error">Profile photo must be smaller than 10 MB.</p>
+            <p class="form-message form-message-error">Profile photo must be smaller than 12 MB.</p>
         <?php elseif ($message === 'profile_photo_error') : ?>
             <p class="form-message form-message-error">Profile photo could not be saved. Please try another image.</p>
         <?php endif; ?>

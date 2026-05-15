@@ -2,7 +2,7 @@
 
 require_once __DIR__ . '/env.php';
 
-const CRAFTCRAWL_PHOTO_MAX_BYTES = 10485760;
+const CRAFTCRAWL_PHOTO_MAX_BYTES = 12582912;
 const CRAFTCRAWL_PHOTO_ALLOWED_MIME_TYPES = [
     'image/jpeg',
     'image/png',
@@ -60,7 +60,7 @@ function craftcrawl_validate_photo_upload($file, $max_bytes = CRAFTCRAWL_PHOTO_M
     }
 
     if (($file['size'] ?? 0) <= 0 || $file['size'] > $max_bytes) {
-        throw new RuntimeException('Photo must be smaller than 10 MB.');
+        throw new RuntimeException('Photo must be smaller than 12 MB.');
     }
 
     $tmp_name = $file['tmp_name'] ?? '';
@@ -198,7 +198,7 @@ function craftcrawl_upload_data_url_to_cloudinary($data_url, $context, $owner_id
 
     $max_bytes = $options['max_bytes'] ?? CRAFTCRAWL_PHOTO_MAX_BYTES;
     if (strlen($binary) > $max_bytes) {
-        throw new RuntimeException('Photo must be smaller than 10 MB.');
+        throw new RuntimeException('Photo must be smaller than 12 MB.');
     }
 
     $tmp_path = tempnam(sys_get_temp_dir(), 'craftcrawl_profile_photo_');

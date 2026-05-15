@@ -97,6 +97,39 @@ function craftcrawl_csrf_input() {
         . '">';
 }
 
+function craftcrawl_ini_size_to_bytes($value) {
+    $value = trim((string) $value);
+
+    if ($value === '') {
+        return 0;
+    }
+
+    $unit = strtolower(substr($value, -1));
+    $number = (float) $value;
+
+    switch ($unit) {
+        case 'g':
+            return (int) ($number * 1024 * 1024 * 1024);
+        case 'm':
+            return (int) ($number * 1024 * 1024);
+        case 'k':
+            return (int) ($number * 1024);
+        default:
+            return (int) $number;
+    }
+}
+
+function craftcrawl_request_exceeds_post_max_size() {
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+        return false;
+    }
+
+    $content_length = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+    $post_max_size = craftcrawl_ini_size_to_bytes(ini_get('post_max_size'));
+
+    return $post_max_size > 0 && $content_length > $post_max_size;
+}
+
 function craftcrawl_verify_csrf() {
     craftcrawl_secure_session_start();
 
