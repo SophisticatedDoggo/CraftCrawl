@@ -34,6 +34,16 @@
         }, delay || 3500);
     }
 
+    function previewSocialAuthMessage(message) {
+        if (!feedback || socialAuthBusy) {
+            return;
+        }
+
+        feedback.classList.remove('is-error');
+        feedback.textContent = message;
+        feedback.hidden = false;
+    }
+
     function clearSocialAuthBusy() {
         window.clearTimeout(socialAuthBusyTimer);
         setSocialAuthBusy(false);
@@ -118,6 +128,10 @@
             width: Math.min(400, target.clientWidth || 360)
         });
 
+        target.addEventListener('pointerdown', () => {
+            previewSocialAuthMessage('Opening Google sign-in...');
+        }, true);
+
         target.addEventListener('click', () => {
             if (!socialAuthBusy) {
                 holdSocialAuth('Opening Google sign-in...', 4500);
@@ -149,6 +163,10 @@
         if (typeof AppleID.auth.renderButton === 'function') {
             AppleID.auth.renderButton();
         }
+
+        target.addEventListener('pointerdown', () => {
+            previewSocialAuthMessage('Opening Apple sign-in...');
+        }, true);
 
         target.addEventListener('click', () => {
             if (!socialAuthBusy) {
