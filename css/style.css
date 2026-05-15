@@ -4407,6 +4407,7 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     aspect-ratio: 45 / 28;
     border-radius: var(--radius-md);
     background: var(--color-surface-muted);
+    touch-action: pan-y;
 }
 
 .business-gallery-slide,
@@ -4444,32 +4445,6 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 .business-gallery-slide.is-active {
     opacity: 1;
-}
-
-.business-gallery-nav {
-    position: absolute;
-    top: 50%;
-    z-index: 2;
-    width: 40px;
-    height: 40px;
-    min-height: 0;
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    color: var(--color-surface);
-    background: rgba(17, 24, 39, 0.72);
-    cursor: pointer;
-    font-size: 32px;
-    line-height: 1;
-    transform: translateY(-50%);
-}
-
-.business-gallery-prev {
-    left: 12px;
-}
-
-.business-gallery-next {
-    right: 12px;
 }
 
 .business-gallery-dots {

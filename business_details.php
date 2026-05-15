@@ -590,8 +590,6 @@ function format_event_time_range($event) {
                     </div>
 
                     <?php if (count($business_gallery_photos) > 1) : ?>
-                        <button type="button" class="business-gallery-nav business-gallery-prev" data-gallery-prev aria-label="Previous photo">&lsaquo;</button>
-                        <button type="button" class="business-gallery-nav business-gallery-next" data-gallery-next aria-label="Next photo">&rsaquo;</button>
                         <div class="business-gallery-dots">
                             <?php foreach ($business_gallery_photos as $photo_index => $photo) : ?>
                                 <button
@@ -812,9 +810,7 @@ function format_event_time_range($event) {
         <div class="photo-lightbox-backdrop review-photo-lightbox-backdrop" data-gallery-lightbox-close></div>
         <div class="photo-lightbox-count review-photo-lightbox-count" id="business-gallery-lightbox-count"></div>
         <button type="button" class="photo-lightbox-close review-photo-lightbox-close" data-gallery-lightbox-close aria-label="Close photo viewer">&times;</button>
-        <button type="button" class="photo-lightbox-nav photo-lightbox-prev review-photo-lightbox-nav review-photo-lightbox-prev" id="business-gallery-lightbox-prev" aria-label="Previous photo">&lsaquo;</button>
         <img class="photo-lightbox-image review-photo-lightbox-image" id="business-gallery-lightbox-image" alt="<?php echo escape_output($business['bName']); ?> photo">
-        <button type="button" class="photo-lightbox-nav photo-lightbox-next review-photo-lightbox-nav review-photo-lightbox-next" id="business-gallery-lightbox-next" aria-label="Next photo">&rsaquo;</button>
     </div>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
