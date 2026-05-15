@@ -75,6 +75,12 @@ if (!$can_view_profile) {
 if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form_action'] ?? '') === 'profile') {
     craftcrawl_verify_csrf();
 
+    $new_first_name = trim(strip_tags($_POST['first_name'] ?? ''));
+    $new_last_name = trim(strip_tags($_POST['last_name'] ?? ''));
+    if ($new_first_name === '' || $new_last_name === '') {
+        $message = 'profile_name_error';
+    }
+
     $profile_level_for_edit = (int) ($profile['level'] ?? 1);
     $all_titles_for_edit = [
         'New Crawler', 'First Sipper', 'Local Taster', 'Weekend Crawler', 'Flight Finder',
@@ -102,6 +108,10 @@ if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form_ac
     }
 
     try {
+        if ($message === 'profile_name_error') {
+            throw new RuntimeException('Profile name is required.');
+        }
+
         if (!empty($_POST['profile_photo_cropped_data'])) {
             $upload_result = craftcrawl_upload_data_url_to_cloudinary(
                 $_POST['profile_photo_cropped_data'],
@@ -111,21 +121,23 @@ if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form_ac
             );
             $photo_id = craftcrawl_insert_cloudinary_photo($conn, $upload_result, $viewer_id, null, 'approved');
             $public_url = $upload_result['secure_url'] ?? null;
-            $profile_update_stmt = $conn->prepare("UPDATE users SET selected_title_index=?, selected_profile_frame=?, selected_profile_frame_style=?, profile_photo_id=?, profile_photo_url=?, profile_photo_source='upload' WHERE id=?");
-            $profile_update_stmt->bind_param("sssisi", $new_title_index, $new_frame, $new_frame_style, $photo_id, $public_url, $viewer_id);
+            $profile_update_stmt = $conn->prepare("UPDATE users SET fName=?, lName=?, selected_title_index=?, selected_profile_frame=?, selected_profile_frame_style=?, profile_photo_id=?, profile_photo_url=?, profile_photo_source='upload' WHERE id=?");
+            $profile_update_stmt->bind_param("sssssisi", $new_first_name, $new_last_name, $new_title_index, $new_frame, $new_frame_style, $photo_id, $public_url, $viewer_id);
         } elseif (!empty($_POST['remove_profile_photo'])) {
-            $profile_update_stmt = $conn->prepare("UPDATE users SET selected_title_index=?, selected_profile_frame=?, selected_profile_frame_style=?, profile_photo_id=NULL, profile_photo_url=NULL, profile_photo_source=NULL WHERE id=?");
-            $profile_update_stmt->bind_param("sssi", $new_title_index, $new_frame, $new_frame_style, $viewer_id);
+            $profile_update_stmt = $conn->prepare("UPDATE users SET fName=?, lName=?, selected_title_index=?, selected_profile_frame=?, selected_profile_frame_style=?, profile_photo_id=NULL, profile_photo_url=NULL, profile_photo_source=NULL WHERE id=?");
+            $profile_update_stmt->bind_param("sssssi", $new_first_name, $new_last_name, $new_title_index, $new_frame, $new_frame_style, $viewer_id);
         } else {
-            $profile_update_stmt = $conn->prepare("UPDATE users SET selected_title_index=?, selected_profile_frame=?, selected_profile_frame_style=? WHERE id=?");
-            $profile_update_stmt->bind_param("sssi", $new_title_index, $new_frame, $new_frame_style, $viewer_id);
+            $profile_update_stmt = $conn->prepare("UPDATE users SET fName=?, lName=?, selected_title_index=?, selected_profile_frame=?, selected_profile_frame_style=? WHERE id=?");
+            $profile_update_stmt->bind_param("sssssi", $new_first_name, $new_last_name, $new_title_index, $new_frame, $new_frame_style, $viewer_id);
         }
         $profile_update_stmt->execute();
         craftcrawl_redirect('profile.php?message=profile_saved');
     } catch (Throwable $error) {
-        $message = str_contains($error->getMessage(), 'larger') || str_contains($error->getMessage(), 'smaller')
+        $message = $message === 'profile_name_error'
+            ? 'profile_name_error'
+            : (str_contains($error->getMessage(), 'larger') || str_contains($error->getMessage(), 'smaller')
             ? 'profile_photo_size_error'
-            : 'profile_photo_error';
+            : 'profile_photo_error');
     }
 }
 
@@ -299,9 +311,18 @@ if (!$profile) {
                 <p class="form-help">You can only view profiles for friends you have added.</p>
             </section>
         <?php else : ?>
+            <?php if ($is_own_profile && $message === 'profile_saved') : ?>
+                <p class="form-message form-message-success">Profile updated.</p>
+            <?php elseif ($is_own_profile && $message === 'profile_name_error') : ?>
+                <p class="form-message form-message-error">First and last name are required.</p>
+            <?php elseif ($is_own_profile && $message === 'profile_photo_size_error') : ?>
+                <p class="form-message form-message-error">Profile photo must be smaller than 12 MB.</p>
+            <?php elseif ($is_own_profile && $message === 'profile_photo_error') : ?>
+                <p class="form-message form-message-error">Profile photo could not be saved. Please try another image.</p>
+            <?php endif; ?>
             <section class="settings-panel profile-hero-panel">
                 <?php if ($is_own_profile) : ?>
-                    <details class="profile-edit-disclosure"<?php echo in_array($message, ['profile_photo_error', 'profile_photo_size_error'], true) ? ' open' : ''; ?>>
+                    <details class="profile-edit-disclosure"<?php echo in_array($message, ['profile_name_error', 'profile_photo_error', 'profile_photo_size_error'], true) ? ' open' : ''; ?>>
                         <summary>
                             <span class="profile-edit-label-closed">Edit Profile</span>
                             <span class="profile-edit-label-open">Close Editor</span>
@@ -321,6 +342,16 @@ if (!$profile) {
                                         <?php if (!empty($profile['profile_photo_url']) || !empty($profile['profile_photo_object_key'])) : ?>
                                             <button type="button" class="button-link-secondary" data-profile-photo-remove>Remove Photo</button>
                                         <?php endif; ?>
+                                    </div>
+
+                                    <div class="profile-edit-title-field">
+                                        <label for="first_name">First Name</label>
+                                        <input type="text" id="first_name" name="first_name" required value="<?php echo escape_output($profile['fName']); ?>">
+                                    </div>
+
+                                    <div class="profile-edit-title-field">
+                                        <label for="last_name">Last Name</label>
+                                        <input type="text" id="last_name" name="last_name" required value="<?php echo escape_output($profile['lName']); ?>">
                                     </div>
 
                                     <div class="profile-edit-title-field">
