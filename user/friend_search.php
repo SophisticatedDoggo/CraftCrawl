@@ -75,6 +75,7 @@ while ($user = $result->fetch_assoc()) {
         ],
         'is_friend' => (bool) $user['is_friend'],
         'pending_sent' => !empty($user['sent_request_id']),
+        'sent_request_id' => $user['sent_request_id'] ? (int) $user['sent_request_id'] : null,
         'pending_received' => !empty($user['received_request_id']),
         'received_request_id' => $user['received_request_id'] ? (int) $user['received_request_id'] : null
     ];

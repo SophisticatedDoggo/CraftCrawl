@@ -224,8 +224,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 disabled = 'disabled';
                 statusMarkup = '<span class="friend-search-status is-friend">Already friends</span>';
             } else if (user.pending_sent) {
-                buttonText = 'Invite Sent';
-                disabled = 'disabled';
+                buttonText = 'Cancel Invite';
+                action = 'cancel';
                 rowClass = ' is-invite-sent';
                 statusMarkup = '<span class="friend-search-status is-sent">✓ Invitation sent</span>';
             } else if (user.pending_received) {
@@ -243,7 +243,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                         <span class="friend-search-email">${escapeHtml(user.email)}</span>
                         ${statusMarkup}
                     </div>
-                    <button type="button" data-friend-id="${user.id}" data-request-id="${user.received_request_id || ''}" data-friend-action="${action}" ${disabled}>
+                    <button type="button" data-friend-id="${user.id}" data-request-id="${user.received_request_id || user.sent_request_id || ''}" data-friend-action="${action}" ${disabled}>
                         ${buttonText}
                     </button>
                 </article>
@@ -256,7 +256,11 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 const action = button.dataset.friendAction;
                 button.disabled = true;
                 button.classList.add('is-loading');
-                button.textContent = action === 'accept' ? 'Accepting...' : 'Sending...';
+                button.textContent = action === 'accept'
+                    ? 'Accepting...'
+                    : action === 'cancel'
+                        ? 'Canceling...'
+                        : 'Sending...';
 
                 const request = action === 'accept'
                     ? postForm(userEndpoint('friend_respond.php'), {
@@ -264,6 +268,11 @@ window.CraftCrawlInitFriends = function (scope = document) {
                         request_id: button.dataset.requestId,
                         response: 'accepted'
                     })
+                    : action === 'cancel'
+                        ? postForm(userEndpoint('friend_cancel.php'), {
+                            csrf_token: csrfToken,
+                            request_id: button.dataset.requestId
+                        })
                     : postForm(userEndpoint('friend_add.php'), {
                         csrf_token: csrfToken,
                         friend_id: button.dataset.friendId
@@ -275,7 +284,11 @@ window.CraftCrawlInitFriends = function (scope = document) {
                             showStatus(data.message || 'Friend could not be added.', true);
                             button.disabled = false;
                             button.classList.remove('is-loading');
-                            button.textContent = action === 'accept' ? 'Accept Invite' : 'Invite';
+                            button.textContent = action === 'accept'
+                                ? 'Accept Invite'
+                                : action === 'cancel'
+                                    ? 'Cancel Invite'
+                                    : 'Invite';
                             return;
                         }
 
@@ -284,11 +297,28 @@ window.CraftCrawlInitFriends = function (scope = document) {
                             window.craftcrawlShowXpReward(data.xp_reward);
                         }
                         button.classList.remove('is-loading');
-                        button.textContent = data.status === 'pending' ? 'Invite Sent' : 'Added';
                         const row = button.closest('.friend-search-result');
                         const summary = row?.querySelector('.friend-search-summary');
 
-                        if (row && summary) {
+                        if (action === 'cancel') {
+                            button.disabled = false;
+                            button.textContent = 'Invite';
+                            button.dataset.friendAction = 'invite';
+                            button.dataset.requestId = '';
+                            if (row && summary) {
+                                row.classList.remove('is-invite-sent');
+                                summary.querySelector('.friend-search-status')?.remove();
+                            }
+                        } else {
+                            button.textContent = data.status === 'pending' ? 'Cancel Invite' : 'Added';
+                            if (data.status === 'pending') {
+                                button.disabled = false;
+                                button.dataset.friendAction = 'cancel';
+                                button.dataset.requestId = data.request_id || '';
+                            }
+                        }
+
+                        if (row && summary && action !== 'cancel') {
                             row.classList.toggle('is-invite-sent', data.status === 'pending');
                             summary.querySelector('.friend-search-status')?.remove();
                             const confirmation = document.createElement('span');
@@ -306,7 +336,11 @@ window.CraftCrawlInitFriends = function (scope = document) {
                         showStatus('Friend could not be added. Please try again.', true);
                         button.disabled = false;
                         button.classList.remove('is-loading');
-                        button.textContent = action === 'accept' ? 'Accept Invite' : 'Invite';
+                        button.textContent = action === 'accept'
+                            ? 'Accept Invite'
+                            : action === 'cancel'
+                                ? 'Cancel Invite'
+                                : 'Invite';
                     });
             });
         });

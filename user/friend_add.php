@@ -107,6 +107,16 @@ try {
     $request_stmt->bind_param("iis", $user_id, $friend_id, $pending);
     $request_stmt->execute();
 
+    $pending_request_stmt = $conn->prepare("
+        SELECT id
+        FROM friend_requests
+        WHERE requester_user_id=? AND addressee_user_id=? AND status='pending'
+        LIMIT 1
+    ");
+    $pending_request_stmt->bind_param("ii", $user_id, $friend_id);
+    $pending_request_stmt->execute();
+    $pending_request = $pending_request_stmt->get_result()->fetch_assoc();
+
     $conn->commit();
     craftcrawl_send_push_to_user(
         $conn,
@@ -119,7 +129,8 @@ try {
     echo json_encode([
         'ok' => true,
         'status' => 'pending',
-        'message' => 'Friend invite sent to ' . trim($friend['fName'] . ' ' . $friend['lName']) . '.'
+        'message' => 'Friend invite sent to ' . trim($friend['fName'] . ' ' . $friend['lName']) . '.',
+        'request_id' => $pending_request ? (int) $pending_request['id'] : null
     ]);
 } catch (Throwable $error) {
     $conn->rollback();
