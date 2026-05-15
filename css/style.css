@@ -1596,6 +1596,64 @@ a.text-link:focus {
     pointer-events: none;
 }
 
+.map-location-control {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 46px;
+    min-width: 46px;
+    height: 46px;
+    min-height: 46px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+    cursor: pointer;
+}
+
+.map-location-control span {
+    position: relative;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--color-primary);
+    border-radius: 50%;
+}
+
+.map-location-control span::before,
+.map-location-control span::after {
+    content: "";
+    position: absolute;
+    background: var(--color-primary);
+}
+
+.map-location-control span::before {
+    top: 50%;
+    left: -5px;
+    width: 30px;
+    height: 2px;
+    transform: translateY(-50%);
+}
+
+.map-location-control span::after {
+    top: -5px;
+    left: 50%;
+    width: 2px;
+    height: 30px;
+    transform: translateX(-50%);
+}
+
+.map-location-control:hover,
+.map-location-control:focus-visible {
+    border-color: var(--color-primary);
+    background: #ffffff;
+    outline: 0;
+    transform: translateY(-1px);
+}
+
 .events-feed {
     width: 100%;
     display: grid;

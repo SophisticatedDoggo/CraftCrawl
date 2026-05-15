@@ -39,6 +39,9 @@ $craftcrawl_portal_show_search = true;
             <div class="map-shell">
                 <div id="map"></div>
                 <div id="map-zoom-debug" class="map-zoom-debug" aria-live="polite">Zoom --</div>
+                <button type="button" id="map-center-user" class="map-location-control" aria-label="Center map on your location" title="Center map on your location">
+                    <span aria-hidden="true"></span>
+                </button>
             </div>
             <div class="business-list-toolbar">
                 <label for="business-list-sort">Sort list</label>

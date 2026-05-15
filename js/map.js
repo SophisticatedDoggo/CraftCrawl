@@ -5,8 +5,11 @@ let locationsAreLoaded = false;
 let hasCenteredOnUserLocation = false;
 let loadedBusinessCount = 0;
 let renderedMapItemCount = 0;
+let userLocationPollId = null;
+let isUserLocationRequestInFlight = false;
 const mapRadiusModeMinZoom = 8;
 const mapRadiusMeters = 50 * 1609.344;
+const userLocationRefreshMs = 10000;
 const mapClusterMaxZoom = 12;
 const isMobileMapViewport = window.matchMedia('(max-width: 700px), (pointer: coarse)').matches;
 const mapMarkerCircleRadius = isMobileMapViewport ? 20 : 15;
@@ -308,6 +311,8 @@ map.on('load', function () {
     //get our data from php function
     getAllLocations();
     requestUserLocation();
+    startUserLocationRefresh();
+    setupUserLocationControl();
 
     map.on('moveend', (event) => {
         updateBusinessListForCurrentMapArea(Boolean(event.originalEvent));
@@ -379,72 +384,136 @@ function getAllLocations(){
     });
 }
 
-function requestUserLocation() {
+function requestUserLocation(options = {}) {
     const locationProvider = window.CraftCrawlLocation || null;
+    const shouldShowErrors = options.showErrors !== false;
+    const locationOptions = {
+        enableHighAccuracy: true,
+        timeout: options.timeout || 12000,
+        maximumAge: options.maximumAge === undefined ? 60000 : options.maximumAge
+    };
 
     if (!locationProvider && !navigator.geolocation) {
-        showLocationStatus('Your browser does not support location lookup.', true);
+        if (shouldShowErrors) {
+            showLocationStatus('Your browser does not support location lookup.', true);
+        }
         return;
     }
 
+    if (isUserLocationRequestInFlight) {
+        return;
+    }
+
+    isUserLocationRequestInFlight = true;
     let didStartLocationRequest = true;
 
     if (locationProvider) {
-        didStartLocationRequest = locationProvider.getCurrentPosition(handlePosition, handleLocationError, {
-            enableHighAccuracy: true,
-            timeout: 12000,
-            maximumAge: 60000
-        });
+        didStartLocationRequest = locationProvider.getCurrentPosition(handlePosition, handleLocationError, locationOptions);
     } else {
-        navigator.geolocation.getCurrentPosition(handlePosition, handleLocationError, {
-            enableHighAccuracy: true,
-            timeout: 12000,
-            maximumAge: 60000
-        });
+        navigator.geolocation.getCurrentPosition(handlePosition, handleLocationError, locationOptions);
     }
 
     if (!didStartLocationRequest) {
-        applyLocationAwareListAndMap();
+        isUserLocationRequestInFlight = false;
+        updateLocationAwareBusinessList();
     }
 
     function handlePosition(position) {
+        isUserLocationRequestInFlight = false;
         userLocation = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude
         };
 
         updateUserLocationMarker();
-        applyLocationAwareListAndMap();
+        if (options.centerOnLocation) {
+            centerMapOnUserLocation();
+            hasCenteredOnUserLocation = true;
+        }
+        applyLocationAwareListAndMap(options);
     }
 
     function handleLocationError(error) {
-        if (error && error.code === 1) {
+        isUserLocationRequestInFlight = false;
+        if (shouldShowErrors && error && error.code === 1) {
             showLocationStatus('Location access is off. Enable location access for CraftCrawl to center the map near you.', true);
         }
 
-        applyLocationAwareListAndMap();
+        updateLocationAwareBusinessList();
     }
 }
 
-function applyLocationAwareListAndMap() {
+function startUserLocationRefresh() {
+    if (userLocationPollId) {
+        return;
+    }
+
+    userLocationPollId = window.setInterval(() => {
+        if (document.hidden) {
+            return;
+        }
+
+        requestUserLocation({
+            allowInitialCenter: false,
+            allowSortSwitch: false,
+            maximumAge: 5000,
+            showErrors: false
+        });
+    }, userLocationRefreshMs);
+}
+
+function setupUserLocationControl() {
+    const button = document.getElementById('map-center-user');
+
+    if (!button || button.dataset.ready === 'true') {
+        return;
+    }
+
+    button.dataset.ready = 'true';
+    button.addEventListener('click', () => {
+        if (userLocation) {
+            centerMapOnUserLocation();
+        }
+
+        requestUserLocation({
+            centerOnLocation: true,
+            allowInitialCenter: false,
+            maximumAge: 0,
+            showErrors: true
+        });
+    });
+}
+
+function applyLocationAwareListAndMap(options = {}) {
     if (!locationsAreLoaded) {
         return;
     }
 
     const sortSelect = document.getElementById('business-list-sort');
+    const allowSortSwitch = options.allowSortSwitch !== false;
+    const allowInitialCenter = options.allowInitialCenter !== false;
 
-    if (userLocation && sortSelect && (sortSelect.value === 'map' || sortSelect.value === 'nearby')) {
+    if (userLocation && sortSelect && allowSortSwitch && (sortSelect.value === 'map' || sortSelect.value === 'nearby')) {
         sortSelect.value = 'nearby';
         updateBusinessListForSort('nearby');
 
-        if (!hasCenteredOnUserLocation) {
+        if (allowInitialCenter && !hasCenteredOnUserLocation) {
             hasCenteredOnUserLocation = true;
-            centerMapOnUserAndNearbyLocations();
+            centerMapOnUserLocation();
         }
 
         return;
     }
 
+    updateLocationAwareBusinessList();
+}
+
+function updateLocationAwareBusinessList() {
+    if (!locationsAreLoaded) {
+        return;
+    }
+
+    const sortSelect = document.getElementById('business-list-sort');
     updateBusinessListForSort(sortSelect ? sortSelect.value : 'map');
 }
 
@@ -483,7 +552,7 @@ function updateUserLocationMarker() {
     });
 }
 
-function centerMapOnUserAndNearbyLocations() {
+function centerMapOnUserLocation() {
     if (!userLocation) {
         return;
     }
