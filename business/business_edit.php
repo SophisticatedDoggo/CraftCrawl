@@ -108,7 +108,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                     <span></span>
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
-                    <a href="business_portal.php" data-back-link>Back</a>
                     <a href="analytics.php">Stats</a>
                     <a href="settings.php">Settings</a>
                     <form action="../logout.php" method="POST">

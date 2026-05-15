@@ -5,9 +5,13 @@ if (gallery) {
     const slideButtons = Array.from(gallery.querySelectorAll('[data-gallery-photo-url]'));
     const dots = Array.from(gallery.querySelectorAll('[data-gallery-dot]'));
     const track = gallery.querySelector('.business-gallery-track');
+    const previousButton = gallery.querySelector('[data-gallery-prev]');
+    const nextButton = gallery.querySelector('[data-gallery-next]');
     const lightbox = document.getElementById('business-gallery-lightbox');
     const lightboxImage = document.getElementById('business-gallery-lightbox-image');
     const lightboxCount = document.getElementById('business-gallery-lightbox-count');
+    const lightboxPreviousButton = document.getElementById('business-gallery-lightbox-prev');
+    const lightboxNextButton = document.getElementById('business-gallery-lightbox-next');
     const lightboxCloseControls = document.querySelectorAll('[data-gallery-lightbox-close]');
     let activeIndex = 0;
     let autoplayId = null;
@@ -56,6 +60,18 @@ if (gallery) {
         });
     });
 
+    if (previousButton) {
+        previousButton.addEventListener('click', () => {
+            manuallyShowSlide(activeIndex - 1);
+        });
+    }
+
+    if (nextButton) {
+        nextButton.addEventListener('click', () => {
+            manuallyShowSlide(activeIndex + 1);
+        });
+    }
+
     function showLightboxPhoto(index) {
         if (!slideButtons.length || !lightboxImage || !lightboxCount) {
             return;
@@ -100,6 +116,18 @@ if (gallery) {
     lightboxCloseControls.forEach((control) => {
         control.addEventListener('click', closeLightbox);
     });
+
+    if (lightboxPreviousButton) {
+        lightboxPreviousButton.addEventListener('click', () => {
+            showLightboxPhoto(activeIndex - 1);
+        });
+    }
+
+    if (lightboxNextButton) {
+        lightboxNextButton.addEventListener('click', () => {
+            showLightboxPhoto(activeIndex + 1);
+        });
+    }
 
     function addSwipeNavigation(element, onPrevious, onNext) {
         if (!element || slides.length < 2) {
@@ -159,6 +187,12 @@ if (gallery) {
         () => showLightboxPhoto(activeIndex - 1),
         () => showLightboxPhoto(activeIndex + 1)
     );
+
+    if (lightbox) {
+        lightbox.addEventListener('touchmove', (event) => {
+            event.preventDefault();
+        }, { passive: false });
+    }
 
     document.addEventListener('keydown', (event) => {
         if (!lightbox || lightbox.hidden) {

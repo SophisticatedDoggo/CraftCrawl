@@ -4447,6 +4447,32 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     opacity: 1;
 }
 
+.business-gallery-nav {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    width: 40px;
+    height: 40px;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    color: var(--color-surface);
+    background: rgba(17, 24, 39, 0.72);
+    cursor: pointer;
+    font-size: 32px;
+    line-height: 1;
+    transform: translateY(-50%);
+}
+
+.business-gallery-prev {
+    left: 12px;
+}
+
+.business-gallery-next {
+    right: 12px;
+}
+
 .business-gallery-dots {
     display: flex;
     justify-content: center;
@@ -4544,6 +4570,7 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 body.lightbox-open {
     overflow: hidden;
+    touch-action: none;
 }
 
 .review-photo-grid {
@@ -4583,6 +4610,8 @@ body.lightbox-open {
     place-items: center;
     padding: 56px 72px;
     box-sizing: border-box;
+    overscroll-behavior: contain;
+    touch-action: none;
 }
 
 .photo-lightbox-backdrop,
@@ -5217,6 +5246,38 @@ a.event-calendar-event:focus .event-calendar-event-name {
     gap: 10px;
 }
 
+.admin-review-card form[hidden] {
+    display: none;
+}
+
+.admin-review-card .business-review-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+}
+
+.admin-review-card .admin-user-identity {
+    grid-column: 1 / -1;
+}
+
+.admin-review-edit-toggle {
+    justify-self: end;
+    min-height: 34px;
+    padding: 7px 12px;
+    font-size: 0.9rem;
+}
+
+.admin-review-preview p {
+    margin-bottom: 0;
+}
+
+.admin-review-edit-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
 .admin-search-form > button,
 .admin-review-card form > button,
 .admin-delete-form button,
@@ -5239,6 +5300,16 @@ a.event-calendar-event:focus .event-calendar-event-name {
 .danger-button {
     color: #ffffff;
     background: var(--color-danger);
+}
+
+.admin-content-item + .admin-content-item {
+    margin-top: 16px;
+}
+
+.admin-content-delete-button {
+    min-height: 34px;
+    padding: 7px 12px;
+    font-size: 0.9rem;
 }
 
 @media (max-width: 900px) {
@@ -5320,10 +5391,132 @@ a.event-calendar-event:focus .event-calendar-event-name {
         font-size: 15px;
     }
 
+    /*
+     * Mobile visual system:
+     * default to editorial sections instead of lifted desktop cards.
+     * Keep strong containment only for dense controls, metrics, and alerts.
+     */
+    .auth-card,
+    .portal-panel,
+    .settings-panel,
+    .business-preview-card,
+    .business-details-hero,
+    .business-location-panel,
+    .business-gallery-panel,
+    .business-events-panel,
+    .business-reviews-panel,
+    .business-photo-manager,
+    .event-detail-card,
+    .event-calendar-panel,
+    .admin-panel {
+        position: relative;
+        padding: 24px 0 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .auth-card {
+        width: min(100%, 520px);
+    }
+
+    .auth-card::before,
+    .portal-panel::before,
+    .settings-panel::before,
+    .business-preview-card::before,
+    .business-details-hero::before,
+    .business-location-panel::before,
+    .business-gallery-panel::before,
+    .business-events-panel::before,
+    .business-reviews-panel::before,
+    .business-photo-manager::before,
+    .event-detail-card::before,
+    .event-calendar-panel::before,
+    .admin-panel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        left: 0;
+        height: 1px;
+        background: linear-gradient(
+            90deg,
+            var(--color-primary) 0 52px,
+            var(--color-border) 52px 100%
+        );
+    }
+
+    .landing-card::before {
+        background: var(--color-border);
+    }
+
+    .auth-card h1,
+    .portal-panel h2,
+    .settings-panel h2,
+    .business-preview-card h2,
+    .business-details-hero h1,
+    .business-location-panel h2,
+    .business-gallery-panel h2,
+    .business-events-panel h2,
+    .business-reviews-panel h2,
+    .business-photo-manager h2,
+    .event-detail-card h1,
+    .event-calendar-panel h2,
+    .admin-panel h2 {
+        letter-spacing: -0.01em;
+    }
+
+    .business-review-card,
+    .friend-location-card,
+    .friend-recommendation-card {
+        padding: 16px 0;
+        border: 0;
+        border-top: 1px solid var(--color-border);
+        border-left: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .business-review-card:first-of-type,
+    .friend-location-card:first-of-type,
+    .friend-recommendation-card:first-of-type {
+        border-top: 0;
+    }
+
+    .dashboard-checkin-panel {
+        border-radius: var(--radius-sm);
+        box-shadow: none;
+    }
+
+    .review-form-panel,
+    .event-form-panel,
+    .business-edit-panel,
+    .analytics-hero,
+    .analytics-panel {
+        box-shadow: none;
+    }
+
     .auth-body {
         align-items: start;
         padding-top: 12px;
         padding-top: max(12px, calc(6px + env(safe-area-inset-top)));
+    }
+
+    .landing-body {
+        align-items: center;
+        min-height: 100svh;
+        padding-top: var(--space-page);
+        padding-bottom: var(--space-page);
+    }
+
+    .landing-card {
+        align-self: center;
     }
 
     .landing-primary-actions,
@@ -5824,19 +6017,11 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .business-actions-menu {
-        display: block;
-        position: absolute;
-        top: 0;
-        right: 0;
-        z-index: 6;
+        display: contents;
     }
 
-    .business-actions-menu .mobile-actions-panel {
+    .business-actions-menu .mobile-actions-toggle {
         display: none;
-    }
-
-    .business-actions-menu.is-open .mobile-actions-panel {
-        display: grid;
     }
 
     .portal-tabs {
@@ -6401,6 +6586,76 @@ a.event-calendar-event:focus .event-calendar-event-name {
         align-items: stretch;
     }
 
+    .admin-business-list-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: center;
+        width: 100%;
+    }
+
+    .admin-business-list-actions form:first-child {
+        grid-column: 1;
+    }
+
+    .admin-business-list-actions > a {
+        grid-column: 2;
+        justify-self: end;
+    }
+
+    .admin-business-list-actions form,
+    .admin-business-list-actions a,
+    .admin-business-list-actions button {
+        width: auto;
+        max-width: 100%;
+    }
+
+    .admin-business-pending-actions form:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .admin-account-list-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: center;
+        width: 100%;
+    }
+
+    .admin-account-list-actions > a {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+    }
+
+    .admin-account-list-actions form:first-of-type {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .admin-account-list-actions form:nth-of-type(n + 2) {
+        grid-column: 1 / -1;
+    }
+
+    .admin-account-list-actions form,
+    .admin-account-list-actions a,
+    .admin-account-list-actions button {
+        width: auto;
+        max-width: 100%;
+    }
+
+    .admin-content-item {
+        padding: 14px 0;
+    }
+
+    .admin-comment-item {
+        border-top: 1px solid var(--color-border);
+    }
+
+    .admin-comment-item:first-of-type {
+        border-top: 0;
+    }
+
     .admin-search-form {
         grid-template-columns: 1fr;
     }
@@ -6411,6 +6666,11 @@ a.event-calendar-event:focus .event-calendar-event-name {
 
     .business-gallery-track {
         aspect-ratio: 4 / 3;
+    }
+
+    .business-gallery-nav,
+    .business-gallery-lightbox-nav {
+        display: none;
     }
 
     .calendar-header {
@@ -6570,9 +6830,6 @@ a.event-calendar-event:focus .event-calendar-event-name {
         font-size: clamp(2.15rem, 9vw, 2.65rem);
     }
 
-    .auth-card,
-    .settings-panel,
-    .business-preview-card,
     .business-edit-panel,
     .analytics-hero,
     .analytics-panel,
@@ -6637,7 +6894,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .business-header-actions.business-actions-menu {
-        display: block;
+        display: contents;
         width: auto;
     }
 
@@ -6647,6 +6904,13 @@ a.event-calendar-event:focus .event-calendar-event-name {
         justify-self: start;
         width: auto;
         max-width: 100%;
+    }
+
+    .business-actions-menu .mobile-actions-panel a,
+    .business-actions-menu .mobile-actions-panel form,
+    .business-actions-menu .mobile-actions-panel button {
+        justify-self: stretch;
+        width: 100%;
     }
 
     .palette-switcher button {

@@ -233,14 +233,14 @@ $businesses = $business_stmt->get_result();
                         <h3><?php echo craftcrawl_admin_escape($business['bName']); ?></h3>
                         <p><?php echo craftcrawl_admin_escape(craftcrawl_admin_business_type_label($business['bType'])); ?> · <?php echo craftcrawl_admin_escape($business['city']); ?>, <?php echo craftcrawl_admin_escape($business['state']); ?> · <?php echo craftcrawl_admin_escape($business['bEmail']); ?></p>
                     </div>
-                    <div class="business-header-actions">
-                        <a href="business_edit.php?id=<?php echo craftcrawl_admin_escape($business['id']); ?>">Edit</a>
+                    <div class="business-header-actions admin-business-list-actions admin-business-pending-actions">
                         <form method="POST" action="">
                             <?php echo craftcrawl_csrf_input(); ?>
                             <input type="hidden" name="form_action" value="approve_business">
                             <input type="hidden" name="business_id" value="<?php echo craftcrawl_admin_escape($business['id']); ?>">
                             <button type="submit">Approve</button>
                         </form>
+                        <a href="business_edit.php?id=<?php echo craftcrawl_admin_escape($business['id']); ?>">Edit</a>
                         <form method="POST" action="" onsubmit="return confirm('Are you sure? Deleting a business will get rid of it forever');">
                             <?php echo craftcrawl_csrf_input(); ?>
                             <input type="hidden" name="form_action" value="delete_business">
@@ -288,14 +288,14 @@ $businesses = $business_stmt->get_result();
                             </span>
                         </p>
                     </div>
-                    <div class="business-header-actions">
-                        <a href="business_edit.php?id=<?php echo craftcrawl_admin_escape($business['id']); ?>">Edit</a>
+                    <div class="business-header-actions admin-business-list-actions">
                         <form method="POST" action="">
                             <?php echo craftcrawl_csrf_input(); ?>
                             <input type="hidden" name="form_action" value="<?php echo $business['approved'] ? 'remove_business_approval' : 'approve_business'; ?>">
                             <input type="hidden" name="business_id" value="<?php echo craftcrawl_admin_escape($business['id']); ?>">
                             <button type="submit"><?php echo $business['approved'] ? 'Remove Approval' : 'Approve'; ?></button>
                         </form>
+                        <a href="business_edit.php?id=<?php echo craftcrawl_admin_escape($business['id']); ?>">Edit</a>
                         <?php if (!$business['approved']) : ?>
                             <form method="POST" action="" onsubmit="return confirm('Are you sure? Deleting a business will get rid of it forever');">
                                 <?php echo craftcrawl_csrf_input(); ?>

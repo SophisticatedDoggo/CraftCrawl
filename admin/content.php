@@ -184,7 +184,7 @@ $comments = $comment_stmt->get_result();
                     $body_preview = substr($body_preview, 0, 120) . '…';
                 }
             ?>
-                <article class="admin-review-card">
+                <article class="admin-review-card admin-content-item">
                     <div class="admin-review-header">
                         <div>
                             <strong><?php echo craftcrawl_admin_escape($post['bName']); ?></strong>
@@ -207,7 +207,7 @@ $comments = $comment_stmt->get_result();
                         <?php echo craftcrawl_csrf_input(); ?>
                         <input type="hidden" name="form_action" value="delete_post">
                         <input type="hidden" name="post_id" value="<?php echo craftcrawl_admin_escape($post['id']); ?>">
-                        <button type="submit" class="danger-button">Delete Post</button>
+                        <button type="submit" class="danger-button admin-content-delete-button">Delete</button>
                     </form>
                 </article>
             <?php endwhile; ?>
@@ -236,7 +236,7 @@ $comments = $comment_stmt->get_result();
                     : craftcrawl_admin_escape(trim(($comment['fName'] ?? '') . ' ' . ($comment['lName'] ?? '')));
                 $item_type = explode(':', $comment['feed_item_key'])[0];
             ?>
-                <article class="admin-review-card">
+                <article class="admin-review-card admin-content-item admin-comment-item">
                     <div class="admin-review-header">
                         <div class="user-identity-row admin-user-identity">
                             <?php if (empty($comment['business_id'])) : ?>
@@ -261,7 +261,7 @@ $comments = $comment_stmt->get_result();
                         <?php echo craftcrawl_csrf_input(); ?>
                         <input type="hidden" name="form_action" value="delete_comment">
                         <input type="hidden" name="comment_id" value="<?php echo craftcrawl_admin_escape($comment['id']); ?>">
-                        <button type="submit" class="danger-button">Delete Comment</button>
+                        <button type="submit" class="danger-button admin-content-delete-button">Delete</button>
                     </form>
                 </article>
             <?php endwhile; ?>

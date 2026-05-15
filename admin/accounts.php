@@ -267,8 +267,7 @@ foreach ($account_queries as $type => $sql) {
                             </p>
                         </div>
                     </div>
-                    <div class="business-header-actions">
-                        <a href="account_details.php?account_type=<?php echo craftcrawl_admin_escape($account['account_type']); ?>&amp;account_id=<?php echo craftcrawl_admin_escape($account['id']); ?>">Details</a>
+                    <div class="business-header-actions admin-account-list-actions">
                         <?php if ($account['account_type'] !== 'admin' && empty($account['emailVerifiedAt']) && empty($account['disabledAt'])) : ?>
                             <form method="POST" action="">
                                 <?php echo craftcrawl_csrf_input(); ?>
@@ -295,6 +294,7 @@ foreach ($account_queries as $type => $sql) {
                                 <button type="submit">Re-enable</button>
                             </form>
                         <?php endif; ?>
+                        <a href="account_details.php?account_type=<?php echo craftcrawl_admin_escape($account['account_type']); ?>&amp;account_id=<?php echo craftcrawl_admin_escape($account['id']); ?>">Details</a>
                     </div>
                 </article>
             <?php endforeach; ?>

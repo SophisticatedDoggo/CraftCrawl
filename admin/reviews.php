@@ -143,15 +143,25 @@ $reviews = $review_stmt->get_result();
             <?php endif; ?>
 
             <?php while ($review = $reviews->fetch_assoc()) : ?>
-                <article class="business-review-card admin-review-card">
+                <article class="business-review-card admin-review-card" data-admin-review-card>
                     <div class="business-review-header">
                         <strong><?php echo craftcrawl_admin_escape($review['bName']); ?></strong>
+                        <button type="button" class="admin-review-edit-toggle" data-admin-review-edit-toggle>Edit</button>
                         <div class="user-identity-row admin-user-identity">
                             <?php echo craftcrawl_render_user_avatar($review, 'small'); ?>
                             <span><?php echo craftcrawl_admin_escape($review['fName'] . ' ' . $review['lName']); ?> · <?php echo craftcrawl_admin_escape($review['email']); ?></span>
                         </div>
                     </div>
-                    <form method="POST" action="">
+                    <div class="admin-review-preview" data-admin-review-preview>
+                        <p><strong>Rating:</strong> <?php echo craftcrawl_admin_escape($review['rating']); ?> / 5</p>
+                        <?php if (!empty($review['notes'])) : ?>
+                            <p><?php echo nl2br(craftcrawl_admin_escape($review['notes'])); ?></p>
+                        <?php endif; ?>
+                        <?php if (!empty($review['business_response'])) : ?>
+                            <p><strong>Business Response:</strong> <?php echo nl2br(craftcrawl_admin_escape($review['business_response'])); ?></p>
+                        <?php endif; ?>
+                    </div>
+                    <form method="POST" action="" data-admin-review-edit-form hidden>
                         <?php echo craftcrawl_csrf_input(); ?>
                         <input type="hidden" name="form_action" value="edit_review">
                         <input type="hidden" name="review_id" value="<?php echo craftcrawl_admin_escape($review['id']); ?>">
@@ -169,7 +179,10 @@ $reviews = $review_stmt->get_result();
                         <label for="business_response_<?php echo craftcrawl_admin_escape($review['id']); ?>">Business Response</label>
                         <textarea id="business_response_<?php echo craftcrawl_admin_escape($review['id']); ?>" name="business_response" rows="3"><?php echo craftcrawl_admin_escape($review['business_response']); ?></textarea>
 
-                        <button type="submit">Save Review</button>
+                        <div class="admin-review-edit-actions">
+                            <button type="submit">Save Review</button>
+                            <button type="button" class="button-link-secondary" data-admin-review-edit-cancel>Cancel</button>
+                        </div>
                     </form>
                     <form method="POST" action="" class="admin-delete-form">
                         <?php echo craftcrawl_csrf_input(); ?>
@@ -182,6 +195,7 @@ $reviews = $review_stmt->get_result();
         </section>
     </main>
     <?php include __DIR__ . '/mobile_nav.php'; ?>
+    <script src="../js/admin_review_edit_toggle.js"></script>
     <script src="../js/mobile_actions_menu.js"></script>
     <script src="../js/depth_animations.js"></script>
 </body>
