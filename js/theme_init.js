@@ -34,6 +34,54 @@ const craftCrawlPaletteAppIcons = {
 document.documentElement.dataset.palette = craftCrawlPalette;
 localStorage.setItem('craftcrawl_palette', craftCrawlPalette);
 
+function isCraftCrawlNativeApp() {
+    const capacitor = window.Capacitor;
+    return Boolean(
+        capacitor
+        && typeof capacitor.isNativePlatform === 'function'
+        && capacitor.isNativePlatform()
+    );
+}
+
+function isCraftCrawlInternalLink(link) {
+    if (!(link instanceof HTMLAnchorElement)) {
+        return false;
+    }
+
+    const href = link.getAttribute('href') || '';
+    if (
+        href === ''
+        || href.startsWith('#')
+        || href.startsWith('mailto:')
+        || href.startsWith('tel:')
+        || href.startsWith('javascript:')
+    ) {
+        return false;
+    }
+
+    try {
+        return new URL(link.href, window.location.href).origin === window.location.origin;
+    } catch (error) {
+        return false;
+    }
+}
+
+function syncCraftCrawlNativeInternalLinks(root = document) {
+    root.querySelectorAll('a[href]').forEach((link) => {
+        link.classList.toggle('native-internal-link', isCraftCrawlInternalLink(link));
+    });
+}
+
+function suppressCraftCrawlNativeInternalLinkCallouts(event) {
+    const target = event.target instanceof Element ? event.target : null;
+    const link = target ? target.closest('a[href]') : null;
+    if (!isCraftCrawlInternalLink(link)) {
+        return;
+    }
+
+    event.preventDefault();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-back-link]').forEach((link) => {
         link.addEventListener('click', (event) => {
@@ -45,6 +93,31 @@ document.addEventListener('DOMContentLoaded', () => {
             window.history.back();
         });
     });
+
+    if (isCraftCrawlNativeApp()) {
+        document.documentElement.classList.add('native-app');
+        syncCraftCrawlNativeInternalLinks();
+        document.addEventListener('contextmenu', suppressCraftCrawlNativeInternalLinkCallouts);
+
+        new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (!(node instanceof Element)) {
+                        return;
+                    }
+
+                    if (node.matches('a[href]')) {
+                        node.classList.toggle('native-internal-link', isCraftCrawlInternalLink(node));
+                    }
+
+                    syncCraftCrawlNativeInternalLinks(node);
+                });
+            });
+        }).observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    }
 });
 
 function craftCrawlLogoUrlFromExisting(existingSrc, logoFile) {

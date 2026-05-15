@@ -37,6 +37,10 @@
     --space-page: clamp(16px, 4vw, 40px);
 }
 
+.native-app a.native-internal-link {
+    -webkit-touch-callout: none;
+}
+
 :root[data-palette="trail-map"] {
     --color-bg: #f4f1ea;
     --color-surface: #fffdf8;
