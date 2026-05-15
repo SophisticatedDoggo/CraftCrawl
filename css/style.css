@@ -584,7 +584,8 @@ label {
     text-align: center;
 }
 
-.social-auth-options.is-busy .social-auth-feedback:not([hidden])::before {
+.social-auth-options.is-busy .social-auth-feedback:not([hidden])::before,
+.social-auth-options.is-previewing .social-auth-feedback:not([hidden])::before {
     content: "";
     width: 1em;
     height: 1em;

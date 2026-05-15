@@ -11,6 +11,7 @@
         socialAuthBusy = isBusy;
 
         if (socialOptions) {
+            socialOptions.classList.remove('is-previewing');
             socialOptions.classList.toggle('is-busy', isBusy);
             socialOptions.setAttribute('aria-busy', isBusy ? 'true' : 'false');
         }
@@ -37,6 +38,10 @@
     function previewSocialAuthMessage(message) {
         if (!feedback || socialAuthBusy) {
             return;
+        }
+
+        if (socialOptions) {
+            socialOptions.classList.add('is-previewing');
         }
 
         feedback.classList.remove('is-error');
