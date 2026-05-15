@@ -206,11 +206,6 @@ function shouldShowCraftCrawlPageLoaderForLink(link, event) {
 
 function startCraftCrawlPageTransition(destination) {
     const destinationUrl = new URL(destination, window.location.href);
-    const capacitor = window.Capacitor;
-    const isNative = capacitor
-        && typeof capacitor.isNativePlatform === 'function'
-        && capacitor.isNativePlatform();
-    const transitionDelay = isNative ? 360 : 110;
 
     if (destinationUrl.origin !== window.location.origin) {
         window.location.assign(destinationUrl.href);
@@ -228,12 +223,8 @@ function startCraftCrawlPageTransition(destination) {
     }
 
     craftCrawlPageTransitionStarted = true;
-    showCraftCrawlPageLoader(0);
-    window.requestAnimationFrame(function () {
-        window.setTimeout(function () {
-            window.location.assign(destinationUrl.href);
-        }, transitionDelay);
-    });
+    showCraftCrawlPageLoader(180);
+    window.location.assign(destinationUrl.href);
 }
 
 function continueCraftCrawlLinkNavigation(link) {
