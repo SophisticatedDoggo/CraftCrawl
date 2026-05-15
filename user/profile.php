@@ -131,7 +131,7 @@ if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form_ac
             $profile_update_stmt->bind_param("sssssi", $new_first_name, $new_last_name, $new_title_index, $new_frame, $new_frame_style, $viewer_id);
         }
         $profile_update_stmt->execute();
-        craftcrawl_redirect('profile.php?message=profile_saved');
+        craftcrawl_redirect('user/profile.php?message=profile_saved');
     } catch (Throwable $error) {
         $message = $message === 'profile_name_error'
             ? 'profile_name_error'
