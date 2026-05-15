@@ -1,6 +1,53 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Roboto+Condensed:wght@700;900&display=swap');
+@font-face {
+    font-family: "Proxima Nova";
+    src: url("../fonts/Proxima Nova/Proxima Nova Light/Proxima Nova Light.ttf") format("truetype");
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Proxima Nova";
+    src: url("../fonts/Proxima Nova/Proxima Nova Regular/Proxima Nova Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Proxima Nova";
+    src: url("../fonts/Proxima Nova/Proxima Nova Semibold/Proxima Nova Semibold.ttf") format("truetype");
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Proxima Nova";
+    src: url("../fonts/Proxima Nova/Proxima Nova Semibold/Proxima Nova Semibold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Proxima Nova";
+    src: url("../fonts/Proxima Nova/Proxima Nova Extrabold/Proxima Nova Extrabold.ttf") format("truetype");
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Proxima Nova";
+    src: url("../fonts/Proxima Nova/Proxima Nova Extrabold/Proxima Nova Extrabold.ttf") format("truetype");
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
 
 :root {
+    --font-sans: "Proxima Nova", "Helvetica Neue", Arial, sans-serif;
     --color-bg: #f4f1ea;
     --color-surface: #fffdf8;
     --color-surface-muted: #ebe6d9;
@@ -138,7 +185,7 @@ body {
     margin: 0;
     color: var(--color-text);
     background: var(--color-bg);
-    font-family: "Roboto", "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--font-sans);
     line-height: 1.5;
 }
 
@@ -191,7 +238,7 @@ img {
 h1,
 h2,
 h3 {
-    font-family: "Roboto Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--font-sans);
     font-weight: 900;
     line-height: 1.15;
 }

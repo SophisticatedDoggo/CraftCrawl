@@ -209,7 +209,7 @@ $review_stmt = $conn->prepare("
     FROM reviews r
     INNER JOIN users u ON u.id = r.user_id
     LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
-    WHERE r.business_id=?
+    WHERE r.business_id=? AND u.disabledAt IS NULL
     ORDER BY r.id DESC
 ");
 $review_stmt->bind_param("i", $business_id);

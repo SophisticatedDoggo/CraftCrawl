@@ -6,6 +6,7 @@ require_once '../lib/password_reset.php';
 require_once '../lib/leveling.php';
 require_once '../lib/cloudinary_upload.php';
 require_once '../lib/user_avatar.php';
+require_once '../lib/user_account_deletion.php';
 include '../db.php';
 
 if (!isset($_SESSION['user_id'])) {
@@ -125,6 +126,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    if ($form_action === 'delete_account') {
+        $delete_password = (string) ($_POST['delete_password'] ?? '');
+        $stmt = $conn->prepare("SELECT password_hash FROM users WHERE id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $user = $stmt->get_result()->fetch_assoc();
+
+        if (!$user || !password_verify($delete_password, $user['password_hash'])) {
+            $message = 'delete_password_error';
+        } else {
+            try {
+                craftcrawl_delete_user_account($conn, $user_id);
+                craftcrawl_clear_remember_cookie();
+                $_SESSION = [];
+                session_destroy();
+                craftcrawl_redirect('index.php');
+            } catch (Throwable $e) {
+                error_log('User account deletion failed for user ' . $user_id . ': ' . $e->getMessage());
+                $message = 'delete_account_error';
+            }
+        }
+    }
+
     if ($form_action === 'privacy') {
         $auto_accept_friend_invites  = isset($_POST['auto_accept_friend_invites']);
         $show_feed_activity          = isset($_POST['show_feed_activity']);
@@ -232,6 +256,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p class="form-message form-message-error">Password must meet the site password rules.</p>
         <?php elseif ($message === 'disable_password_error') : ?>
             <p class="form-message form-message-error">Password is incorrect. Your account was not disabled.</p>
+        <?php elseif ($message === 'delete_password_error') : ?>
+            <p class="form-message form-message-error">Password is incorrect. Your account was not deleted.</p>
+        <?php elseif ($message === 'delete_account_error') : ?>
+            <p class="form-message form-message-error">Your account could not be deleted right now. Please try again.</p>
         <?php elseif ($message === 'privacy_saved') : ?>
             <p class="form-message form-message-success">Privacy settings updated.</p>
         <?php elseif ($message === 'theme_saved') : ?>
@@ -374,6 +402,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="disable_password">Password</label>
                 <input type="password" id="disable_password" name="disable_password" autocomplete="current-password" required>
                 <button type="submit" class="danger-button">Disable Account</button>
+            </form>
+        </section>
+
+        <section class="settings-panel">
+            <h2>Delete Account</h2>
+            <p class="form-help">Deleting your account permanently removes your login access, profile identity, friendships, uploaded photo records, comments, reactions, and feed visibility. Historical activity needed for aggregate statistics is retained without keeping your public account visible.</p>
+            <form method="POST" action="" class="settings-form" onsubmit="return confirm('Permanently delete this account? This cannot be undone. Your login access, profile identity, social connections, comments, reactions, and feed visibility will be removed while anonymous historical totals are retained for statistics.');">
+                <?php echo craftcrawl_csrf_input(); ?>
+                <input type="hidden" name="form_action" value="delete_account">
+                <label for="delete_password">Password</label>
+                <input type="password" id="delete_password" name="delete_password" autocomplete="current-password" required>
+                <button type="submit" class="danger-button">Delete Account Permanently</button>
             </form>
         </section>
     </main>

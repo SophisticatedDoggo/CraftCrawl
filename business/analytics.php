@@ -72,7 +72,7 @@ $recent_stmt = $conn->prepare("
     FROM user_visits uv
     INNER JOIN users u ON u.id = uv.user_id
     LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
-    WHERE uv.business_id=?
+    WHERE uv.business_id=? AND u.disabledAt IS NULL
     ORDER BY uv.checkedInAt DESC
     LIMIT 12
 ");

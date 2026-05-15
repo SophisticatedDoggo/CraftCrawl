@@ -202,7 +202,7 @@ $top_visitors_stmt = $conn->prepare("
     FROM user_visits uv
     INNER JOIN users u ON u.id = uv.user_id
     LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
-    WHERE uv.business_id=?
+    WHERE uv.business_id=? AND u.disabledAt IS NULL
     " . ($mode === 'lifetime' ? '' : 'AND uv.checkedInAt >= ? AND uv.checkedInAt < ?') . "
     GROUP BY uv.user_id, u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key
     ORDER BY visit_count DESC, last_checkin DESC

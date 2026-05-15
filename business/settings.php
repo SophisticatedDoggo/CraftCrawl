@@ -3,6 +3,7 @@ require '../login_check.php';
 require_once '../lib/admin_auth.php';
 require_once '../lib/remember_auth.php';
 require_once '../lib/password_reset.php';
+require_once '../lib/business_account_deletion.php';
 include '../db.php';
 
 if (!isset($_SESSION['business_id'])) {
@@ -61,6 +62,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION = [];
             session_destroy();
             craftcrawl_redirect('index.php');
+        }
+    }
+
+    if ($form_action === 'delete_account') {
+        $delete_password = (string) ($_POST['delete_password'] ?? '');
+        $stmt = $conn->prepare("SELECT password_hash FROM businesses WHERE id=?");
+        $stmt->bind_param("i", $business_id);
+        $stmt->execute();
+        $business_account = $stmt->get_result()->fetch_assoc();
+
+        if (!$business_account || !password_verify($delete_password, $business_account['password_hash'])) {
+            $message = 'delete_password_error';
+        } else {
+            try {
+                craftcrawl_delete_business_account($conn, $business_id);
+                craftcrawl_clear_remember_cookie();
+                $_SESSION = [];
+                session_destroy();
+                craftcrawl_redirect('index.php');
+            } catch (Throwable $e) {
+                error_log('Business account deletion failed for business ' . $business_id . ': ' . $e->getMessage());
+                $message = 'delete_account_error';
+            }
         }
     }
 
@@ -151,6 +175,10 @@ $display_palette = in_array($business['display_palette'] ?? '', $allowed_display
             <p class="form-message form-message-error">Password must meet the site password rules.</p>
         <?php elseif ($message === 'disable_password_error') : ?>
             <p class="form-message form-message-error">Password is incorrect. Your account was not disabled.</p>
+        <?php elseif ($message === 'delete_password_error') : ?>
+            <p class="form-message form-message-error">Password is incorrect. Your account was not deleted.</p>
+        <?php elseif ($message === 'delete_account_error') : ?>
+            <p class="form-message form-message-error">Your account could not be deleted right now. Please try again.</p>
         <?php elseif ($message === 'theme_saved') : ?>
             <p class="form-message form-message-success">Display theme updated.</p>
         <?php endif; ?>
@@ -197,6 +225,18 @@ $display_palette = in_array($business['display_palette'] ?? '', $allowed_display
                 <label for="disable_password">Password</label>
                 <input type="password" id="disable_password" name="disable_password" autocomplete="current-password" required>
                 <button type="submit" class="danger-button">Disable Account</button>
+            </form>
+        </section>
+
+        <section class="settings-panel">
+            <h2>Delete Account</h2>
+            <p class="form-help">Deleting your business account permanently removes login access, public profile identity, uploaded photo records, and public feed visibility. Historical activity needed for aggregate statistics is retained without keeping the business publicly visible.</p>
+            <form method="POST" action="" class="settings-form" onsubmit="return confirm('Permanently delete this business account? This cannot be undone. Login access, public identity, uploaded photo records, and public feed visibility will be removed while anonymous historical totals are retained for statistics.');">
+                <?php echo craftcrawl_csrf_input(); ?>
+                <input type="hidden" name="form_action" value="delete_account">
+                <label for="delete_password">Password</label>
+                <input type="password" id="delete_password" name="delete_password" autocomplete="current-password" required>
+                <button type="submit" class="danger-button">Delete Account Permanently</button>
             </form>
         </section>
     </main>
