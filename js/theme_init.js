@@ -330,7 +330,6 @@ function startCraftCrawlPageTransition(destination) {
 
     craftCrawlPageTransitionStarted = true;
     showCraftCrawlPageLoader(180);
-    showCraftCrawlNativePageTransition();
     window.location.assign(destinationUrl.href);
 }
 
@@ -412,7 +411,6 @@ document.addEventListener('submit', function (event) {
         window.setTimeout(function () {
             if (!event.defaultPrevented) {
                 showCraftCrawlPageLoader(180);
-                showCraftCrawlNativePageTransition();
             }
         }, 0);
     }
