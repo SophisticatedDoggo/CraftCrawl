@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     lName VARCHAR(50) NOT NULL,
     email VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    password_auth_enabled BOOL NOT NULL DEFAULT TRUE,
     total_xp INT NOT NULL DEFAULT 0,
     level INT NOT NULL DEFAULT 1,
     level_xp INT NOT NULL DEFAULT 0,

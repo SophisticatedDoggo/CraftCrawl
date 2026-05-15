@@ -126,7 +126,7 @@ function craftcrawl_complete_password_reset($conn, $token, $password_hash) {
 
     try {
         if ($account_type === 'user') {
-            $account_stmt = $conn->prepare("UPDATE users SET password_hash=? WHERE id=?");
+            $account_stmt = $conn->prepare("UPDATE users SET password_hash=?, password_auth_enabled=TRUE WHERE id=?");
         } elseif ($account_type === 'business') {
             $account_stmt = $conn->prepare("UPDATE businesses SET password_hash=? WHERE id=?");
         } elseif ($account_type === 'admin') {

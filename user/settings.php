@@ -29,6 +29,7 @@ $settings_stmt = $conn->prepare("
         u.selected_title_index,
         u.selected_profile_frame, u.selected_profile_frame_style,
         u.display_palette,
+        u.password_auth_enabled,
         u.fName,
         u.lName,
         u.profile_photo_url,
@@ -51,6 +52,7 @@ $show_profile_rewards        = !isset($user_settings['show_profile_rewards'])   
 $show_want_to_go             = !isset($user_settings['show_want_to_go'])            || !empty($user_settings['show_want_to_go']);
 $notify_social_activity      = !isset($user_settings['notify_social_activity'])     || !empty($user_settings['notify_social_activity']);
 $allow_post_interactions     = !isset($user_settings['allow_post_interactions'])    || !empty($user_settings['allow_post_interactions']);
+$password_auth_enabled       = !empty($user_settings['password_auth_enabled']);
 $user_level = (int) ($user_settings['level'] ?? 1);
 $selected_title_index = $user_settings['selected_title_index'] !== null ? (int) $user_settings['selected_title_index'] : null;
 $selected_profile_frame = $user_settings['selected_profile_frame'] ?? null;
@@ -105,46 +107,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($form_action === 'disable_account') {
-        $disable_password = (string) ($_POST['disable_password'] ?? '');
-        $stmt = $conn->prepare("SELECT password_hash FROM users WHERE id=?");
-        $stmt->bind_param("i", $user_id);
-        $stmt->execute();
-        $user = $stmt->get_result()->fetch_assoc();
-
-        if (!$user || !password_verify($disable_password, $user['password_hash'])) {
-            $message = 'disable_password_error';
+        if (!$password_auth_enabled) {
+            $message = 'password_required_for_account_action';
         } else {
-            $disable_stmt = $conn->prepare("UPDATE users SET disabledAt=NOW() WHERE id=?");
-            $disable_stmt->bind_param("i", $user_id);
-            $disable_stmt->execute();
-            craftcrawl_revoke_remember_tokens_for_account($conn, 'user', $user_id);
-            craftcrawl_revoke_password_reset_tokens_for_account($conn, 'user', $user_id);
-            craftcrawl_clear_remember_cookie();
-            $_SESSION = [];
-            session_destroy();
-            craftcrawl_redirect('index.php');
-        }
-    }
+            $disable_password = (string) ($_POST['disable_password'] ?? '');
+            $stmt = $conn->prepare("SELECT password_hash FROM users WHERE id=?");
+            $stmt->bind_param("i", $user_id);
+            $stmt->execute();
+            $user = $stmt->get_result()->fetch_assoc();
 
-    if ($form_action === 'delete_account') {
-        $delete_password = (string) ($_POST['delete_password'] ?? '');
-        $stmt = $conn->prepare("SELECT password_hash FROM users WHERE id=?");
-        $stmt->bind_param("i", $user_id);
-        $stmt->execute();
-        $user = $stmt->get_result()->fetch_assoc();
-
-        if (!$user || !password_verify($delete_password, $user['password_hash'])) {
-            $message = 'delete_password_error';
-        } else {
-            try {
-                craftcrawl_delete_user_account($conn, $user_id);
+            if (!$user || !password_verify($disable_password, $user['password_hash'])) {
+                $message = 'disable_password_error';
+            } else {
+                $disable_stmt = $conn->prepare("UPDATE users SET disabledAt=NOW() WHERE id=?");
+                $disable_stmt->bind_param("i", $user_id);
+                $disable_stmt->execute();
+                craftcrawl_revoke_remember_tokens_for_account($conn, 'user', $user_id);
+                craftcrawl_revoke_password_reset_tokens_for_account($conn, 'user', $user_id);
                 craftcrawl_clear_remember_cookie();
                 $_SESSION = [];
                 session_destroy();
                 craftcrawl_redirect('index.php');
-            } catch (Throwable $e) {
-                error_log('User account deletion failed for user ' . $user_id . ': ' . $e->getMessage());
-                $message = 'delete_account_error';
+            }
+        }
+    }
+
+    if ($form_action === 'delete_account') {
+        if (!$password_auth_enabled) {
+            $message = 'password_required_for_account_action';
+        } else {
+            $delete_password = (string) ($_POST['delete_password'] ?? '');
+            $stmt = $conn->prepare("SELECT password_hash FROM users WHERE id=?");
+            $stmt->bind_param("i", $user_id);
+            $stmt->execute();
+            $user = $stmt->get_result()->fetch_assoc();
+
+            if (!$user || !password_verify($delete_password, $user['password_hash'])) {
+                $message = 'delete_password_error';
+            } else {
+                try {
+                    craftcrawl_delete_user_account($conn, $user_id);
+                    craftcrawl_clear_remember_cookie();
+                    $_SESSION = [];
+                    session_destroy();
+                    craftcrawl_redirect('index.php');
+                } catch (Throwable $e) {
+                    error_log('User account deletion failed for user ' . $user_id . ': ' . $e->getMessage());
+                    $message = 'delete_account_error';
+                }
             }
         }
     }
@@ -189,12 +199,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $new_password = (string) ($_POST['new_password'] ?? '');
         $verify_password = (string) ($_POST['verify_password'] ?? '');
 
-        $stmt = $conn->prepare("SELECT password_hash FROM users WHERE id=?");
+        $stmt = $conn->prepare("SELECT password_hash, password_auth_enabled FROM users WHERE id=?");
         $stmt->bind_param("i", $user_id);
         $stmt->execute();
         $user = $stmt->get_result()->fetch_assoc();
 
-        if (!$user || !password_verify($current_password, $user['password_hash'])) {
+        $user_has_password_auth = !empty($user['password_auth_enabled']);
+
+        if (!$user) {
+            $message = 'password_current_error';
+        } elseif ($user_has_password_auth && !password_verify($current_password, $user['password_hash'])) {
             $message = 'password_current_error';
         } elseif (!hash_equals($new_password, $verify_password)) {
             $message = 'password_match_error';
@@ -205,12 +219,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message = 'password_rule_error';
             } else {
                 $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
-                $update_stmt = $conn->prepare("UPDATE users SET password_hash=? WHERE id=?");
+                $update_stmt = $conn->prepare("UPDATE users SET password_hash=?, password_auth_enabled=TRUE WHERE id=?");
                 $update_stmt->bind_param("si", $password_hash, $user_id);
                 $update_stmt->execute();
                 craftcrawl_revoke_remember_tokens_for_account($conn, 'user', $user_id);
                 craftcrawl_revoke_password_reset_tokens_for_account($conn, 'user', $user_id);
-                header('Location: settings.php?message=password_saved');
+                header('Location: settings.php?message=' . ($user_has_password_auth ? 'password_saved' : 'password_created'));
                 exit();
             }
         }
@@ -248,6 +262,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p class="form-message form-message-success">Profile customization saved.</p>
         <?php elseif ($message === 'password_saved') : ?>
             <p class="form-message form-message-success">Password updated.</p>
+        <?php elseif ($message === 'password_created') : ?>
+            <p class="form-message form-message-success">Password created. You can now use it for account actions and password login.</p>
         <?php elseif ($message === 'password_current_error') : ?>
             <p class="form-message form-message-error">Current password is incorrect.</p>
         <?php elseif ($message === 'password_match_error') : ?>
@@ -260,6 +276,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p class="form-message form-message-error">Password is incorrect. Your account was not deleted.</p>
         <?php elseif ($message === 'delete_account_error') : ?>
             <p class="form-message form-message-error">Your account could not be deleted right now. Please try again.</p>
+        <?php elseif ($message === 'password_required_for_account_action') : ?>
+            <p class="form-message form-message-error">Create a password first before disabling or deleting this account.</p>
         <?php elseif ($message === 'privacy_saved') : ?>
             <p class="form-message form-message-success">Privacy settings updated.</p>
         <?php elseif ($message === 'theme_saved') : ?>
@@ -376,12 +394,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </section>
 
         <section class="settings-panel">
-            <h2>Reset Password</h2>
+            <h2><?php echo $password_auth_enabled ? 'Reset Password' : 'Create Password'; ?></h2>
+            <?php if (!$password_auth_enabled) : ?>
+                <p class="form-help">This account currently uses social sign-in only. Create a password if you also want password login or need to disable or delete the account later.</p>
+            <?php endif; ?>
             <form method="POST" action="" class="settings-form">
                 <?php echo craftcrawl_csrf_input(); ?>
                 <input type="hidden" name="form_action" value="change_password">
-                <label for="current_password">Current Password</label>
-                <input type="password" id="current_password" name="current_password" autocomplete="current-password" required>
+                <?php if ($password_auth_enabled) : ?>
+                    <label for="current_password">Current Password</label>
+                    <input type="password" id="current_password" name="current_password" autocomplete="current-password" required>
+                <?php endif; ?>
 
                 <label for="new_password">New Password</label>
                 <input type="password" id="new_password" name="new_password" autocomplete="new-password" required>
@@ -389,31 +412,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="verify_password">Verify New Password</label>
                 <input type="password" id="verify_password" name="verify_password" autocomplete="new-password" required>
 
-                <button type="submit">Update Password</button>
+                <button type="submit"><?php echo $password_auth_enabled ? 'Update Password' : 'Create Password'; ?></button>
             </form>
         </section>
 
         <section class="settings-panel">
             <h2>Disable Account</h2>
             <p class="form-help">Disabling your account will immediately sign you out, prevent future logins, revoke remembered sessions, and invalidate active password reset links. Your reviews, visits, XP, badges, likes, and uploaded content are not deleted automatically and may remain visible unless removed separately.</p>
+            <?php if (!$password_auth_enabled) : ?>
+                <p class="form-help">Create a password above before disabling this account.</p>
+            <?php endif; ?>
             <form method="POST" action="" class="settings-form" onsubmit="return confirm('Disable this account? You will be signed out immediately, future logins will be blocked, remembered sessions and password reset links will be revoked, and existing activity or content will not be deleted automatically.');">
                 <?php echo craftcrawl_csrf_input(); ?>
                 <input type="hidden" name="form_action" value="disable_account">
                 <label for="disable_password">Password</label>
-                <input type="password" id="disable_password" name="disable_password" autocomplete="current-password" required>
-                <button type="submit" class="danger-button">Disable Account</button>
+                <input type="password" id="disable_password" name="disable_password" autocomplete="current-password" <?php echo $password_auth_enabled ? 'required' : 'disabled'; ?>>
+                <button type="submit" class="danger-button" <?php echo $password_auth_enabled ? '' : 'disabled'; ?>>Disable Account</button>
             </form>
         </section>
 
         <section class="settings-panel">
             <h2>Delete Account</h2>
             <p class="form-help">Deleting your account permanently removes your login access, profile identity, friendships, uploaded photo records, comments, reactions, and feed visibility. Historical activity needed for aggregate statistics is retained without keeping your public account visible.</p>
+            <?php if (!$password_auth_enabled) : ?>
+                <p class="form-help">Create a password above before deleting this account.</p>
+            <?php endif; ?>
             <form method="POST" action="" class="settings-form" onsubmit="return confirm('Permanently delete this account? This cannot be undone. Your login access, profile identity, social connections, comments, reactions, and feed visibility will be removed while anonymous historical totals are retained for statistics.');">
                 <?php echo craftcrawl_csrf_input(); ?>
                 <input type="hidden" name="form_action" value="delete_account">
                 <label for="delete_password">Password</label>
-                <input type="password" id="delete_password" name="delete_password" autocomplete="current-password" required>
-                <button type="submit" class="danger-button">Delete Account Permanently</button>
+                <input type="password" id="delete_password" name="delete_password" autocomplete="current-password" <?php echo $password_auth_enabled ? 'required' : 'disabled'; ?>>
+                <button type="submit" class="danger-button" <?php echo $password_auth_enabled ? '' : 'disabled'; ?>>Delete Account Permanently</button>
             </form>
         </section>
     </main>

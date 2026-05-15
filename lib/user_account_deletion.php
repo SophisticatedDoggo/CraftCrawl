@@ -48,6 +48,7 @@ function craftcrawl_delete_user_account(mysqli $conn, int $user_id): void {
                 lName='User',
                 email=?,
                 password_hash=?,
+                password_auth_enabled=FALSE,
                 google_sub=NULL,
                 apple_sub=NULL,
                 profile_photo_id=NULL,

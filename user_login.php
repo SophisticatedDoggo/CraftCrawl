@@ -59,13 +59,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: user_login.php");
         exit();
     } else {
-        $stmt = $conn->prepare("SELECT id, password_hash, emailVerifiedAt, disabledAt, display_palette FROM users WHERE email=?");
+        $stmt = $conn->prepare("SELECT id, password_hash, password_auth_enabled, emailVerifiedAt, disabledAt, display_palette FROM users WHERE email=?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $result = $stmt->get_result();
         $user = $result->fetch_assoc();
 
-        if($user && password_verify($password, $user['password_hash'])) {
+        if($user && !empty($user['password_auth_enabled']) && password_verify($password, $user['password_hash'])) {
             if (!empty($user['disabledAt'])) {
                 $_SESSION['user_login_feedback'] = [
                     'disabled_error' => true,

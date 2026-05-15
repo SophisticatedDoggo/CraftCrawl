@@ -288,7 +288,7 @@ function craftcrawl_social_find_or_create_user($conn, $identity) {
         $profile_photo_url = filter_var($identity['profile_photo_url'] ?? '', FILTER_VALIDATE_URL) ? $identity['profile_photo_url'] : null;
         $profile_photo_source = $profile_photo_url !== null ? $identity['provider'] : null;
 
-        $stmt = $conn->prepare("INSERT INTO users (fName, lName, email, password_hash, {$provider_column}, profile_photo_url, profile_photo_source, createdAt, emailVerifiedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO users (fName, lName, email, password_hash, password_auth_enabled, {$provider_column}, profile_photo_url, profile_photo_source, createdAt, emailVerifiedAt) VALUES (?, ?, ?, ?, FALSE, ?, ?, ?, ?, ?)");
         $stmt->bind_param('sssssssss', $first_name, $last_name, $email, $password_hash, $provider_sub, $profile_photo_url, $profile_photo_source, $date, $date);
         $stmt->execute();
         $user = [

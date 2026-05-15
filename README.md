@@ -66,6 +66,12 @@ Run the social sign-in migration for existing databases:
 mysql -u craft_crawl -p craft_crawl < migrations/2026_05_13_social_sign_in.sql
 ```
 
+If the database already existed before password-state tracking was added, also run:
+
+```sh
+mysql -u craft_crawl -p craft_crawl < migrations/2026_05_15_user_password_auth_state.sql
+```
+
 ## Email verification
 
 New user and business accounts must verify their email address before login.
