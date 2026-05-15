@@ -509,6 +509,15 @@ label {
     margin: 0 0 22px;
 }
 
+.auth-back-link {
+    display: inline-block;
+    margin: 0 0 14px;
+}
+
+.mobile-context-back {
+    display: none;
+}
+
 .auth-top-section {
     margin: 0 0 18px;
 }
@@ -5227,6 +5236,14 @@ a.event-calendar-event:focus .event-calendar-event-name {
 
     .user-subpage-header-actions {
         display: none;
+    }
+
+    .mobile-context-back {
+        display: inline-flex;
+        justify-self: start;
+        width: fit-content;
+        min-height: 36px;
+        padding: 7px 12px;
     }
 
     .business-search {

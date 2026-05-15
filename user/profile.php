@@ -37,6 +37,19 @@ function craftcrawl_profile_badge_category_label($category) {
     return $labels[$category] ?? ucwords(str_replace('_', ' ', (string) $category));
 }
 
+function craftcrawl_profile_business_type_label($type) {
+    $labels = [
+        'brewery' => 'Brewery',
+        'winery' => 'Winery',
+        'cidery' => 'Cidery',
+        'distillery' => 'Distillery',
+        'distilery' => 'Distillery',
+        'meadery' => 'Meadery',
+    ];
+
+    return $labels[$type] ?? ucwords(str_replace('_', ' ', (string) $type));
+}
+
 if (!$is_own_profile) {
     $friend_stmt = $conn->prepare("SELECT id FROM user_friends WHERE user_id=? AND friend_user_id=? LIMIT 1");
     $friend_stmt->bind_param("ii", $viewer_id, $profile_id);
@@ -268,12 +281,15 @@ if (!$profile) {
                 </div>
             </div>
             <div class="business-header-actions user-subpage-header-actions">
-                <a href="portal.php">Back to Map</a>
+                <a href="portal.php" data-back-link>Back</a>
                 <a href="friends.php">Friends</a>
                 <?php if ($is_own_profile) : ?>
                     <a href="settings.php">Settings</a>
                 <?php endif; ?>
             </div>
+            <?php if (!$is_own_profile) : ?>
+                <a class="mobile-context-back" href="friends.php" data-back-link>Back</a>
+            <?php endif; ?>
         </header>
 
         <?php if (!$profile) : ?>
@@ -564,7 +580,7 @@ if (!$profile) {
                         <?php while ($business = $followed_businesses->fetch_assoc()) : ?>
                             <article class="friend-location-card">
                                 <strong><?php echo escape_output($business['bName']); ?></strong>
-                                <span><?php echo escape_output($business['bType']); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
+                                <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
                                 <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View Business</a>
                             </article>
                         <?php endwhile; ?>
@@ -582,7 +598,7 @@ if (!$profile) {
                         <?php while ($business = $want_to_go_businesses->fetch_assoc()) : ?>
                             <article class="friend-location-card">
                                 <strong><?php echo escape_output($business['bName']); ?></strong>
-                                <span><?php echo escape_output($business['bType']); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
+                                <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
                                 <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View Business</a>
                             </article>
                         <?php endwhile; ?>

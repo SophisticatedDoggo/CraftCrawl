@@ -126,6 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="auth-body">
     <main class="auth-card">
+        <a class="auth-back-link text-link" href="index.php" data-back-link>Back</a>
         <img class="site-logo auth-logo" src="images/Logo.webp" alt="CraftCrawl logo">
         <h1>Business Login</h1>
         <form id="business_login_form" action="" method="POST">

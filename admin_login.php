@@ -105,6 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="auth-body">
     <main class="auth-card">
+        <a class="auth-back-link text-link" href="index.php" data-back-link>Back</a>
         <img class="site-logo auth-logo" src="images/Logo.webp" alt="CraftCrawl logo">
         <h1>Admin Login</h1>
         <form action="" method="POST">
@@ -138,7 +139,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
             </div>
         </form>
-        <p class="auth-switch"><a href="index.php">Back to account selection</a></p>
         <?php include __DIR__ . '/legal_nav.php'; ?>
     </main>
     <script src="js/password_visibility.js"></script>

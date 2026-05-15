@@ -58,6 +58,7 @@ function verification_message($result) {
 </head>
 <body class="auth-body">
     <main class="auth-card">
+        <a class="auth-back-link text-link" href="<?php echo escape_output($login_path); ?>" data-back-link>Back</a>
         <img class="site-logo auth-logo" src="images/Logo.webp" alt="CraftCrawl logo">
         <h1>Email Verification</h1>
         <p class="form-message <?php echo $success ? 'form-message-success' : 'form-message-error'; ?>">
@@ -68,7 +69,6 @@ function verification_message($result) {
                 <a href="resend_verification.php?account_type=<?php echo escape_output($account_type); ?>&email=<?php echo escape_output(rawurlencode($resend_email)); ?>">Request a new verification email</a>
             </p>
         <?php endif; ?>
-        <p class="auth-switch"><a href="<?php echo escape_output($login_path); ?>">Back to login</a></p>
     </main>
 </body>
 </html>

@@ -112,9 +112,9 @@ if (isset($_SESSION['user_id'])) {
     <main class="event-detail-page">
         <div class="details-nav">
             <?php if ($is_business_owner) : ?>
-                <a href="business/events.php?month=<?php echo escape_output(date('Y-m', strtotime($occurrence_date))); ?>">Back to Calendar</a>
+                <a href="business/events.php?month=<?php echo escape_output(date('Y-m', strtotime($occurrence_date))); ?>" data-back-link>Back</a>
             <?php else : ?>
-                <a href="business_details.php?id=<?php echo escape_output($event['business_id']); ?>">Back to Business</a>
+                <a href="business_details.php?id=<?php echo escape_output($event['business_id']); ?>" data-back-link>Back</a>
             <?php endif; ?>
             <form action="logout.php" method="POST">
                 <?php echo craftcrawl_csrf_input(); ?>

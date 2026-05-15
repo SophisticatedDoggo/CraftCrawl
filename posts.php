@@ -71,7 +71,7 @@ require_once 'config.php';
 <body>
     <main class="business-details-page">
         <div class="details-nav">
-            <a href="business_details.php?id=<?php echo escape_output($business_id); ?>">Back to <?php echo escape_output($business['bName']); ?></a>
+            <a href="business_details.php?id=<?php echo escape_output($business_id); ?>" data-back-link>Back</a>
             <div class="mobile-actions-menu details-actions-menu" data-mobile-actions-menu>
                 <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
                     <span></span>

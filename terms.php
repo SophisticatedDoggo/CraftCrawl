@@ -22,7 +22,7 @@ $contact_email = craftcrawl_env('CRAFTCRAWL_SUPPORT_EMAIL', 'support@craftcrawl.
                     <p>Last updated May 12, 2026</p>
                 </div>
             </div>
-            <a href="index.php">Back to CraftCrawl</a>
+            <a href="index.php" data-back-link>Back</a>
         </header>
 
         <section class="settings-panel legal-panel">

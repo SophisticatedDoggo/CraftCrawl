@@ -102,6 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="auth-body">
     <main class="auth-card auth-card-wide">
+        <a class="auth-back-link text-link" href="user_login.php" data-back-link>Back</a>
         <div class="auth-top-section">
             <img class="site-logo auth-logo" src="images/Logo.webp" alt="CraftCrawl logo">
             <h1>Create An Account</h1>
@@ -158,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <input type="submit" value="Create Account">
         </form>
-        <p class="auth-switch"><a href="user_login.php">Back to login</a></p>
+        <p class="auth-switch">Already have an account? <a href="user_login.php">Log in</a></p>
         <?php include __DIR__ . '/legal_nav.php'; ?>
     </main>
     <?php if ($social_auth_enabled) : ?>

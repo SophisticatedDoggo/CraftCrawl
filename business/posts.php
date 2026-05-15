@@ -353,7 +353,7 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '📍 Want to Go'
                     <span></span>
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
-                    <a href="business_portal.php">Back to Portal</a>
+                    <a href="business_portal.php" data-back-link>Back</a>
                     <a href="analytics.php">Stats</a>
                     <a href="settings.php">Settings</a>
                     <form action="../logout.php" method="POST">

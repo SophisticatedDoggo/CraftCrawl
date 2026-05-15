@@ -34,6 +34,19 @@ const craftCrawlPaletteAppIcons = {
 document.documentElement.dataset.palette = craftCrawlPalette;
 localStorage.setItem('craftcrawl_palette', craftCrawlPalette);
 
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-back-link]').forEach((link) => {
+        link.addEventListener('click', (event) => {
+            if (window.history.length <= 1) {
+                return;
+            }
+
+            event.preventDefault();
+            window.history.back();
+        });
+    });
+});
+
 function craftCrawlLogoUrlFromExisting(existingSrc, logoFile) {
     try {
         const url = new URL(existingSrc || 'images/Logo.webp', window.location.href);

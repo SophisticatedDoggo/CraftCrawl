@@ -385,7 +385,7 @@ function format_event_time_range($event) {
 <body>
     <main class="business-details-page">
         <div class="details-nav">
-            <a href="user/portal.php">Back to Map</a>
+            <a href="user/portal.php" data-back-link>Back</a>
             <div class="mobile-actions-menu details-actions-menu" data-mobile-actions-menu>
                 <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
                     <span></span>

@@ -173,7 +173,7 @@ if (!empty($account['disabledAt'])) {
                     <?php endif; ?>
                     <h2><?php echo craftcrawl_admin_escape($account['account_name']); ?></h2>
                 </div>
-                <a href="accounts.php">Back to Accounts</a>
+                <a href="accounts.php" data-back-link>Back</a>
             </div>
             <dl class="admin-detail-list">
                 <div>

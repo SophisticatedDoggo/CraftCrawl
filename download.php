@@ -26,7 +26,7 @@ $apk_updated = $apk_available ? date('F j, Y g:i A T', filemtime($apk_path)) : n
                     <p>Install CraftCrawl on iOS or Android.</p>
                 </div>
             </div>
-            <a href="index.php">Back to CraftCrawl</a>
+            <a href="index.php" data-back-link>Back</a>
         </header>
 
         <section class="download-options" aria-label="Download options">
