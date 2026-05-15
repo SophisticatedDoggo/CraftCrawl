@@ -2,6 +2,7 @@
     const enableButton = document.querySelector('[data-onesignal-enable]');
     const statusMessage = document.querySelector('[data-onesignal-status]');
     const isUserPath = /\/user\/?$|\/user\//.test(window.location.pathname);
+    const nativeAutoPromptKey = 'craftcrawl_native_push_auto_prompted_v1';
 
     function userEndpoint(file) {
         return isUserPath ? file : `user/${file}`;
@@ -9,6 +10,22 @@
 
     function getNativeOneSignalPlugin() {
         return window.Capacitor?.Plugins?.OneSignalCapacitor || null;
+    }
+
+    function hasAutoPromptedNativePush() {
+        try {
+            return window.localStorage.getItem(nativeAutoPromptKey) === '1';
+        } catch (error) {
+            return true;
+        }
+    }
+
+    function markAutoPromptedNativePush() {
+        try {
+            window.localStorage.setItem(nativeAutoPromptKey, '1');
+        } catch (error) {
+            // Ignore storage failures; the OS permission prompt still controls repeat prompts.
+        }
     }
 
     function setStatus(message, isError) {
@@ -100,6 +117,21 @@
         return Boolean(response?.permission || response?.accepted);
     }
 
+    async function autoPromptNativePush(OneSignal) {
+        if (!getNativeOneSignalPlugin() || hasAutoPromptedNativePush()) {
+            return;
+        }
+
+        markAutoPromptedNativePush();
+
+        try {
+            const accepted = await requestNativePermission(OneSignal);
+            setStatus(accepted ? 'Push notifications are enabled for this device.' : 'Notifications were not enabled.', !accepted);
+        } catch (error) {
+            setStatus('Notifications could not be enabled on this device.', true);
+        }
+    }
+
     fetch(userEndpoint('onesignal_config.php'), { credentials: 'same-origin' })
         .then((response) => response.ok ? response.json() : null)
         .then((config) => {
@@ -116,7 +148,13 @@
                 : initOneSignal(config);
         })
         .then((OneSignal) => {
-            if (!OneSignal || !enableButton) {
+            if (!OneSignal) {
+                return;
+            }
+
+            autoPromptNativePush(OneSignal);
+
+            if (!enableButton) {
                 return;
             }
 
