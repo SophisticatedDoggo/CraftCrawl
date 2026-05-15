@@ -94,7 +94,7 @@ $reviews = $review_stmt->get_result();
     <main class="business-portal admin-page">
         <header class="business-portal-header">
             <div>
-                <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
+                <img class="site-logo" src="../images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
                 <div>
                     <h1>Review Moderation</h1>
                     <p>Edit or remove reviews across CraftCrawl.</p>

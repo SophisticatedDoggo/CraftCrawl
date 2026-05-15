@@ -129,7 +129,7 @@ $comments = $comment_stmt->get_result();
     <main class="business-portal admin-page">
         <header class="business-portal-header">
             <div>
-                <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
+                <img class="site-logo" src="../images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
                 <div>
                     <h1>Content Moderation</h1>
                     <p>Review and remove business posts and comments.</p>

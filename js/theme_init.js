@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function craftCrawlLogoUrlFromExisting(existingSrc, logoFile) {
     try {
-        const url = new URL(existingSrc || 'images/Logo.webp', window.location.href);
+        const url = new URL(existingSrc || 'images/craft-crawl-logo-trail.png', window.location.href);
         url.pathname = url.pathname.replace(/[^/]*$/, logoFile);
         url.search = '';
         url.hash = '';
@@ -150,9 +150,25 @@ function syncCraftCrawlLogos() {
             logo.src = nextSrc;
         }
     });
+
+    syncCraftCrawlFavicon(logoFile);
 }
 
 window.syncCraftCrawlLogos = syncCraftCrawlLogos;
+
+function syncCraftCrawlFavicon(logoFile) {
+    const faviconUrl = craftCrawlLogoUrlFromExisting('', logoFile);
+    let icon = document.querySelector('link[rel="icon"]');
+
+    if (!icon) {
+        icon = document.createElement('link');
+        icon.rel = 'icon';
+        icon.type = 'image/png';
+        document.head.appendChild(icon);
+    }
+
+    icon.href = faviconUrl;
+}
 
 function syncCraftCrawlNativeAppIcon(palette) {
     const appIcon = getCraftCrawlNativePlugin('CraftCrawlAppIcon');

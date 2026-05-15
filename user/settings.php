@@ -207,7 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="settings-page">
         <header class="settings-header">
             <div>
-                <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
+                <img class="site-logo" src="../images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
                 <div>
                     <h1>Settings</h1>
                     <p>Manage account preferences and privacy.</p>

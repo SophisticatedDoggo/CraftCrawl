@@ -588,7 +588,7 @@ function format_event_time_range($event) {
                             <img
                                 src="<?php echo escape_output($photo_url); ?>"
                                 alt="<?php echo escape_output($business['bName']); ?> photo <?php echo escape_output($photo_index + 1); ?>"
-                                loading="<?php echo $photo_index === 0 ? 'eager' : 'lazy'; ?>"
+                                loading="<?php echo $photo_index < 2 ? 'eager' : 'lazy'; ?>"
                             >
                         </button>
                     <?php endforeach; ?>

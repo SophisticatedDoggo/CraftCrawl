@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     <main class="business-portal admin-page">
         <header class="business-portal-header">
             <div>
-                <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
+                <img class="site-logo" src="../images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
                 <div>
                     <h1>Edit Business</h1>
                     <p><?php echo craftcrawl_admin_escape($business['bName']); ?></p>

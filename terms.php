@@ -16,7 +16,7 @@ $contact_email = craftcrawl_env('CRAFTCRAWL_SUPPORT_EMAIL', 'support@craftcrawl.
     <main class="settings-page legal-page">
         <header class="settings-header legal-header">
             <div>
-                <img class="site-logo" src="images/Logo.webp" alt="CraftCrawl logo">
+                <img class="site-logo" src="images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
                 <div>
                     <h1>Terms of Service</h1>
                     <p>Last updated May 12, 2026</p>

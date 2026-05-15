@@ -160,7 +160,7 @@ $leaderboard = $leaderboard_stmt->get_result();
     <main class="settings-page friends-page" data-friends-manager-page data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
         <header class="settings-header">
             <div>
-                <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
+                <img class="site-logo" src="../images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
                 <div>
                     <h1>Friends</h1>
                     <p>Search for accounts, approve invites, and view friends' CraftCrawl progress.</p>

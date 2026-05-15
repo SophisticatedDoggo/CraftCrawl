@@ -61,7 +61,7 @@ if (isset($_SESSION['admin_id'])) {
 </head>
 <body class="auth-body landing-body">
     <main class="auth-card landing-card">
-        <img class="site-logo auth-logo" src="images/Logo.webp" alt="CraftCrawl logo">
+        <img class="site-logo auth-logo" src="images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
         <h1>Choose Account Type</h1>
         <div class="landing-primary-actions">
             <a class="button-link" href="user_login.php">User Account</a>

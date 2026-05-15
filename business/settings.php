@@ -119,7 +119,7 @@ $display_palette = in_array($business['display_palette'] ?? '', $allowed_display
     <main class="business-portal settings-page">
         <header class="business-portal-header">
             <div>
-                <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
+                <img class="site-logo" src="../images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
                 <div>
                     <h1>Settings</h1>
                     <p><?php echo escape_output($business['bName'] ?? 'Business'); ?></p>

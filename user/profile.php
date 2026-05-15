@@ -275,7 +275,7 @@ if (!$profile) {
     <main class="settings-page profile-page">
         <header class="settings-header">
             <div>
-                <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
+                <img class="site-logo" src="../images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
                 <div>
                     <h1><?php echo escape_output($page_title); ?></h1>
                     <p><?php echo $profile ? 'XP, badges, and CraftCrawl milestones.' : 'This profile is not available.'; ?></p>

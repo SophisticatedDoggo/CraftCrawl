@@ -20,7 +20,7 @@ $apk_updated = $apk_available ? date('F j, Y g:i A T', filemtime($apk_path)) : n
     <main class="settings-page legal-page download-page">
         <header class="settings-header legal-header download-header">
             <div>
-                <img class="site-logo" src="images/Logo.webp" alt="CraftCrawl logo">
+                <img class="site-logo" src="images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
                 <div>
                     <h1>Craft Crawl Download</h1>
                     <p>Install CraftCrawl on iOS or Android.</p>

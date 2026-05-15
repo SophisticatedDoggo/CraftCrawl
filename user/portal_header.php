@@ -22,7 +22,7 @@ if ($craftcrawl_portal_show_level_summary && isset($conn, $user_id)) {
 ?>
 <header class="portal-header">
     <div>
-        <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
+        <img class="site-logo" src="../images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
         <h1>Craft Crawl</h1>
     </div>
     <?php if ($craftcrawl_portal_show_search) : ?>

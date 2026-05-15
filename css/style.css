@@ -4428,7 +4428,8 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     color: inherit;
     font: inherit;
     text-align: inherit;
-    transition: opacity 180ms ease;
+    transform: translateX(5%);
+    transition: opacity 260ms ease, transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .business-gallery-slide img {
@@ -4445,6 +4446,11 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 .business-gallery-slide.is-active {
     opacity: 1;
+    transform: translateX(0);
+}
+
+.business-gallery-slide.is-before {
+    transform: translateX(-5%);
 }
 
 .business-gallery-nav {
@@ -4631,6 +4637,52 @@ body.lightbox-open {
     object-fit: contain;
     background: var(--color-surface-muted);
     box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
+}
+
+.photo-lightbox-image.is-changing-next,
+.review-photo-lightbox-image.is-changing-next {
+    animation: photo-lightbox-next 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.photo-lightbox-image.is-changing-previous,
+.review-photo-lightbox-image.is-changing-previous {
+    animation: photo-lightbox-previous 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes photo-lightbox-next {
+    from {
+        opacity: 0;
+        transform: translateX(18px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes photo-lightbox-previous {
+    from {
+        opacity: 0;
+        transform: translateX(-18px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .business-gallery-slide,
+    .business-gallery-slide-button {
+        transition: none;
+    }
+
+    .photo-lightbox-image.is-changing-next,
+    .review-photo-lightbox-image.is-changing-next,
+    .photo-lightbox-image.is-changing-previous,
+    .review-photo-lightbox-image.is-changing-previous {
+        animation: none;
+    }
 }
 
 .photo-lightbox-count,

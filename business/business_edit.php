@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     <main class="business-portal">
         <header class="business-portal-header">
             <div>
-                <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
+                <img class="site-logo" src="../images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
                 <div>
                     <h1>Edit Info</h1>
                     <p><?php echo escape_output($business['bName']); ?></p>
