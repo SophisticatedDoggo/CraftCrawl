@@ -156,6 +156,7 @@ $leaderboard = $leaderboard_stmt->get_result();
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
+    <div data-user-page-content>
     <main class="settings-page friends-page" data-friends-manager-page data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
         <header class="settings-header">
             <div>
@@ -272,10 +273,17 @@ $leaderboard = $leaderboard_stmt->get_result();
             <div class="friend-current-list" data-current-friends-list></div>
         </section>
     </main>
-    <?php include __DIR__ . '/subpage_mobile_nav.php'; ?>
+    </div>
+    <?php include __DIR__ . '/app_nav.php'; ?>
     <script src="../js/level_celebration.js"></script>
     <script src="../js/friends.js"></script>
     <script src="../js/mobile_actions_menu.js"></script>
+    <script src="../js/palette_switcher.js"></script>
+    <script src="../js/app_icon_switcher.js"></script>
+    <script src="../js/profile_photo_crop.js"></script>
+    <script src="../js/badge_showcase.js"></script>
+    <script src="../js/feed_thread.js"></script>
+    <script src="../js/user_shell_navigation.js"></script>
     <script src="../js/onesignal_push.js"></script>
 </body>
 </html>

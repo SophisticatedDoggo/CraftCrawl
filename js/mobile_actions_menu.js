@@ -52,18 +52,25 @@ function setupMobileActionsMenu() {
         });
     });
 
-    document.addEventListener('click', (event) => {
-        menus.forEach((menu) => {
+    if (document.documentElement.dataset.mobileActionsGlobalReady !== 'true') {
+        document.documentElement.dataset.mobileActionsGlobalReady = 'true';
+        document.addEventListener('click', (event) => {
+            document.querySelectorAll('[data-mobile-actions-menu]').forEach((menu) => {
             const clickedToggle = event.target.closest('[data-mobile-actions-toggle]');
 
             if (!menu.contains(event.target) && !clickedToggle) {
                 setMobileActionsMenuOpen(false);
             }
+            });
         });
-    });
+    }
 }
 
 function setupMomentumSafeMobileTabs() {
+    if (document.documentElement.dataset.mobileTabsGlobalReady === 'true') {
+        return;
+    }
+    document.documentElement.dataset.mobileTabsGlobalReady = 'true';
     let lastTouchActivatedAt = 0;
     let touchStartX = 0;
     let touchStartY = 0;
@@ -82,6 +89,11 @@ function setupMomentumSafeMobileTabs() {
         if (tab instanceof HTMLAnchorElement) {
             if (typeof window.CraftCrawlSwitchUserTab === 'function'
                 && window.CraftCrawlSwitchUserTab(tab.href)) {
+                return;
+            }
+
+            if (typeof window.CraftCrawlNavigateUserShell === 'function'
+                && window.CraftCrawlNavigateUserShell(tab.href)) {
                 return;
             }
 
@@ -217,6 +229,10 @@ function setupMobileTabThumbs() {
     }
 
     tabbars.forEach((tabbar) => {
+        if (tabbar.dataset.thumbReady === 'true') {
+            return;
+        }
+        tabbar.dataset.thumbReady = 'true';
         tabbar.addEventListener('pointerdown', (event) => {
             const tab = event.target instanceof Element ? event.target.closest('.mobile-app-tab') : null;
 
@@ -238,6 +254,9 @@ function setupMobileTabThumbs() {
     }
 }
 
-setupMobileTabThumbs();
-setupMobileActionsMenu();
-setupMomentumSafeMobileTabs();
+window.CraftCrawlInitMobileActionsMenu = function () {
+    setupMobileTabThumbs();
+    setupMobileActionsMenu();
+    setupMomentumSafeMobileTabs();
+};
+window.CraftCrawlInitMobileActionsMenu();

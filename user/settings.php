@@ -203,6 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
+    <div data-user-page-content>
     <main class="settings-page">
         <header class="settings-header">
             <div>
@@ -376,11 +377,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
         </section>
     </main>
-    <?php include __DIR__ . '/subpage_mobile_nav.php'; ?>
+    </div>
+    <?php include __DIR__ . '/app_nav.php'; ?>
     <script src="../js/palette_switcher.js"></script>
     <script src="../js/app_icon_switcher.js"></script>
     <script src="../js/friends.js"></script>
     <script src="../js/mobile_actions_menu.js"></script>
+    <script src="../js/profile_photo_crop.js"></script>
+    <script src="../js/badge_showcase.js"></script>
+    <script src="../js/feed_thread.js"></script>
+    <script src="../js/user_shell_navigation.js"></script>
     <script src="../js/onesignal_push.js"></script>
 </body>
 </html>

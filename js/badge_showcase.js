@@ -1,9 +1,14 @@
-(function () {
-    const section = document.querySelector('[data-badge-showcase]');
+window.CraftCrawlInitBadgeShowcase = function (root = document) {
+    const section = root.querySelector('[data-badge-showcase]');
 
     if (!section) {
         return;
     }
+
+    if (section.dataset.shellReady === 'true') {
+        return;
+    }
+    section.dataset.shellReady = 'true';
 
     const csrfToken = section.dataset.csrfToken || '';
     const slotCount = parseInt(section.dataset.slotCount || '1', 10);
@@ -63,7 +68,7 @@
         const showcasedKeys = new Set(showcase.map((s) => s.badge_key));
         const isFull = showcase.length >= slotCount;
 
-        document.querySelectorAll('[data-earned-badge-card]').forEach((card) => {
+        root.querySelectorAll('[data-earned-badge-card]').forEach((card) => {
             const badgeKey = card.dataset.badgeKey;
 
             if (!badgeKey) return;
@@ -141,7 +146,7 @@
 
     wireShowcaseButtons(section);
 
-    document.querySelectorAll('[data-earned-badge-card]').forEach((card) => {
+    root.querySelectorAll('[data-earned-badge-card]').forEach((card) => {
         card.addEventListener('click', () => handleEarnedBadgeFeature(card));
         card.addEventListener('keydown', (event) => {
             if (event.key === 'Enter' || event.key === ' ') {
@@ -158,4 +163,5 @@
             badge_key: button?.dataset.badgeKey || ''
         };
     }).filter((badge) => badge.badge_key));
-}());
+};
+window.CraftCrawlInitBadgeShowcase();

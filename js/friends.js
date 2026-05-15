@@ -1,7 +1,7 @@
-(function () {
-    const panel = document.querySelector('[data-friends-panel]');
-    const managerPage = document.querySelector('[data-friends-manager-page]');
-    const root = managerPage || document;
+window.CraftCrawlInitFriends = function (scope = document) {
+    const panel = scope.querySelector('[data-friends-panel]');
+    const managerPage = scope.querySelector('[data-friends-manager-page]');
+    const root = managerPage || scope;
     const form = root.querySelector('[data-friends-search-form]');
     const input = root.querySelector('#friend-search-input');
     const results = root.querySelector('[data-friends-search-results]');
@@ -48,6 +48,14 @@
 
     if (!panel && !managerPage && !menuBadge && !tabBadge) {
         return;
+    }
+
+    const readyTarget = managerPage || panel;
+    if (readyTarget && readyTarget.dataset.friendsReady === 'true') {
+        return;
+    }
+    if (readyTarget) {
+        readyTarget.dataset.friendsReady = 'true';
     }
 
     function escapeHtml(value) {
@@ -946,4 +954,5 @@
     } else {
         loadStatus();
     }
-}());
+};
+window.CraftCrawlInitFriends();

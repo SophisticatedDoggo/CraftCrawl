@@ -32,7 +32,7 @@ if ($craftcrawl_portal_show_level_summary && isset($conn, $user_id)) {
             <div id="business-search-results" class="business-search-results" hidden></div>
         </form>
     <?php endif; ?>
-    <div class="mobile-actions-menu" data-mobile-actions-menu>
+    <div class="mobile-actions-menu portal-header-actions-menu" data-mobile-actions-menu>
         <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
             <span></span>
             <span></span>

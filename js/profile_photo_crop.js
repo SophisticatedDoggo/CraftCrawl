@@ -1,8 +1,13 @@
-(function () {
-    const form = document.querySelector('[data-profile-photo-form]');
+window.CraftCrawlInitProfilePhotoCrop = function (root = document) {
+    const form = root.querySelector('[data-profile-photo-form]');
     if (!form) {
         return;
     }
+
+    if (form.dataset.shellReady === 'true') {
+        return;
+    }
+    form.dataset.shellReady = 'true';
 
     const input = form.querySelector('[data-profile-photo-input]');
     const dataInput = form.querySelector('[data-profile-photo-cropped-data]');
@@ -16,6 +21,8 @@
     let offsetY = 0;
     let dragging = false;
     let dragStart = null;
+
+    document.querySelectorAll('.profile-photo-cropper').forEach((existingModal) => existingModal.remove());
 
     const modal = document.createElement('div');
     modal.className = 'profile-photo-cropper';
@@ -179,4 +186,5 @@
             preview.innerHTML = '<span>CC</span>';
         }
     });
-})();
+};
+window.CraftCrawlInitProfilePhotoCrop();

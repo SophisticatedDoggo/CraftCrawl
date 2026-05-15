@@ -333,6 +333,7 @@ if ($feed_item) {
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
+    <div data-user-page-content>
     <main class="settings-page feed-thread-page" data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
         <header class="settings-header">
             <div>
@@ -451,43 +452,17 @@ if ($feed_item) {
             </section>
         <?php endif; ?>
     </main>
-    <?php include __DIR__ . '/subpage_mobile_nav.php'; ?>
+    </div>
+    <?php include __DIR__ . '/app_nav.php'; ?>
     <script src="../js/friends.js"></script>
     <script src="../js/mobile_actions_menu.js"></script>
+    <script src="../js/palette_switcher.js"></script>
+    <script src="../js/app_icon_switcher.js"></script>
+    <script src="../js/profile_photo_crop.js"></script>
+    <script src="../js/badge_showcase.js"></script>
+    <script src="../js/feed_thread.js"></script>
+    <script src="../js/user_shell_navigation.js"></script>
     <script src="../js/onesignal_push.js"></script>
     <script src="../js/level_celebration.js"></script>
-    <script>
-        document.querySelectorAll('[data-reply-toggle]').forEach((button) => {
-            button.addEventListener('click', () => {
-                const form = document.getElementById(button.getAttribute('aria-controls'));
-                const isExpanded = button.getAttribute('aria-expanded') === 'true';
-
-                button.setAttribute('aria-expanded', String(!isExpanded));
-                button.textContent = isExpanded ? 'Reply' : 'Hide Reply';
-
-                if (form) {
-                    form.hidden = isExpanded;
-                    if (!isExpanded) {
-                        form.querySelector('textarea')?.focus();
-                    }
-                }
-            });
-        });
-
-        document.querySelectorAll('[data-reply-cancel]').forEach((button) => {
-            button.addEventListener('click', () => {
-                const form = button.closest('.feed-reply-form');
-                const toggle = form ? document.querySelector(`[aria-controls="${form.id}"]`) : null;
-
-                if (form) {
-                    form.hidden = true;
-                }
-                if (toggle) {
-                    toggle.setAttribute('aria-expanded', 'false');
-                    toggle.textContent = 'Reply';
-                }
-            });
-        });
-    </script>
 </body>
 </html>
