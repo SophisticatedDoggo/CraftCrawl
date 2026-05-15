@@ -11,12 +11,12 @@
     const activeContent = () => document.querySelector('[data-area-page-content]');
     function routeKey(file) { return config.active[file] || ''; }
     function syncNav(url) {
-        window.CraftCrawlCloseMobileActionsMenu?.();
         const active = routeKey(fileOf(url));
         document.querySelectorAll('.mobile-app-tabbar .mobile-app-tab').forEach((tab) => {
             if (!(tab instanceof HTMLAnchorElement)) return;
             tab.classList.toggle('is-active', Boolean(active) && routeKey(fileOf(tab.href)) === active);
         });
+        window.CraftCrawlCloseMobileActionsMenu?.();
         window.CraftCrawlInitMobileActionsMenu?.();
     }
     function init(root) {

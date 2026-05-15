@@ -18,7 +18,6 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
 
     function syncTab(tab, options = {}) {
         if (!document.contains(shell) || !routeByTab[tab]) return;
-        window.CraftCrawlCloseMobileActionsMenu?.();
         shell.dataset.activeUserTab = tab;
         shell.querySelectorAll('[data-user-tab-panel]').forEach((panel) => {
             panel.hidden = panel.dataset.userTabPanel !== tab;
@@ -32,6 +31,7 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
         shell.closest('[data-user-page-content]')?.querySelectorAll('[data-user-tab-map-only]').forEach((element) => {
             element.hidden = tab !== 'map';
         });
+        window.CraftCrawlCloseMobileActionsMenu?.();
         document.title = titleByTab[tab];
         if (options.updateHistory) history.pushState({ craftcrawlUserTab: tab }, '', `${routeByTab[tab]}${options.hash || ''}`);
         window.dispatchEvent(new CustomEvent('craftcrawl:user-tab-changed', { detail: { tab } }));

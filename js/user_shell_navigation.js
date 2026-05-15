@@ -14,7 +14,6 @@
     function baseContent() { return document.querySelector('[data-user-page-content] [data-user-tab-shell]')?.closest('[data-user-page-content]') || null; }
 
     function setActiveTab(url) {
-        window.CraftCrawlCloseMobileActionsMenu?.();
         const file = currentFile(url);
         const active = file === 'portal.php' ? 'map' : file === 'events.php' ? 'events' : file === 'feed.php' ? 'feed' : '';
         document.querySelectorAll('.mobile-app-tabbar .mobile-app-tab').forEach((tab) => {
@@ -23,6 +22,7 @@
             const tabName = fileName === 'portal.php' ? 'map' : fileName === 'events.php' ? 'events' : fileName === 'feed.php' ? 'feed' : '';
             tab.classList.toggle('is-active', Boolean(active) && tabName === active);
         });
+        window.CraftCrawlCloseMobileActionsMenu?.();
         window.CraftCrawlInitMobileActionsMenu?.();
     }
 
