@@ -130,6 +130,15 @@
         return `data-feed-item-type="${escapeHtml(item.type || '')}" data-feed-is-self="${item.is_self ? 'true' : 'false'}"`;
     }
 
+    function renderFeedMeta(label, date) {
+        return `
+            <p class="feed-item-meta">
+                <span>${escapeHtml(label)}</span>
+                ${date ? `<span aria-hidden="true">·</span><time>${escapeHtml(date)}</time>` : ''}
+            </p>
+        `;
+    }
+
     function availableReactionTypes(item) {
         const types = reactionTypesByItemType[item.type] || Object.keys(reactionLabels);
 
@@ -448,9 +457,10 @@
             return `
                 <article class="friends-feed-item" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
-                    <div>
-                        <strong>${escapeHtml(actorName)} reached Level ${escapeHtml(item.level)}</strong>
-                        <p>${escapeHtml(item.title)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
+                    <div class="feed-item-content">
+                        ${renderFeedMeta(actorName, date)}
+                        <strong class="feed-item-title">Reached Level ${escapeHtml(item.level)}</strong>
+                        <p class="feed-item-detail">${escapeHtml(item.title)}</p>
                         ${actions}
                     </div>
                 </article>
@@ -461,9 +471,10 @@
             return `
                 <article class="friends-feed-item" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
-                    <div>
-                        <strong>${escapeHtml(actorName)} earned ${escapeHtml(item.badge_name)}</strong>
-                        <p>${escapeHtml(item.badge_description)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
+                    <div class="feed-item-content">
+                        ${renderFeedMeta(actorName, date)}
+                        <strong class="feed-item-title">Earned ${escapeHtml(item.badge_name)}</strong>
+                        <p class="feed-item-detail">${escapeHtml(item.badge_description)}</p>
                         ${actions}
                     </div>
                 </article>
@@ -474,9 +485,10 @@
             return `
                 <article class="friends-feed-item" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
-                    <div>
-                        <strong>${escapeHtml(item.is_self ? 'You want' : `${item.friend_name} wants`)} to go to ${escapeHtml(item.event_name)}</strong>
-                        <p>${escapeHtml(item.business_name)} · ${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
+                    <div class="feed-item-content">
+                        ${renderFeedMeta(actorName, date)}
+                        <strong class="feed-item-title">${escapeHtml(item.is_self ? 'Want' : 'Wants')} to go to ${escapeHtml(item.event_name)}</strong>
+                        <p class="feed-item-detail">${escapeHtml(item.business_name)} · ${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
                         ${actions}
                     </div>
                 </article>
@@ -487,9 +499,10 @@
             return `
                 <article class="friends-feed-item" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
-                    <div>
-                        <strong>${escapeHtml(item.is_self ? 'You want' : `${item.friend_name} wants`)} to visit ${escapeHtml(item.business_name)}</strong>
-                        <p>${escapeHtml(item.business_type)} · ${escapeHtml(item.city)}, ${escapeHtml(item.state)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
+                    <div class="feed-item-content">
+                        ${renderFeedMeta(actorName, date)}
+                        <strong class="feed-item-title">${escapeHtml(item.is_self ? 'Want' : 'Wants')} to visit ${escapeHtml(item.business_name)}</strong>
+                        <p class="feed-item-detail">${escapeHtml(item.business_type)} · ${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
                         ${actions}
                     </div>
                 </article>
@@ -515,10 +528,10 @@
             return `
                 <article class="friends-feed-item" ${feedItemAttrs(item)}>
                     <div class="friends-feed-icon">${isPoll ? '📊' : '📢'}</div>
-                    <div>
-                        <strong>${escapeHtml(item.business_name)}</strong>
-                        <p>${escapeHtml(item.title)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
-                        ${item.body ? `<p class="feed-business-post-body">${escapeHtml(item.body)}</p>` : ''}
+                    <div class="feed-item-content">
+                        ${renderFeedMeta(item.business_name, date)}
+                        <strong class="feed-item-title">${escapeHtml(item.title)}</strong>
+                        ${item.body ? `<p class="feed-item-detail feed-business-post-body">${escapeHtml(item.body)}</p>` : ''}
                         ${pollSection}
                         ${actions}
                     </div>
@@ -529,9 +542,10 @@
         return `
             <article class="friends-feed-item" ${feedItemAttrs(item)}>
                 ${renderAvatar(item.actor, item.friend_name)}
-                <div>
-                    <strong>${escapeHtml(actorName)} visited ${escapeHtml(item.business_name)} for the first time</strong>
-                    <p>${escapeHtml(item.city)}, ${escapeHtml(item.state)}${date ? ` · ${escapeHtml(date)}` : ''}</p>
+                <div class="feed-item-content">
+                    ${renderFeedMeta(actorName, date)}
+                    <strong class="feed-item-title">Visited ${escapeHtml(item.business_name)} for the first time</strong>
+                    <p class="feed-item-detail">${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
                     ${actions}
                 </div>
             </article>
@@ -777,7 +791,9 @@
 
         return `
             <a class="feed-comments-link" href="feed_post.php?item=${encodeURIComponent(item.item_key)}" aria-label="Show comments">
-                <span aria-hidden="true">💬</span>
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7A8.38 8.38 0 0 1 4 11.5a8.5 8.5 0 0 1 17 0Z"></path>
+                </svg>
                 ${label ? `<span>${label}</span>` : ''}
             </a>
         `;

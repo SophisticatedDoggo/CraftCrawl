@@ -192,6 +192,31 @@ function getCraftCrawlNativePlugin(name) {
 
 window.getCraftCrawlNativePlugin = getCraftCrawlNativePlugin;
 
+function getCraftCrawlCurrentPageBackground() {
+    const palette = document.documentElement.dataset.palette || 'trail-map';
+    return craftCrawlPaletteBackgrounds[palette] || craftCrawlPaletteBackgrounds['trail-map'];
+}
+
+function showCraftCrawlNativePageTransition() {
+    const transition = getCraftCrawlNativePlugin('CraftCrawlPageTransition');
+
+    if (!transition || typeof transition.show !== 'function') {
+        return Promise.resolve();
+    }
+
+    return transition.show({ color: getCraftCrawlCurrentPageBackground() }).catch(() => {});
+}
+
+function hideCraftCrawlNativePageTransition() {
+    const transition = getCraftCrawlNativePlugin('CraftCrawlPageTransition');
+
+    if (!transition || typeof transition.hide !== 'function') {
+        return;
+    }
+
+    transition.hide().catch(() => {});
+}
+
 function syncCraftCrawlNativeStatusBar() {
     const statusBar = getCraftCrawlNativePlugin('StatusBar');
 
@@ -305,7 +330,9 @@ function startCraftCrawlPageTransition(destination) {
 
     craftCrawlPageTransitionStarted = true;
     showCraftCrawlPageLoader(180);
-    window.location.assign(destinationUrl.href);
+    showCraftCrawlNativePageTransition().finally(() => {
+        window.location.assign(destinationUrl.href);
+    });
 }
 
 function continueCraftCrawlLinkNavigation(link) {
@@ -386,6 +413,7 @@ document.addEventListener('submit', function (event) {
         window.setTimeout(function () {
             if (!event.defaultPrevented) {
                 showCraftCrawlPageLoader(180);
+                showCraftCrawlNativePageTransition();
             }
         }, 0);
     }
@@ -405,7 +433,9 @@ document.addEventListener('click', function (event) {
 window.addEventListener('pageshow', function () {
     craftCrawlPageTransitionStarted = false;
     hideCraftCrawlPageLoader();
+    hideCraftCrawlNativePageTransition();
 });
 window.addEventListener('pagehide', function () {
     showCraftCrawlPageLoader(0);
+    showCraftCrawlNativePageTransition();
 });
