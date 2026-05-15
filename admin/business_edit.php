@@ -91,8 +91,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CraftCrawl | Edit Business</title>
-    <script src="../js/theme_init.js"></script>
-    <link rel="stylesheet" href="../css/style.css">
+    <script src="../js/theme_init.js?v=<?php echo filemtime(__DIR__ . '/../js/theme_init.js'); ?>"></script>
+    <link rel="stylesheet" href="../css/style.css?v=<?php echo filemtime(__DIR__ . '/../css/style.css'); ?>">
     <script id="search-js" defer src="https://api.mapbox.com/search-js/v1.5.0/web.js"></script>
 </head>
 <body>
@@ -219,10 +219,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo craftcrawl_admin_escape($MAPBOX_ACCESS_TOKEN); ?>";
 </script>
-<script src="../js/business_portal.js"></script>
-<script src="../js/mobile_actions_menu.js"></script>
-    <script src="../js/admin_review_edit_toggle.js"></script>
+<script src="../js/business_portal.js?v=<?php echo filemtime(__DIR__ . '/../js/business_portal.js'); ?>"></script>
+<script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
+    <script src="../js/admin_review_edit_toggle.js?v=<?php echo filemtime(__DIR__ . '/../js/admin_review_edit_toggle.js'); ?>"></script>
     <script>window.CraftCrawlAreaShellConfig = { area: 'admin', home: 'dashboard.php', routes: ['dashboard.php','accounts.php','reviews.php','content.php','account_details.php','business_edit.php'], active: { 'dashboard.php':'dashboard', 'business_edit.php':'dashboard', 'accounts.php':'accounts', 'account_details.php':'accounts', 'reviews.php':'reviews', 'content.php':'content' } };</script>
-    <script src="../js/area_shell_navigation.js"></script>
+    <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
 </body>
 </html>

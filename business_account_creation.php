@@ -134,8 +134,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CraftCrawl | Business Account Creation</title>
-    <script src="js/theme_init.js"></script>
-    <link rel="stylesheet" href="css/style.css">
+    <script src="js/theme_init.js?v=<?php echo filemtime(__DIR__ . '/js/theme_init.js'); ?>"></script>
+    <link rel="stylesheet" href="css/style.css?v=<?php echo filemtime(__DIR__ . '/css/style.css'); ?>">
     <script id="search-js" defer src="https://api.mapbox.com/search-js/v1.5.0/web.js"></script>
     <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 </head>
@@ -262,8 +262,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
 </script>
-<script src="js/business_account_creation.js"></script>
-<script src="js/business_hours_editor.js"></script>
-<script src="js/password_visibility.js"></script>
+<script src="js/business_account_creation.js?v=<?php echo filemtime(__DIR__ . '/js/business_account_creation.js'); ?>"></script>
+<script src="js/business_hours_editor.js?v=<?php echo filemtime(__DIR__ . '/js/business_hours_editor.js'); ?>"></script>
+<script src="js/password_visibility.js?v=<?php echo filemtime(__DIR__ . '/js/password_visibility.js'); ?>"></script>
 </body>
 </html>

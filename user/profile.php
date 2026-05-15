@@ -267,8 +267,8 @@ if (!$profile) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CraftCrawl | <?php echo escape_output($page_title); ?></title>
-    <script src="../js/theme_init.js"></script>
-    <link rel="stylesheet" href="../css/style.css">
+    <script src="../js/theme_init.js?v=<?php echo filemtime(__DIR__ . '/../js/theme_init.js'); ?>"></script>
+    <link rel="stylesheet" href="../css/style.css?v=<?php echo filemtime(__DIR__ . '/../css/style.css'); ?>">
 </head>
 <body>
     <div data-user-page-content>
@@ -667,15 +667,15 @@ if (!$profile) {
     </main>
     </div>
     <?php include __DIR__ . '/app_nav.php'; ?>
-    <script src="../js/level_celebration.js"></script>
-    <script src="../js/friends.js"></script>
-    <script src="../js/profile_photo_crop.js"></script>
-    <script src="../js/mobile_actions_menu.js"></script>
-    <script src="../js/palette_switcher.js"></script>
-    <script src="../js/app_icon_switcher.js"></script>
-    <script src="../js/badge_showcase.js"></script>
-    <script src="../js/feed_thread.js"></script>
-    <script src="../js/user_shell_navigation.js"></script>
-    <script src="../js/onesignal_push.js"></script>
+    <script src="../js/level_celebration.js?v=<?php echo filemtime(__DIR__ . '/../js/level_celebration.js'); ?>"></script>
+    <script src="../js/friends.js?v=<?php echo filemtime(__DIR__ . '/../js/friends.js'); ?>"></script>
+    <script src="../js/profile_photo_crop.js?v=<?php echo filemtime(__DIR__ . '/../js/profile_photo_crop.js'); ?>"></script>
+    <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
+    <script src="../js/palette_switcher.js?v=<?php echo filemtime(__DIR__ . '/../js/palette_switcher.js'); ?>"></script>
+    <script src="../js/app_icon_switcher.js?v=<?php echo filemtime(__DIR__ . '/../js/app_icon_switcher.js'); ?>"></script>
+    <script src="../js/badge_showcase.js?v=<?php echo filemtime(__DIR__ . '/../js/badge_showcase.js'); ?>"></script>
+    <script src="../js/feed_thread.js?v=<?php echo filemtime(__DIR__ . '/../js/feed_thread.js'); ?>"></script>
+    <script src="../js/user_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/user_shell_navigation.js'); ?>"></script>
+    <script src="../js/onesignal_push.js?v=<?php echo filemtime(__DIR__ . '/../js/onesignal_push.js'); ?>"></script>
 </body>
 </html>

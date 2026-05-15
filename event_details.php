@@ -105,8 +105,8 @@ if (isset($_SESSION['user_id'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CraftCrawl | <?php echo escape_output($event['eName']); ?></title>
-    <script src="js/theme_init.js"></script>
-    <link rel="stylesheet" href="css/style.css">
+    <script src="js/theme_init.js?v=<?php echo filemtime(__DIR__ . '/js/theme_init.js'); ?>"></script>
+    <link rel="stylesheet" href="css/style.css?v=<?php echo filemtime(__DIR__ . '/css/style.css'); ?>">
 </head>
 <body>
     <main class="event-detail-page">
@@ -201,6 +201,6 @@ if (isset($_SESSION['user_id'])) {
             });
         });
     </script>
-    <script src="js/depth_animations.js"></script>
+    <script src="js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/js/depth_animations.js'); ?>"></script>
 </body>
 </html>

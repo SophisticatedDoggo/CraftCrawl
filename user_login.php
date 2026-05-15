@@ -121,8 +121,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CraftCrawl | User Login</title>
-    <script src="js/theme_init.js"></script>
-    <link rel="stylesheet" href="css/style.css">
+    <script src="js/theme_init.js?v=<?php echo filemtime(__DIR__ . '/js/theme_init.js'); ?>"></script>
+    <link rel="stylesheet" href="css/style.css?v=<?php echo filemtime(__DIR__ . '/css/style.css'); ?>">
     <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 </head>
 <body class="auth-body">
@@ -210,8 +210,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if (!empty($APPLE_SIGN_IN_CLIENT_ID)) : ?>
             <script src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js" async defer></script>
         <?php endif; ?>
-        <script src="js/social_auth.js"></script>
+        <script src="js/social_auth.js?v=<?php echo filemtime(__DIR__ . '/js/social_auth.js'); ?>"></script>
     <?php endif; ?>
-    <script src="js/password_visibility.js"></script>
+    <script src="js/password_visibility.js?v=<?php echo filemtime(__DIR__ . '/js/password_visibility.js'); ?>"></script>
 </body>
 </html>

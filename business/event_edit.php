@@ -164,8 +164,8 @@ $form_date = $editing_event['eventDate'] ?? $selected_date;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CraftCrawl | <?php echo $editing_event ? 'Edit Event' : 'Add Event'; ?></title>
-    <script src="../js/theme_init.js"></script>
-    <link rel="stylesheet" href="../css/style.css">
+    <script src="../js/theme_init.js?v=<?php echo filemtime(__DIR__ . '/../js/theme_init.js'); ?>"></script>
+    <link rel="stylesheet" href="../css/style.css?v=<?php echo filemtime(__DIR__ . '/../css/style.css'); ?>">
 </head>
 <body>
     <div data-area-page-content>
@@ -272,15 +272,15 @@ $form_date = $editing_event['eventDate'] ?? $selected_date;
     </main>
     </div>
     <?php include __DIR__ . '/mobile_nav.php'; ?>
-    <script src="../js/business_events.js"></script>
-    <script src="../js/mobile_actions_menu.js"></script>
-    <script src="../js/depth_animations.js"></script>
-    <script src="../js/business_events.js"></script>
-    <script src="../js/business_analytics.js"></script>
-    <script src="../js/business_review_responses.js"></script>
-    <script src="../js/business_hours_editor.js"></script>
-    <script src="../js/business_posts.js"></script>
+    <script src="../js/business_events.js?v=<?php echo filemtime(__DIR__ . '/../js/business_events.js'); ?>"></script>
+    <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
+    <script src="../js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/../js/depth_animations.js'); ?>"></script>
+    <script src="../js/business_events.js?v=<?php echo filemtime(__DIR__ . '/../js/business_events.js'); ?>"></script>
+    <script src="../js/business_analytics.js?v=<?php echo filemtime(__DIR__ . '/../js/business_analytics.js'); ?>"></script>
+    <script src="../js/business_review_responses.js?v=<?php echo filemtime(__DIR__ . '/../js/business_review_responses.js'); ?>"></script>
+    <script src="../js/business_hours_editor.js?v=<?php echo filemtime(__DIR__ . '/../js/business_hours_editor.js'); ?>"></script>
+    <script src="../js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/../js/business_posts.js'); ?>"></script>
     <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
-    <script src="../js/area_shell_navigation.js"></script>
+    <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
 </body>
 </html>

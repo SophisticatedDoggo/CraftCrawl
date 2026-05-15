@@ -382,9 +382,9 @@ function format_event_time_range($event) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CraftCrawl | <?php echo escape_output($business['bName']); ?></title>
-    <script src="js/theme_init.js"></script>
+    <script src="js/theme_init.js?v=<?php echo filemtime(__DIR__ . '/js/theme_init.js'); ?>"></script>
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.21.0/mapbox-gl.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=<?php echo filemtime(__DIR__ . '/css/style.css'); ?>">
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.21.0/mapbox-gl.js"></script>
 </head>
 <body>
@@ -806,29 +806,29 @@ function format_event_time_range($event) {
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
     window.CRAFTCRAWL_XP_REWARD_POPUP = <?php echo json_encode($xp_reward_popup, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
 </script>
-<script src="js/location.js"></script>
-<script src="js/business_details_map.js"></script>
-<script src="js/directions_links.js"></script>
-<script src="js/level_celebration.js"></script>
+<script src="js/location.js?v=<?php echo filemtime(__DIR__ . '/js/location.js'); ?>"></script>
+<script src="js/business_details_map.js?v=<?php echo filemtime(__DIR__ . '/js/business_details_map.js'); ?>"></script>
+<script src="js/directions_links.js?v=<?php echo filemtime(__DIR__ . '/js/directions_links.js'); ?>"></script>
+<script src="js/level_celebration.js?v=<?php echo filemtime(__DIR__ . '/js/level_celebration.js'); ?>"></script>
 <script>
     if (window.CRAFTCRAWL_XP_REWARD_POPUP && window.craftcrawlShowXpReward) {
         window.craftcrawlShowXpReward(window.CRAFTCRAWL_XP_REWARD_POPUP);
     }
 </script>
-<script src="js/check_in.js"></script>
-<script src="js/business_posts.js"></script>
-<script src="js/business_gallery.js"></script>
-<script src="js/review_photos.js"></script>
-<script src="js/review_edit_toggle.js"></script>
-<script src="js/friends.js"></script>
-<script src="js/mobile_actions_menu.js"></script>
-<script src="js/palette_switcher.js"></script>
-<script src="js/app_icon_switcher.js"></script>
-<script src="js/profile_photo_crop.js"></script>
-<script src="js/badge_showcase.js"></script>
-<script src="js/feed_thread.js"></script>
-<script src="js/user_tab_shell.js"></script>
-<script src="js/user_shell_navigation.js"></script>
-<script src="js/depth_animations.js"></script>
+<script src="js/check_in.js?v=<?php echo filemtime(__DIR__ . '/js/check_in.js'); ?>"></script>
+<script src="js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/js/business_posts.js'); ?>"></script>
+<script src="js/business_gallery.js?v=<?php echo filemtime(__DIR__ . '/js/business_gallery.js'); ?>"></script>
+<script src="js/review_photos.js?v=<?php echo filemtime(__DIR__ . '/js/review_photos.js'); ?>"></script>
+<script src="js/review_edit_toggle.js?v=<?php echo filemtime(__DIR__ . '/js/review_edit_toggle.js'); ?>"></script>
+<script src="js/friends.js?v=<?php echo filemtime(__DIR__ . '/js/friends.js'); ?>"></script>
+<script src="js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/js/mobile_actions_menu.js'); ?>"></script>
+<script src="js/palette_switcher.js?v=<?php echo filemtime(__DIR__ . '/js/palette_switcher.js'); ?>"></script>
+<script src="js/app_icon_switcher.js?v=<?php echo filemtime(__DIR__ . '/js/app_icon_switcher.js'); ?>"></script>
+<script src="js/profile_photo_crop.js?v=<?php echo filemtime(__DIR__ . '/js/profile_photo_crop.js'); ?>"></script>
+<script src="js/badge_showcase.js?v=<?php echo filemtime(__DIR__ . '/js/badge_showcase.js'); ?>"></script>
+<script src="js/feed_thread.js?v=<?php echo filemtime(__DIR__ . '/js/feed_thread.js'); ?>"></script>
+<script src="js/user_tab_shell.js?v=<?php echo filemtime(__DIR__ . '/js/user_tab_shell.js'); ?>"></script>
+<script src="js/user_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/js/user_shell_navigation.js'); ?>"></script>
+<script src="js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/js/depth_animations.js'); ?>"></script>
 </body>
 </html>

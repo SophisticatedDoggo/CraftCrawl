@@ -65,8 +65,8 @@ require_once 'config.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CraftCrawl | <?php echo escape_output($business['bName']); ?> &mdash; Posts</title>
-    <script src="js/theme_init.js"></script>
-    <link rel="stylesheet" href="css/style.css">
+    <script src="js/theme_init.js?v=<?php echo filemtime(__DIR__ . '/js/theme_init.js'); ?>"></script>
+    <link rel="stylesheet" href="css/style.css?v=<?php echo filemtime(__DIR__ . '/css/style.css'); ?>">
 </head>
 <body>
     <main class="business-details-page">
@@ -150,8 +150,8 @@ require_once 'config.php';
         </button>
     </nav>
 
-    <script src="js/friends.js"></script>
-    <script src="js/business_posts.js"></script>
-    <script src="js/mobile_actions_menu.js"></script>
+    <script src="js/friends.js?v=<?php echo filemtime(__DIR__ . '/js/friends.js'); ?>"></script>
+    <script src="js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/js/business_posts.js'); ?>"></script>
+    <script src="js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/js/mobile_actions_menu.js'); ?>"></script>
 </body>
 </html>
