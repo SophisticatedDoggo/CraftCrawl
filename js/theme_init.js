@@ -30,8 +30,16 @@ const craftCrawlPaletteAppIcons = {
     ember: 'ember',
     'ember-dark': 'ember-dark'
 };
+const craftCrawlPaletteBackgrounds = {
+    'trail-map': '#f4f1ea',
+    'trail-dark': '#15171a',
+    ember: '#f7f3ed',
+    'ember-dark': '#15171a'
+};
 
 document.documentElement.dataset.palette = craftCrawlPalette;
+document.documentElement.style.backgroundColor = craftCrawlPaletteBackgrounds[craftCrawlPalette]
+    || craftCrawlPaletteBackgrounds['trail-map'];
 localStorage.setItem('craftcrawl_palette', craftCrawlPalette);
 
 function isCraftCrawlNativeApp() {

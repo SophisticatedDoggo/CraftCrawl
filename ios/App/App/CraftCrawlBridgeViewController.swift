@@ -10,6 +10,9 @@ class CraftCrawlBridgeViewController: CAPBridgeViewController {
         let webView = super.webView(with: frame, configuration: configuration)
         webView.isOpaque = false
         webView.backgroundColor = craftCrawlBackground
+        if #available(iOS 15.0, *) {
+            webView.underPageBackgroundColor = craftCrawlBackground
+        }
         webView.scrollView.backgroundColor = craftCrawlBackground
         return webView
     }
