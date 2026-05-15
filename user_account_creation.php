@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             data-apple-signin
                             data-color="black"
                             data-border="true"
-                            data-type="sign up"
+                            data-type="sign-up"
                         ></div>
                     <?php endif; ?>
                     <p class="form-message social-auth-feedback" data-social-auth-feedback hidden></p>
