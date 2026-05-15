@@ -26,7 +26,7 @@ $stmt = $conn->prepare("
         u.fName,
         u.lName,
         u.email,
-        u.selected_profile_frame,
+        u.selected_profile_frame, u.selected_profile_frame_style,
         u.profile_photo_url,
         p.object_key AS profile_photo_object_key,
         CASE WHEN uf.id IS NULL THEN 0 ELSE 1 END AS is_friend,
@@ -60,7 +60,8 @@ while ($user = $result->fetch_assoc()) {
             'name' => trim($user['fName'] . ' ' . $user['lName']),
             'initials' => craftcrawl_user_initials($user),
             'avatar_url' => craftcrawl_user_avatar_url($user, 96),
-            'frame' => $user['selected_profile_frame'] ?? null
+            'frame' => $user['selected_profile_frame'] ?? null,
+            'frame_style' => $user['selected_profile_frame_style'] ?? null
         ],
         'is_friend' => (bool) $user['is_friend'],
         'pending_sent' => !empty($user['sent_request_id']),

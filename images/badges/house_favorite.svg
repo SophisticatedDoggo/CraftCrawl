@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title>House Favorite</title>
+  <defs>
+    <linearGradient id="badge-fill" x1="20" y1="14" x2="108" y2="114" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f0b56a"/>
+      <stop offset="1" stop-color="#7b4a22"/>
+    </linearGradient>
+  </defs>
+  <path fill="#3b2411" d="M64 8l47 20v36c0 31-20 48-47 58-27-10-47-27-47-58V28L64 8Z"/>
+  <path fill="url(#badge-fill)" d="M64 17l38 16v31c0 24-15 39-38 48-23-9-38-24-38-48V33l38-16Z"/>
+  <g fill="#3b2411" opacity=".84"><path d="M39 45c8-13 27-17 40-7l5-9 7 31-31-7 10-6c-8-5-19-2-24 6-4 6-4 14 0 20l-12 8c-7-11-7-25 5-36Zm50 38c-8 13-27 17-40 7l-5 9-7-31 31 7-10 6c8 5 19 2 24-6 4-6 4-14 0-20l12-8c7 11 7 25-5 36Z"/></g>
+  <circle cx="92" cy="92" r="22" fill="#fff8ea" stroke="#3b2411" stroke-width="6"/>
+  <text x="92" y="99" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="800" fill="#3b2411">10x</text>
+</svg>

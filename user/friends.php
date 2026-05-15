@@ -106,7 +106,7 @@ $leaderboard_stmt = $conn->prepare("
         u.level,
         u.level_xp,
         u.selected_title_index,
-        u.selected_profile_frame,
+        u.selected_profile_frame, u.selected_profile_frame_style,
         u.profile_photo_url,
         p.object_key AS profile_photo_object_key,
         COALESCE(stats.unique_locations, 0) AS unique_locations,
@@ -273,6 +273,7 @@ $leaderboard = $leaderboard_stmt->get_result();
         </section>
     </main>
     <?php include __DIR__ . '/subpage_mobile_nav.php'; ?>
+    <script src="../js/level_celebration.js"></script>
     <script src="../js/friends.js"></script>
     <script src="../js/mobile_actions_menu.js"></script>
     <script src="../js/onesignal_push.js"></script>

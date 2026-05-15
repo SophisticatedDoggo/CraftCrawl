@@ -35,7 +35,8 @@ function craftcrawl_feed_actor_payload($row) {
         'name' => craftcrawl_feed_actor_name($row['user_id'] ?? 0, 0, $row['fName'] ?? '', $row['lName'] ?? ''),
         'initials' => craftcrawl_user_initials($row),
         'avatar_url' => craftcrawl_user_avatar_url($row, 96),
-        'frame' => $row['selected_profile_frame'] ?? null
+        'frame' => $row['selected_profile_frame'] ?? null,
+        'frame_style' => $row['selected_profile_frame_style'] ?? null
     ];
 }
 
@@ -44,7 +45,7 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
         $visit_id = (int) $matches[1];
         $stmt = $conn->prepare("
             SELECT uv.id, uv.user_id, uv.checkedInAt, b.id AS business_id, b.bName, b.city, b.state,
-                u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+                u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
             FROM user_visits uv
             INNER JOIN businesses b ON b.id = uv.business_id
             INNER JOIN users u ON u.id = uv.user_id
@@ -78,7 +79,7 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
         $xp_id = (int) $matches[1];
         $stmt = $conn->prepare("
             SELECT xl.id, xl.user_id, xl.level_after, xl.createdAt,
-                u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+                u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
             FROM xp_log xl
             INNER JOIN users u ON u.id = xl.user_id
             LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
@@ -118,7 +119,7 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
         $stmt = $conn->prepare("
             SELECT ew.id, ew.user_id, ew.event_id, ew.occurrence_date, ew.createdAt,
                 e.eName, e.startTime, b.id AS business_id, b.bName, b.city, b.state,
-                u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+                u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
             FROM event_want_to_go ew
             INNER JOIN events e ON e.id = ew.event_id
             INNER JOIN businesses b ON b.id = e.business_id
@@ -157,7 +158,7 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
         $want_id = (int) $matches[1];
         $stmt = $conn->prepare("
             SELECT wtg.id, wtg.user_id, wtg.createdAt, b.id AS business_id, b.bName, b.bType, b.city, b.state,
-                u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+                u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
             FROM want_to_go_locations wtg
             INNER JOIN businesses b ON b.id = wtg.business_id
             INNER JOIN users u ON u.id = wtg.user_id
@@ -192,7 +193,7 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
         $badge_id = (int) $matches[1];
         $stmt = $conn->prepare("
             SELECT ub.id, ub.user_id, ub.badge_name, ub.badge_description, ub.badge_tier, ub.earnedAt,
-                u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+                u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
             FROM user_badges ub
             INNER JOIN users u ON u.id = ub.user_id
             LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'

@@ -14,7 +14,7 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = (int) $_SESSION['user_id'];
 $stmt = $conn->prepare("
     SELECT fr.id, fr.createdAt, u.fName, u.lName, u.email,
-        u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+        u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
     FROM friend_requests fr
     INNER JOIN users u ON u.id = fr.requester_user_id
     LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
@@ -35,7 +35,8 @@ while ($request = $result->fetch_assoc()) {
             'name' => trim($request['fName'] . ' ' . $request['lName']),
             'initials' => craftcrawl_user_initials($request),
             'avatar_url' => craftcrawl_user_avatar_url($request, 96),
-            'frame' => $request['selected_profile_frame'] ?? null
+            'frame' => $request['selected_profile_frame'] ?? null,
+            'frame_style' => $request['selected_profile_frame_style'] ?? null
         ],
         'created_at' => $request['createdAt']
     ];

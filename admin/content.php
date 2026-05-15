@@ -89,7 +89,7 @@ $posts = $post_stmt->get_result();
 // ── Comments query ────────────────────────────────────────────────────────
 $comment_sql = "
     SELECT fc.id, fc.feed_item_key, fc.body, fc.createdAt, fc.user_id, fc.business_id,
-        u.fName, u.lName, u.email, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key,
+        u.fName, u.lName, u.email, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key,
         b.bName
     FROM feed_comments fc
     LEFT JOIN users u ON u.id = fc.user_id

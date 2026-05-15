@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title>Trusted Taster</title>
+  <defs>
+    <linearGradient id="badge-fill" x1="20" y1="14" x2="108" y2="114" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f0a7cf"/>
+      <stop offset="1" stop-color="#8b4f6f"/>
+    </linearGradient>
+  </defs>
+  <path fill="#3d2130" d="M64 8l47 20v36c0 31-20 48-47 58-27-10-47-27-47-58V28L64 8Z"/>
+  <path fill="url(#badge-fill)" d="M64 17l38 16v31c0 24-15 39-38 48-23-9-38-24-38-48V33l38-16Z"/>
+  <g fill="#3d2130" opacity=".84"><path d="M35 32h58v44H63L45 93V76H35V32Zm13 15v8h32v-8H48Zm0 16v8h22v-8H48Z"/></g>
+  <circle cx="92" cy="92" r="22" fill="#fff8ea" stroke="#3d2130" stroke-width="6"/>
+  <text x="92" y="99" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="800" fill="#3d2130">25</text>
+</svg>

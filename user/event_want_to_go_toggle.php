@@ -53,6 +53,8 @@ if ($is_saved) {
     $insert_stmt = $conn->prepare("INSERT IGNORE INTO event_want_to_go (user_id, event_id, occurrence_date, createdAt) VALUES (?, ?, ?, NOW())");
     $insert_stmt->bind_param("iis", $user_id, $event_id, $occurrence_date);
     $insert_stmt->execute();
+    if ($insert_stmt->affected_rows > 0) {
+    }
 }
 
 $count_stmt = $conn->prepare("SELECT COUNT(*) AS total FROM event_want_to_go WHERE event_id=? AND occurrence_date=?");

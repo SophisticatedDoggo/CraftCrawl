@@ -63,6 +63,11 @@ if ($action === 'remove') {
     $count_stmt->execute();
     $current_count = (int) $count_stmt->get_result()->fetch_assoc()['total'];
 
+    if ($slot_count < 1) {
+        echo json_encode(['ok' => false, 'message' => 'Your first showcase slot unlocks at Level 8.']);
+        exit();
+    }
+
     if ($current_count >= $slot_count) {
         echo json_encode(['ok' => false, 'message' => "You have used all $slot_count showcase slots. Remove a badge first."]);
         exit();

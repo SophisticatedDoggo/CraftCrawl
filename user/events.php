@@ -39,6 +39,7 @@ $craftcrawl_portal_show_search = false;
 </script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="../js/portal_events.js"></script>
+<script src="../js/level_celebration.js"></script>
 <script src="../js/friends.js"></script>
 <script src="../js/mobile_actions_menu.js"></script>
 <script src="../js/depth_animations.js"></script>

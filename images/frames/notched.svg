@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title>Notched</title>
+  <defs>
+    <mask id="portrait-safe-frame" maskUnits="userSpaceOnUse">
+      <rect width="128" height="128" fill="#fff"/>
+      <circle cx="64" cy="64" r="42" fill="#000"/>
+    </mask>
+  </defs>
+  <g mask="url(#portrait-safe-frame)">
+    <path d="M35 16h58l19 19v58l-19 19H35L16 93V35l19-19Z" fill="none" stroke="#000" stroke-width="10" stroke-linejoin="round"/>
+  </g>
+</svg>

@@ -87,7 +87,13 @@
             method: 'POST',
             body: formData,
             credentials: 'same-origin'
-        }).then((response) => response.json());
+        }).then((response) => response.json().catch(() => null).then((data) => {
+            if (!response.ok || !data) {
+                throw new Error((data && data.message) || 'Reaction could not be saved.');
+            }
+
+            return data;
+        }));
     }
 
     function formatDate(value) {
@@ -108,7 +114,8 @@
     function renderAvatar(actor, fallbackName) {
         const data = actor || {};
         const frame = String(data.frame || '').replace(/[^a-z0-9_-]/gi, '');
-        const classes = `user-avatar user-avatar-medium feed-avatar ${frame ? `has-frame-${frame}` : ''}`;
+        const frameStyle = String(data.frame_style || 'solid').replace(/[^a-z0-9_-]/gi, '') || 'solid';
+        const classes = `user-avatar user-avatar-medium feed-avatar ${frame ? `has-frame-${frame} has-frame-style-${frameStyle}` : ''}`;
         const name = data.name || fallbackName || 'A friend';
         const initials = data.initials || String(name).split(/\s+/).slice(0, 2).map((part) => part.charAt(0)).join('').toUpperCase() || 'CC';
 
@@ -246,6 +253,9 @@
                         }
 
                         showStatus(data.message || 'Friend invite updated.', false);
+                        if (data.xp_reward && window.craftcrawlShowXpReward) {
+                            window.craftcrawlShowXpReward(data.xp_reward);
+                        }
                         button.classList.remove('is-loading');
                         button.textContent = data.status === 'pending' ? 'Invite Sent' : 'Added';
                         refreshFriendsData();
@@ -307,6 +317,9 @@
                         }
 
                         showStatus(data.message || 'Friend invite updated.', false);
+                        if (data.xp_reward && window.craftcrawlShowXpReward) {
+                            window.craftcrawlShowXpReward(data.xp_reward);
+                        }
                         button.classList.remove('is-loading');
                         if (row) {
                             row.remove();
@@ -564,53 +577,57 @@
         }
     }
 
-    // Event delegation for reactions — works for initial and paginated items
-    if (feed) {
-        feed.addEventListener('click', (event) => {
-            const button = event.target.closest('[data-feed-reaction]');
-            if (!button || button.disabled) {
-                return;
-            }
+    // Event delegation for reactions — works for feed lists and feed threads.
+    document.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-feed-reaction]');
+        if (!button || button.disabled) {
+            return;
+        }
 
-            button.disabled = true;
-            button.classList.add('is-loading');
+        const tokenSource = button.closest('[data-csrf-token]');
+        const requestCsrfToken = tokenSource?.dataset.csrfToken || csrfToken;
 
-            postForm(userEndpoint('feed_reaction_toggle.php'), {
-                csrf_token: csrfToken,
-                item_key: button.dataset.itemKey,
-                reaction_type: button.dataset.reactionType
+        button.disabled = true;
+        button.classList.add('is-loading');
+
+        postForm(userEndpoint('feed_reaction_toggle.php'), {
+            csrf_token: requestCsrfToken,
+            item_key: button.dataset.itemKey,
+            reaction_type: button.dataset.reactionType
+        })
+            .then((data) => {
+                if (!data.ok) {
+                    showStatus(data.message || 'Reaction could not be saved.', true);
+                    return;
+                }
+
+                if (data.xp_reward && window.craftcrawlShowXpReward) {
+                    window.craftcrawlShowXpReward(data.xp_reward);
+                }
+
+                const article = button.closest('article');
+                const reactionsDiv = button.closest('.feed-reactions');
+                if (reactionsDiv && data.reactions) {
+                    const itemKey = button.dataset.itemKey;
+                    const itemType = article?.dataset.feedItemType || itemKey.split(':')[0];
+                    const availableReactions = availableReactionTypes({
+                        type: itemType,
+                        is_self: article?.dataset.feedIsSelf === 'true'
+                    });
+                    const reactionMap = {};
+                    data.reactions.forEach((r) => { reactionMap[r.type] = r; });
+                    reactionsDiv.innerHTML = availableReactions.map((type) => {
+                        const reaction = reactionMap[type] || { count: 0, reacted: false };
+                        return `<button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(itemKey)}" data-reaction-type="${type}">${reactionLabels[type]}${reaction.count > 0 ? ` ${reaction.count}` : ''}</button>`;
+                    }).join('');
+                }
             })
-                .then((data) => {
-                    if (!data.ok) {
-                        showStatus(data.message || 'Reaction could not be saved.', true);
-                        return;
-                    }
-
-                    // Update reaction buttons in place without reloading the full feed
-                    const article = button.closest('article');
-                    const reactionsDiv = article?.querySelector('.feed-reactions');
-                    if (reactionsDiv && data.reactions) {
-                        const itemKey = button.dataset.itemKey;
-                        const itemType = article?.dataset.feedItemType || itemKey.split(':')[0];
-                        const availableReactions = availableReactionTypes({
-                            type: itemType,
-                            is_self: article?.dataset.feedIsSelf === 'true'
-                        });
-                        const reactionMap = {};
-                        data.reactions.forEach((r) => { reactionMap[r.type] = r; });
-                        reactionsDiv.innerHTML = availableReactions.map((type) => {
-                            const reaction = reactionMap[type] || { count: 0, reacted: false };
-                            return `<button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(itemKey)}" data-reaction-type="${type}">${reactionLabels[type]}${reaction.count > 0 ? ` ${reaction.count}` : ''}</button>`;
-                        }).join('');
-                    }
-                })
-                .catch(() => showStatus('Reaction could not be saved.', true))
-                .finally(() => {
-                    button.disabled = false;
-                    button.classList.remove('is-loading');
-                });
-        });
-    }
+            .catch((error) => showStatus(error.message || 'Reaction could not be saved.', true))
+            .finally(() => {
+                button.disabled = false;
+                button.classList.remove('is-loading');
+            });
+    });
 
     // Delegated poll vote handler for feed items
     if (feed) {

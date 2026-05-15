@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $review_sql = "
     SELECT r.id, r.rating, r.notes, r.business_response, r.business_responseAt,
-        u.fName, u.lName, u.email, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key,
+        u.fName, u.lName, u.email, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key,
         b.bName, b.id AS business_id
     FROM reviews r
     INNER JOIN users u ON u.id = r.user_id

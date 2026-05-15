@@ -178,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $conn->begin_transaction();
                 $progress_before = craftcrawl_user_level_progress($conn, $user_id);
 
-                $stmt = $conn->prepare("INSERT INTO reviews (rating, user_id, business_id, notes) VALUES (?, ?, ?, ?)");
+                $stmt = $conn->prepare("INSERT INTO reviews (rating, user_id, business_id, notes, createdAt) VALUES (?, ?, ?, ?, NOW())");
                 $stmt->bind_param("iiis", $rating, $user_id, $business_id, $notes);
                 $stmt->execute();
                 $review_id = $stmt->insert_id;
@@ -194,7 +194,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 $badges = craftcrawl_award_eligible_badges($conn, $user_id);
-                $progress = craftcrawl_user_level_progress($conn, $user_id);
+                $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges);
+                $progress = $reward_payload['progress'] ?? craftcrawl_user_level_progress($conn, $user_id);
                 $conn->commit();
 
                 $review_message = $review_xp_awarded ? 'review_saved_xp' : 'review_saved';
@@ -202,20 +203,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $review_message = 'review_saved_badge';
                 }
 
-                $xp_awarded = max(0, (int) ($progress['total_xp'] ?? 0) - (int) ($progress_before['total_xp'] ?? 0));
-                if ($xp_awarded > 0) {
-                    $_SESSION['craftcrawl_xp_reward_popup'] = [
-                        'xp_awarded' => $xp_awarded,
-                        'badges' => $badges,
-                        'level_up' => (int) $progress['level'] > (int) $progress_before['level']
-                            ? [
-                                'level' => (int) $progress['level'],
-                                'title' => $progress['title']
-                            ]
-                            : null,
-                        'progress_before' => $progress_before,
-                        'progress' => $progress
-                    ];
+                if ($reward_payload) {
+                    $_SESSION['craftcrawl_xp_reward_popup'] = $reward_payload;
                 }
                 header("Location: business_details.php?id=" . $business_id . "&message=" . $review_message);
                 exit();
@@ -242,7 +231,7 @@ $rating_summary = $rating_result->fetch_assoc();
 
 $review_stmt = $conn->prepare("
     SELECT r.id, r.rating, r.notes, r.business_response, r.business_responseAt,
-        u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+        u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
     FROM reviews r
     INNER JOIN users u ON u.id = r.user_id
     LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'

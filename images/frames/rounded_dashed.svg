@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title>Dashed Rounded Square</title>
+  <defs>
+    <mask id="portrait-safe-frame" maskUnits="userSpaceOnUse">
+      <rect width="128" height="128" fill="#fff"/>
+      <circle cx="64" cy="64" r="42" fill="#000"/>
+    </mask>
+  </defs>
+  <g mask="url(#portrait-safe-frame)">
+    <rect x="17" y="17" width="94" height="94" rx="29" fill="none" stroke="#000" stroke-width="10" stroke-dasharray="14 9"/>
+  </g>
+</svg>

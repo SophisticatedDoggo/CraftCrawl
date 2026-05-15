@@ -102,27 +102,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="auth-body">
     <main class="auth-card auth-card-wide">
-        <img class="site-logo auth-logo" src="images/Logo.webp" alt="CraftCrawl logo">
-        <h1>Create An Account</h1>
-        <?php if ($social_auth_enabled) : ?>
-            <div class="social-auth-options" data-social-auth-options aria-label="Social sign-in options">
-                <?php if (!empty($GOOGLE_SIGN_IN_CLIENT_ID)) : ?>
-                    <div class="social-auth-provider" data-google-signin></div>
-                <?php endif; ?>
-                <?php if (!empty($APPLE_SIGN_IN_CLIENT_ID)) : ?>
-                    <div
-                        id="appleid-signin"
-                        class="social-auth-provider social-auth-provider-apple"
-                        data-apple-signin
-                        data-color="black"
-                        data-border="true"
-                        data-type="sign up"
-                    ></div>
-                <?php endif; ?>
-                <p class="form-message social-auth-feedback" data-social-auth-feedback hidden></p>
-            </div>
-            <div class="auth-divider"><span>or</span></div>
-        <?php endif; ?>
+        <div class="auth-top-section">
+            <img class="site-logo auth-logo" src="images/Logo.webp" alt="CraftCrawl logo">
+            <h1>Create An Account</h1>
+            <?php if ($social_auth_enabled) : ?>
+                <div class="social-auth-options" data-social-auth-options aria-label="Social sign-in options">
+                    <?php if (!empty($GOOGLE_SIGN_IN_CLIENT_ID)) : ?>
+                        <div class="social-auth-provider" data-google-signin></div>
+                    <?php endif; ?>
+                    <?php if (!empty($APPLE_SIGN_IN_CLIENT_ID)) : ?>
+                        <div
+                            id="appleid-signin"
+                            class="social-auth-provider social-auth-provider-apple"
+                            data-apple-signin
+                            data-color="black"
+                            data-border="true"
+                            data-type="sign up"
+                        ></div>
+                    <?php endif; ?>
+                    <p class="form-message social-auth-feedback" data-social-auth-feedback hidden></p>
+                </div>
+                <div class="auth-divider"><span>or</span></div>
+            <?php endif; ?>
+        </div>
         <form id="account_creation_form" action="" method="POST">
             <?php echo craftcrawl_csrf_input(); ?>
             <div class="form-feedback">

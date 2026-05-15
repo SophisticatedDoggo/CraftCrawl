@@ -24,6 +24,10 @@
             .replaceAll("'", '&#039;');
     }
 
+    function badgeIconPath(badgeKey) {
+        return `../images/badges/${encodeURIComponent(String(badgeKey || ''))}.svg`;
+    }
+
     function renderShowcase(showcase) {
         const grid = section.querySelector('[data-showcase-grid]');
         if (!grid) return;
@@ -37,6 +41,7 @@
             if (badge) {
                 html += `
                     <article class="badge-showcase-slot is-filled" data-showcase-slot="${s}">
+                        <img class="badge-icon" src="${badgeIconPath(badge.badge_key)}" alt="" loading="lazy" width="64" height="64">
                         <strong>${escapeHtml(badge.badge_name)}</strong>
                         <small>${escapeHtml(badge.badge_tier)}</small>
                         <button type="button" class="badge-showcase-remove" data-showcase-action="remove" data-badge-key="${escapeHtml(badge.badge_key)}">Remove</button>
@@ -65,11 +70,15 @@
 
             const isShowcased = showcasedKeys.has(badgeKey);
             const canFeature = !isShowcased && !isFull;
+            const status = card.querySelector('.badge-goal-title-row span');
 
             card.classList.toggle('is-showcased', isShowcased);
             card.classList.toggle('can-feature', canFeature);
             card.setAttribute('aria-disabled', String(!canFeature));
             card.tabIndex = canFeature ? 0 : -1;
+            if (status) {
+                status.textContent = isShowcased ? 'Featured' : 'Unlocked';
+            }
 
             if (canFeature) {
                 const badgeName = card.querySelector('strong')?.textContent || 'badge';

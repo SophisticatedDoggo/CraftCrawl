@@ -197,14 +197,14 @@ $follower_stmt->execute();
 $follower_count = (int) ($follower_stmt->get_result()->fetch_assoc()['follower_count'] ?? 0);
 
 $top_visitors_stmt = $conn->prepare("
-    SELECT u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key,
+    SELECT u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key,
         COUNT(*) AS visit_count, MAX(uv.checkedInAt) AS last_checkin
     FROM user_visits uv
     INNER JOIN users u ON u.id = uv.user_id
     LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
     WHERE uv.business_id=?
     " . ($mode === 'lifetime' ? '' : 'AND uv.checkedInAt >= ? AND uv.checkedInAt < ?') . "
-    GROUP BY uv.user_id, u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key
+    GROUP BY uv.user_id, u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key
     ORDER BY visit_count DESC, last_checkin DESC
     LIMIT 5
 ");
@@ -224,6 +224,7 @@ while ($visitor = $visitor_result->fetch_assoc()) {
         'avatar_url' => craftcrawl_user_avatar_url($visitor, 96),
         'initials' => craftcrawl_user_initials($visitor),
         'frame' => $visitor['selected_profile_frame'] ?? null,
+        'frame_style' => $visitor['selected_profile_frame_style'] ?? null,
         'visit_count' => $visit_count,
         'visit_label' => number_format($visit_count) . ' visit' . ($visit_count === 1 ? '' : 's'),
         'last_checkin' => date('M j, g:i A', strtotime($visitor['last_checkin']))

@@ -8,7 +8,7 @@ $craftcrawl_portal_avatar = null;
 
 if ($craftcrawl_portal_show_level_summary && isset($conn, $user_id)) {
     $avatar_stmt = $conn->prepare("
-        SELECT u.id, u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+        SELECT u.id, u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
         FROM users u
         LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
         WHERE u.id=?

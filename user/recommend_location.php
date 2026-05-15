@@ -60,23 +60,11 @@ try {
     $stmt->bind_param("iiiss", $user_id, $friend_id, $business_id, $message, $pending);
     $stmt->execute();
     $badges = craftcrawl_award_eligible_badges($conn, $user_id);
-    $progress = craftcrawl_user_level_progress($conn, $user_id);
+    $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges);
     $conn->commit();
 
-    $xp_awarded = max(0, (int) ($progress['total_xp'] ?? 0) - (int) ($progress_before['total_xp'] ?? 0));
-    if ($xp_awarded > 0) {
-        $_SESSION['craftcrawl_xp_reward_popup'] = [
-            'xp_awarded' => $xp_awarded,
-            'badges' => $badges,
-            'level_up' => (int) $progress['level'] > (int) $progress_before['level']
-                ? [
-                    'level' => (int) $progress['level'],
-                    'title' => $progress['title']
-                ]
-                : null,
-            'progress_before' => $progress_before,
-            'progress' => $progress
-        ];
+    if ($reward_payload) {
+        $_SESSION['craftcrawl_xp_reward_popup'] = $reward_payload;
     }
 } catch (Throwable $error) {
     $conn->rollback();

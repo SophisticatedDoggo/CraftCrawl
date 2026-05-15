@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title>Inset Hexagon</title>
+  <defs>
+    <mask id="portrait-safe-frame" maskUnits="userSpaceOnUse">
+      <rect width="128" height="128" fill="#fff"/>
+      <circle cx="64" cy="64" r="42" fill="#000"/>
+    </mask>
+  </defs>
+  <g mask="url(#portrait-safe-frame)">
+    <path d="M32 9h64l32 55-32 55H32L0 64 32 9Z" fill="none" stroke="#000" stroke-width="8" stroke-linejoin="round"/><path d="M39 21h50l25 43-25 43H39L14 64l25-43Z" fill="none" stroke="#000" stroke-width="5" stroke-linejoin="round"/>
+  </g>
+</svg>

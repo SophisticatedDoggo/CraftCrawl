@@ -200,7 +200,11 @@
         const badgeNames = Array.isArray(reward.badges)
             ? reward.badges.filter((badgeName) => String(badgeName || '').trim() !== '')
             : [];
+        const levelRewards = Array.isArray(reward.level_rewards)
+            ? reward.level_rewards.filter((item) => item && String(item.name || '').trim() !== '')
+            : [];
         let badgesWrap = null;
+        let levelRewardsWrap = null;
 
         overlay.className = 'level-celebration xp-reward-celebration';
         overlay.dataset.levelCelebration = 'true';
@@ -256,6 +260,25 @@
             badgesWrap.append(badgeHeading, badgeList);
         }
 
+        if (levelRewards.length) {
+            const rewardHeading = document.createElement('strong');
+            const rewardList = document.createElement('div');
+
+            levelRewardsWrap = document.createElement('div');
+            levelRewardsWrap.className = 'xp-reward-badges xp-reward-level-rewards';
+            rewardHeading.textContent = levelRewards.length === 1 ? 'Level Reward Unlocked' : 'Level Rewards Unlocked';
+            rewardList.className = 'xp-reward-badge-list';
+
+            levelRewards.forEach((item) => {
+                const rewardItem = document.createElement('span');
+                const level = Number(item.level || 0);
+                rewardItem.textContent = `${level ? `Level ${level}: ` : ''}${item.name}`;
+                rewardList.appendChild(rewardItem);
+            });
+
+            levelRewardsWrap.append(rewardHeading, rewardList);
+        }
+
         createConfetti(effects);
         if (levelUp) {
             createBalloons(effects);
@@ -264,6 +287,9 @@
         panel.append(closeButton, kicker, heading, xpAmount, message, progressWrap);
         if (badgesWrap) {
             panel.appendChild(badgesWrap);
+        }
+        if (levelRewardsWrap) {
+            panel.appendChild(levelRewardsWrap);
         }
         overlay.append(effects, panel);
         document.body.appendChild(overlay);

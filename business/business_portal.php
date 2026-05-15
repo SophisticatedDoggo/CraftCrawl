@@ -200,7 +200,7 @@ $rating_summary = $rating_result->fetch_assoc();
 
 $review_stmt = $conn->prepare("
     SELECT r.id, r.rating, r.notes, r.business_response, r.business_responseAt,
-        u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+        u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
     FROM reviews r
     INNER JOIN users u ON u.id = r.user_id
     LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'

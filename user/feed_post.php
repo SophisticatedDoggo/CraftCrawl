@@ -27,7 +27,96 @@ function format_feed_date($value) {
     return $timestamp ? date('M j, g:i A', $timestamp) : '';
 }
 
-function render_feed_thread_post($item) {
+function feed_thread_attrs($item) {
+    return 'data-feed-item-type="' . escape_output($item['type'] ?? '') . '" data-feed-is-self="' . (!empty($item['is_self']) ? 'true' : 'false') . '"';
+}
+
+function feed_thread_reaction_options($item) {
+    $options_by_type = [
+        'first_visit' => ['cheers', 'nice_find'],
+        'level_up' => ['cheers', 'nice_find', 'trophy'],
+        'event_want' => ['cheers', 'nice_find'],
+        'location_want' => ['cheers', 'nice_find', 'want_to_go'],
+        'badge_earned' => ['cheers', 'trophy'],
+        'business_post' => ['cheers', 'want_to_go'],
+    ];
+
+    $type = $item['type'] ?? '';
+    $options = $options_by_type[$type] ?? ['cheers', 'nice_find'];
+
+    if (!empty($item['is_self']) && $type !== 'business_post') {
+        $options = array_values(array_filter($options, fn($option) => $option !== 'want_to_go'));
+    }
+
+    return $options;
+}
+
+function render_feed_thread_reactions($conn, $user_id, $item) {
+    if (empty($item['item_key'])) {
+        return '';
+    }
+
+    $item_key = $item['item_key'];
+    $item_type = $item['type'] ?? '';
+
+    if ($item_type !== 'business_post') {
+        $owner_id = craftcrawl_feed_item_owner_id($conn, $item_key);
+        if ($owner_id) {
+            $interact_stmt = $conn->prepare("SELECT allow_post_interactions FROM users WHERE id=? LIMIT 1");
+            $interact_stmt->bind_param("i", $owner_id);
+            $interact_stmt->execute();
+            $interact_row = $interact_stmt->get_result()->fetch_assoc();
+            if (isset($interact_row['allow_post_interactions']) && empty($interact_row['allow_post_interactions'])) {
+                return '';
+            }
+        }
+    }
+
+    $labels = [
+        'cheers' => '🍻 Cheers',
+        'nice_find' => '🔥 Nice',
+        'want_to_go' => '📍 Want to Go',
+        'trophy' => '🏆 Trophy',
+    ];
+    $reactions = [];
+
+    $reaction_stmt = $conn->prepare("
+        SELECT reaction_type, user_id
+        FROM feed_reactions
+        WHERE feed_item_key=?
+        ORDER BY createdAt ASC, id ASC
+    ");
+    $reaction_stmt->bind_param("s", $item_key);
+    $reaction_stmt->execute();
+    $reaction_result = $reaction_stmt->get_result();
+
+    while ($reaction = $reaction_result->fetch_assoc()) {
+        $type = $reaction['reaction_type'];
+        $reactor_id = (int) $reaction['user_id'];
+
+        if (!isset($reactions[$type])) {
+            $reactions[$type] = ['count' => 0, 'reacted' => false];
+        }
+
+        $reactions[$type]['count']++;
+        $reactions[$type]['reacted'] = $reactions[$type]['reacted'] || $reactor_id === (int) $user_id;
+    }
+
+    $html = '<div class="feed-action-row"><div class="feed-reactions">';
+    foreach (feed_thread_reaction_options($item) as $reaction_type) {
+        $reaction = $reactions[$reaction_type] ?? ['count' => 0, 'reacted' => false];
+        $active_class = $reaction['reacted'] ? ' is-active' : '';
+        $count_text = $reaction['count'] > 0 ? ' ' . (int) $reaction['count'] : '';
+        $html .= '<button type="button" class="' . $active_class . '" data-feed-reaction data-item-key="' . escape_output($item_key) . '" data-reaction-type="' . escape_output($reaction_type) . '">';
+        $html .= escape_output($labels[$reaction_type] ?? $reaction_type) . $count_text;
+        $html .= '</button>';
+    }
+    $html .= '</div></div>';
+
+    return $html;
+}
+
+function render_feed_thread_post($item, $actions_html = '') {
     $date = format_feed_date($item['created_at'] ?? '');
     $actor_name = !empty($item['is_self']) ? 'You' : ($item['friend_name'] ?? 'A friend');
     $want_phrase = !empty($item['is_self']) ? 'You want' : (($item['friend_name'] ?? 'A friend') . ' wants');
@@ -36,17 +125,19 @@ function render_feed_thread_post($item) {
             'fName' => $item['actor']['name'] ?? $item['friend_name'] ?? '',
             'lName' => '',
             'profile_photo_url' => $item['actor']['avatar_url'] ?? null,
-            'selected_profile_frame' => $item['actor']['frame'] ?? null
+            'selected_profile_frame' => $item['actor']['frame'] ?? null,
+            'selected_profile_frame_style' => $item['actor']['frame_style'] ?? null
         ], 'medium', 'feed-avatar')
         : '';
 
     if (($item['type'] ?? '') === 'level_up') {
         return '
-            <article class="friends-feed-item feed-thread-post">
+            <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
                 ' . $avatar . '
                 <div>
                     <strong>' . escape_output($actor_name) . ' reached Level ' . escape_output($item['level']) . '</strong>
                     <p>' . escape_output($item['title']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
+                    ' . $actions_html . '
                 </div>
             </article>
         ';
@@ -54,12 +145,13 @@ function render_feed_thread_post($item) {
 
     if (($item['type'] ?? '') === 'event_want') {
         return '
-            <article class="friends-feed-item feed-thread-post">
+            <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
                 ' . $avatar . '
                 <div>
                     <strong>' . escape_output($want_phrase) . ' to go to ' . escape_output($item['event_name']) . '</strong>
                     <p>' . escape_output($item['business_name']) . ' · ' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
                     <a href="../event_details.php?id=' . escape_output($item['event_id']) . '&date=' . escape_output($item['event_date']) . '">View event</a>
+                    ' . $actions_html . '
                 </div>
             </article>
         ';
@@ -68,25 +160,27 @@ function render_feed_thread_post($item) {
     if (($item['type'] ?? '') === 'business_post') {
         $is_poll = ($item['post_type'] ?? '') === 'poll';
         return '
-            <article class="friends-feed-item feed-thread-post">
+            <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
                 <div class="friends-feed-icon">' . ($is_poll ? '📊' : '📢') . '</div>
                 <div>
                     <strong>' . escape_output($item['business_name']) . '</strong>
                     <p>' . escape_output($item['title']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
                     ' . (!empty($item['body']) ? '<p>' . nl2br(escape_output($item['body'])) . '</p>' : '') . '
                     <a href="../business_details.php?id=' . escape_output($item['business_id']) . '">View Business</a>
+                    ' . $actions_html . '
                 </div>
             </article>
         ';
     }
 
     return '
-        <article class="friends-feed-item feed-thread-post">
+        <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
             ' . $avatar . '
             <div>
                 <strong>' . escape_output($actor_name) . ' visited ' . escape_output($item['business_name']) . ' for the first time</strong>
                 <p>' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
                 <a href="../business_details.php?id=' . escape_output($item['business_id']) . '">View business</a>
+                ' . $actions_html . '
             </div>
         </article>
     ';
@@ -201,7 +295,7 @@ if ($feed_item) {
         SELECT fc.id, fc.parent_comment_id, fc.body, fc.createdAt, fc.user_id, fc.business_id,
             u.fName,
             u.lName,
-            u.selected_profile_frame,
+            u.selected_profile_frame, u.selected_profile_frame_style,
             u.profile_photo_url,
             p.object_key AS profile_photo_object_key,
             b.bName
@@ -239,7 +333,7 @@ if ($feed_item) {
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-    <main class="settings-page feed-thread-page">
+    <main class="settings-page feed-thread-page" data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
         <header class="settings-header">
             <div>
                 <img class="site-logo" src="../images/Logo.webp" alt="CraftCrawl logo">
@@ -274,7 +368,7 @@ if ($feed_item) {
             <?php endif; ?>
 
             <section class="settings-panel feed-thread-panel">
-                <?php echo render_feed_thread_post($feed_item); ?>
+                <?php echo render_feed_thread_post($feed_item, render_feed_thread_reactions($conn, $user_id, $feed_item)); ?>
             </section>
 
             <section class="settings-panel feed-thread-panel">
@@ -360,6 +454,7 @@ if ($feed_item) {
     <script src="../js/friends.js"></script>
     <script src="../js/mobile_actions_menu.js"></script>
     <script src="../js/onesignal_push.js"></script>
+    <script src="../js/level_celebration.js"></script>
     <script>
         document.querySelectorAll('[data-reply-toggle]').forEach((button) => {
             button.addEventListener('click', () => {

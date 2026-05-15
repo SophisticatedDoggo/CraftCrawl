@@ -125,12 +125,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $like_search = '%' . $search . '%';
 $users_sql = "
     SELECT 'user' AS account_type, u.id, CONCAT(u.fName, ' ', u.lName) AS account_name, u.fName, u.lName, u.email, u.emailVerifiedAt, u.disabledAt,
-        u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+        u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
     FROM users u
     LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
 ";
-$business_sql = "SELECT 'business' AS account_type, id, bName AS account_name, NULL AS fName, NULL AS lName, bEmail AS email, emailVerifiedAt, disabledAt, NULL AS selected_profile_frame, NULL AS profile_photo_url, NULL AS profile_photo_object_key FROM businesses";
-$admins_sql = "SELECT 'admin' AS account_type, id, CONCAT(fName, ' ', lName) AS account_name, fName, lName, email, NULL AS emailVerifiedAt, CASE WHEN active=FALSE THEN COALESCE(disabledAt, createdAt) ELSE disabledAt END AS disabledAt, NULL AS selected_profile_frame, NULL AS profile_photo_url, NULL AS profile_photo_object_key FROM admins";
+$business_sql = "SELECT 'business' AS account_type, id, bName AS account_name, NULL AS fName, NULL AS lName, bEmail AS email, emailVerifiedAt, disabledAt, NULL AS selected_profile_frame, NULL AS selected_profile_frame_style, NULL AS profile_photo_url, NULL AS profile_photo_object_key FROM businesses";
+$admins_sql = "SELECT 'admin' AS account_type, id, CONCAT(fName, ' ', lName) AS account_name, fName, lName, email, NULL AS emailVerifiedAt, CASE WHEN active=FALSE THEN COALESCE(disabledAt, createdAt) ELSE disabledAt END AS disabledAt, NULL AS selected_profile_frame, NULL AS selected_profile_frame_style, NULL AS profile_photo_url, NULL AS profile_photo_object_key FROM admins";
 
 if ($search !== '') {
     $users_sql .= " WHERE u.email LIKE ? OR u.fName LIKE ? OR u.lName LIKE ?";

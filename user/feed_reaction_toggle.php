@@ -240,6 +240,7 @@ $existing_stmt = $conn->prepare("SELECT id FROM feed_reactions WHERE user_id=? A
 $existing_stmt->bind_param("iss", $user_id, $item_key, $reaction_type);
 $existing_stmt->execute();
 $existing = $existing_stmt->get_result()->fetch_assoc();
+$reward_payload = null;
 
 if ($existing) {
     $delete_stmt = $conn->prepare("DELETE FROM feed_reactions WHERE id=?");
@@ -247,10 +248,12 @@ if ($existing) {
     $delete_stmt->bind_param("i", $reaction_id);
     $delete_stmt->execute();
 } else {
+    $progress_before = craftcrawl_user_level_progress($conn, $user_id);
     $insert_stmt = $conn->prepare("INSERT INTO feed_reactions (user_id, feed_item_key, reaction_type, createdAt) VALUES (?, ?, ?, NOW())");
     $insert_stmt->bind_param("iss", $user_id, $item_key, $reaction_type);
     $insert_stmt->execute();
-    craftcrawl_award_eligible_badges($conn, $user_id);
+    $badges = craftcrawl_award_eligible_badges($conn, $user_id);
+    $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges);
 
     if ($owner_id && $owner_id !== $user_id) {
         $reaction_labels = [
@@ -309,5 +312,5 @@ while ($reaction = $result->fetch_assoc()) {
     ];
 }
 
-echo json_encode(['ok' => true, 'reactions' => array_values($reactions)]);
+echo json_encode(['ok' => true, 'reactions' => array_values($reactions), 'xp_reward' => $reward_payload]);
 ?>

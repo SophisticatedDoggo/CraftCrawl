@@ -36,7 +36,7 @@ function admin_details_account_fetch($conn, $account_type, $account_id) {
     if ($account_type === 'user') {
         $stmt = $conn->prepare("
             SELECT u.id, CONCAT(u.fName, ' ', u.lName) AS account_name, u.fName, u.lName, u.email, u.createdAt, u.emailVerifiedAt, u.disabledAt,
-                u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+                u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
             FROM users u
             LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
             WHERE u.id=?

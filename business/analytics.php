@@ -68,7 +68,7 @@ $today_first_time_rate = $today_checkins > 0 ? round(($today_first_time / $today
 
 $recent_stmt = $conn->prepare("
     SELECT uv.visit_type, uv.xp_awarded, uv.distance_meters, uv.checkedInAt,
-        u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+        u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
     FROM user_visits uv
     INNER JOIN users u ON u.id = uv.user_id
     LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'

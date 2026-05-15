@@ -43,6 +43,7 @@ if (!$friend) {
 
 try {
     $conn->begin_transaction();
+    $progress_before = craftcrawl_user_level_progress($conn, $user_id);
 
     $existing_stmt = $conn->prepare("SELECT id FROM user_friends WHERE user_id=? AND friend_user_id=?");
     $existing_stmt->bind_param("ii", $user_id, $friend_id);
@@ -88,13 +89,15 @@ try {
 
         $badges = craftcrawl_award_eligible_badges($conn, $user_id);
         craftcrawl_award_eligible_badges($conn, $friend_id);
+        $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges);
         $conn->commit();
 
         echo json_encode([
             'ok' => true,
             'status' => 'friends',
             'message' => trim($friend['fName'] . ' ' . $friend['lName']) . ' is now your friend.',
-            'badges' => $badges
+            'badges' => $badges,
+            'xp_reward' => $reward_payload
         ]);
         exit();
     }

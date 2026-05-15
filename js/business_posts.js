@@ -68,6 +68,10 @@
                     return;
                 }
 
+                if (data.xp_reward && window.craftcrawlShowXpReward) {
+                    window.craftcrawlShowXpReward(data.xp_reward);
+                }
+
                 const reactionsDiv = reactionBtn.closest('.feed-reactions');
                 if (!reactionsDiv || !data.reactions) {
                     return;

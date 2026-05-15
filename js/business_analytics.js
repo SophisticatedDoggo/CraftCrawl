@@ -101,7 +101,8 @@
 
         visitors.innerHTML = items.map((visitor) => {
             const frame = String(visitor.frame || '').replace(/[^a-z0-9_-]/gi, '');
-            const avatarClass = `user-avatar user-avatar-small ${frame ? `has-frame-${frame}` : ''}`;
+            const frameStyle = String(visitor.frame_style || 'solid').replace(/[^a-z0-9_-]/gi, '') || 'solid';
+            const avatarClass = `user-avatar user-avatar-small ${frame ? `has-frame-${frame} has-frame-style-${frameStyle}` : ''}`;
             const avatar = visitor.avatar_url
                 ? `<span class="${avatarClass}"><img src="${escapeHtml(visitor.avatar_url)}" alt="${escapeHtml(visitor.name)} profile photo" loading="lazy"></span>`
                 : `<span class="${avatarClass}" aria-label="${escapeHtml(visitor.name)} profile photo"><span>${escapeHtml(visitor.initials || 'CC')}</span></span>`;

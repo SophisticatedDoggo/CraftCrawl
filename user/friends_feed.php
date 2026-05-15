@@ -30,7 +30,7 @@ $friend_stmt = $conn->prepare("
         u.show_feed_activity,
         u.level,
         u.selected_title_index,
-        u.selected_profile_frame,
+        u.selected_profile_frame, u.selected_profile_frame_style,
         u.profile_photo_url,
         p.object_key AS profile_photo_object_key,
         uf.createdAt
@@ -59,6 +59,7 @@ while ($friend = $friend_result->fetch_assoc()) {
         'level' => $friend_level,
         'title' => craftcrawl_user_effective_title($friend_level, $selected_title_index),
         'selected_profile_frame' => $friend['selected_profile_frame'] ?? null,
+        'selected_profile_frame_style' => $friend['selected_profile_frame_style'] ?? null,
         'profile_photo_url' => $friend['profile_photo_url'] ?? null,
         'profile_photo_object_key' => $friend['profile_photo_object_key'] ?? null,
         'created_at' => $friend['createdAt']
@@ -70,7 +71,7 @@ while ($friend = $friend_result->fetch_assoc()) {
 
 $people = $friends;
 $self_stmt = $conn->prepare("
-    SELECT u.id, u.fName, u.lName, u.selected_profile_frame, u.profile_photo_url, p.object_key AS profile_photo_object_key
+    SELECT u.id, u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
     FROM users u
     LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
     WHERE u.id=?
@@ -85,6 +86,7 @@ $people[$user_id] = [
     'name' => 'You',
     'show_feed_activity' => true,
     'selected_profile_frame' => $self['selected_profile_frame'] ?? null,
+    'selected_profile_frame_style' => $self['selected_profile_frame_style'] ?? null,
     'profile_photo_url' => $self['profile_photo_url'] ?? null,
     'profile_photo_object_key' => $self['profile_photo_object_key'] ?? null,
     'created_at' => null
@@ -122,7 +124,8 @@ function craftcrawl_feed_person_payload($person) {
             'name' => 'A friend',
             'initials' => 'CC',
             'avatar_url' => null,
-            'frame' => null
+            'frame' => null,
+            'frame_style' => null
         ];
     }
 
@@ -131,7 +134,8 @@ function craftcrawl_feed_person_payload($person) {
         'name' => $person['name'] ?? trim(($person['fName'] ?? '') . ' ' . ($person['lName'] ?? '')),
         'initials' => craftcrawl_user_initials($person),
         'avatar_url' => craftcrawl_user_avatar_url($person, 96),
-        'frame' => $person['selected_profile_frame'] ?? null
+        'frame' => $person['selected_profile_frame'] ?? null,
+        'frame_style' => $person['selected_profile_frame_style'] ?? null
     ];
 }
 

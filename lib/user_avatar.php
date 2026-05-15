@@ -40,7 +40,11 @@ function craftcrawl_avatar_escape($value) {
 
 function craftcrawl_render_user_avatar($user, $size_class = 'medium', $extra_class = '') {
     $frame = preg_replace('/[^a-z0-9_-]/i', '', (string) ($user['selected_profile_frame'] ?? ''));
-    $classes = trim('user-avatar user-avatar-' . $size_class . ' ' . ($frame !== '' ? 'has-frame-' . $frame : '') . ' ' . $extra_class);
+    $frame_style = preg_replace('/[^a-z0-9_-]/i', '', (string) ($user['selected_profile_frame_style'] ?? 'solid'));
+    $frame_classes = $frame !== ''
+        ? 'has-frame-' . $frame . ' has-frame-style-' . ($frame_style !== '' ? $frame_style : 'solid')
+        : '';
+    $classes = trim('user-avatar user-avatar-' . $size_class . ' ' . $frame_classes . ' ' . $extra_class);
     $url = craftcrawl_user_avatar_url($user, $size_class === 'large' ? 180 : 96);
     $name = trim(($user['fName'] ?? '') . ' ' . ($user['lName'] ?? ''));
     $alt = $name !== '' ? $name . ' profile photo' : 'Profile photo';

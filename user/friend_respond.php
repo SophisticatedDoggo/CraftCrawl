@@ -50,6 +50,7 @@ $badges = [];
 
 try {
     $conn->begin_transaction();
+    $progress_before = craftcrawl_user_level_progress($conn, $user_id);
 
     $update_stmt = $conn->prepare("UPDATE friend_requests SET status=?, respondedAt=NOW() WHERE id=?");
     $update_stmt->bind_param("si", $response, $request_id);
@@ -69,6 +70,7 @@ try {
         craftcrawl_award_eligible_badges($conn, $requester_id);
     }
 
+    $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges);
     $conn->commit();
 
     $name = trim($request['fName'] . ' ' . $request['lName']);
@@ -86,7 +88,8 @@ try {
     echo json_encode([
         'ok' => true,
         'message' => $response === 'accepted' ? $name . ' is now your friend.' : 'Friend invite declined.',
-        'badges' => $badges
+        'badges' => $badges,
+        'xp_reward' => $reward_payload
     ]);
 } catch (Throwable $error) {
     $conn->rollback();
