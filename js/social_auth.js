@@ -6,9 +6,28 @@
     let appleInitialized = false;
     let socialAuthBusy = false;
     let socialAuthBusyTimer = null;
+    let activeProviderTarget = null;
 
-    function setSocialAuthBusy(isBusy, message) {
+    function setSocialAuthBusy(isBusy, message, providerTarget) {
         socialAuthBusy = isBusy;
+        const previousProviderTarget = activeProviderTarget;
+
+        if (previousProviderTarget && (!isBusy || previousProviderTarget !== providerTarget)) {
+            previousProviderTarget.classList.remove('is-loading');
+            previousProviderTarget.removeAttribute('data-loading-label');
+        }
+
+        activeProviderTarget = isBusy ? (providerTarget || activeProviderTarget) : null;
+
+        if (activeProviderTarget) {
+            activeProviderTarget.classList.toggle('is-loading', isBusy);
+
+            if (message) {
+                activeProviderTarget.dataset.loadingLabel = message;
+            } else if (!isBusy) {
+                activeProviderTarget.removeAttribute('data-loading-label');
+            }
+        }
 
         if (socialOptions) {
             socialOptions.classList.toggle('is-busy', isBusy);
@@ -22,9 +41,9 @@
         }
     }
 
-    function holdSocialAuth(message, delay) {
+    function holdSocialAuth(message, delay, providerTarget) {
         window.clearTimeout(socialAuthBusyTimer);
-        setSocialAuthBusy(true, message);
+        setSocialAuthBusy(true, message, providerTarget);
 
         socialAuthBusyTimer = window.setTimeout(() => {
             setSocialAuthBusy(false);
@@ -56,7 +75,7 @@
             return Promise.resolve();
         }
 
-        setSocialAuthBusy(true, 'Signing you in...');
+        setSocialAuthBusy(true, 'Signing you in...', activeProviderTarget);
 
         const formData = new FormData();
         formData.append('csrf_token', config.csrfToken || '');
@@ -117,6 +136,19 @@
             logo_alignment: 'left',
             width: Math.min(400, target.clientWidth || 360)
         });
+
+        target.addEventListener('pointerdown', () => {
+            if (!socialAuthBusy) {
+                holdSocialAuth('Opening Google sign-in...', 4500, target);
+            }
+        }, true);
+
+        target.addEventListener('click', () => {
+            if (!socialAuthBusy) {
+                holdSocialAuth('Opening Google sign-in...', 4500, target);
+            }
+        }, true);
+
         googleInitialized = true;
         return true;
     }
@@ -143,12 +175,20 @@
             AppleID.auth.renderButton();
         }
 
+        target.addEventListener('pointerdown', () => {
+            if (socialAuthBusy) {
+                return;
+            }
+
+            holdSocialAuth('Opening Apple sign-in...', 4500, target);
+        }, true);
+
         target.addEventListener('click', () => {
             if (socialAuthBusy) {
                 return;
             }
 
-            holdSocialAuth('Opening Apple sign-in...', 4500);
+            holdSocialAuth('Opening Apple sign-in...', 4500, target);
         }, true);
 
         document.addEventListener('AppleIDSignInOnSuccess', (event) => {

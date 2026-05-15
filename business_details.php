@@ -388,6 +388,7 @@ function format_event_time_range($event) {
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.21.0/mapbox-gl.js"></script>
 </head>
 <body>
+    <div data-user-page-content>
     <main class="business-details-page">
         <div class="details-nav">
             <a href="user/portal.php" data-back-link>Back</a>
@@ -778,33 +779,6 @@ function format_event_time_range($event) {
             <?php endforeach; ?>
         </section>
     </main>
-    <nav class="mobile-app-tabbar business-details-tabbar" aria-label="Account navigation">
-        <a class="mobile-app-tab" href="user/portal.php">
-            <span class="mobile-app-tab-icon mobile-app-tab-icon-map" aria-hidden="true"></span>
-            <span>Map</span>
-        </a>
-        <a class="mobile-app-tab" href="user/events.php">
-            <span class="mobile-app-tab-icon mobile-app-tab-icon-events" aria-hidden="true"></span>
-            <span>Events</span>
-        </a>
-        <a class="mobile-app-tab" href="user/feed.php">
-            <span class="mobile-app-tab-icon mobile-app-tab-icon-friends" aria-hidden="true"></span>
-            <span>Feed</span>
-            <span class="mobile-tab-badge" data-friends-tab-badge hidden></span>
-        </a>
-        <a class="mobile-app-tab" href="user/portal.php#checkin-panel">
-            <span class="mobile-app-tab-icon mobile-app-tab-icon-checkin" aria-hidden="true"></span>
-            <span>Check In</span>
-        </a>
-        <button type="button" class="mobile-app-tab mobile-app-menu-tab" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
-            <span class="mobile-app-tab-icon mobile-app-tab-icon-menu" aria-hidden="true">
-                <span></span>
-                <span></span>
-                <span></span>
-            </span>
-            <span>Menu</span>
-        </button>
-    </nav>
     <div class="review-photo-lightbox" id="review-photo-lightbox" hidden>
         <div class="photo-lightbox-backdrop review-photo-lightbox-backdrop" data-lightbox-close></div>
         <div class="photo-lightbox-count review-photo-lightbox-count" id="review-photo-lightbox-count"></div>
@@ -821,6 +795,13 @@ function format_event_time_range($event) {
         <img class="photo-lightbox-image review-photo-lightbox-image" id="business-gallery-lightbox-image" alt="<?php echo escape_output($business['bName']); ?> photo">
         <button type="button" class="photo-lightbox-nav photo-lightbox-next review-photo-lightbox-nav review-photo-lightbox-next business-gallery-lightbox-nav" id="business-gallery-lightbox-next" aria-label="Next photo">&rsaquo;</button>
     </div>
+    </div>
+    <?php
+    $craftcrawl_portal_active = '';
+    $craftcrawl_user_nav_prefix = '/user/';
+    $craftcrawl_user_logout_action = '/logout.php';
+    include __DIR__ . '/user/app_nav.php';
+    ?>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
     window.CRAFTCRAWL_XP_REWARD_POPUP = <?php echo json_encode($xp_reward_popup, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
@@ -841,6 +822,13 @@ function format_event_time_range($event) {
 <script src="js/review_edit_toggle.js"></script>
 <script src="js/friends.js"></script>
 <script src="js/mobile_actions_menu.js"></script>
+<script src="js/palette_switcher.js"></script>
+<script src="js/app_icon_switcher.js"></script>
+<script src="js/profile_photo_crop.js"></script>
+<script src="js/badge_showcase.js"></script>
+<script src="js/feed_thread.js"></script>
+<script src="js/user_tab_shell.js"></script>
+<script src="js/user_shell_navigation.js"></script>
 <script src="js/depth_animations.js"></script>
 </body>
 </html>

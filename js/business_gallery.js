@@ -16,6 +16,7 @@ if (gallery) {
     let activeIndex = 0;
     let autoplayId = null;
     let lightboxTransitionId = 0;
+    let suppressSlideClick = false;
     const preloadedImages = new Map();
 
     function normalizedIndex(index, count = slides.length) {
@@ -63,7 +64,7 @@ if (gallery) {
 
         slides.forEach((slide, slideIndex) => {
             slide.classList.toggle('is-active', slideIndex === activeIndex);
-            slide.classList.toggle('is-before', slideIndex < activeIndex);
+            slide.style.transform = '';
         });
 
         dots.forEach((dot, dotIndex) => {
@@ -173,7 +174,13 @@ if (gallery) {
     }
 
     slideButtons.forEach((slideButton, index) => {
-        slideButton.addEventListener('click', () => {
+        slideButton.addEventListener('click', (event) => {
+            if (suppressSlideClick) {
+                event.preventDefault();
+                suppressSlideClick = false;
+                return;
+            }
+
             openLightbox(index);
         });
     });
@@ -193,6 +200,125 @@ if (gallery) {
             showLightboxPhoto(activeIndex + 1);
         });
     }
+
+    function addDragFollowCarousel(element) {
+        if (!element || slides.length < 2) {
+            return;
+        }
+
+        let startX = null;
+        let startY = null;
+        let isDragging = false;
+        let dragAxisLocked = false;
+
+        function positionSlides(offsetPx = 0, animate = true) {
+            element.classList.toggle('is-dragging', !animate);
+
+            slides.forEach((slide, slideIndex) => {
+                let relativeIndex = slideIndex - activeIndex;
+
+                if (relativeIndex > slides.length / 2) {
+                    relativeIndex -= slides.length;
+                } else if (relativeIndex < -slides.length / 2) {
+                    relativeIndex += slides.length;
+                }
+
+                slide.style.transform = `translateX(calc(${relativeIndex * 100}% + ${offsetPx}px))`;
+            });
+        }
+
+        function finishDrag(offsetPx, velocityDirection = 0) {
+            const width = element.clientWidth || 1;
+            const threshold = Math.min(width * 0.2, 90);
+            const shouldAdvance = Math.abs(offsetPx) > threshold || velocityDirection !== 0;
+            let nextIndex = activeIndex;
+
+            if (shouldAdvance && offsetPx < 0) {
+                nextIndex = activeIndex + 1;
+            } else if (shouldAdvance && offsetPx > 0) {
+                nextIndex = activeIndex - 1;
+            }
+
+            showSlide(nextIndex);
+            positionSlides(0, true);
+            startAutoplay();
+        }
+
+        element.addEventListener('touchstart', (event) => {
+            const touch = event.touches[0];
+            if (!touch) {
+                return;
+            }
+
+            stopAutoplay();
+            startX = touch.clientX;
+            startY = touch.clientY;
+            isDragging = false;
+            dragAxisLocked = false;
+            positionSlides(0, false);
+        }, { passive: true });
+
+        element.addEventListener('touchmove', (event) => {
+            const touch = event.touches[0];
+            if (!touch || startX === null || startY === null) {
+                return;
+            }
+
+            const deltaX = touch.clientX - startX;
+            const deltaY = touch.clientY - startY;
+
+            if (!dragAxisLocked) {
+                if (Math.abs(deltaX) < 8 && Math.abs(deltaY) < 8) {
+                    return;
+                }
+
+                dragAxisLocked = true;
+                isDragging = Math.abs(deltaX) > Math.abs(deltaY);
+            }
+
+            if (!isDragging) {
+                return;
+            }
+
+            event.preventDefault();
+            positionSlides(deltaX, false);
+        }, { passive: false });
+
+        element.addEventListener('touchend', (event) => {
+            const touch = event.changedTouches[0];
+            if (!touch || startX === null || startY === null) {
+                return;
+            }
+
+            const deltaX = touch.clientX - startX;
+            startX = null;
+            startY = null;
+
+            if (!isDragging) {
+                element.classList.remove('is-dragging');
+                startAutoplay();
+                return;
+            }
+
+            suppressSlideClick = Math.abs(deltaX) > 8;
+            finishDrag(deltaX);
+            isDragging = false;
+            dragAxisLocked = false;
+        }, { passive: true });
+
+        element.addEventListener('touchcancel', () => {
+            startX = null;
+            startY = null;
+            isDragging = false;
+            dragAxisLocked = false;
+            positionSlides(0, true);
+            startAutoplay();
+        }, { passive: true });
+
+        positionSlides(0, true);
+    }
+
+    addDragFollowCarousel(track);
 
     function addSwipeNavigation(element, onPrevious, onNext) {
         if (!element || slides.length < 2) {
@@ -240,12 +366,6 @@ if (gallery) {
             startY = null;
         }, { passive: true });
     }
-
-    addSwipeNavigation(
-        track,
-        () => manuallyShowSlide(activeIndex - 1),
-        () => manuallyShowSlide(activeIndex + 1)
-    );
 
     addSwipeNavigation(
         lightbox,

@@ -1,14 +1,16 @@
 (function () {
     const baseFiles = new Set(['portal.php', 'events.php', 'feed.php']);
-    const shellFiles = new Set([...baseFiles, 'friends.php', 'profile.php', 'settings.php', 'feed_post.php']);
+    const shellFiles = new Set([...baseFiles, 'friends.php', 'profile.php', 'settings.php', 'feed_post.php', 'business_details.php']);
     let navigating = false;
 
-    function absoluteUrl(value) { return new URL(value, window.location.href).href; }
+    function absoluteUrl(value, base = window.location.href) { return new URL(value, base).href; }
     function currentFile(url = window.location.href) { return new URL(url, window.location.href).pathname.split('/').pop() || 'portal.php'; }
     function isBaseUrl(url) { return baseFiles.has(currentFile(url)); }
     function isShellUrl(url) {
         const next = new URL(url, window.location.href);
-        return next.origin === window.location.origin && next.pathname.includes('/user/') && shellFiles.has(currentFile(next.href));
+        return next.origin === window.location.origin
+            && shellFiles.has(currentFile(next.href))
+            && (next.pathname.includes('/user/') || currentFile(next.href) === 'business_details.php');
     }
     function activeContent() { return document.querySelector('[data-user-page-content]:not([hidden])'); }
     function baseContent() { return document.querySelector('[data-user-page-content] [data-user-tab-shell]')?.closest('[data-user-page-content]') || null; }
@@ -33,8 +35,8 @@
         clone.remove();
     }
 
-    function loadExternalScript(script) {
-        const src = absoluteUrl(script.src);
+    function loadExternalScript(script, baseUrl) {
+        const src = absoluteUrl(script.getAttribute('src'), baseUrl);
         if ([...document.scripts].some((existing) => existing.src === src)) return Promise.resolve();
         return new Promise((resolve, reject) => {
             const clone = document.createElement('script');
@@ -45,9 +47,9 @@
         });
     }
 
-    async function hydrateAssets(doc) {
+    async function hydrateAssets(doc, baseUrl) {
         doc.querySelectorAll('link[rel="stylesheet"][href]').forEach((link) => {
-            const href = absoluteUrl(link.href);
+            const href = absoluteUrl(link.getAttribute('href'), baseUrl);
             if ([...document.querySelectorAll('link[rel="stylesheet"][href]')].some((existing) => existing.href === href)) return;
             const clone = document.createElement('link');
             clone.rel = 'stylesheet';
@@ -55,7 +57,7 @@
             document.head.appendChild(clone);
         });
         for (const script of doc.querySelectorAll('script')) {
-            if (script.src) await loadExternalScript(script);
+            if (script.src) await loadExternalScript(script, baseUrl);
             else if (script.textContent.trim()) copyInlineScript(script);
         }
     }
@@ -105,7 +107,7 @@
 
                 document.body.className = doc.body.className;
                 document.title = doc.title;
-                await hydrateAssets(doc);
+                await hydrateAssets(doc, url);
                 initSwappedContent(nextContent);
             }
 
