@@ -126,10 +126,13 @@
         const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
         if (!link || link.target || link.hasAttribute('download') || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         if (!isShellUrl(link.href)) return;
-        if (typeof window.CraftCrawlSwitchUserTab === 'function' && window.CraftCrawlSwitchUserTab(link.href)) return;
+
         event.preventDefault();
+        event.stopPropagation();
+
+        if (typeof window.CraftCrawlSwitchUserTab === 'function' && window.CraftCrawlSwitchUserTab(link.href)) return;
         navigate(link.href);
-    });
+    }, true);
     window.addEventListener('popstate', () => { if (isShellUrl(window.location.href)) navigate(window.location.href, { replace: true }); });
     window.CraftCrawlNavigateUserShell = navigate;
     setActiveTab(window.location.href);
