@@ -92,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     <script id="search-js" defer src="https://api.mapbox.com/search-js/v1.5.0/web.js"></script>
 </head>
 <body>
+    <div data-area-page-content>
     <main class="business-portal">
         <header class="business-portal-header">
             <div>
@@ -231,6 +232,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             </form>
         </section>
     </main>
+    </div>
     <?php include __DIR__ . '/mobile_nav.php'; ?>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
@@ -238,5 +240,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 <script src="../js/business_portal.js"></script>
 <script src="../js/business_hours_editor.js"></script>
 <script src="../js/mobile_actions_menu.js"></script>
+    <script src="../js/business_events.js"></script>
+    <script src="../js/business_analytics.js"></script>
+    <script src="../js/business_review_responses.js"></script>
+    <script src="../js/business_hours_editor.js"></script>
+    <script src="../js/business_posts.js"></script>
+    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
+    <script src="../js/area_shell_navigation.js"></script>
 </body>
 </html>

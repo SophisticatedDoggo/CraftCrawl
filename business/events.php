@@ -98,6 +98,7 @@ foreach ($events_by_date as $date => $events) {
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
+    <div data-area-page-content>
     <main class="business-portal">
         <header class="business-portal-header">
             <div>
@@ -177,9 +178,17 @@ foreach ($events_by_date as $date => $events) {
                 </div>
         </section>
     </main>
+    </div>
     <?php include __DIR__ . '/mobile_nav.php'; ?>
     <script src="../js/business_events.js"></script>
     <script src="../js/mobile_actions_menu.js"></script>
     <script src="../js/depth_animations.js"></script>
+    <script src="../js/business_events.js"></script>
+    <script src="../js/business_analytics.js"></script>
+    <script src="../js/business_review_responses.js"></script>
+    <script src="../js/business_hours_editor.js"></script>
+    <script src="../js/business_posts.js"></script>
+    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
+    <script src="../js/area_shell_navigation.js"></script>
 </body>
 </html>

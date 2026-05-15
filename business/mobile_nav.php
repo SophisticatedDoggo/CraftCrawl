@@ -7,7 +7,7 @@ $craftcrawl_business_nav_is_posts = $craftcrawl_business_nav_page === 'posts.php
 $craftcrawl_business_nav_is_events = in_array($craftcrawl_business_nav_page, ['events.php', 'event_edit.php'], true);
 $craftcrawl_business_nav_is_edit = $craftcrawl_business_nav_page === 'business_edit.php';
 ?>
-<nav class="mobile-app-tabbar business-mobile-tabbar" aria-label="Business navigation">
+<nav data-area-persistent-ui class="mobile-app-tabbar business-mobile-tabbar" aria-label="Business navigation">
     <a class="mobile-app-tab<?php echo $craftcrawl_business_nav_is_portal ? ' is-active' : ''; ?>" href="business_portal.php">
         <span class="mobile-app-tab-icon mobile-app-tab-icon-dashboard" aria-hidden="true"></span>
         <span>Portal</span>

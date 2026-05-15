@@ -6,7 +6,7 @@ $craftcrawl_admin_nav_is_accounts = in_array($craftcrawl_admin_nav_page, ['accou
 $craftcrawl_admin_nav_is_reviews = $craftcrawl_admin_nav_page === 'reviews.php';
 $craftcrawl_admin_nav_is_content = $craftcrawl_admin_nav_page === 'content.php';
 ?>
-<nav class="mobile-app-tabbar admin-mobile-tabbar" aria-label="Admin navigation">
+<nav data-area-persistent-ui class="mobile-app-tabbar admin-mobile-tabbar" aria-label="Admin navigation">
     <a class="mobile-app-tab<?php echo $craftcrawl_admin_nav_is_dashboard ? ' is-active' : ''; ?>" href="dashboard.php">
         <span class="mobile-app-tab-icon mobile-app-tab-icon-dashboard" aria-hidden="true"></span>
         <span>Home</span>

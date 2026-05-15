@@ -1,4 +1,4 @@
-(function () {
+window.CraftCrawlInitBusinessHoursEditor = function (root = document) {
     function setRowDisabledState(row) {
         const closedInput = row.querySelector('[data-hours-closed]');
         const openInput = row.querySelector('[data-hours-open]');
@@ -69,7 +69,9 @@
         });
     }
 
-    document.querySelectorAll('.business-hours-editor').forEach((editor) => {
+    root.querySelectorAll('.business-hours-editor').forEach((editor) => {
+        if (editor.dataset.shellReady === 'true') return;
+        editor.dataset.shellReady = 'true';
         editor.querySelectorAll('[data-hours-row]').forEach((row) => {
             setRowDisabledState(row);
             row.querySelector('[data-hours-closed]')?.addEventListener('change', () => {
@@ -87,4 +89,5 @@
             applyBulkHours(editor);
         });
     });
-}());
+};
+window.CraftCrawlInitBusinessHoursEditor();

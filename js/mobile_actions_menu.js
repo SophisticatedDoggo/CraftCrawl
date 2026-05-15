@@ -21,6 +21,10 @@ function setMobileActionsMenuOpen(isOpen) {
     });
 }
 
+window.CraftCrawlCloseMobileActionsMenu = function () {
+    setMobileActionsMenuOpen(false);
+};
+
 function toggleMobileActionsMenu() {
     const menu = document.querySelector('[data-mobile-actions-menu]');
     const isOpen = menu ? !menu.classList.contains('is-open') : true;

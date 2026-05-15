@@ -14,6 +14,7 @@
     function baseContent() { return document.querySelector('[data-user-page-content] [data-user-tab-shell]')?.closest('[data-user-page-content]') || null; }
 
     function setActiveTab(url) {
+        window.CraftCrawlCloseMobileActionsMenu?.();
         const file = currentFile(url);
         const active = file === 'portal.php' ? 'map' : file === 'events.php' ? 'events' : file === 'feed.php' ? 'feed' : '';
         document.querySelectorAll('.mobile-app-tabbar .mobile-app-tab').forEach((tab) => {

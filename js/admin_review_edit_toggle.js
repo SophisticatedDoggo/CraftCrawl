@@ -1,5 +1,7 @@
-(function () {
-    document.querySelectorAll('[data-admin-review-card]').forEach((card) => {
+window.CraftCrawlInitAdminReviewEditToggle = function (root = document) {
+    root.querySelectorAll('[data-admin-review-card]').forEach((card) => {
+        if (card.dataset.shellReady === 'true') return;
+        card.dataset.shellReady = 'true';
         const preview = card.querySelector('[data-admin-review-preview]');
         const form = card.querySelector('[data-admin-review-edit-form]');
         const toggle = card.querySelector('[data-admin-review-edit-toggle]');
@@ -28,4 +30,5 @@
         toggle.addEventListener('click', showForm);
         cancel?.addEventListener('click', hideForm);
     });
-}());
+};
+window.CraftCrawlInitAdminReviewEditToggle();

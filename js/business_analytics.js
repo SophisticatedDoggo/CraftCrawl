@@ -1,9 +1,8 @@
-(function () {
-    const widget = document.querySelector('[data-analytics-widget]');
+window.CraftCrawlInitBusinessAnalytics = function (root = document) {
+    const widget = root.querySelector('[data-analytics-widget]');
 
-    if (!widget) {
-        return;
-    }
+    if (!widget || widget.dataset.shellReady === 'true') { return; }
+    widget.dataset.shellReady = 'true';
 
     const endpoint = widget.dataset.analyticsEndpoint || 'analytics_data.php';
     const modeButtons = Array.from(widget.querySelectorAll('[data-analytics-mode]'));
@@ -13,7 +12,7 @@
     const totalLabel = widget.querySelector('[data-analytics-total-label]');
     const chart = widget.querySelector('[data-analytics-chart]');
     const summaryCards = widget.querySelector('[data-analytics-summary-cards]');
-    const visitors = document.querySelector('[data-analytics-top-visitors]');
+    const visitors = root.querySelector('[data-analytics-top-visitors]');
     let mode = widget.dataset.analyticsMode || 'month';
     let offset = 0;
 
@@ -197,4 +196,5 @@
     });
 
     loadAnalytics();
-})();
+};
+window.CraftCrawlInitBusinessAnalytics();

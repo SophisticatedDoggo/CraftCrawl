@@ -18,6 +18,7 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
 
     function syncTab(tab, options = {}) {
         if (!document.contains(shell) || !routeByTab[tab]) return;
+        window.CraftCrawlCloseMobileActionsMenu?.();
         shell.dataset.activeUserTab = tab;
         shell.querySelectorAll('[data-user-tab-panel]').forEach((panel) => {
             panel.hidden = panel.dataset.userTabPanel !== tab;

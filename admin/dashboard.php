@@ -169,6 +169,7 @@ $businesses = $business_stmt->get_result();
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
+    <div data-area-page-content>
     <main class="business-portal admin-page">
         <header class="business-portal-header">
             <div>
@@ -309,8 +310,12 @@ $businesses = $business_stmt->get_result();
             <?php endwhile; ?>
         </section>
     </main>
+    </div>
     <?php include __DIR__ . '/mobile_nav.php'; ?>
     <script src="../js/mobile_actions_menu.js"></script>
     <script src="../js/depth_animations.js"></script>
+    <script src="../js/admin_review_edit_toggle.js"></script>
+    <script>window.CraftCrawlAreaShellConfig = { area: 'admin', home: 'dashboard.php', routes: ['dashboard.php','accounts.php','reviews.php','content.php','account_details.php','business_edit.php'], active: { 'dashboard.php':'dashboard', 'business_edit.php':'dashboard', 'accounts.php':'accounts', 'account_details.php':'accounts', 'reviews.php':'reviews', 'content.php':'content' } };</script>
+    <script src="../js/area_shell_navigation.js"></script>
 </body>
 </html>
