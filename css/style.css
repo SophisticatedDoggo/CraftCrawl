@@ -2334,6 +2334,36 @@ a.text-link:focus {
     font-size: 14px;
 }
 
+.friend-search-result.is-invite-sent {
+    border-color: color-mix(in srgb, var(--color-success-text) 42%, var(--color-border));
+    background: color-mix(in srgb, var(--color-success-bg) 42%, var(--color-surface-muted));
+}
+
+.friend-search-summary {
+    min-width: 0;
+}
+
+.friend-search-result .friend-search-status {
+    display: inline-flex;
+    width: fit-content;
+    margin-top: 7px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.friend-search-status.is-sent,
+.friend-search-status.is-friend {
+    color: var(--color-success-text);
+    background: var(--color-success-bg);
+}
+
+.friend-search-status.is-received {
+    color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+}
+
 .feed-item-content {
     min-width: 0;
 }

@@ -1,6 +1,7 @@
 <?php
 require '../login_check.php';
 include '../db.php';
+require_once '../lib/leveling.php';
 require_once '../lib/user_avatar.php';
 
 header('Content-Type: application/json');
@@ -26,6 +27,8 @@ $stmt = $conn->prepare("
         u.fName,
         u.lName,
         u.email,
+        u.level,
+        u.selected_title_index,
         u.selected_profile_frame, u.selected_profile_frame_style,
         u.profile_photo_url,
         p.object_key AS profile_photo_object_key,
@@ -52,10 +55,17 @@ $result = $stmt->get_result();
 $users = [];
 
 while ($user = $result->fetch_assoc()) {
+    $level = max(1, (int) ($user['level'] ?? 1));
+    $selected_title_index = $user['selected_title_index'] !== null
+        ? (int) $user['selected_title_index']
+        : null;
+
     $users[] = [
         'id' => (int) $user['id'],
         'name' => trim($user['fName'] . ' ' . $user['lName']),
         'email' => $user['email'],
+        'level' => $level,
+        'title' => craftcrawl_user_effective_title($level, $selected_title_index),
         'actor' => [
             'name' => trim($user['fName'] . ' ' . $user['lName']),
             'initials' => craftcrawl_user_initials($user),

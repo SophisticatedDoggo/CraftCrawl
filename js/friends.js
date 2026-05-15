@@ -23,6 +23,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
         badgeCount: 0
     };
     let currentFriendsCache = [];
+    let friendSearchTimer = null;
+    let friendSearchRequestId = 0;
     let lastItemDate = null;
     let hasMore = false;
     let loadingMore = false;
@@ -214,24 +216,32 @@ window.CraftCrawlInitFriends = function (scope = document) {
             let buttonText = 'Invite';
             let disabled = '';
             let action = 'invite';
+            let statusMarkup = '';
+            let rowClass = '';
 
             if (user.is_friend) {
                 buttonText = 'Added';
                 disabled = 'disabled';
+                statusMarkup = '<span class="friend-search-status is-friend">Already friends</span>';
             } else if (user.pending_sent) {
                 buttonText = 'Invite Sent';
                 disabled = 'disabled';
+                rowClass = ' is-invite-sent';
+                statusMarkup = '<span class="friend-search-status is-sent">✓ Invitation sent</span>';
             } else if (user.pending_received) {
                 buttonText = 'Accept Invite';
                 action = 'accept';
+                statusMarkup = '<span class="friend-search-status is-received">Invited you</span>';
             }
 
             return `
-                <article class="friend-search-result">
+                <article class="friend-search-result${rowClass}">
                     ${renderAvatar(user.actor, user.name)}
-                    <div>
+                    <div class="friend-search-summary">
                         <strong>${escapeHtml(user.name)}</strong>
-                        <span>${escapeHtml(user.email)}</span>
+                        <span class="friend-search-meta">Level ${escapeHtml(user.level || 1)}${user.title ? ` &middot; ${escapeHtml(user.title)}` : ''}</span>
+                        <span class="friend-search-email">${escapeHtml(user.email)}</span>
+                        ${statusMarkup}
                     </div>
                     <button type="button" data-friend-id="${user.id}" data-request-id="${user.received_request_id || ''}" data-friend-action="${action}" ${disabled}>
                         ${buttonText}
@@ -275,6 +285,21 @@ window.CraftCrawlInitFriends = function (scope = document) {
                         }
                         button.classList.remove('is-loading');
                         button.textContent = data.status === 'pending' ? 'Invite Sent' : 'Added';
+                        const row = button.closest('.friend-search-result');
+                        const summary = row?.querySelector('.friend-search-summary');
+
+                        if (row && summary) {
+                            row.classList.toggle('is-invite-sent', data.status === 'pending');
+                            summary.querySelector('.friend-search-status')?.remove();
+                            const confirmation = document.createElement('span');
+                            confirmation.className = data.status === 'pending'
+                                ? 'friend-search-status is-sent'
+                                : 'friend-search-status is-friend';
+                            confirmation.textContent = data.status === 'pending'
+                                ? '✓ Invitation sent'
+                                : 'Now friends';
+                            summary.appendChild(confirmation);
+                        }
                         refreshFriendsData();
                     })
                     .catch(() => {
@@ -873,27 +898,27 @@ window.CraftCrawlInitFriends = function (scope = document) {
             });
     }
 
-    if (form && input) {
-        form.addEventListener('submit', (event) => {
-            event.preventDefault();
-            hideStatus();
+    function runFriendSearch(query, { showShortQueryMessage = false } = {}) {
+        const requestId = ++friendSearchRequestId;
 
-            const query = input.value.trim();
-            const searchButton = form.querySelector('button[type="submit"]');
-
-            if (query.length < 2) {
+        if (query.length < 2) {
+            if (results) {
+                results.innerHTML = '';
+                results.hidden = true;
+            }
+            if (showShortQueryMessage) {
                 showStatus('Search by at least two characters.', true);
-                return;
             }
+            return Promise.resolve();
+        }
 
-            if (searchButton) {
-                searchButton.disabled = true;
-                searchButton.classList.add('is-loading');
-            }
-
-            fetch(`${userEndpoint('friend_search.php')}?q=${encodeURIComponent(query)}`, { credentials: 'same-origin' })
+        return fetch(`${userEndpoint('friend_search.php')}?q=${encodeURIComponent(query)}`, { credentials: 'same-origin' })
                 .then((response) => response.json())
                 .then((data) => {
+                    if (requestId !== friendSearchRequestId) {
+                        return;
+                    }
+
                     if (!data.ok) {
                         showStatus(data.message || 'Search failed.', true);
                         return;
@@ -902,14 +927,28 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     renderSearchResults(data.users || []);
                 })
                 .catch(() => {
-                    showStatus('Search failed. Please try again.', true);
-                })
-                .finally(() => {
-                    if (searchButton) {
-                        searchButton.disabled = false;
-                        searchButton.classList.remove('is-loading');
+                    if (requestId === friendSearchRequestId) {
+                        showStatus('Search failed. Please try again.', true);
                     }
                 });
+    }
+
+    if (form && input) {
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            hideStatus();
+            window.clearTimeout(friendSearchTimer);
+            runFriendSearch(input.value.trim(), { showShortQueryMessage: true });
+        });
+
+        input.addEventListener('input', () => {
+            hideStatus();
+            window.clearTimeout(friendSearchTimer);
+
+            const query = input.value.trim();
+            friendSearchTimer = window.setTimeout(() => {
+                runFriendSearch(query);
+            }, 250);
         });
     }
 
