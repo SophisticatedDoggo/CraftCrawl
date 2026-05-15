@@ -310,6 +310,8 @@
 					"AppIcon-EmberDark",
 				);
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				APS_ENVIRONMENT = development;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CRAFTCRAWL_APP_ICON_NAME = AppIcon;
 				CURRENT_PROJECT_VERSION = 1;
@@ -340,6 +342,8 @@
 					"AppIcon-EmberDark",
 				);
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				APS_ENVIRONMENT = production;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CRAFTCRAWL_APP_ICON_NAME = AppIcon;
 				CURRENT_PROJECT_VERSION = 1;

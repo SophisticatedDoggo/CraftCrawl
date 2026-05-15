@@ -7,6 +7,10 @@
         return isUserPath ? file : `user/${file}`;
     }
 
+    function getNativeOneSignalPlugin() {
+        return window.Capacitor?.Plugins?.OneSignalCapacitor || null;
+    }
+
     function setStatus(message, isError) {
         if (!statusMessage) {
             return;
@@ -33,6 +37,19 @@
             script.onerror = () => reject(new Error('OneSignal SDK could not be loaded.'));
             document.head.appendChild(script);
         });
+    }
+
+    async function initNativeOneSignal(config) {
+        const OneSignal = getNativeOneSignalPlugin();
+
+        if (!OneSignal) {
+            return null;
+        }
+
+        await OneSignal.initialize({ appId: config.app_id });
+        await OneSignal.login({ externalId: config.external_id });
+
+        return OneSignal;
     }
 
     async function initOneSignal(config) {
@@ -73,6 +90,16 @@
         return false;
     }
 
+    async function requestNativePermission(OneSignal) {
+        const response = await OneSignal.requestPermission({ fallbackToSettings: true });
+
+        if (typeof response === 'boolean') {
+            return response;
+        }
+
+        return Boolean(response?.permission || response?.accepted);
+    }
+
     fetch(userEndpoint('onesignal_config.php'), { credentials: 'same-origin' })
         .then((response) => response.ok ? response.json() : null)
         .then((config) => {
@@ -84,7 +111,9 @@
                 return null;
             }
 
-            return initOneSignal(config);
+            return getNativeOneSignalPlugin()
+                ? initNativeOneSignal(config)
+                : initOneSignal(config);
         })
         .then((OneSignal) => {
             if (!OneSignal || !enableButton) {
@@ -98,10 +127,12 @@
                 setStatus('Opening notification permission prompt...', false);
 
                 try {
-                    const accepted = await requestPermission(OneSignal);
-                    setStatus(accepted ? 'Push notifications are enabled for this browser.' : 'Notifications were not enabled.', !accepted);
+                    const accepted = getNativeOneSignalPlugin()
+                        ? await requestNativePermission(OneSignal)
+                        : await requestPermission(OneSignal);
+                    setStatus(accepted ? 'Push notifications are enabled for this device.' : 'Notifications were not enabled.', !accepted);
                 } catch (error) {
-                    setStatus('Notifications could not be enabled in this browser.', true);
+                    setStatus('Notifications could not be enabled on this device.', true);
                 } finally {
                     enableButton.disabled = false;
                     enableButton.classList.remove('is-loading');

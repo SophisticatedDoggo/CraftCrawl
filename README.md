@@ -80,16 +80,22 @@ these environment variables on the host:
 
 ## OneSignal push notifications
 
-CraftCrawl can register logged-in user browsers with OneSignal Web Push and send
-targeted social notifications for friend invites, accepted invites, comments,
-replies, and reactions. Configure these environment variables on the host:
+CraftCrawl can register logged-in user browsers and native iOS/Android app
+installs with OneSignal, then send targeted social notifications for friend
+invites, accepted invites, comments, replies, and reactions. Configure these
+environment variables on the host:
 
 - `ONESIGNAL_APP_ID`
 - `ONESIGNAL_API_KEY`
+- `CRAFTCRAWL_APP_URL`
 
 The OneSignal web app must be configured for the same origin as the site, such
 as `https://staging.craftcrawl.site`, and `OneSignalSDKWorker.js` must remain
 publicly accessible from the site root.
+
+Native push requires the OneSignal Capacitor plugin to be synced into the iOS
+and Android projects. iOS uses the `com.craftcrawl.app` bundle ID with APNs, and
+Android uses the `com.craftcrawl.app` package with Firebase Cloud Messaging.
 
 Run the email verification migration for existing databases:
 
