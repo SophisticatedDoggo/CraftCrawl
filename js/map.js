@@ -7,6 +7,7 @@ let loadedBusinessCount = 0;
 let renderedMapItemCount = 0;
 let userLocationPollId = null;
 let isUserLocationRequestInFlight = false;
+let hasBoundUserLocationLifecycleEvents = false;
 const mapRadiusModeMinZoom = 8;
 const mapRadiusMeters = 50 * 1609.344;
 const userLocationRefreshMs = 10000;
@@ -38,6 +39,11 @@ const map = new mapboxgl.Map({
     center: [-79.3432615, 40.208976], // starting position [lng, lat]
     zoom: 6.5, // starting zoom
 });
+
+// Start locating the user immediately so native iOS does not wait for Mapbox
+// style loading before beginning the first location lookup.
+requestUserLocation();
+setupUserLocationLifecycleRefresh();
 
 map.on('load', function () {
     updateMapZoomDebug();
@@ -310,7 +316,7 @@ map.on('load', function () {
 
     //get our data from php function
     getAllLocations();
-    requestUserLocation();
+    updateUserLocationMarker();
     startUserLocationRefresh();
     setupUserLocationControl();
 
@@ -387,6 +393,7 @@ function getAllLocations(){
 function requestUserLocation(options = {}) {
     const locationProvider = window.CraftCrawlLocation || null;
     const shouldShowErrors = options.showErrors !== false;
+    const shouldUpdateDependentViews = options.updateDependentViews !== false;
     const locationOptions = {
         enableHighAccuracy: true,
         timeout: options.timeout || 12000,
@@ -415,7 +422,9 @@ function requestUserLocation(options = {}) {
 
     if (!didStartLocationRequest) {
         isUserLocationRequestInFlight = false;
-        updateLocationAwareBusinessList();
+        if (shouldUpdateDependentViews) {
+            updateLocationAwareBusinessList();
+        }
     }
 
     function handlePosition(position) {
@@ -430,7 +439,10 @@ function requestUserLocation(options = {}) {
             centerMapOnUserLocation();
             hasCenteredOnUserLocation = true;
         }
-        applyLocationAwareListAndMap(options);
+
+        if (shouldUpdateDependentViews) {
+            applyLocationAwareListAndMap(options);
+        }
     }
 
     function handleLocationError(error) {
@@ -439,7 +451,9 @@ function requestUserLocation(options = {}) {
             showLocationStatus('Location access is off. Enable location access for CraftCrawl to center the map near you.', true);
         }
 
-        updateLocationAwareBusinessList();
+        if (shouldUpdateDependentViews) {
+            updateLocationAwareBusinessList();
+        }
     }
 }
 
@@ -457,9 +471,40 @@ function startUserLocationRefresh() {
             allowInitialCenter: false,
             allowSortSwitch: false,
             maximumAge: 5000,
-            showErrors: false
+            showErrors: false,
+            updateDependentViews: false
         });
     }, userLocationRefreshMs);
+}
+
+function setupUserLocationLifecycleRefresh() {
+    if (hasBoundUserLocationLifecycleEvents) {
+        return;
+    }
+
+    hasBoundUserLocationLifecycleEvents = true;
+
+    const refreshVisibleUserLocation = () => {
+        if (document.hidden) {
+            return;
+        }
+
+        requestUserLocation({
+            allowInitialCenter: false,
+            allowSortSwitch: false,
+            maximumAge: 15000,
+            showErrors: false,
+            updateDependentViews: !userLocation
+        });
+    };
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            refreshVisibleUserLocation();
+        }
+    });
+
+    window.addEventListener('pageshow', refreshVisibleUserLocation);
 }
 
 function setupUserLocationControl() {
