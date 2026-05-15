@@ -335,6 +335,12 @@ map.on('load', function () {
 
 setupPortalTabs();
 
+window.addEventListener('craftcrawl:user-tab-changed', (event) => {
+    if (event.detail?.tab === 'map') {
+        window.setTimeout(() => map.resize(), 0);
+    }
+});
+
 function formatBusinessType(type) {
     const labels = {
         brewery: 'Brewery',

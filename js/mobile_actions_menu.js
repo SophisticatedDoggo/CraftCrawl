@@ -80,6 +80,11 @@ function setupMomentumSafeMobileTabs() {
         }
 
         if (tab instanceof HTMLAnchorElement) {
+            if (typeof window.CraftCrawlSwitchUserTab === 'function'
+                && window.CraftCrawlSwitchUserTab(tab.href)) {
+                return;
+            }
+
             if (typeof window.CraftCrawlNavigateWithLoader === 'function') {
                 window.CraftCrawlNavigateWithLoader(tab.href);
             } else {

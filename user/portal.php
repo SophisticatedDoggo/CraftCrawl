@@ -8,6 +8,7 @@ $user_id = (int) ($_SESSION['user_id'] ?? 0);
 $user_progress = craftcrawl_user_level_progress($conn, $user_id);
 $craftcrawl_portal_active = 'map';
 $craftcrawl_portal_show_search = true;
+$craftcrawl_portal_shell = true;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -24,41 +25,7 @@ $craftcrawl_portal_show_search = true;
 </head>
 <body class="portal-body">
     <?php include __DIR__ . '/portal_header.php'; ?>
-    <main class="portal-main">
-        <section id="checkin-panel" class="dashboard-checkin-panel" data-dashboard-checkin data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
-            <div>
-                <h2>Check In Nearby</h2>
-                <p>Use your current location to find nearby CraftCrawl locations where you can earn visit XP.</p>
-            </div>
-            <button type="button" data-find-checkins>Find Nearby Check-ins</button>
-            <p class="form-message" data-checkin-status hidden></p>
-            <div class="dashboard-checkin-list" data-checkin-list hidden></div>
-        </section>
-
-        <section id="map-panel" class="portal-panel">
-            <div class="map-shell">
-                <div id="map"></div>
-                <div id="map-zoom-debug" class="map-zoom-debug" aria-live="polite">Zoom --</div>
-                <button type="button" id="map-center-user" class="map-location-control" aria-label="Center map on your location" title="Center map on your location">
-                    <span aria-hidden="true"></span>
-                </button>
-            </div>
-            <div class="business-list-toolbar">
-                <label for="business-list-sort">Sort list</label>
-                <select id="business-list-sort">
-                    <option value="map">Map area</option>
-                    <option value="nearby">Near me</option>
-                    <option value="name">Name</option>
-                    <option value="brewery">Breweries first</option>
-                    <option value="winery">Wineries first</option>
-                    <option value="cidery">Cideries first</option>
-                    <option value="distillery">Distilleries first</option>
-                    <option value="meadery">Meaderies first</option>
-                </select>
-            </div>
-            <ol id="business-list" class="business-list"></ol>
-        </section>
-    </main>
+    <?php include __DIR__ . '/tab_panels.php'; ?>
     <?php include __DIR__ . '/mobile_nav.php'; ?>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
@@ -72,6 +39,7 @@ $craftcrawl_portal_show_search = true;
 <script src="../js/dashboard_check_in.js"></script>
 <script src="../js/friends.js"></script>
 <script src="../js/mobile_actions_menu.js"></script>
+<script src="../js/user_tab_shell.js"></script>
 <script src="../js/depth_animations.js"></script>
 <script src="../js/onesignal_push.js"></script>
 </body>

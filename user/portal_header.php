@@ -3,7 +3,8 @@ require_once __DIR__ . '/../lib/user_avatar.php';
 
 $craftcrawl_portal_active = $craftcrawl_portal_active ?? 'map';
 $craftcrawl_portal_show_search = $craftcrawl_portal_show_search ?? false;
-$craftcrawl_portal_show_level_summary = !in_array($craftcrawl_portal_active, ['events', 'feed'], true);
+$craftcrawl_portal_shell = $craftcrawl_portal_shell ?? false;
+$craftcrawl_portal_show_level_summary = $craftcrawl_portal_shell || !in_array($craftcrawl_portal_active, ['events', 'feed'], true);
 $craftcrawl_portal_avatar = null;
 
 if ($craftcrawl_portal_show_level_summary && isset($conn, $user_id)) {
@@ -25,7 +26,7 @@ if ($craftcrawl_portal_show_level_summary && isset($conn, $user_id)) {
         <h1>Craft Crawl</h1>
     </div>
     <?php if ($craftcrawl_portal_show_search) : ?>
-        <form class="business-search" role="search">
+        <form class="business-search" role="search" data-user-tab-map-only <?php echo $craftcrawl_portal_active !== 'map' ? 'hidden' : ''; ?>>
             <label for="business-search-input">Search businesses</label>
             <input type="search" id="business-search-input" placeholder="Search by name, type, or town" autocomplete="off">
             <div id="business-search-results" class="business-search-results" hidden></div>
@@ -53,7 +54,7 @@ if ($craftcrawl_portal_show_level_summary && isset($conn, $user_id)) {
         </div>
     </div>
     <?php if ($craftcrawl_portal_show_level_summary) : ?>
-    <section class="portal-level-summary" aria-label="Your CraftCrawl level">
+    <section class="portal-level-summary" aria-label="Your CraftCrawl level" data-user-tab-map-only <?php echo $craftcrawl_portal_active !== 'map' ? 'hidden' : ''; ?>>
         <?php if ($craftcrawl_portal_avatar) : ?>
             <?php echo craftcrawl_render_user_avatar($craftcrawl_portal_avatar, 'medium', 'portal-level-avatar'); ?>
         <?php endif; ?>
