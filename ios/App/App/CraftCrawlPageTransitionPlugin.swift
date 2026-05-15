@@ -1,5 +1,4 @@
 import UIKit
-import WebKit
 import Capacitor
 
 @objc(CraftCrawlPageTransitionPlugin)
@@ -29,15 +28,14 @@ public class CraftCrawlPageTransitionPlugin: CAPPlugin, CAPBridgedPlugin {
                 return
             }
 
-            self.buildOverlay(in: hostView, backgroundColor: backgroundColor) { overlay in
-                if overlay.superview == nil {
-                    hostView.addSubview(overlay)
-                }
-
-                hostView.bringSubviewToFront(overlay)
-                self.overlayView = overlay
-                call.resolve()
+            let overlay = self.makeColorOverlay(in: hostView, backgroundColor: backgroundColor)
+            if overlay.superview == nil {
+                hostView.addSubview(overlay)
             }
+
+            hostView.bringSubviewToFront(overlay)
+            self.overlayView = overlay
+            call.resolve()
         }
     }
 
@@ -55,32 +53,6 @@ public class CraftCrawlPageTransitionPlugin: CAPPlugin, CAPBridgedPlugin {
                 overlay.alpha = 1
                 call.resolve()
             })
-        }
-    }
-
-    private func buildOverlay(in hostView: UIView, backgroundColor: UIColor, completion: @escaping (UIView) -> Void) {
-        guard let webView = bridge?.webView else {
-            completion(makeColorOverlay(in: hostView, backgroundColor: backgroundColor))
-            return
-        }
-
-        let configuration = WKSnapshotConfiguration()
-        configuration.rect = webView.bounds
-
-        webView.takeSnapshot(with: configuration) { image, _ in
-            guard let image = image else {
-                completion(self.makeColorOverlay(in: hostView, backgroundColor: backgroundColor))
-                return
-            }
-
-            let imageView = UIImageView(frame: hostView.bounds)
-            imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            imageView.backgroundColor = backgroundColor
-            imageView.contentMode = .scaleToFill
-            imageView.image = image
-            imageView.isUserInteractionEnabled = true
-            imageView.alpha = 1
-            completion(imageView)
         }
     }
 

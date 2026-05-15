@@ -330,9 +330,8 @@ function startCraftCrawlPageTransition(destination) {
 
     craftCrawlPageTransitionStarted = true;
     showCraftCrawlPageLoader(180);
-    showCraftCrawlNativePageTransition().finally(() => {
-        window.location.assign(destinationUrl.href);
-    });
+    showCraftCrawlNativePageTransition();
+    window.location.assign(destinationUrl.href);
 }
 
 function continueCraftCrawlLinkNavigation(link) {
