@@ -21,7 +21,9 @@ window.CraftCrawlInitAppIconSwitcher = function (root = document) {
         button.classList.toggle('is-active', active);
         button.setAttribute('aria-pressed', String(active));
     });
-    const setDisabled = (disabled) => buttons.forEach((button) => { button.disabled = disabled; });
+    const setDisabled = (disabled) => buttons.forEach((button) => {
+        button.disabled = disabled || button.dataset.appIconLocked === 'true';
+    });
     appIcon.getCurrentIcon().then((data) => { settings.hidden = false; setActive(data.name || 'trail'); }).catch(() => {});
     buttons.forEach((button) => button.addEventListener('click', () => {
         const iconName = button.dataset.appIconOption || 'trail';

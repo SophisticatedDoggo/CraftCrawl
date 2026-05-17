@@ -178,6 +178,7 @@ if (!$profile) {
     $title_rewards = array_values(array_filter($level_rewards, fn($reward) => ($reward['type'] ?? '') === 'Title'));
     $frame_rewards = $is_own_profile ? craftcrawl_user_profile_frame_reward_catalog($conn, $profile_id, $profile_level) : [];
     $showcase_rewards = array_values(array_filter($level_rewards, fn($reward) => ($reward['type'] ?? '') === 'Showcase'));
+    $appearance_rewards = array_values(array_filter($level_rewards, fn($reward) => in_array(($reward['type'] ?? ''), ['Display Theme', 'App Icon'], true)));
     $badge_progress_rows = $is_own_profile ? craftcrawl_user_badge_progress($conn, $profile_id) : [];
 
     $showcase_stmt = $conn->prepare("
@@ -556,6 +557,31 @@ if (!$profile) {
                                         <p><?php echo escape_output($reward['description']); ?></p>
                                         <small>
                                             Level <?php echo escape_output($reward['level']); ?> ·
+                                            <?php echo $reward['unlocked'] ? 'Unlocked' : escape_output($reward['levels_remaining']) . ' level' . ((int) $reward['levels_remaining'] === 1 ? '' : 's') . ' to go'; ?>
+                                        </small>
+                                    </div>
+                                </article>
+                            <?php endforeach; ?>
+                        </div>
+                    </details>
+
+                    <details class="reward-disclosure">
+                        <summary>
+                            <span>Display Themes &amp; App Icons</span>
+                            <small><?php echo escape_output(count(array_filter($appearance_rewards, fn($reward) => $reward['unlocked']))); ?> / <?php echo escape_output(count($appearance_rewards)); ?> unlocked</small>
+                        </summary>
+                        <p class="reward-disclosure-help">Change unlocked display themes and app icons from Settings.</p>
+                        <div class="reward-list">
+                            <?php foreach ($appearance_rewards as $reward) : ?>
+                                <article class="reward-goal-card<?php echo $reward['unlocked'] ? ' is-unlocked' : ' is-locked'; ?>">
+                                    <div>
+                                        <div class="reward-goal-title-row">
+                                            <strong><?php echo escape_output($reward['name']); ?></strong>
+                                            <span><?php echo $reward['unlocked'] ? 'Unlocked' : 'Locked'; ?></span>
+                                        </div>
+                                        <p><?php echo escape_output($reward['description']); ?></p>
+                                        <small>
+                                            Level <?php echo escape_output($reward['level']); ?> · <?php echo escape_output($reward['type']); ?> ·
                                             <?php echo $reward['unlocked'] ? 'Unlocked' : escape_output($reward['levels_remaining']) . ' level' . ((int) $reward['levels_remaining'] === 1 ? '' : 's') . ' to go'; ?>
                                         </small>
                                     </div>

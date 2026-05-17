@@ -1429,9 +1429,15 @@ function craftcrawl_unlocked_profile_frame_styles_for_user($conn, $user_id, $lev
 function craftcrawl_level_reward_catalog($current_level) {
     $current_level = max(1, min(CRAFTCRAWL_MAX_LEVEL, (int) $current_level));
     $rewards = [
+        ['level' => 2, 'name' => 'Trail Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'trail-dark'],
         ['level' => 8, 'name' => '1st Badge Showcase Slot', 'description' => 'Feature 1 earned badge on your profile.', 'type' => 'Showcase'],
+        ['level' => 14, 'name' => 'Ember Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'ember'],
         ['level' => 16, 'name' => '2nd Badge Showcase Slot', 'description' => 'Feature 2 earned badges on your profile.', 'type' => 'Showcase'],
+        ['level' => 22, 'name' => 'Ember App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'ember'],
         ['level' => 24, 'name' => '3rd Badge Showcase Slot', 'description' => 'Feature 3 earned badges on your profile.', 'type' => 'Showcase'],
+        ['level' => 38, 'name' => 'Ember Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'ember-dark'],
+        ['level' => 48, 'name' => 'Trail Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'trail-dark'],
+        ['level' => 63, 'name' => 'Ember Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'ember-dark'],
     ];
 
     $titles = [
@@ -1461,6 +1467,40 @@ function craftcrawl_level_reward_catalog($current_level) {
     return $rewards;
 }
 
+function craftcrawl_display_theme_reward_catalog($current_level) {
+    return array_values(array_filter(
+        craftcrawl_level_reward_catalog($current_level),
+        fn($reward) => ($reward['type'] ?? '') === 'Display Theme'
+    ));
+}
+
+function craftcrawl_app_icon_reward_catalog($current_level) {
+    return array_values(array_filter(
+        craftcrawl_level_reward_catalog($current_level),
+        fn($reward) => ($reward['type'] ?? '') === 'App Icon'
+    ));
+}
+
+function craftcrawl_unlocked_display_palettes($level) {
+    $palettes = ['trail-map'];
+    foreach (craftcrawl_display_theme_reward_catalog($level) as $reward) {
+        if (!empty($reward['unlocked']) && !empty($reward['reward_key'])) {
+            $palettes[] = $reward['reward_key'];
+        }
+    }
+    return array_values(array_unique($palettes));
+}
+
+function craftcrawl_unlocked_app_icons($level) {
+    $icons = ['trail'];
+    foreach (craftcrawl_app_icon_reward_catalog($level) as $reward) {
+        if (!empty($reward['unlocked']) && !empty($reward['reward_key'])) {
+            $icons[] = $reward['reward_key'];
+        }
+    }
+    return array_values(array_unique($icons));
+}
+
 function craftcrawl_unlocked_title_count($level) {
     $level = max(1, min(CRAFTCRAWL_MAX_LEVEL, (int) $level));
     return min(20, (int) floor(($level - 1) / 5) + 1);
@@ -1488,24 +1528,30 @@ function craftcrawl_user_effective_title($level, $selected_title_index) {
 function craftcrawl_next_reward_preview($level) {
     $level = max(1, min(CRAFTCRAWL_MAX_LEVEL, (int) $level));
     $milestones = [
+        2   => 'Trail Dark Display Theme',
         5   => 'Bronze Pour Frame Color',
         6   => 'First Sipper Title',
         8   => '1st badge showcase slot',
         10  => 'Copper Kettle Frame Color',
         12  => 'Square Frame Shape',
+        14  => 'Ember Display Theme',
         15  => 'Slate Cellar Frame Color',
         16  => '2nd badge showcase slot',
         18  => 'Double Ring Frame Shape',
         20  => 'Silver Tap Frame Color',
+        22  => 'Ember App Icon',
         24  => '3rd badge showcase slot',
         25  => 'Taproom Regular Title',
         30  => 'Emerald Trail Frame Color',
         32  => 'Trail Marks Frame Shape',
+        38  => 'Ember Dark Display Theme',
         40  => 'Sapphire Stream Frame Color',
         45  => 'Diamond Frame Shape',
+        48  => 'Trail Dark App Icon',
         50  => 'Amethyst Flight Frame Color',
         58  => 'Hex Frame Shape',
         60  => 'Gold Barrel Frame Color',
+        63  => 'Ember Dark App Icon',
         70  => 'Rose Cellar Frame Color',
         72  => 'Inset Pour Frame Shape',
         85  => 'Obsidian Night Frame Color',
