@@ -23,6 +23,7 @@ craftcrawl_verify_csrf();
 $user_id = (int) $_SESSION['user_id'];
 $item_key = trim($_POST['item_key'] ?? '');
 $reaction_type = $_POST['reaction_type'] ?? '';
+$reaction_stage = 'validate_request';
 
 $reaction_options_by_type = [
     'first_visit'   => ['cheers', 'nice_find'],
@@ -39,11 +40,12 @@ if (preg_match('/^(first_visit|level_up|event_want|location_want|badge_earned|bu
 }
 $item_reaction_options = $reaction_options_by_type[$item_type] ?? [];
 
-if ($item_key === '' || !in_array($reaction_type, $item_reaction_options, true)) {
-    http_response_code(400);
-    echo json_encode(['ok' => false, 'message' => 'Reaction could not be saved.']);
-    exit();
-}
+try {
+    if ($item_key === '' || !in_array($reaction_type, $item_reaction_options, true)) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'message' => 'Reaction could not be saved.']);
+        exit();
+    }
 
 function craftcrawl_feed_item_is_visible($conn, $user_id, $item_key) {
     if (preg_match('/^first_visit:(\d+)$/', $item_key, $matches)) {
@@ -175,19 +177,21 @@ function craftcrawl_feed_item_is_visible($conn, $user_id, $item_key) {
     return false;
 }
 
-if (!craftcrawl_feed_item_is_visible($conn, $user_id, $item_key)) {
-    http_response_code(403);
-    echo json_encode(['ok' => false, 'message' => 'Reaction could not be saved.']);
-    exit();
-}
+    $reaction_stage = 'check_visibility';
+    if (!craftcrawl_feed_item_is_visible($conn, $user_id, $item_key)) {
+        http_response_code(403);
+        echo json_encode(['ok' => false, 'message' => 'Reaction could not be saved.']);
+        exit();
+    }
 
-$owner_id = craftcrawl_feed_item_owner_id($conn, $item_key);
+    $reaction_stage = 'load_owner';
+    $owner_id = craftcrawl_feed_item_owner_id($conn, $item_key);
 
-if ($reaction_type === 'want_to_go' && $owner_id === $user_id && $item_type !== 'business_post') {
-    http_response_code(400);
-    echo json_encode(['ok' => false, 'message' => 'That reaction is not available on your own post.']);
-    exit();
-}
+    if ($reaction_type === 'want_to_go' && $owner_id === $user_id && $item_type !== 'business_post') {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'message' => 'That reaction is not available on your own post.']);
+        exit();
+    }
 
 function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user_id) {
     // Business posts are always interactive
@@ -230,87 +234,128 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user
     return !isset($row['allow_post_interactions']) || !empty($row['allow_post_interactions']);
 }
 
-if (!craftcrawl_feed_item_allows_interactions($conn, $item_key, $user_id)) {
-    http_response_code(403);
-    echo json_encode(['ok' => false, 'message' => 'Reactions are not enabled on this post.']);
-    exit();
-}
+    $reaction_stage = 'check_interactions';
+    if (!craftcrawl_feed_item_allows_interactions($conn, $item_key, $user_id)) {
+        http_response_code(403);
+        echo json_encode(['ok' => false, 'message' => 'Reactions are not enabled on this post.']);
+        exit();
+    }
 
-$existing_stmt = $conn->prepare("SELECT id FROM feed_reactions WHERE user_id=? AND feed_item_key=? AND reaction_type=?");
-$existing_stmt->bind_param("iss", $user_id, $item_key, $reaction_type);
-$existing_stmt->execute();
-$existing = $existing_stmt->get_result()->fetch_assoc();
-$reward_payload = null;
+    $reaction_stage = 'load_existing_reaction';
+    $existing_stmt = $conn->prepare("SELECT id FROM feed_reactions WHERE user_id=? AND feed_item_key=? AND reaction_type=?");
+    $existing_stmt->bind_param("iss", $user_id, $item_key, $reaction_type);
+    $existing_stmt->execute();
+    $existing = $existing_stmt->get_result()->fetch_assoc();
+    $reward_payload = null;
 
-if ($existing) {
-    $delete_stmt = $conn->prepare("DELETE FROM feed_reactions WHERE id=?");
-    $reaction_id = (int) $existing['id'];
-    $delete_stmt->bind_param("i", $reaction_id);
-    $delete_stmt->execute();
-} else {
-    $progress_before = craftcrawl_user_level_progress($conn, $user_id);
-    $insert_stmt = $conn->prepare("INSERT INTO feed_reactions (user_id, feed_item_key, reaction_type, createdAt) VALUES (?, ?, ?, NOW())");
-    $insert_stmt->bind_param("iss", $user_id, $item_key, $reaction_type);
-    $insert_stmt->execute();
-    $badges = craftcrawl_award_eligible_badges($conn, $user_id);
-    $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Feed Reaction');
+    if ($existing) {
+        $reaction_stage = 'delete_reaction';
+        $delete_stmt = $conn->prepare("DELETE FROM feed_reactions WHERE id=?");
+        $reaction_id = (int) $existing['id'];
+        $delete_stmt->bind_param("i", $reaction_id);
+        $delete_stmt->execute();
+    } else {
+        $reaction_stage = 'insert_reaction';
+        $insert_stmt = $conn->prepare("INSERT INTO feed_reactions (user_id, feed_item_key, reaction_type, createdAt) VALUES (?, ?, ?, NOW())");
+        $insert_stmt->bind_param("iss", $user_id, $item_key, $reaction_type);
+        $insert_stmt->execute();
 
-    if ($owner_id && $owner_id !== $user_id) {
-        $reaction_labels = [
-            'cheers' => 'Cheers',
-            'nice_find' => 'Nice',
-            'want_to_go' => 'Want to Go',
-            'trophy' => 'Trophy',
+        try {
+            $reaction_stage = 'load_progress_before_reward';
+            $progress_before = craftcrawl_user_level_progress($conn, $user_id);
+            $reaction_stage = 'award_badges';
+            $badges = craftcrawl_award_eligible_badges($conn, $user_id);
+            $reaction_stage = 'build_reward_payload';
+            $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Feed Reaction');
+        } catch (Throwable $reward_error) {
+            error_log(
+                'Feed reaction reward side effect failed at stage ' . $reaction_stage
+                . ' for user ' . $user_id
+                . ' item ' . $item_key
+                . ' reaction ' . $reaction_type
+                . ': ' . $reward_error->getMessage()
+            );
+            $reward_payload = null;
+        }
+
+        if ($owner_id && $owner_id !== $user_id) {
+            try {
+                $reaction_stage = 'send_push_notification';
+                $reaction_labels = [
+                    'cheers' => 'Cheers',
+                    'nice_find' => 'Nice',
+                    'want_to_go' => 'Want to Go',
+                    'trophy' => 'Trophy',
+                ];
+                $reactor_name = craftcrawl_user_display_name_by_id($conn, $user_id);
+                craftcrawl_send_push_to_user(
+                    $conn,
+                    $owner_id,
+                    'New reaction',
+                    $reactor_name . ' reacted ' . ($reaction_labels[$reaction_type] ?? 'to your post') . ' on your CraftCrawl post.',
+                    'user/feed_post.php?item=' . rawurlencode($item_key) . '&focus_section=reactions'
+                );
+            } catch (Throwable $push_error) {
+                error_log(
+                    'Feed reaction push side effect failed for user ' . $user_id
+                    . ' item ' . $item_key
+                    . ' reaction ' . $reaction_type
+                    . ': ' . $push_error->getMessage()
+                );
+            }
+        }
+    }
+
+    $reaction_stage = 'load_reaction_counts';
+    $count_stmt = $conn->prepare("
+        SELECT fr.reaction_type, fr.user_id, u.fName, u.lName
+        FROM feed_reactions fr
+        INNER JOIN users u ON u.id = fr.user_id
+        WHERE fr.feed_item_key=?
+        ORDER BY fr.createdAt ASC, fr.id ASC
+    ");
+    $count_stmt->bind_param("s", $item_key);
+    $count_stmt->execute();
+    $result = $count_stmt->get_result();
+    $reactions = [];
+
+    while ($reaction = $result->fetch_assoc()) {
+        $type = $reaction['reaction_type'];
+        $reactor_id = (int) $reaction['user_id'];
+
+        if ($type === 'want_to_go' && $owner_id === $reactor_id) {
+            continue;
+        }
+
+        if (!isset($reactions[$type])) {
+            $reactions[$type] = [
+                'type' => $type,
+                'count' => 0,
+                'reacted' => false,
+                'reactors' => []
+            ];
+        }
+
+        $reactor_name = trim($reaction['fName'] . ' ' . $reaction['lName']);
+        $reactions[$type]['count']++;
+        $reactions[$type]['reacted'] = $reactions[$type]['reacted'] || $reactor_id === $user_id;
+        $reactions[$type]['reactors'][] = [
+            'id' => $reactor_id,
+            'name' => $reactor_id === $user_id ? 'You' : $reactor_name,
+            'is_you' => $reactor_id === $user_id
         ];
-        $reactor_name = craftcrawl_user_display_name_by_id($conn, $user_id);
-        craftcrawl_send_push_to_user(
-            $conn,
-            $owner_id,
-            'New reaction',
-            $reactor_name . ' reacted ' . ($reaction_labels[$reaction_type] ?? 'to your post') . ' on your CraftCrawl post.',
-            'user/feed_post.php?item=' . rawurlencode($item_key) . '&focus_section=reactions'
-        );
     }
+
+    echo json_encode(['ok' => true, 'reactions' => array_values($reactions), 'xp_reward' => $reward_payload]);
+} catch (Throwable $error) {
+    error_log(
+        'Feed reaction toggle failed at stage ' . $reaction_stage
+        . ' for user ' . $user_id
+        . ' item ' . $item_key
+        . ' reaction ' . $reaction_type
+        . ': ' . $error->getMessage()
+    );
+    http_response_code(500);
+    echo json_encode(['ok' => false, 'message' => 'Reaction could not be saved.']);
 }
-
-$count_stmt = $conn->prepare("
-    SELECT fr.reaction_type, fr.user_id, u.fName, u.lName
-    FROM feed_reactions fr
-    INNER JOIN users u ON u.id = fr.user_id
-    WHERE fr.feed_item_key=?
-    ORDER BY fr.createdAt ASC, fr.id ASC
-");
-$count_stmt->bind_param("s", $item_key);
-$count_stmt->execute();
-$result = $count_stmt->get_result();
-$reactions = [];
-
-while ($reaction = $result->fetch_assoc()) {
-    $type = $reaction['reaction_type'];
-    $reactor_id = (int) $reaction['user_id'];
-
-    if ($type === 'want_to_go' && $owner_id === $reactor_id) {
-        continue;
-    }
-
-    if (!isset($reactions[$type])) {
-        $reactions[$type] = [
-            'type' => $type,
-            'count' => 0,
-            'reacted' => false,
-            'reactors' => []
-        ];
-    }
-
-    $reactor_name = trim($reaction['fName'] . ' ' . $reaction['lName']);
-    $reactions[$type]['count']++;
-    $reactions[$type]['reacted'] = $reactions[$type]['reacted'] || $reactor_id === $user_id;
-    $reactions[$type]['reactors'][] = [
-        'id' => $reactor_id,
-        'name' => $reactor_id === $user_id ? 'You' : $reactor_name,
-        'is_you' => $reactor_id === $user_id
-    ];
-}
-
-echo json_encode(['ok' => true, 'reactions' => array_values($reactions), 'xp_reward' => $reward_payload]);
 ?>
