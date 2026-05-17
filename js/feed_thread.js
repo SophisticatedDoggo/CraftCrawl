@@ -1,17 +1,57 @@
-function focusFeedThreadHashTarget() {
-    if (!window.location.hash) {
+function notificationFocusTarget(root = document) {
+    const params = new URLSearchParams(window.location.search);
+    const commentId = params.get('focus_comment');
+    const section = params.get('focus_section');
+
+    if (commentId && /^\d+$/.test(commentId)) {
+        return root.querySelector(`#comment-${CSS.escape(commentId)}`);
+    }
+
+    if (section === 'reactions') {
+        return root.querySelector('#feed-reactions');
+    }
+
+    if (window.location.hash) {
+        return root.querySelector(`#${CSS.escape(window.location.hash.slice(1))}`);
+    }
+
+    return null;
+}
+
+function focusNotificationTargetWhenVisible(target) {
+    if (!target || target.dataset.notificationFocusHandled === 'true') {
         return;
     }
 
-    const target = document.getElementById(window.location.hash.slice(1));
-    if (!target) {
-        return;
-    }
+    target.dataset.notificationFocusHandled = 'true';
+    target.classList.add('notification-focus-pending');
+
+    const highlightTarget = () => {
+        target.classList.remove('notification-focus-pending');
+        target.classList.add('notification-focus-target');
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) {
+            return;
+        }
+
+        observer.disconnect();
+        highlightTarget();
+    }, { threshold: 0.45 });
+
+    observer.observe(target);
 
     window.requestAnimationFrame(() => {
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        target.classList.add('notification-focus-target');
     });
+
+    window.setTimeout(() => {
+        observer.disconnect();
+        if (!target.classList.contains('notification-focus-target')) {
+            highlightTarget();
+        }
+    }, 1800);
 }
 
 window.CraftCrawlInitFeedThread = function (root = document) {
@@ -43,6 +83,6 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         });
     });
 
-    focusFeedThreadHashTarget();
+    focusNotificationTargetWhenVisible(notificationFocusTarget(root));
 };
 window.CraftCrawlInitFeedThread();

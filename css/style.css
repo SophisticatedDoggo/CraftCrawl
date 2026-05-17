@@ -2341,16 +2341,28 @@ a.text-link:focus {
 
 
 .notification-focus-target {
-    animation: notification-focus-pulse 2.4s ease-out;
+    animation: notification-focus-pulse 3s ease-out forwards;
+}
+
+#feed-reactions.notification-focus-pending,
+#feed-reactions.notification-focus-target {
+    border-radius: var(--radius-sm);
 }
 
 @keyframes notification-focus-pulse {
-    0%, 35% {
-        border-color: color-mix(in srgb, var(--color-accent) 72%, var(--color-border));
-        box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent) 18%, transparent);
+    0% {
+        outline: 0 solid color-mix(in srgb, var(--color-accent) 0%, transparent);
+        background: transparent;
+        box-shadow: none;
+    }
+    12%, 58% {
+        outline: 3px solid color-mix(in srgb, var(--color-accent) 75%, transparent);
+        background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface-muted));
+        box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-accent) 20%, transparent);
     }
     100% {
-        border-color: var(--color-border);
+        outline: 0 solid color-mix(in srgb, var(--color-accent) 0%, transparent);
+        background: transparent;
         box-shadow: none;
     }
 }

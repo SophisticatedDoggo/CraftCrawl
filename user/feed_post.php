@@ -268,7 +268,7 @@ if ($feed_item && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $new_comment_id = (int) $conn->insert_id;
 
     $commenter_name = craftcrawl_user_display_name_by_id($conn, $user_id);
-    $thread_url = 'user/feed_post.php?item=' . rawurlencode($item_key) . '#comment-' . $new_comment_id;
+    $thread_url = 'user/feed_post.php?item=' . rawurlencode($item_key) . '&focus_comment=' . rawurlencode((string) $new_comment_id);
     $owner_id = craftcrawl_feed_item_owner_id($conn, $item_key);
 
     if ($owner_id && $owner_id !== $user_id) {
