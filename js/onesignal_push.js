@@ -1,5 +1,5 @@
 (function () {
-    const enableButton = document.querySelector('[data-onesignal-enable]');
+    const toggleInput = document.querySelector('[data-onesignal-toggle]');
     const statusMessage = document.querySelector('[data-onesignal-status]');
     const isUserPath = /\/user\/?$|\/user\//.test(window.location.pathname);
     const nativeAutoPromptKey = 'craftcrawl_native_push_auto_prompted_v2';
@@ -9,7 +9,68 @@
     }
 
     function getNativeOneSignalPlugin() {
-        return window.Capacitor?.Plugins?.OneSignalCapacitor || null;
+        const capacitor = window.Capacitor;
+        const isNative = capacitor
+            && typeof capacitor.isNativePlatform === 'function'
+            && capacitor.isNativePlatform();
+
+        if (!isNative) {
+            return null;
+        }
+
+        const rawPlugin = capacitor.Plugins?.OneSignalCapacitor
+            || (typeof capacitor.registerPlugin === 'function'
+                ? capacitor.registerPlugin('OneSignalCapacitor')
+                : null);
+
+        if (!rawPlugin) {
+            return null;
+        }
+
+        // Bundled OneSignal clients expose the rich namespace API already.
+        if (rawPlugin.Notifications && rawPlugin.User?.pushSubscription) {
+            return rawPlugin;
+        }
+
+        // Remote web content inside Capacitor sees the raw native bridge instead.
+        // Adapt that bridge to the smaller OneSignal shape the rest of this file uses.
+        return {
+            initialize(appId) {
+                return rawPlugin.initialize({ appId });
+            },
+            login(externalId) {
+                return rawPlugin.login({ externalId });
+            },
+            Notifications: {
+                addEventListener(event, listener) {
+                    if (event === 'click' && typeof rawPlugin.addListener === 'function') {
+                        rawPlugin.addListener('notificationClick', listener);
+                    }
+                },
+                async hasPermission() {
+                    return Boolean((await rawPlugin.getPermission()).permission);
+                },
+                async canRequestPermission() {
+                    return Boolean((await rawPlugin.canRequestPermission()).canRequest);
+                },
+                async requestPermission(fallbackToSettings) {
+                    return Boolean((await rawPlugin.requestPermission({ fallbackToSettings })).accepted);
+                }
+            },
+            User: {
+                pushSubscription: {
+                    async getOptedInAsync() {
+                        return Boolean((await rawPlugin.getPushSubscriptionOptedIn()).optedIn);
+                    },
+                    optIn() {
+                        return rawPlugin.optInPushSubscription();
+                    },
+                    optOut() {
+                        return rawPlugin.optOutPushSubscription();
+                    }
+                }
+            }
+        };
     }
 
     function hasAutoPromptedNativePush() {
@@ -88,13 +149,13 @@
             return null;
         }
 
-        await OneSignal.initialize({ appId: config.app_id });
+        await OneSignal.initialize(config.app_id);
         if (typeof OneSignal.Notifications.addClickListener === 'function') {
             OneSignal.Notifications.addClickListener(handleNativeNotificationClick);
         } else {
             OneSignal.Notifications.addEventListener?.('click', handleNativeNotificationClick);
         }
-        await OneSignal.login({ externalId: config.external_id });
+        await OneSignal.login(config.external_id);
 
         return OneSignal;
     }
@@ -153,10 +214,34 @@
         return true;
     }
 
+    async function nativeIsOptedIn(OneSignal) {
+        if (OneSignal.User?.pushSubscription && typeof OneSignal.User.pushSubscription.getOptedInAsync === 'function') {
+            return Boolean(await OneSignal.User.pushSubscription.getOptedInAsync());
+        }
+
+        return nativeHasPermission(OneSignal);
+    }
+
     async function ensureNativePushOptIn(OneSignal) {
         if (OneSignal.User?.pushSubscription && typeof OneSignal.User.pushSubscription.optIn === 'function') {
             await OneSignal.User.pushSubscription.optIn();
         }
+    }
+
+    async function optOutNativePush(OneSignal) {
+        if (OneSignal.User?.pushSubscription && typeof OneSignal.User.pushSubscription.optOut === 'function') {
+            await OneSignal.User.pushSubscription.optOut();
+        }
+    }
+
+    async function syncToggleState(OneSignal) {
+        if (!toggleInput) {
+            return;
+        }
+
+        toggleInput.checked = getNativeOneSignalPlugin()
+            ? await nativeIsOptedIn(OneSignal)
+            : window.Notification?.permission === 'granted';
     }
 
     async function requestNativePermission(OneSignal) {
@@ -216,8 +301,8 @@
         .then((response) => response.ok ? response.json() : null)
         .then((config) => {
             if (!config || !config.enabled || !config.app_id) {
-                if (enableButton) {
-                    enableButton.disabled = true;
+                if (toggleInput) {
+                    toggleInput.disabled = true;
                     setStatus('Push notifications are not configured yet.', true);
                 }
                 return null;
@@ -227,40 +312,63 @@
                 ? initNativeOneSignal(config)
                 : initOneSignal(config);
         })
-        .then((OneSignal) => {
+        .then(async (OneSignal) => {
             if (!OneSignal) {
                 return;
             }
 
-            autoPromptNativePush(OneSignal);
+            await autoPromptNativePush(OneSignal);
 
-            if (!enableButton) {
+            if (!toggleInput) {
                 return;
             }
 
-            enableButton.disabled = false;
-            enableButton.addEventListener('click', async () => {
-                enableButton.disabled = true;
-                enableButton.classList.add('is-loading');
-                setStatus('Opening notification permission prompt...', false);
+            syncToggleState(OneSignal)
+                .catch(() => {
+                    toggleInput.checked = false;
+                })
+                .finally(() => {
+                    toggleInput.disabled = false;
+                });
+
+            toggleInput.addEventListener('change', async () => {
+                const shouldEnable = toggleInput.checked;
+                toggleInput.disabled = true;
+                setStatus(shouldEnable ? 'Opening notification permission prompt...' : 'Turning off push notifications...', false);
 
                 try {
-                    const accepted = getNativeOneSignalPlugin()
-                        ? await requestNativePermission(OneSignal)
-                        : await requestPermission(OneSignal);
-                    setStatus(accepted ? 'Push notifications are enabled for this device.' : 'Notifications were not enabled.', !accepted);
+                    if (getNativeOneSignalPlugin()) {
+                        if (shouldEnable) {
+                            const accepted = await requestNativePermission(OneSignal);
+                            toggleInput.checked = accepted && await nativeIsOptedIn(OneSignal);
+                            setStatus(toggleInput.checked ? 'Push notifications are enabled for this device.' : 'Notifications were not enabled.', !toggleInput.checked);
+                        } else {
+                            await optOutNativePush(OneSignal);
+                            toggleInput.checked = false;
+                            setStatus('Push notifications are off for this device.', false);
+                        }
+                    } else if (shouldEnable) {
+                        const accepted = await requestPermission(OneSignal);
+                        toggleInput.checked = accepted;
+                        setStatus(accepted ? 'Push notifications are enabled for this device.' : 'Notifications were not enabled.', !accepted);
+                    } else {
+                        toggleInput.checked = true;
+                        setStatus('Use your browser settings to turn off web push notifications.', true);
+                    }
                 } catch (error) {
-                    setStatus('Notifications could not be enabled on this device.', true);
+                    await syncToggleState(OneSignal).catch(() => {
+                        toggleInput.checked = !shouldEnable;
+                    });
+                    setStatus('Notifications could not be updated on this device.', true);
                 } finally {
-                    enableButton.disabled = false;
-                    enableButton.classList.remove('is-loading');
+                    toggleInput.disabled = false;
                 }
             });
         })
         .catch((error) => {
             console.error('CraftCrawl OneSignal initialization failed:', error);
-            if (enableButton) {
-                enableButton.disabled = true;
+            if (toggleInput) {
+                toggleInput.disabled = true;
                 setStatus(error && error.message ? error.message : 'Push notifications could not be initialized.', true);
             }
         });

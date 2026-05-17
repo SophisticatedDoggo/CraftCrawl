@@ -388,8 +388,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <section class="settings-panel">
             <h2>Push Notifications</h2>
-            <p class="form-help">Enable browser push notifications on this device for friend invites, comments, replies, and reactions.</p>
-            <button type="button" data-onesignal-enable disabled>Enable Push Notifications</button>
+            <p class="form-help">Control push notifications on this device for friend invites, comments, replies, and reactions.</p>
+            <label class="settings-toggle">
+                <input type="checkbox" data-onesignal-toggle disabled>
+                <span>
+                    <strong>Push Notifications</strong>
+                    <small>Turn push notifications on or off for this device.</small>
+                </span>
+            </label>
             <p class="form-message" data-onesignal-status hidden></p>
         </section>
 

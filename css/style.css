@@ -670,11 +670,6 @@ label {
     max-width: 100%;
 }
 
-.settings-panel > button[data-onesignal-enable] {
-    width: auto;
-    max-width: 100%;
-}
-
 .settings-toggle {
     display: grid;
     grid-template-columns: 52px minmax(0, 1fr);
