@@ -102,7 +102,7 @@ function render_feed_thread_reactions($conn, $user_id, $item) {
         $reactions[$type]['reacted'] = $reactions[$type]['reacted'] || $reactor_id === (int) $user_id;
     }
 
-    $html = '<div class="feed-action-row"><div class="feed-reactions">';
+    $html = '<div class="feed-action-row" id="feed-reactions"><div class="feed-reactions">';
     foreach (feed_thread_reaction_options($item) as $reaction_type) {
         $reaction = $reactions[$reaction_type] ?? ['count' => 0, 'reacted' => false];
         $active_class = $reaction['reacted'] ? ' is-active' : '';
@@ -251,9 +251,10 @@ if ($feed_item && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $comment_stmt = $conn->prepare("INSERT INTO feed_comments (user_id, parent_comment_id, feed_item_key, body, createdAt) VALUES (?, ?, ?, ?, NOW())");
     $comment_stmt->bind_param("iiss", $user_id, $parent_comment_id, $item_key, $body);
     $comment_stmt->execute();
+    $new_comment_id = (int) $conn->insert_id;
 
     $commenter_name = craftcrawl_user_display_name_by_id($conn, $user_id);
-    $thread_url = 'user/feed_post.php?item=' . rawurlencode($item_key);
+    $thread_url = 'user/feed_post.php?item=' . rawurlencode($item_key) . '#comment-' . $new_comment_id;
     $owner_id = craftcrawl_feed_item_owner_id($conn, $item_key);
 
     if ($owner_id && $owner_id !== $user_id) {
@@ -387,7 +388,7 @@ if ($feed_item) {
                                     ? 'You'
                                     : trim($comment['fName'] . ' ' . $comment['lName']));
                         ?>
-                        <article class="feed-comment">
+                        <article class="feed-comment" id="comment-<?php echo escape_output($comment['id']); ?>">
                             <?php if (empty($comment['business_id'])) : ?>
                                 <?php echo craftcrawl_render_user_avatar($comment, 'small'); ?>
                             <?php else : ?>
@@ -420,7 +421,7 @@ if ($feed_item) {
                                                     ? 'You'
                                                     : trim($reply['fName'] . ' ' . $reply['lName']));
                                         ?>
-                                        <article class="feed-comment feed-reply">
+                                        <article class="feed-comment feed-reply" id="comment-<?php echo escape_output($reply['id']); ?>">
                                             <?php if (empty($reply['business_id'])) : ?>
                                                 <?php echo craftcrawl_render_user_avatar($reply, 'small'); ?>
                                             <?php else : ?>

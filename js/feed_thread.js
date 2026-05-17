@@ -1,3 +1,19 @@
+function focusFeedThreadHashTarget() {
+    if (!window.location.hash) {
+        return;
+    }
+
+    const target = document.getElementById(window.location.hash.slice(1));
+    if (!target) {
+        return;
+    }
+
+    window.requestAnimationFrame(() => {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        target.classList.add('notification-focus-target');
+    });
+}
+
 window.CraftCrawlInitFeedThread = function (root = document) {
     root.querySelectorAll('[data-reply-toggle]').forEach((button) => {
         if (button.dataset.replyToggleReady === 'true') return;
@@ -26,5 +42,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             }
         });
     });
+
+    focusFeedThreadHashTarget();
 };
 window.CraftCrawlInitFeedThread();

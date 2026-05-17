@@ -43,6 +43,11 @@ window.CraftCrawlInitFriends = function (scope = document) {
         business_post: ['cheers', 'want_to_go']
     };
     const isUserPath = /\/user\/?$|\/user\//.test(window.location.pathname);
+    const focusParams = new URLSearchParams(window.location.search);
+    const requestedFocusRequestId = focusParams.get('focus_request');
+    const requestedFocusFriendId = focusParams.get('focus_friend');
+    let hasFocusedRequest = false;
+    let hasFocusedFriend = false;
 
     function userEndpoint(file) {
         return isUserPath ? file : `user/${file}`;
@@ -67,6 +72,17 @@ window.CraftCrawlInitFriends = function (scope = document) {
             .replaceAll('>', '&gt;')
             .replaceAll('"', '&quot;')
             .replaceAll("'", '&#039;');
+    }
+
+    function focusNotificationTarget(element) {
+        if (!element) {
+            return;
+        }
+
+        window.requestAnimationFrame(() => {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.classList.add('notification-focus-target');
+        });
     }
 
     function showStatus(message, isError) {
@@ -357,7 +373,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         }
 
         requestsList.innerHTML = requests.map((request) => `
-            <article class="friend-request-item">
+            <article class="friend-request-item" data-friend-request-id="${request.id}">
                 ${renderAvatar(request.actor, request.name)}
                 <div>
                     <strong>${escapeHtml(request.name)}</strong>
@@ -369,6 +385,14 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 </div>
             </article>
         `).join('');
+
+        if (!hasFocusedRequest && requestedFocusRequestId) {
+            const focusedRequest = requestsList.querySelector(`[data-friend-request-id="${CSS.escape(requestedFocusRequestId)}"]`);
+            if (focusedRequest) {
+                hasFocusedRequest = true;
+                focusNotificationTarget(focusedRequest);
+            }
+        }
 
         requestsList.querySelectorAll('button[data-request-id]').forEach((button) => {
             button.addEventListener('click', () => {
@@ -433,7 +457,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         }
 
         currentFriendsList.innerHTML = visibleFriends.map((friend) => `
-            <article class="friend-current-item">
+            <article class="friend-current-item" data-friend-id="${friend.id}">
                 ${renderAvatar(friend.actor, friend.name)}
                 <div class="friend-current-summary">
                     <div class="friend-current-name-row">
@@ -448,6 +472,14 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 </div>
             </article>
         `).join('');
+
+        if (!hasFocusedFriend && requestedFocusFriendId) {
+            const focusedFriend = currentFriendsList.querySelector(`[data-friend-id="${CSS.escape(requestedFocusFriendId)}"]`);
+            if (focusedFriend) {
+                hasFocusedFriend = true;
+                focusNotificationTarget(focusedFriend);
+            }
+        }
 
         currentFriendsList.querySelectorAll('[data-remove-friend-id]').forEach((button) => {
             button.addEventListener('click', () => {

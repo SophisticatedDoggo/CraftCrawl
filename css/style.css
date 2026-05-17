@@ -2339,6 +2339,22 @@ a.text-link:focus {
     margin: 14px 0 20px;
 }
 
+
+.notification-focus-target {
+    animation: notification-focus-pulse 2.4s ease-out;
+}
+
+@keyframes notification-focus-pulse {
+    0%, 35% {
+        border-color: color-mix(in srgb, var(--color-accent) 72%, var(--color-border));
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent) 18%, transparent);
+    }
+    100% {
+        border-color: var(--color-border);
+        box-shadow: none;
+    }
+}
+
 .friend-search-result,
 .friend-request-item,
 .friend-current-item,

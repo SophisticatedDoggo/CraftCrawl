@@ -268,7 +268,7 @@ if ($existing) {
             $owner_id,
             'New reaction',
             $reactor_name . ' reacted ' . ($reaction_labels[$reaction_type] ?? 'to your post') . ' on your CraftCrawl post.',
-            'user/feed_post.php?item=' . rawurlencode($item_key)
+            'user/feed_post.php?item=' . rawurlencode($item_key) . '#feed-reactions'
         );
     }
 }

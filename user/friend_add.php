@@ -123,7 +123,7 @@ try {
         $friend_id,
         'New friend invite',
         $sender_name . ' sent you a CraftCrawl friend invite.',
-        'user/friends.php'
+        'user/friends.php?focus_request=' . rawurlencode((string) ((int) ($pending_request['id'] ?? 0)))
     );
 
     echo json_encode([
