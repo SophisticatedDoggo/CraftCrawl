@@ -3,7 +3,6 @@
     const statusMessage = document.querySelector('[data-onesignal-status]');
     const isUserPath = /\/user\/?$|\/user\//.test(window.location.pathname);
     const nativeAutoPromptKey = 'craftcrawl_native_push_auto_prompted_v2';
-    const nativePushDisabledKey = 'craftcrawl_native_push_disabled_v1';
 
     function userEndpoint(file) {
         return isUserPath ? file : `user/${file}`;
@@ -87,30 +86,6 @@
             window.localStorage.setItem(nativeAutoPromptKey, '1');
         } catch (error) {
             // Ignore storage failures; the OS permission prompt still controls repeat prompts.
-        }
-    }
-
-    function hasDisabledNativePush() {
-        try {
-            return window.localStorage.getItem(nativePushDisabledKey) === '1';
-        } catch (error) {
-            return false;
-        }
-    }
-
-    function markDisabledNativePush() {
-        try {
-            window.localStorage.setItem(nativePushDisabledKey, '1');
-        } catch (error) {
-            // The native opt-out still applies even if local persistence is unavailable.
-        }
-    }
-
-    function clearDisabledNativePush() {
-        try {
-            window.localStorage.removeItem(nativePushDisabledKey);
-        } catch (error) {
-            // Ignore storage failures; native permission still remains the main gate.
         }
     }
 
@@ -259,22 +234,44 @@
         }
     }
 
-    async function syncNativePushSubscriptionState(OneSignal) {
-        if (!getNativeOneSignalPlugin()) {
-            return false;
+    async function nativePushIsEnabledOnThisDevice(OneSignal) {
+        return await nativeHasPermission(OneSignal) && await nativeIsOptedIn(OneSignal);
+    }
+
+    function webPushSubscription(OneSignal) {
+        return OneSignal.User?.PushSubscription || OneSignal.User?.pushSubscription || null;
+    }
+
+    async function webPushIsEnabledInThisBrowser(OneSignal) {
+        const subscription = webPushSubscription(OneSignal);
+
+        if (subscription && typeof subscription.optedIn === 'boolean') {
+            return subscription.optedIn;
         }
 
-        const hasPermission = await nativeHasPermission(OneSignal);
-        const shouldBeEnabled = hasPermission && !hasDisabledNativePush();
+        return window.Notification?.permission === 'granted';
+    }
 
-        // Keep the actual device subscription healthy on every app page, not only
-        // when the user opens Settings. iOS permission and OneSignal subscription
-        // can briefly drift apart after a fresh install or app restart.
-        if (shouldBeEnabled && !await nativeIsOptedIn(OneSignal)) {
-            await ensureNativePushOptIn(OneSignal);
+    async function enableWebPushInThisBrowser(OneSignal) {
+        const subscription = webPushSubscription(OneSignal);
+
+        if (subscription && typeof subscription.optIn === 'function') {
+            await subscription.optIn();
+            return webPushIsEnabledInThisBrowser(OneSignal);
         }
 
-        return shouldBeEnabled;
+        return Boolean(await requestPermission(OneSignal));
+    }
+
+    async function disableWebPushInThisBrowser(OneSignal) {
+        const subscription = webPushSubscription(OneSignal);
+
+        if (subscription && typeof subscription.optOut === 'function') {
+            await subscription.optOut();
+            return true;
+        }
+
+        return false;
     }
 
     async function syncToggleState(OneSignal) {
@@ -283,8 +280,8 @@
         }
 
         toggleInput.checked = getNativeOneSignalPlugin()
-            ? await syncNativePushSubscriptionState(OneSignal)
-            : window.Notification?.permission === 'granted';
+            ? await nativePushIsEnabledOnThisDevice(OneSignal)
+            : await webPushIsEnabledInThisBrowser(OneSignal);
     }
 
     async function requestNativePermission(OneSignal) {
@@ -334,9 +331,6 @@
 
             const accepted = await requestNativePermission(OneSignal);
             markAutoPromptedNativePush();
-            if (accepted) {
-                clearDisabledNativePush();
-            }
             setStatus(accepted ? 'Push notifications are enabled for this device.' : 'Notifications were not enabled.', !accepted);
         } catch (error) {
             setStatus('Notifications could not be enabled on this device.', true);
@@ -364,7 +358,6 @@
             }
 
             await autoPromptNativePush(OneSignal);
-            await syncNativePushSubscriptionState(OneSignal);
 
             if (!toggleInput) {
                 return;
@@ -387,21 +380,20 @@
                     if (getNativeOneSignalPlugin()) {
                         if (shouldEnable) {
                             const accepted = await requestNativePermission(OneSignal);
-                            if (accepted) {
-                                clearDisabledNativePush();
-                            }
-                            toggleInput.checked = accepted;
+                            toggleInput.checked = accepted && await nativePushIsEnabledOnThisDevice(OneSignal);
                             setStatus(toggleInput.checked ? 'Push notifications are enabled for this device.' : 'Notifications were not enabled.', !toggleInput.checked);
                         } else {
                             await optOutNativePush(OneSignal);
-                            markDisabledNativePush();
                             toggleInput.checked = false;
                             setStatus('Push notifications are off for this device.', false);
                         }
                     } else if (shouldEnable) {
-                        const accepted = await requestPermission(OneSignal);
+                        const accepted = await enableWebPushInThisBrowser(OneSignal);
                         toggleInput.checked = accepted;
-                        setStatus(accepted ? 'Push notifications are enabled for this device.' : 'Notifications were not enabled.', !accepted);
+                        setStatus(accepted ? 'Push notifications are enabled for this browser.' : 'Notifications were not enabled.', !accepted);
+                    } else if (await disableWebPushInThisBrowser(OneSignal)) {
+                        toggleInput.checked = false;
+                        setStatus('Push notifications are off for this browser.', false);
                     } else {
                         toggleInput.checked = true;
                         setStatus('Use your browser settings to turn off web push notifications.', true);
