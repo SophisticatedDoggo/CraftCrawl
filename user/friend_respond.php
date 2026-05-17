@@ -81,7 +81,8 @@ try {
             (int) $request['requester_user_id'],
             'Friend invite accepted',
             craftcrawl_user_display_name_by_id($conn, $user_id) . ' accepted your CraftCrawl friend invite.',
-            'user/friends.php?focus_friend=' . rawurlencode((string) $user_id)
+            'user/friends.php?focus_friend=' . rawurlencode((string) $user_id),
+            false
         );
     }
 

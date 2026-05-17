@@ -18,8 +18,12 @@ window.CraftCrawlInitFriends = function (scope = document) {
     const csrfToken = panel?.dataset.csrfToken || managerPage?.dataset.csrfToken || '';
     let currentStatus = {
         pendingInvites: 0,
+        pendingRecommendations: 0,
+        socialNotifications: 0,
         newFriends: 0,
         newFeedItems: 0,
+        friendsBadgeCount: 0,
+        feedBadgeCount: 0,
         badgeCount: 0
     };
     let currentFriendsCache = [];
@@ -183,15 +187,26 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     return;
                 }
 
+                const pendingInvites = Number(data.pending_invites || 0);
+                const pendingRecommendations = Number(data.pending_recommendations || 0);
+                const socialNotifications = Number(data.social_notifications || 0);
+                const newFriends = Number(data.new_friends || 0);
+                const newFeedItems = Number(data.new_feed_items || 0);
+                const friendsBadgeCount = pendingInvites + pendingRecommendations + newFriends;
+                const feedBadgeCount = newFeedItems + socialNotifications;
                 const badgeCount = Number(data.badge_count || 0);
                 currentStatus = {
-                    pendingInvites: Number(data.pending_invites || 0),
-                    newFriends: Number(data.new_friends || 0),
-                    newFeedItems: Number(data.new_feed_items || 0),
+                    pendingInvites,
+                    pendingRecommendations,
+                    socialNotifications,
+                    newFriends,
+                    newFeedItems,
+                    friendsBadgeCount,
+                    feedBadgeCount,
                     badgeCount
                 };
-                setBadge(menuBadge, badgeCount);
-                setBadge(tabBadge, badgeCount);
+                setBadge(menuBadge, friendsBadgeCount);
+                setBadge(tabBadge, feedBadgeCount);
             })
             .catch(() => {});
     }

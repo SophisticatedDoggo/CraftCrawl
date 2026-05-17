@@ -44,7 +44,7 @@ function craftcrawl_onesignal_absolute_url($path = '') {
     return $base_url . '/' . ltrim($path, '/');
 }
 
-function craftcrawl_send_push_to_user($conn, $recipient_user_id, $heading, $body, $url = '') {
+function craftcrawl_send_push_to_user($conn, $recipient_user_id, $heading, $body, $url = '', $require_social_opt_in = true) {
     if (!craftcrawl_onesignal_enabled()) {
         return false;
     }
@@ -60,7 +60,7 @@ function craftcrawl_send_push_to_user($conn, $recipient_user_id, $heading, $body
     $stmt->execute();
     $recipient = $stmt->get_result()->fetch_assoc();
 
-    if (!$recipient || empty($recipient['notify_social_activity'])) {
+    if (!$recipient || ($require_social_opt_in && empty($recipient['notify_social_activity']))) {
         return false;
     }
 

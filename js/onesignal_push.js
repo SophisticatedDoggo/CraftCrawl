@@ -3,6 +3,7 @@
     const statusMessage = document.querySelector('[data-onesignal-status]');
     const isUserPath = /\/user\/?$|\/user\//.test(window.location.pathname);
     const nativeAutoPromptKey = 'craftcrawl_native_push_auto_prompted_v2';
+    const nativePushDisabledKey = 'craftcrawl_native_push_disabled_v1';
 
     function userEndpoint(file) {
         return isUserPath ? file : `user/${file}`;
@@ -86,6 +87,30 @@
             window.localStorage.setItem(nativeAutoPromptKey, '1');
         } catch (error) {
             // Ignore storage failures; the OS permission prompt still controls repeat prompts.
+        }
+    }
+
+    function hasDisabledNativePush() {
+        try {
+            return window.localStorage.getItem(nativePushDisabledKey) === '1';
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function markDisabledNativePush() {
+        try {
+            window.localStorage.setItem(nativePushDisabledKey, '1');
+        } catch (error) {
+            // The native opt-out still applies even if local persistence is unavailable.
+        }
+    }
+
+    function clearDisabledNativePush() {
+        try {
+            window.localStorage.removeItem(nativePushDisabledKey);
+        } catch (error) {
+            // Ignore storage failures; native permission still remains the main gate.
         }
     }
 
@@ -234,13 +259,31 @@
         }
     }
 
+    async function syncNativePushSubscriptionState(OneSignal) {
+        if (!getNativeOneSignalPlugin()) {
+            return false;
+        }
+
+        const hasPermission = await nativeHasPermission(OneSignal);
+        const shouldBeEnabled = hasPermission && !hasDisabledNativePush();
+
+        // Keep the actual device subscription healthy on every app page, not only
+        // when the user opens Settings. iOS permission and OneSignal subscription
+        // can briefly drift apart after a fresh install or app restart.
+        if (shouldBeEnabled && !await nativeIsOptedIn(OneSignal)) {
+            await ensureNativePushOptIn(OneSignal);
+        }
+
+        return shouldBeEnabled;
+    }
+
     async function syncToggleState(OneSignal) {
         if (!toggleInput) {
             return;
         }
 
         toggleInput.checked = getNativeOneSignalPlugin()
-            ? await nativeIsOptedIn(OneSignal)
+            ? await syncNativePushSubscriptionState(OneSignal)
             : window.Notification?.permission === 'granted';
     }
 
@@ -291,6 +334,9 @@
 
             const accepted = await requestNativePermission(OneSignal);
             markAutoPromptedNativePush();
+            if (accepted) {
+                clearDisabledNativePush();
+            }
             setStatus(accepted ? 'Push notifications are enabled for this device.' : 'Notifications were not enabled.', !accepted);
         } catch (error) {
             setStatus('Notifications could not be enabled on this device.', true);
@@ -318,6 +364,7 @@
             }
 
             await autoPromptNativePush(OneSignal);
+            await syncNativePushSubscriptionState(OneSignal);
 
             if (!toggleInput) {
                 return;
@@ -340,10 +387,14 @@
                     if (getNativeOneSignalPlugin()) {
                         if (shouldEnable) {
                             const accepted = await requestNativePermission(OneSignal);
-                            toggleInput.checked = accepted && await nativeIsOptedIn(OneSignal);
+                            if (accepted) {
+                                clearDisabledNativePush();
+                            }
+                            toggleInput.checked = accepted;
                             setStatus(toggleInput.checked ? 'Push notifications are enabled for this device.' : 'Notifications were not enabled.', !toggleInput.checked);
                         } else {
                             await optOutNativePush(OneSignal);
+                            markDisabledNativePush();
                             toggleInput.checked = false;
                             setStatus('Push notifications are off for this device.', false);
                         }

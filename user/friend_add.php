@@ -98,7 +98,8 @@ try {
                 $friend_id,
                 'Friend invite accepted',
                 $sender_name . ' accepted your CraftCrawl friend invite.',
-                'user/friends.php?focus_friend=' . rawurlencode((string) $user_id)
+                'user/friends.php?focus_friend=' . rawurlencode((string) $user_id),
+                false
             );
         }
 
@@ -133,7 +134,8 @@ try {
         $friend_id,
         'New friend invite',
         $sender_name . ' sent you a CraftCrawl friend invite.',
-        'user/friends.php?focus_request=' . rawurlencode((string) ((int) ($pending_request['id'] ?? 0)))
+        'user/friends.php?focus_request=' . rawurlencode((string) ((int) ($pending_request['id'] ?? 0))),
+        false
     );
 
     echo json_encode([
