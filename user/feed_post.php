@@ -360,7 +360,7 @@ if ($feed_item) {
             </div>
             <div class="business-header-actions user-subpage-header-actions">
                 <a href="feed.php" data-back-link>Back</a>
-                <a href="friends.php">Manage Friends</a>
+                <a href="friends.php">Friends</a>
                 <a href="profile.php">Profile</a>
             </div>
             <a class="mobile-context-back" href="feed.php" data-back-link>Back</a>

@@ -93,7 +93,12 @@ function suppressCraftCrawlNativeInternalLinkCallouts(event) {
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-back-link]').forEach((link) => {
         link.addEventListener('click', (event) => {
-            if (window.history.length <= 1) {
+            const currentUrl = new URL(window.location.href);
+
+            // After a POST/redirect action, the prior browser-history entry is often the
+            // same page without its flash message. In that state, honor the explicit
+            // destination instead of making Back appear to refresh the current screen.
+            if (currentUrl.searchParams.has('message') || window.history.length <= 1) {
                 return;
             }
 

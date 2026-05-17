@@ -5486,7 +5486,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .user-subpage-header-actions {
-        display: none;
+        display: none !important;
     }
 
     .mobile-context-back {
@@ -6143,7 +6143,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .user-subpage-header-actions {
-        display: none;
+        display: none !important;
     }
 
     .business-section-header .business-header-actions {
