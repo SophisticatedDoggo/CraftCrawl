@@ -574,15 +574,19 @@ if (!$profile) {
                         <div class="reward-list">
                             <?php foreach ($appearance_rewards as $reward) : ?>
                                 <article class="reward-goal-card<?php echo $reward['unlocked'] ? ' is-unlocked' : ' is-locked'; ?>">
-                                    <img
-                                        class="appearance-reward-preview"
-                                        src="../images/craft-crawl-logo-<?php echo escape_output($reward['reward_key'] ?? 'trail'); ?>.png"
-                                        alt=""
-                                        aria-hidden="true"
-                                        loading="lazy"
-                                        width="58"
-                                        height="58"
-                                    >
+                                    <?php if (($reward['type'] ?? '') === 'Display Theme') : ?>
+                                        <span class="appearance-theme-preview is-<?php echo escape_output($reward['reward_key'] ?? 'trail-map'); ?>" aria-hidden="true"></span>
+                                    <?php else : ?>
+                                        <img
+                                            class="appearance-reward-preview"
+                                            src="../images/craft-crawl-logo-<?php echo escape_output($reward['reward_key'] ?? 'trail'); ?>.png"
+                                            alt=""
+                                            aria-hidden="true"
+                                            loading="lazy"
+                                            width="58"
+                                            height="58"
+                                        >
+                                    <?php endif; ?>
                                     <div>
                                         <div class="reward-goal-title-row">
                                             <strong><?php echo escape_output($reward['name']); ?></strong>

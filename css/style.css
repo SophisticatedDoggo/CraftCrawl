@@ -1321,7 +1321,8 @@ a.text-link:focus {
     grid-template-columns: 1fr;
 }
 
-.reward-goal-card:has(.appearance-reward-preview) {
+.reward-goal-card:has(.appearance-reward-preview),
+.reward-goal-card:has(.appearance-theme-preview) {
     grid-template-columns: 66px minmax(0, 1fr);
 }
 
@@ -1399,6 +1400,35 @@ a.text-link:focus {
     border-radius: var(--radius-sm);
     background: var(--color-surface);
     object-fit: cover;
+}
+
+.appearance-theme-preview {
+    display: inline-block;
+    width: 58px;
+    height: 58px;
+    border: 3px solid var(--theme-preview-primary);
+    border-radius: 999px;
+    background: var(--theme-preview-bg);
+}
+
+.appearance-theme-preview.is-trail-map {
+    --theme-preview-bg: #f4f1ea;
+    --theme-preview-primary: #3f6f3a;
+}
+
+.appearance-theme-preview.is-trail-dark {
+    --theme-preview-bg: #15171a;
+    --theme-preview-primary: #8fbc6a;
+}
+
+.appearance-theme-preview.is-ember {
+    --theme-preview-bg: #f7f3ed;
+    --theme-preview-primary: #c05c23;
+}
+
+.appearance-theme-preview.is-ember-dark {
+    --theme-preview-bg: #15171a;
+    --theme-preview-primary: #c05c23;
 }
 
 .badge-goal-card.is-showcased {
