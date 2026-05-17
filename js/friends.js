@@ -13,8 +13,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
     const sentinel = feed?.querySelector('[data-feed-sentinel]');
     const status = root.querySelector('[data-friends-status]');
     const count = panel?.querySelector('[data-friends-count]');
-    const menuBadge = document.querySelector('[data-friends-menu-badge]');
-    const tabBadge = document.querySelector('[data-friends-tab-badge]');
+    const menuBadges = document.querySelectorAll('[data-friends-menu-badge]');
+    const tabBadges = document.querySelectorAll('[data-friends-tab-badge]');
     const menuToggleBadges = document.querySelectorAll('[data-friends-menu-toggle-badge]');
     const csrfToken = panel?.dataset.csrfToken || managerPage?.dataset.csrfToken || '';
     let currentStatus = {
@@ -58,7 +58,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         return isUserPath ? file : `user/${file}`;
     }
 
-    if (!panel && !managerPage && !menuBadge && !tabBadge && !menuToggleBadges.length) {
+    if (!panel && !managerPage && !menuBadges.length && !tabBadges.length && !menuToggleBadges.length) {
         return;
     }
 
@@ -206,9 +206,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     feedBadgeCount,
                     badgeCount
                 };
-                setBadge(menuBadge, friendsBadgeCount);
+                menuBadges.forEach((badge) => setBadge(badge, friendsBadgeCount));
                 menuToggleBadges.forEach((badge) => setBadge(badge, friendsBadgeCount));
-                setBadge(tabBadge, feedBadgeCount);
+                tabBadges.forEach((badge) => setBadge(badge, feedBadgeCount));
                 syncNativeAppBadge(badgeCount);
             })
             .catch(() => {});

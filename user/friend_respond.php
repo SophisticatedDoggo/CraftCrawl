@@ -70,7 +70,13 @@ try {
         craftcrawl_award_eligible_badges($conn, $requester_id);
     }
 
-    $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges);
+    $reward_payload = craftcrawl_xp_reward_payload(
+        $conn,
+        $user_id,
+        $progress_before,
+        $badges,
+        $response === 'accepted' ? 'Friend Added' : null
+    );
     $conn->commit();
 
     $name = trim($request['fName'] . ' ' . $request['lName']);

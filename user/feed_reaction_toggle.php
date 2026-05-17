@@ -253,7 +253,7 @@ if ($existing) {
     $insert_stmt->bind_param("iss", $user_id, $item_key, $reaction_type);
     $insert_stmt->execute();
     $badges = craftcrawl_award_eligible_badges($conn, $user_id);
-    $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges);
+    $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Feed Reaction');
 
     if ($owner_id && $owner_id !== $user_id) {
         $reaction_labels = [

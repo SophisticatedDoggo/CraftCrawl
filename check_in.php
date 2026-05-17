@@ -102,7 +102,8 @@ try {
     $source_id = $visit_type === 'first_time' ? (string) $business_id : (string) $visit_id;
     craftcrawl_add_xp($conn, $user_id, $xp_awarded, $source_type, $source_id, $business['bName']);
     $badges = craftcrawl_award_eligible_badges($conn, $user_id);
-    $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges);
+    $action_label = $visit_type === 'first_time' ? 'First-Time Check-In' : 'Repeat Check-In';
+    $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, $action_label);
     $progress = $reward_payload['progress'] ?? craftcrawl_user_level_progress($conn, $user_id);
 
     $conn->commit();
@@ -114,6 +115,7 @@ try {
         'message' => ($visit_type === 'first_time' ? 'First-time visit checked in.' : 'Repeat visit checked in.'),
         'checkin_message' => $checkin_message,
         'xp_awarded' => $reward_payload['xp_awarded'] ?? $xp_awarded,
+        'action_label' => $action_label,
         'badges' => $badges,
         'level_up' => $reward_payload['level_up'] ?? null,
         'level_rewards' => $reward_payload['level_rewards'] ?? [],

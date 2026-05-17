@@ -248,7 +248,8 @@
         closeButton.setAttribute('aria-label', 'Close XP reward');
         closeButton.textContent = '\u00d7';
 
-        kicker.textContent = levelUp ? 'XP Earned' : 'Nice Check-In';
+        const actionLabel = String(reward.action_label || '').trim();
+        kicker.textContent = actionLabel || 'XP Earned';
         heading.id = 'level-celebration-title';
         heading.textContent = levelUp ? 'Level progress incoming' : 'XP added';
         xpAmount.className = 'xp-reward-amount';

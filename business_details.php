@@ -199,7 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 $badges = craftcrawl_award_eligible_badges($conn, $user_id);
-                $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges);
+                $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Review');
                 $progress = $reward_payload['progress'] ?? craftcrawl_user_level_progress($conn, $user_id);
                 $conn->commit();
 
