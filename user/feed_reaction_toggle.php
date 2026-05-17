@@ -189,7 +189,7 @@ if ($reaction_type === 'want_to_go' && $owner_id === $user_id && $item_type !== 
     exit();
 }
 
-function craftcrawl_feed_item_allows_interactions($conn, $item_key) {
+function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user_id) {
     // Business posts are always interactive
     if (preg_match('/^business_post:/', $item_key)) {
         return true;
@@ -219,7 +219,7 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key) {
         $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
     }
 
-    if (!$owner_user_id) {
+    if (!$owner_user_id || $owner_user_id === (int) $viewer_user_id) {
         return true; // Fail open if owner can't be determined
     }
 
@@ -230,7 +230,7 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key) {
     return !isset($row['allow_post_interactions']) || !empty($row['allow_post_interactions']);
 }
 
-if (!craftcrawl_feed_item_allows_interactions($conn, $item_key)) {
+if (!craftcrawl_feed_item_allows_interactions($conn, $item_key, $user_id)) {
     http_response_code(403);
     echo json_encode(['ok' => false, 'message' => 'Reactions are not enabled on this post.']);
     exit();

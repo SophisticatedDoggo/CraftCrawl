@@ -848,7 +848,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             return '';
         }
 
-        if (item.allow_interactions === false && item.type !== 'business_post') {
+        if (item.allow_interactions === false && item.type !== 'business_post' && !item.is_self) {
             return '';
         }
 

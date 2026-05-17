@@ -59,7 +59,7 @@ function render_feed_thread_reactions($conn, $user_id, $item) {
     $item_key = $item['item_key'];
     $item_type = $item['type'] ?? '';
 
-    if ($item_type !== 'business_post') {
+    if ($item_type !== 'business_post' && empty($item['is_self'])) {
         $owner_id = craftcrawl_feed_item_owner_id($conn, $item_key);
         if ($owner_id) {
             $interact_stmt = $conn->prepare("SELECT allow_post_interactions FROM users WHERE id=? LIMIT 1");
@@ -234,7 +234,7 @@ if ($feed_item && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $item_type_prefix = explode(':', $item_key)[0];
     if (in_array($item_type_prefix, ['first_visit', 'level_up', 'event_want', 'location_want', 'badge_earned'], true)) {
         $item_owner_id = craftcrawl_feed_item_owner_id($conn, $item_key);
-        if ($item_owner_id) {
+        if ($item_owner_id && $item_owner_id !== $user_id) {
             $interact_stmt = $conn->prepare("SELECT allow_post_interactions FROM users WHERE id=? LIMIT 1");
             $interact_stmt->bind_param("i", $item_owner_id);
             $interact_stmt->execute();
