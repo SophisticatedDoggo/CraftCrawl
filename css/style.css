@@ -2447,6 +2447,8 @@ a.text-link:focus {
 }
 
 .friends-feed-item {
+    --feed-avatar-track: 56px;
+    --feed-column-gap: 12px;
     grid-template-columns: 56px minmax(0, 1fr);
     align-items: start;
     gap: 12px;
@@ -2628,6 +2630,11 @@ a.text-link:focus {
     gap: 8px;
     margin-top: 12px;
     flex-wrap: wrap;
+}
+
+.friends-feed-item .feed-action-row {
+    width: calc(100% + var(--feed-avatar-track) + var(--feed-column-gap));
+    margin-left: calc(-1 * (var(--feed-avatar-track) + var(--feed-column-gap)));
 }
 
 .feed-primary-actions {
@@ -7197,6 +7204,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
 
     .friends-feed-item {
         grid-template-columns: 48px minmax(0, 1fr);
+        --feed-avatar-track: 48px;
     }
 
     .feed-avatar {
