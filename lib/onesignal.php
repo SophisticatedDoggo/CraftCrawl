@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/env.php';
+require_once __DIR__ . '/notifications.php';
 
 function craftcrawl_onesignal_app_id() {
     return craftcrawl_env('ONESIGNAL_APP_ID');
@@ -63,6 +64,9 @@ function craftcrawl_send_push_to_user($conn, $recipient_user_id, $heading, $body
         return false;
     }
 
+    $notification_counts = craftcrawl_user_notification_counts($conn, $recipient_user_id);
+    $badge_count = max(0, (int) ($notification_counts['badge_count'] ?? 0));
+
     $payload = [
         'app_id' => craftcrawl_onesignal_app_id(),
         'target_channel' => 'push',
@@ -75,6 +79,9 @@ function craftcrawl_send_push_to_user($conn, $recipient_user_id, $heading, $body
         'contents' => [
             'en' => $body
         ],
+        // Keep iOS aligned with the same unread total already used by the app UI.
+        'ios_badgeType' => 'SetTo',
+        'ios_badgeCount' => $badge_count,
     ];
 
     $absolute_url = craftcrawl_onesignal_absolute_url($url);

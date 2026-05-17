@@ -927,8 +927,33 @@ window.CraftCrawlInitFriends = function (scope = document) {
             });
     }
 
+    function isFeedTabActive() {
+        return Boolean(panel && !panel.closest('[data-user-tab-panel]')?.hidden);
+    }
+
+    function refreshVisibleFeed() {
+        if (!isFeedTabActive()) {
+            return Promise.resolve();
+        }
+
+        return loadFeed();
+    }
+
     window.addEventListener('craftcrawl:event-want-updated', () => {
         loadFeed();
+    });
+
+    window.addEventListener('craftcrawl:user-tab-changed', (event) => {
+        if (event.detail?.tab === 'feed') {
+            refreshVisibleFeed();
+        }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            loadStatus();
+            refreshVisibleFeed();
+        }
     });
 
     function loadRequests() {

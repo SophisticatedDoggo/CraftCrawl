@@ -92,6 +92,16 @@ try {
         $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges);
         $conn->commit();
 
+        if ($reverse_request) {
+            craftcrawl_send_push_to_user(
+                $conn,
+                $friend_id,
+                'Friend invite accepted',
+                $sender_name . ' accepted your CraftCrawl friend invite.',
+                'user/friends.php?focus_friend=' . rawurlencode((string) $user_id)
+            );
+        }
+
         echo json_encode([
             'ok' => true,
             'status' => 'friends',

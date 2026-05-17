@@ -73,6 +73,11 @@
             return;
         }
 
+        if (typeof window.CraftCrawlNavigateUserShell === 'function'
+            && window.CraftCrawlNavigateUserShell(path)) {
+            return;
+        }
+
         window.location.assign(path);
     }
 
@@ -84,7 +89,11 @@
         }
 
         await OneSignal.initialize({ appId: config.app_id });
-        OneSignal.Notifications.addEventListener('click', handleNativeNotificationClick);
+        if (typeof OneSignal.Notifications.addClickListener === 'function') {
+            OneSignal.Notifications.addClickListener(handleNativeNotificationClick);
+        } else {
+            OneSignal.Notifications.addEventListener?.('click', handleNativeNotificationClick);
+        }
         await OneSignal.login({ externalId: config.external_id });
 
         return OneSignal;
