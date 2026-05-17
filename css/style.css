@@ -1388,8 +1388,8 @@ a.text-link:focus {
 
 .reward-goal-card.is-unlocked .reward-goal-title-row span,
 .badge-goal-card.is-unlocked .badge-goal-title-row span {
-    border-color: color-mix(in srgb, var(--color-primary) 48%, var(--color-border));
-    color: var(--color-primary);
+    border-color: color-mix(in srgb, #d96b6b 52%, var(--color-border));
+    color: #d96b6b;
 }
 
 .appearance-reward-preview {
@@ -4405,8 +4405,8 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 .palette-switcher button:not(:disabled) .settings-option-status,
 .app-icon-switcher button:not(:disabled) .settings-option-status {
-    border-color: color-mix(in srgb, var(--color-primary) 48%, var(--color-border));
-    color: var(--color-primary);
+    border-color: color-mix(in srgb, #d96b6b 52%, var(--color-border));
+    color: #d96b6b;
 }
 
 .palette-switcher button:disabled,
