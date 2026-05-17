@@ -55,9 +55,71 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let hasFocusedRequest = false;
     let hasFocusedFriend = false;
 
+    function installFeedReactionHandler() {
+        if (document.documentElement.dataset.feedReactionReady === 'true') {
+            return;
+        }
+
+        document.documentElement.dataset.feedReactionReady = 'true';
+
+        // Event delegation for reactions — works for feed lists, feed threads, and business post surfaces.
+        document.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-feed-reaction]');
+            if (!button || button.disabled) {
+                return;
+            }
+
+            const tokenSource = button.closest('[data-csrf-token]');
+            const requestCsrfToken = tokenSource?.dataset.csrfToken || csrfToken;
+
+            button.disabled = true;
+            button.classList.add('is-loading');
+
+            postForm(userEndpoint('feed_reaction_toggle.php'), {
+                csrf_token: requestCsrfToken,
+                item_key: button.dataset.itemKey,
+                reaction_type: button.dataset.reactionType
+            })
+                .then((data) => {
+                    if (!data.ok) {
+                        showStatus(data.message || 'Reaction could not be saved.', true);
+                        return;
+                    }
+
+                    if (data.xp_reward && window.craftcrawlShowXpReward) {
+                        window.craftcrawlShowXpReward(data.xp_reward);
+                    }
+
+                    const article = button.closest('article');
+                    const reactionsDiv = button.closest('.feed-reactions');
+                    if (reactionsDiv && data.reactions) {
+                        const itemKey = button.dataset.itemKey;
+                        const itemType = article?.dataset.feedItemType || itemKey.split(':')[0];
+                        const availableReactions = availableReactionTypes({
+                            type: itemType,
+                            is_self: article?.dataset.feedIsSelf === 'true'
+                        });
+                        const reactionMap = {};
+                        data.reactions.forEach((r) => { reactionMap[r.type] = r; });
+                        reactionsDiv.innerHTML = availableReactions.map((type) => {
+                            const reaction = reactionMap[type] || { count: 0, reacted: false };
+                            return `<button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(itemKey)}" data-reaction-type="${type}">${reactionLabels[type]}${reaction.count > 0 ? ` ${reaction.count}` : ''}</button>`;
+                        }).join('');
+                    }
+                })
+                .catch((error) => showStatus(error.message || 'Reaction could not be saved.', true))
+                .finally(() => {
+                    button.disabled = false;
+                    button.classList.remove('is-loading');
+                });
+        });
+    }
+
     function userEndpoint(file) {
         return isUserPath ? file : `user/${file}`;
     }
+
+    installFeedReactionHandler();
 
     if (!panel && !managerPage && !menuBadges.length && !tabBadges.length && !menuToggleBadges.length) {
         return;
@@ -793,58 +855,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
             sentinel.hidden = !hasMore;
         }
     }
-
-    // Event delegation for reactions — works for feed lists and feed threads.
-    document.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-feed-reaction]');
-        if (!button || button.disabled) {
-            return;
-        }
-
-        const tokenSource = button.closest('[data-csrf-token]');
-        const requestCsrfToken = tokenSource?.dataset.csrfToken || csrfToken;
-
-        button.disabled = true;
-        button.classList.add('is-loading');
-
-        postForm(userEndpoint('feed_reaction_toggle.php'), {
-            csrf_token: requestCsrfToken,
-            item_key: button.dataset.itemKey,
-            reaction_type: button.dataset.reactionType
-        })
-            .then((data) => {
-                if (!data.ok) {
-                    showStatus(data.message || 'Reaction could not be saved.', true);
-                    return;
-                }
-
-                if (data.xp_reward && window.craftcrawlShowXpReward) {
-                    window.craftcrawlShowXpReward(data.xp_reward);
-                }
-
-                const article = button.closest('article');
-                const reactionsDiv = button.closest('.feed-reactions');
-                if (reactionsDiv && data.reactions) {
-                    const itemKey = button.dataset.itemKey;
-                    const itemType = article?.dataset.feedItemType || itemKey.split(':')[0];
-                    const availableReactions = availableReactionTypes({
-                        type: itemType,
-                        is_self: article?.dataset.feedIsSelf === 'true'
-                    });
-                    const reactionMap = {};
-                    data.reactions.forEach((r) => { reactionMap[r.type] = r; });
-                    reactionsDiv.innerHTML = availableReactions.map((type) => {
-                        const reaction = reactionMap[type] || { count: 0, reacted: false };
-                        return `<button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(itemKey)}" data-reaction-type="${type}">${reactionLabels[type]}${reaction.count > 0 ? ` ${reaction.count}` : ''}</button>`;
-                    }).join('');
-                }
-            })
-            .catch((error) => showStatus(error.message || 'Reaction could not be saved.', true))
-            .finally(() => {
-                button.disabled = false;
-                button.classList.remove('is-loading');
-            });
-    });
 
     // Delegated poll vote handler for feed items
     if (feed) {

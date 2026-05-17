@@ -96,7 +96,7 @@ function craftcrawl_render_business_post(array $post): string {
         $r = $reaction_map[$reaction_type] ?? ['count' => 0, 'reacted' => false];
         $active_class = $r['reacted'] ? ' is-active' : '';
         $count_text = $r['count'] > 0 ? ' ' . $r['count'] : '';
-        $html .= '<button type="button" class="' . $active_class . '" data-post-reaction data-item-key="' . $item_key . '" data-reaction-type="' . $reaction_type . '">';
+        $html .= '<button type="button" class="' . $active_class . '" data-feed-reaction data-item-key="' . $item_key . '" data-reaction-type="' . $reaction_type . '">';
         $html .= htmlspecialchars($reaction_label, ENT_QUOTES, 'UTF-8') . $count_text;
         $html .= '</button>';
     }
