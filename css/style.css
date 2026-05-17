@@ -4322,9 +4322,9 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 }
 
 .palette-switcher-settings button:not(.is-active) {
-    border-color: color-mix(in srgb, var(--palette-preview-border) 76%, #8b8b8b);
-    color: color-mix(in srgb, var(--palette-preview-text) 82%, var(--palette-preview-muted));
-    background: color-mix(in srgb, var(--palette-preview-surface) 88%, #8b8b8b);
+    border-color: color-mix(in srgb, var(--palette-preview-primary) 42%, var(--palette-preview-border));
+    color: var(--palette-preview-text);
+    background: color-mix(in srgb, var(--palette-preview-primary) 8%, var(--palette-preview-surface));
 }
 
 .palette-switcher-settings button:hover,
