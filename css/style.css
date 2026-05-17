@@ -2623,7 +2623,7 @@ a.text-link:focus {
 
 .feed-action-row {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
     gap: 8px;
     margin-top: 12px;
@@ -2642,6 +2642,7 @@ a.text-link:focus {
     flex-wrap: wrap;
     gap: 6px;
     justify-content: flex-end;
+    margin-left: auto;
     margin-top: 0;
 }
 
@@ -6249,7 +6250,8 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .feed-reactions {
-        justify-content: flex-start;
+        justify-content: flex-end;
+        margin-left: auto;
     }
 
     .event-feed-item:not(.event-feed-item-with-cover) .event-feed-cover {
@@ -6869,7 +6871,8 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .feed-reactions {
-        justify-content: start;
+        justify-content: flex-end;
+        margin-left: auto;
     }
 
     #map {

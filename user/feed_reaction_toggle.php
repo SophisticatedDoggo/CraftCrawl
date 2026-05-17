@@ -30,7 +30,7 @@ $reaction_options_by_type = [
     'level_up'      => ['cheers', 'nice_find', 'trophy'],
     'event_want'    => ['cheers', 'nice_find'],
     'location_want' => ['cheers', 'nice_find', 'want_to_go'],
-    'badge_earned'  => ['cheers', 'trophy'],
+    'badge_earned'  => ['cheers', 'nice_find', 'trophy'],
     'business_post' => ['cheers', 'want_to_go'],
 ];
 
