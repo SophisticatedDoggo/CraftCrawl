@@ -4321,6 +4321,12 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     background: var(--palette-preview-surface);
 }
 
+.palette-switcher-settings button:not(.is-active) {
+    border-color: color-mix(in srgb, var(--palette-preview-border) 76%, #8b8b8b);
+    color: color-mix(in srgb, var(--palette-preview-text) 82%, var(--palette-preview-muted));
+    background: color-mix(in srgb, var(--palette-preview-surface) 88%, #8b8b8b);
+}
+
 .palette-switcher-settings button:hover,
 .palette-switcher-settings button:focus,
 .palette-switcher-settings button.is-active {
@@ -4413,6 +4419,10 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 .app-icon-switcher button:disabled {
     cursor: not-allowed;
     opacity: 0.78;
+}
+
+.palette-switcher-settings button:disabled {
+    opacity: 1;
 }
 
 .business-edit-panel button {
