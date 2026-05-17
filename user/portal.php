@@ -6,6 +6,11 @@ require_once '../lib/leveling.php';
 
 $user_id = (int) ($_SESSION['user_id'] ?? 0);
 $user_progress = craftcrawl_user_level_progress($conn, $user_id);
+$welcome_stmt = $conn->prepare('SELECT fName, welcomeSeenAt FROM users WHERE id=? LIMIT 1');
+$welcome_stmt->bind_param('i', $user_id);
+$welcome_stmt->execute();
+$welcome_user = $welcome_stmt->get_result()->fetch_assoc();
+$show_welcome_modal = $welcome_user && empty($welcome_user['welcomeSeenAt']);
 $craftcrawl_portal_active = 'map';
 $craftcrawl_portal_show_search = true;
 $craftcrawl_portal_shell = true;
@@ -28,6 +33,30 @@ $craftcrawl_portal_shell = true;
         <?php include __DIR__ . '/portal_header.php'; ?>
         <?php include __DIR__ . '/tab_panels.php'; ?>
     </div>
+    <?php if ($show_welcome_modal) : ?>
+        <section
+            class="welcome-modal"
+            data-welcome-modal
+            data-dismiss-url="welcome_seen.php"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="welcome-modal-title"
+        >
+            <div class="welcome-modal-backdrop" aria-hidden="true"></div>
+            <div class="welcome-modal-panel">
+                <span class="welcome-modal-kicker">Welcome to CraftCrawl</span>
+                <h2 id="welcome-modal-title">Hi<?php echo !empty($welcome_user['fName']) ? ', ' . escape_output($welcome_user['fName']) : ''; ?>.</h2>
+                <p>Your portal is where your crawl comes together:</p>
+                <ul>
+                    <li><strong>Map</strong> nearby breweries, wineries, cideries, distilleries, and meaderies.</li>
+                    <li><strong>Check in</strong> when you visit to earn XP, level up, and unlock rewards.</li>
+                    <li><strong>Events</strong> help you find what is happening next at CraftCrawl locations.</li>
+                    <li><strong>Feed</strong> lets you follow friends' milestones and discoveries.</li>
+                </ul>
+                <button type="button" data-welcome-dismiss>Start exploring</button>
+            </div>
+        </section>
+    <?php endif; ?>
     <?php include __DIR__ . '/app_nav.php'; ?>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
@@ -51,5 +80,6 @@ $craftcrawl_portal_shell = true;
 <script src="../js/user_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/user_shell_navigation.js'); ?>"></script>
 <script src="../js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/../js/depth_animations.js'); ?>"></script>
 <script src="../js/onesignal_push.js?v=<?php echo filemtime(__DIR__ . '/../js/onesignal_push.js'); ?>"></script>
+<script src="../js/welcome_modal.js?v=<?php echo filemtime(__DIR__ . '/../js/welcome_modal.js'); ?>"></script>
 </body>
 </html>

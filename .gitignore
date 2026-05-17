@@ -1,7 +1,9 @@
 data/
 .env
 scripts/
-migrations/
+migrations/*
+!migrations/
+!migrations/*.sql
 files/
 node_modules/
 dist/
