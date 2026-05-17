@@ -1380,6 +1380,12 @@ a.text-link:focus {
     text-transform: uppercase;
 }
 
+.reward-goal-card.is-locked .reward-goal-title-row span,
+.badge-goal-card.is-locked .badge-goal-title-row span {
+    border-color: var(--color-border);
+    color: var(--color-muted);
+}
+
 .reward-goal-card.is-unlocked .reward-goal-title-row span,
 .badge-goal-card.is-unlocked .badge-goal-title-row span {
     border-color: color-mix(in srgb, var(--color-primary) 48%, var(--color-border));
@@ -4315,24 +4321,12 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     background: var(--palette-preview-surface);
 }
 
-.palette-switcher-settings button .settings-option-status {
-    border-color: color-mix(in srgb, var(--palette-preview-primary) 48%, var(--palette-preview-border));
-    color: var(--palette-preview-primary);
-}
-
 .palette-switcher-settings button:hover,
 .palette-switcher-settings button:focus,
 .palette-switcher-settings button.is-active {
     border-color: var(--palette-preview-primary);
     color: var(--palette-preview-text);
     background: color-mix(in srgb, var(--palette-preview-primary) 14%, var(--palette-preview-surface));
-}
-
-.palette-switcher-settings button:hover .settings-option-status,
-.palette-switcher-settings button:focus .settings-option-status,
-.palette-switcher-settings button.is-active .settings-option-status {
-    border-color: var(--palette-preview-primary);
-    color: var(--palette-preview-primary);
 }
 
 .display-theme-form {
@@ -4403,25 +4397,16 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     text-transform: uppercase;
 }
 
+.palette-switcher button:disabled .settings-option-status,
+.app-icon-switcher button:disabled .settings-option-status {
+    border-color: var(--color-border);
+    color: var(--color-muted);
+}
+
 .palette-switcher button:not(:disabled) .settings-option-status,
 .app-icon-switcher button:not(:disabled) .settings-option-status {
     border-color: color-mix(in srgb, var(--color-primary) 48%, var(--color-border));
     color: var(--color-primary);
-}
-
-.palette-switcher button.is-active .settings-option-status,
-.palette-switcher button:hover .settings-option-status,
-.palette-switcher button:focus .settings-option-status {
-    border-color: color-mix(in srgb, var(--color-on-primary) 70%, transparent);
-    color: var(--color-on-primary);
-}
-
-.palette-switcher-settings button:not(:disabled) .settings-option-status,
-.palette-switcher-settings button.is-active .settings-option-status,
-.palette-switcher-settings button:hover .settings-option-status,
-.palette-switcher-settings button:focus .settings-option-status {
-    border-color: var(--palette-preview-primary);
-    color: var(--palette-preview-primary);
 }
 
 .palette-switcher button:disabled,
