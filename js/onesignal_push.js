@@ -138,13 +138,23 @@
     }
 
     async function requestNativePermission(OneSignal) {
-        const response = await OneSignal.requestPermission({ fallbackToSettings: true });
-
-        if (typeof response === 'boolean') {
-            return response;
+        if (OneSignal.Notifications && typeof OneSignal.Notifications.requestPermission === 'function') {
+            return Boolean(await OneSignal.Notifications.requestPermission(true));
         }
 
-        return Boolean(response?.permission || response?.accepted);
+        // Older native bridges exposed this lower-level plugin method directly.
+        // Keep it as a fallback so existing installed builds fail gracefully.
+        if (typeof OneSignal.requestPermission === 'function') {
+            const response = await OneSignal.requestPermission({ fallbackToSettings: true });
+
+            if (typeof response === 'boolean') {
+                return response;
+            }
+
+            return Boolean(response?.permission || response?.accepted);
+        }
+
+        return false;
     }
 
     async function autoPromptNativePush(OneSignal) {
