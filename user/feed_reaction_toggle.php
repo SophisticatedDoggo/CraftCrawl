@@ -202,24 +202,29 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user
     $owner_user_id = 0;
 
     if (preg_match('/^first_visit:(\d+)$/', $item_key, $m)) {
+        $item_id = (int) $m[1];
         $s = $conn->prepare("SELECT user_id FROM user_visits WHERE id=? LIMIT 1");
-        $s->bind_param("i", (int) $m[1]); $s->execute();
+        $s->bind_param("i", $item_id); $s->execute();
         $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
     } elseif (preg_match('/^level_up:(\d+)$/', $item_key, $m)) {
+        $item_id = (int) $m[1];
         $s = $conn->prepare("SELECT user_id FROM xp_log WHERE id=? LIMIT 1");
-        $s->bind_param("i", (int) $m[1]); $s->execute();
+        $s->bind_param("i", $item_id); $s->execute();
         $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
     } elseif (preg_match('/^event_want:(\d+)$/', $item_key, $m)) {
+        $item_id = (int) $m[1];
         $s = $conn->prepare("SELECT user_id FROM event_want_to_go WHERE id=? LIMIT 1");
-        $s->bind_param("i", (int) $m[1]); $s->execute();
+        $s->bind_param("i", $item_id); $s->execute();
         $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
     } elseif (preg_match('/^location_want:(\d+)$/', $item_key, $m)) {
+        $item_id = (int) $m[1];
         $s = $conn->prepare("SELECT user_id FROM want_to_go_locations WHERE id=? LIMIT 1");
-        $s->bind_param("i", (int) $m[1]); $s->execute();
+        $s->bind_param("i", $item_id); $s->execute();
         $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
     } elseif (preg_match('/^badge_earned:(\d+)$/', $item_key, $m)) {
+        $item_id = (int) $m[1];
         $s = $conn->prepare("SELECT user_id FROM user_badges WHERE id=? LIMIT 1");
-        $s->bind_param("i", (int) $m[1]); $s->execute();
+        $s->bind_param("i", $item_id); $s->execute();
         $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
     }
 
