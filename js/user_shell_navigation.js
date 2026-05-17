@@ -65,6 +65,12 @@
     function initSwappedContent(root) {
         window.CraftCrawlInitUserTabShell?.(root);
         window.CraftCrawlInitFriends?.(root);
+        window.CraftCrawlInitBusinessDetailsMap?.(root);
+        window.CraftCrawlInitBusinessGallery?.(root);
+        window.CraftCrawlInitBusinessPosts?.(root);
+        window.CraftCrawlInitCheckIn?.(root);
+        window.CraftCrawlInitReviewPhotos?.(root);
+        window.CraftCrawlInitReviewEditToggle?.(root);
         window.CraftCrawlInitPaletteSwitcher?.(root);
         window.CraftCrawlInitAppIconSwitcher?.(root);
         window.CraftCrawlInitProfilePhotoCrop?.(root);
@@ -89,7 +95,9 @@
             const visibleContent = activeContent();
 
             if (destinationIsBase && liveBaseContent) {
-                if (visibleContent && visibleContent !== liveBaseContent) visibleContent.remove();
+                document.querySelectorAll('[data-user-page-content]').forEach((content) => {
+                    if (content !== liveBaseContent) content.remove();
+                });
                 liveBaseContent.hidden = false;
                 document.body.className = 'portal-body';
                 window.CraftCrawlSwitchUserTab?.(url);
@@ -99,6 +107,9 @@
                 if (!nextContent || !visibleContent) throw new Error('Missing shell content.');
 
                 if (!destinationIsBase && liveBaseContent && visibleContent === liveBaseContent) {
+                    document.querySelectorAll('[data-user-page-content]').forEach((content) => {
+                        if (content !== liveBaseContent) content.remove();
+                    });
                     liveBaseContent.hidden = true;
                     liveBaseContent.after(nextContent);
                 } else {
@@ -128,6 +139,18 @@
     document.addEventListener('click', (event) => {
         const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
         if (!link || link.target || link.hasAttribute('download') || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+        // Shell pages are swapped into the DOM, so their back links do not always
+        // receive the one-time listener registered by theme_init.js on page load.
+        // Preserve the shared back-link contract here before normal shell routing
+        // treats the fallback href as a fresh navigation.
+        if (link.hasAttribute('data-back-link') && window.history.length > 1) {
+            event.preventDefault();
+            event.stopPropagation();
+            window.history.back();
+            return;
+        }
+
         if (!isShellUrl(link.href)) return;
 
         event.preventDefault();

@@ -1,12 +1,13 @@
-(function () {
-    const form = document.querySelector('[data-check-in-form]');
+window.CraftCrawlInitCheckIn = function (root = document) {
+    const form = root.querySelector('[data-check-in-form]');
 
-    if (!form) {
-        return;
+    if (!form || form.dataset.checkInReady === 'true') {
+        return false;
     }
+    form.dataset.checkInReady = 'true';
 
     const button = form.querySelector('button[type="submit"]');
-    const feedback = document.querySelector('[data-check-in-feedback]');
+    const feedback = root.querySelector('[data-check-in-feedback]');
     const latitudeInput = form.querySelector('input[name="latitude"]');
     const longitudeInput = form.querySelector('input[name="longitude"]');
 
@@ -138,4 +139,7 @@
             }
         }
     });
-}());
+    return true;
+};
+
+window.CraftCrawlInitCheckIn();

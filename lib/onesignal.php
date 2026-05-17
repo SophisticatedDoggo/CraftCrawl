@@ -80,7 +80,13 @@ function craftcrawl_send_push_to_user($conn, $recipient_user_id, $heading, $body
     $absolute_url = craftcrawl_onesignal_absolute_url($url);
 
     if ($absolute_url !== '') {
-        $payload['url'] = $absolute_url;
+        // Web push should keep opening a normal browser URL, but native push
+        // should let the app route inside its existing WebView instead of asking
+        // Android/iOS to resolve an https URL externally.
+        $payload['web_url'] = $absolute_url;
+        $payload['data'] = [
+            'craftcrawl_path' => '/' . ltrim($url, '/')
+        ];
     }
 
     $json_payload = json_encode($payload);

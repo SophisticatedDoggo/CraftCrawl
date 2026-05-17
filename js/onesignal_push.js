@@ -56,6 +56,26 @@
         });
     }
 
+    function nativeNotificationPath(event) {
+        const path = event?.notification?.additionalData?.craftcrawl_path;
+
+        if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) {
+            return '';
+        }
+
+        return path;
+    }
+
+    function handleNativeNotificationClick(event) {
+        const path = nativeNotificationPath(event);
+
+        if (!path) {
+            return;
+        }
+
+        window.location.assign(path);
+    }
+
     async function initNativeOneSignal(config) {
         const OneSignal = getNativeOneSignalPlugin();
 
@@ -64,6 +84,7 @@
         }
 
         await OneSignal.initialize({ appId: config.app_id });
+        OneSignal.Notifications.addEventListener('click', handleNativeNotificationClick);
         await OneSignal.login({ externalId: config.external_id });
 
         return OneSignal;

@@ -1,81 +1,84 @@
-const reviewPhotoButtons = Array.from(document.querySelectorAll('.review-photo-button'));
-const lightbox = document.getElementById('review-photo-lightbox');
-const lightboxImage = document.getElementById('review-photo-lightbox-image');
-const lightboxCount = document.getElementById('review-photo-lightbox-count');
-const previousButton = document.getElementById('review-photo-lightbox-prev');
-const nextButton = document.getElementById('review-photo-lightbox-next');
-const closeControls = document.querySelectorAll('[data-lightbox-close]');
+window.CraftCrawlInitReviewPhotos = function (root = document) {
+    const reviewPhotoButtons = Array.from(root.querySelectorAll('.review-photo-button'));
+    const lightbox = root.querySelector('#review-photo-lightbox');
 
-let activePhotoIndex = 0;
+    if (!reviewPhotoButtons.length || !lightbox || lightbox.dataset.reviewPhotosReady === 'true') {
+        return false;
+    }
+    lightbox.dataset.reviewPhotosReady = 'true';
 
-function showReviewPhoto(index) {
-    if (!reviewPhotoButtons.length || !lightbox || !lightboxImage || !lightboxCount) {
-        return;
+    const lightboxImage = root.querySelector('#review-photo-lightbox-image');
+    const lightboxCount = root.querySelector('#review-photo-lightbox-count');
+    const previousButton = root.querySelector('#review-photo-lightbox-prev');
+    const nextButton = root.querySelector('#review-photo-lightbox-next');
+    const closeControls = root.querySelectorAll('[data-lightbox-close]');
+    let activePhotoIndex = 0;
+
+    function showReviewPhoto(index) {
+        if (!lightboxImage || !lightboxCount) {
+            return;
+        }
+
+        activePhotoIndex = (index + reviewPhotoButtons.length) % reviewPhotoButtons.length;
+        const photoButton = reviewPhotoButtons[activePhotoIndex];
+
+        lightboxImage.src = photoButton.dataset.reviewPhotoUrl;
+        lightboxCount.textContent = `${activePhotoIndex + 1} / ${reviewPhotoButtons.length}`;
     }
 
-    activePhotoIndex = (index + reviewPhotoButtons.length) % reviewPhotoButtons.length;
-    const photoButton = reviewPhotoButtons[activePhotoIndex];
-
-    lightboxImage.src = photoButton.dataset.reviewPhotoUrl;
-    lightboxCount.textContent = `${activePhotoIndex + 1} / ${reviewPhotoButtons.length}`;
-}
-
-function openReviewPhotoLightbox(index) {
-    if (!lightbox) {
-        return;
+    function openReviewPhotoLightbox(index) {
+        showReviewPhoto(index);
+        lightbox.hidden = false;
+        document.body.classList.add('lightbox-open');
     }
 
-    showReviewPhoto(index);
-    lightbox.hidden = false;
-    document.body.classList.add('lightbox-open');
-}
+    function closeReviewPhotoLightbox() {
+        if (!lightboxImage) {
+            return;
+        }
 
-function closeReviewPhotoLightbox() {
-    if (!lightbox || !lightboxImage) {
-        return;
+        lightbox.hidden = true;
+        lightboxImage.removeAttribute('src');
+        document.body.classList.remove('lightbox-open');
     }
 
-    lightbox.hidden = true;
-    lightboxImage.removeAttribute('src');
-    document.body.classList.remove('lightbox-open');
-}
-
-reviewPhotoButtons.forEach((button, index) => {
-    button.addEventListener('click', () => {
-        openReviewPhotoLightbox(index);
+    reviewPhotoButtons.forEach((button, index) => {
+        button.addEventListener('click', () => {
+            openReviewPhotoLightbox(index);
+        });
     });
-});
 
-if (previousButton) {
-    previousButton.addEventListener('click', () => {
+    previousButton?.addEventListener('click', () => {
         showReviewPhoto(activePhotoIndex - 1);
     });
-}
 
-if (nextButton) {
-    nextButton.addEventListener('click', () => {
+    nextButton?.addEventListener('click', () => {
         showReviewPhoto(activePhotoIndex + 1);
     });
-}
 
-closeControls.forEach((control) => {
-    control.addEventListener('click', closeReviewPhotoLightbox);
-});
+    closeControls.forEach((control) => {
+        control.addEventListener('click', closeReviewPhotoLightbox);
+    });
 
-document.addEventListener('keydown', (event) => {
-    if (!lightbox || lightbox.hidden) {
-        return;
-    }
+    document.addEventListener('keydown', (event) => {
+        if (lightbox.hidden) {
+            return;
+        }
 
-    if (event.key === 'Escape') {
-        closeReviewPhotoLightbox();
-    }
+        if (event.key === 'Escape') {
+            closeReviewPhotoLightbox();
+        }
 
-    if (event.key === 'ArrowLeft') {
-        showReviewPhoto(activePhotoIndex - 1);
-    }
+        if (event.key === 'ArrowLeft') {
+            showReviewPhoto(activePhotoIndex - 1);
+        }
 
-    if (event.key === 'ArrowRight') {
-        showReviewPhoto(activePhotoIndex + 1);
-    }
-});
+        if (event.key === 'ArrowRight') {
+            showReviewPhoto(activePhotoIndex + 1);
+        }
+    });
+
+    return true;
+};
+
+window.CraftCrawlInitReviewPhotos();

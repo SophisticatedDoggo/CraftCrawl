@@ -68,6 +68,34 @@
         }
     }
 
+    function syncPersistentUserProgress(progress) {
+        if (!progress) {
+            return;
+        }
+
+        document.querySelectorAll('[data-user-progress-summary]').forEach((summary) => {
+            const level = summary.querySelector('[data-user-progress-level]');
+            const title = summary.querySelector('[data-user-progress-title]');
+            const fill = summary.querySelector('[data-user-progress-fill]');
+            const xp = summary.querySelector('[data-user-progress-xp]');
+
+            if (level) {
+                level.textContent = `Level ${progress.level}`;
+            }
+            if (title) {
+                title.textContent = progress.title || '';
+            }
+            if (fill) {
+                fill.style.width = `${progressPercent(progress)}%`;
+            }
+            if (xp) {
+                xp.textContent = progress.max_level
+                    ? 'Max Level Reached'
+                    : `${progress.level_xp} / ${progress.next_level_xp} XP`;
+            }
+        });
+    }
+
     function buildProgressSteps(before, after) {
         const steps = [];
         const startLevel = Number(before.level || 1);
@@ -178,6 +206,7 @@
             return;
         }
 
+        syncPersistentUserProgress(reward.progress);
         removeExistingCelebration();
 
         const levelUp = Number(reward.progress.level || 1) > Number(reward.progress_before.level || 1);
@@ -339,4 +368,5 @@
 
     window.craftcrawlShowXpReward = showXpReward;
     window.craftcrawlShowLevelCelebration = showLevelCelebration;
+    window.craftcrawlSyncPersistentUserProgress = syncPersistentUserProgress;
 }());

@@ -1,18 +1,22 @@
-const gallery = document.querySelector('[data-business-gallery]');
+window.CraftCrawlInitBusinessGallery = function (root = document) {
+    const gallery = root.querySelector('[data-business-gallery]');
 
-if (gallery) {
+    if (!gallery || gallery.dataset.businessGalleryReady === 'true') {
+        return false;
+    }
+    gallery.dataset.businessGalleryReady = 'true';
     const slides = Array.from(gallery.querySelectorAll('.business-gallery-slide'));
     const slideButtons = Array.from(gallery.querySelectorAll('[data-gallery-photo-url]'));
     const dots = Array.from(gallery.querySelectorAll('[data-gallery-dot]'));
     const track = gallery.querySelector('.business-gallery-track');
     const previousButton = gallery.querySelector('[data-gallery-prev]');
     const nextButton = gallery.querySelector('[data-gallery-next]');
-    const lightbox = document.getElementById('business-gallery-lightbox');
-    const lightboxImage = document.getElementById('business-gallery-lightbox-image');
-    const lightboxCount = document.getElementById('business-gallery-lightbox-count');
-    const lightboxPreviousButton = document.getElementById('business-gallery-lightbox-prev');
-    const lightboxNextButton = document.getElementById('business-gallery-lightbox-next');
-    const lightboxCloseControls = document.querySelectorAll('[data-gallery-lightbox-close]');
+    const lightbox = root.querySelector('#business-gallery-lightbox');
+    const lightboxImage = root.querySelector('#business-gallery-lightbox-image');
+    const lightboxCount = root.querySelector('#business-gallery-lightbox-count');
+    const lightboxPreviousButton = root.querySelector('#business-gallery-lightbox-prev');
+    const lightboxNextButton = root.querySelector('#business-gallery-lightbox-next');
+    const lightboxCloseControls = root.querySelectorAll('[data-gallery-lightbox-close]');
     let activeIndex = 0;
     let autoplayId = null;
     let lightboxTransitionId = 0;
@@ -412,4 +416,7 @@ if (gallery) {
     }, 250);
 
     startAutoplay();
-}
+    return true;
+};
+
+window.CraftCrawlInitBusinessGallery();

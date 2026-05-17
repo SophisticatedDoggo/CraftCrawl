@@ -1,12 +1,13 @@
-(function () {
-    const preview = document.querySelector('[data-review-edit-preview]');
-    const form = document.querySelector('[data-review-edit-form]');
-    const toggle = document.querySelector('[data-review-edit-toggle]');
-    const cancel = document.querySelector('[data-review-edit-cancel]');
+window.CraftCrawlInitReviewEditToggle = function (root = document) {
+    const preview = root.querySelector('[data-review-edit-preview]');
+    const form = root.querySelector('[data-review-edit-form]');
+    const toggle = root.querySelector('[data-review-edit-toggle]');
+    const cancel = root.querySelector('[data-review-edit-cancel]');
 
-    if (!preview || !form || !toggle) {
-        return;
+    if (!preview || !form || !toggle || toggle.dataset.reviewEditReady === 'true') {
+        return false;
     }
+    toggle.dataset.reviewEditReady = 'true';
 
     function showForm() {
         preview.hidden = true;
@@ -25,4 +26,7 @@
     if (cancel) {
         cancel.addEventListener('click', hideForm);
     }
-}());
+    return true;
+};
+
+window.CraftCrawlInitReviewEditToggle();

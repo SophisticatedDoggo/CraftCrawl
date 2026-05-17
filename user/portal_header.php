@@ -54,21 +54,21 @@ if ($craftcrawl_portal_show_level_summary && isset($conn, $user_id)) {
         </div>
     </div>
     <?php if ($craftcrawl_portal_show_level_summary) : ?>
-    <section class="portal-level-summary" aria-label="Your CraftCrawl level" data-user-tab-map-only <?php echo $craftcrawl_portal_active !== 'map' ? 'hidden' : ''; ?>>
+    <section class="portal-level-summary" aria-label="Your CraftCrawl level" data-user-tab-map-only data-user-progress-summary <?php echo $craftcrawl_portal_active !== 'map' ? 'hidden' : ''; ?>>
         <?php if ($craftcrawl_portal_avatar) : ?>
             <?php echo craftcrawl_render_user_avatar($craftcrawl_portal_avatar, 'medium', 'portal-level-avatar'); ?>
         <?php endif; ?>
         <div>
-            <strong>Level <?php echo escape_output($user_progress['level']); ?></strong>
-            <span><?php echo escape_output($user_progress['title']); ?></span>
+            <strong data-user-progress-level>Level <?php echo escape_output($user_progress['level']); ?></strong>
+            <span data-user-progress-title><?php echo escape_output($user_progress['title']); ?></span>
         </div>
         <div class="level-progress-bar" aria-hidden="true">
-            <span style="width: <?php echo escape_output($user_progress['progress_percent']); ?>%;"></span>
+            <span data-user-progress-fill style="width: <?php echo escape_output($user_progress['progress_percent']); ?>%;"></span>
         </div>
         <?php if ($user_progress['max_level']) : ?>
-            <p>Max Level Reached</p>
+            <p data-user-progress-xp>Max Level Reached</p>
         <?php else : ?>
-            <p><?php echo escape_output($user_progress['level_xp']); ?> / <?php echo escape_output($user_progress['next_level_xp']); ?> XP</p>
+            <p data-user-progress-xp><?php echo escape_output($user_progress['level_xp']); ?> / <?php echo escape_output($user_progress['next_level_xp']); ?> XP</p>
             <?php $portal_next_reward = craftcrawl_next_reward_preview($user_progress['level']); ?>
             <?php if ($portal_next_reward) : ?>
                 <p class="next-reward-preview">Level <?php echo escape_output($portal_next_reward['level']); ?>: <?php echo escape_output($portal_next_reward['description']); ?></p>
