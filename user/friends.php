@@ -157,7 +157,7 @@ $leaderboard = $leaderboard_stmt->get_result();
 </head>
 <body>
     <div data-user-page-content>
-    <main class="settings-page friends-page pull-refresh-surface" data-friends-manager-page data-pull-refresh data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
+    <main class="settings-page friends-page pull-refresh-surface" data-friends-manager-page data-pull-refresh data-refresh-action="shell" data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
         <div class="pull-refresh-indicator" data-refresh-indicator aria-live="polite">
             <span aria-hidden="true"></span>
             <strong data-refresh-label>Pull to refresh</strong>

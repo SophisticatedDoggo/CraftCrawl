@@ -2227,6 +2227,15 @@ a.text-link:focus {
 
 .events-feed-header {
     width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px 12px;
+    align-items: flex-start;
+}
+
+.events-feed-header > div {
+    min-width: min(100%, 240px);
 }
 
 .events-feed-header h2 {
@@ -2249,6 +2258,7 @@ a.text-link:focus {
 }
 
 .events-liked-toggle {
+    flex-basis: 100%;
     max-width: max-content;
     margin-top: 8px;
     padding: 8px 10px;

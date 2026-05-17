@@ -8,7 +8,7 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
     feedContainer.dataset.portalEventsReady = 'true';
 
     function getAllEvents(likedOnly = false) {
-        $.ajax({
+        return $.ajax({
             url: likedOnly ? '../mapbox/get_events.php?liked=1' : '../mapbox/get_events.php',
             dataType: 'json',
             success: function (eventData) {
@@ -26,9 +26,13 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
 
     function refreshVisibleEvents() {
         if (isEventsTabActive()) {
-            getAllEvents(Boolean(likedEventsOnly?.checked));
+            return getAllEvents(Boolean(likedEventsOnly?.checked));
         }
+
+        return Promise.resolve();
     }
+
+    window.CraftCrawlRefreshPortalEvents = refreshVisibleEvents;
 
     function renderEventsFeed(events) {
         if (!events.length) {

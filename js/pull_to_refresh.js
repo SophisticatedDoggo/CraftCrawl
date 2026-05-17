@@ -44,6 +44,14 @@
                     return window.CraftCrawlRefreshFriendsFeed();
                 }
 
+                if (action === 'events' && typeof window.CraftCrawlRefreshPortalEvents === 'function') {
+                    return window.CraftCrawlRefreshPortalEvents();
+                }
+
+                if (action === 'shell' && typeof window.CraftCrawlRefreshUserShell === 'function') {
+                    return window.CraftCrawlRefreshUserShell();
+                }
+
                 window.location.reload();
                 return new Promise(() => {});
             }

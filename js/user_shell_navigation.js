@@ -81,8 +81,12 @@
         window.CraftCrawlInitMobileActionsMenu?.();
     }
 
-    async function fetchDocument(url) {
-        const response = await fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'CraftCrawlShell' } });
+    async function fetchDocument(url, options = {}) {
+        const response = await fetch(url, {
+            credentials: 'same-origin',
+            cache: options.noStore ? 'no-store' : 'default',
+            headers: { 'X-Requested-With': 'CraftCrawlShell' }
+        });
         if (!response.ok) throw new Error('Navigation failed.');
         return new DOMParser().parseFromString(await response.text(), 'text/html');
     }
@@ -104,7 +108,7 @@
                 document.body.className = 'portal-body';
                 window.CraftCrawlSwitchUserTab?.(url);
             } else {
-                const doc = await fetchDocument(url);
+                const doc = await fetchDocument(url, { noStore: Boolean(options.noStore) });
                 const nextContent = doc.querySelector('[data-user-page-content]');
                 if (!nextContent || !visibleContent) throw new Error('Missing shell content.');
 
@@ -163,5 +167,8 @@
     }, true);
     window.addEventListener('popstate', () => { if (isShellUrl(window.location.href)) navigate(window.location.href, { replace: true }); });
     window.CraftCrawlNavigateUserShell = navigate;
+    window.CraftCrawlRefreshUserShell = function () {
+        return navigate(window.location.href, { replace: true, noStore: true });
+    };
     setActiveTab(window.location.href);
 })();

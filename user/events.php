@@ -36,6 +36,7 @@ $craftcrawl_portal_shell = true;
 <script src="../js/map.js?v=<?php echo filemtime(__DIR__ . '/../js/map.js'); ?>"></script>
 <script src="../js/directions_links.js?v=<?php echo filemtime(__DIR__ . '/../js/directions_links.js'); ?>"></script>
 <script src="../js/portal_events.js?v=<?php echo filemtime(__DIR__ . '/../js/portal_events.js'); ?>"></script>
+<script src="../js/pull_to_refresh.js?v=<?php echo filemtime(__DIR__ . '/../js/pull_to_refresh.js'); ?>"></script>
 <script src="../js/level_celebration.js?v=<?php echo filemtime(__DIR__ . '/../js/level_celebration.js'); ?>"></script>
 <script src="../js/dashboard_check_in.js?v=<?php echo filemtime(__DIR__ . '/../js/dashboard_check_in.js'); ?>"></script>
 <script src="../js/friends.js?v=<?php echo filemtime(__DIR__ . '/../js/friends.js'); ?>"></script>

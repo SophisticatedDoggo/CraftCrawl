@@ -39,10 +39,17 @@ $craftcrawl_portal_active = $craftcrawl_portal_active ?? 'map';
     </div>
 
     <div data-user-tab-panel="events" <?php echo $craftcrawl_portal_active !== 'events' ? 'hidden' : ''; ?>>
-        <section id="events-panel" class="portal-panel">
+        <section id="events-panel" class="portal-panel pull-refresh-surface" data-pull-refresh data-refresh-action="events">
+            <div class="pull-refresh-indicator" data-refresh-indicator aria-live="polite">
+                <span aria-hidden="true"></span>
+                <strong data-refresh-label>Pull to refresh</strong>
+            </div>
             <div class="events-feed-header">
-                <h2>Upcoming Events</h2>
-                <p>Events from CraftCrawl businesses.</p>
+                <div>
+                    <h2>Upcoming Events</h2>
+                    <p>Events from CraftCrawl businesses.</p>
+                </div>
+                <button type="button" class="refresh-page-button" data-refresh-button>Refresh</button>
                 <label class="events-liked-toggle">
                     <input type="checkbox" id="liked-events-only">
                     Liked locations only

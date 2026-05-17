@@ -389,7 +389,7 @@ function format_event_time_range($event) {
 </head>
 <body>
     <div data-user-page-content>
-    <main class="business-details-page pull-refresh-surface" data-pull-refresh>
+    <main class="business-details-page pull-refresh-surface" data-pull-refresh data-refresh-action="shell">
         <div class="pull-refresh-indicator" data-refresh-indicator aria-live="polite">
             <span aria-hidden="true"></span>
             <strong data-refresh-label>Pull to refresh</strong>
