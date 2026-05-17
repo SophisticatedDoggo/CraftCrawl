@@ -996,6 +996,7 @@ a.text-link:focus {
 
 .mobile-actions-toggle {
     display: none;
+    position: relative;
 }
 
 .mobile-actions-panel {
@@ -6094,7 +6095,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
         border-radius: var(--radius-sm);
     }
 
-    .mobile-actions-toggle span {
+    .mobile-actions-toggle > span:not(.notification-badge) {
         display: block;
         width: 21px;
         height: 2.5px;

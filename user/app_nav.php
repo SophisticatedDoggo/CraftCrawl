@@ -8,6 +8,7 @@ $craftcrawl_user_logout_action = $craftcrawl_user_logout_action ?? '/logout.php'
         <span></span>
         <span></span>
         <span></span>
+        <span class="notification-badge" data-friends-menu-toggle-badge hidden></span>
     </button>
     <div class="mobile-actions-panel" data-mobile-actions-panel>
         <a href="<?php echo $craftcrawl_user_nav_prefix; ?>friends.php">
@@ -49,5 +50,6 @@ $craftcrawl_user_logout_action = $craftcrawl_user_logout_action ?? '/logout.php'
             <span></span>
         </span>
         <span>Menu</span>
+        <span class="mobile-tab-badge" data-friends-menu-toggle-badge hidden></span>
     </button>
 </nav>

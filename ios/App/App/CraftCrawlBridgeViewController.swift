@@ -25,6 +25,7 @@ class CraftCrawlBridgeViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
         bridge?.registerPluginInstance(CraftCrawlAppIconPlugin())
+        bridge?.registerPluginInstance(CraftCrawlBadgePlugin())
         bridge?.registerPluginInstance(CraftCrawlPageTransitionPlugin())
     }
 }

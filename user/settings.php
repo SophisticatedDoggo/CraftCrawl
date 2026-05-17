@@ -387,19 +387,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </section>
 
         <section class="settings-panel">
-            <h2>Push Notifications</h2>
-            <p class="form-help">Control push notifications on this device for friend invites, comments, replies, and reactions.</p>
-            <label class="settings-toggle">
-                <input type="checkbox" data-onesignal-toggle disabled>
-                <span>
-                    <strong>Push Notifications</strong>
-                    <small>Turn push notifications on or off for this device.</small>
-                </span>
-            </label>
-            <p class="form-message" data-onesignal-status hidden></p>
-        </section>
-
-        <section class="settings-panel">
             <h2><?php echo $password_auth_enabled ? 'Reset Password' : 'Create Password'; ?></h2>
             <?php if (!$password_auth_enabled) : ?>
                 <p class="form-help">This account currently uses social sign-in only. Create a password if you also want password login or need to disable or delete the account later.</p>

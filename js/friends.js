@@ -15,6 +15,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     const count = panel?.querySelector('[data-friends-count]');
     const menuBadge = document.querySelector('[data-friends-menu-badge]');
     const tabBadge = document.querySelector('[data-friends-tab-badge]');
+    const menuToggleBadges = document.querySelectorAll('[data-friends-menu-toggle-badge]');
     const csrfToken = panel?.dataset.csrfToken || managerPage?.dataset.csrfToken || '';
     let currentStatus = {
         pendingInvites: 0,
@@ -57,7 +58,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         return isUserPath ? file : `user/${file}`;
     }
 
-    if (!panel && !managerPage && !menuBadge && !tabBadge) {
+    if (!panel && !managerPage && !menuBadge && !tabBadge && !menuToggleBadges.length) {
         return;
     }
 
@@ -206,7 +207,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     badgeCount
                 };
                 setBadge(menuBadge, friendsBadgeCount);
+                menuToggleBadges.forEach((badge) => setBadge(badge, friendsBadgeCount));
                 setBadge(tabBadge, feedBadgeCount);
+                syncNativeAppBadge(badgeCount);
             })
             .catch(() => {});
     }
@@ -230,6 +233,30 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
         element.textContent = value > 9 ? '9+' : String(value);
         element.hidden = value < 1;
+    }
+
+    function getNativeBadgePlugin() {
+        const capacitor = window.Capacitor;
+        if (!capacitor
+            || typeof capacitor.isNativePlatform !== 'function'
+            || !capacitor.isNativePlatform()
+            || (typeof capacitor.getPlatform === 'function' && capacitor.getPlatform() !== 'ios')) {
+            return null;
+        }
+
+        return capacitor.Plugins?.CraftCrawlBadge
+            || (typeof capacitor.registerPlugin === 'function'
+                ? capacitor.registerPlugin('CraftCrawlBadge')
+                : null);
+    }
+
+    function syncNativeAppBadge(value) {
+        const badgePlugin = getNativeBadgePlugin();
+        if (!badgePlugin || typeof badgePlugin.setBadgeCount !== 'function') {
+            return;
+        }
+
+        badgePlugin.setBadgeCount({ count: Math.max(0, Number(value || 0)) }).catch(() => {});
     }
 
     function renderSearchResults(users) {
