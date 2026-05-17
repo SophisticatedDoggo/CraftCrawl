@@ -2,7 +2,7 @@
     const enableButton = document.querySelector('[data-onesignal-enable]');
     const statusMessage = document.querySelector('[data-onesignal-status]');
     const isUserPath = /\/user\/?$|\/user\//.test(window.location.pathname);
-    const nativeAutoPromptKey = 'craftcrawl_native_push_auto_prompted_v1';
+    const nativeAutoPromptKey = 'craftcrawl_native_push_auto_prompted_v2';
 
     function userEndpoint(file) {
         return isUserPath ? file : `user/${file}`;
@@ -137,21 +137,53 @@
         return false;
     }
 
+    async function nativeHasPermission(OneSignal) {
+        if (OneSignal.Notifications && typeof OneSignal.Notifications.hasPermission === 'function') {
+            return Boolean(await OneSignal.Notifications.hasPermission());
+        }
+
+        return false;
+    }
+
+    async function nativeCanRequestPermission(OneSignal) {
+        if (OneSignal.Notifications && typeof OneSignal.Notifications.canRequestPermission === 'function') {
+            return Boolean(await OneSignal.Notifications.canRequestPermission());
+        }
+
+        return true;
+    }
+
+    async function ensureNativePushOptIn(OneSignal) {
+        if (OneSignal.User?.pushSubscription && typeof OneSignal.User.pushSubscription.optIn === 'function') {
+            await OneSignal.User.pushSubscription.optIn();
+        }
+    }
+
     async function requestNativePermission(OneSignal) {
+        if (await nativeHasPermission(OneSignal)) {
+            await ensureNativePushOptIn(OneSignal);
+            return true;
+        }
+
         if (OneSignal.Notifications && typeof OneSignal.Notifications.requestPermission === 'function') {
-            return Boolean(await OneSignal.Notifications.requestPermission(true));
+            const accepted = Boolean(await OneSignal.Notifications.requestPermission(true));
+            if (accepted) {
+                await ensureNativePushOptIn(OneSignal);
+            }
+            return accepted;
         }
 
         // Older native bridges exposed this lower-level plugin method directly.
         // Keep it as a fallback so existing installed builds fail gracefully.
         if (typeof OneSignal.requestPermission === 'function') {
             const response = await OneSignal.requestPermission({ fallbackToSettings: true });
-
-            if (typeof response === 'boolean') {
-                return response;
+            const accepted = typeof response === 'boolean'
+                ? response
+                : Boolean(response?.permission || response?.accepted);
+            if (accepted) {
+                await ensureNativePushOptIn(OneSignal);
             }
-
-            return Boolean(response?.permission || response?.accepted);
+            return accepted;
         }
 
         return false;
@@ -162,10 +194,18 @@
             return;
         }
 
-        markAutoPromptedNativePush();
-
         try {
+            if (await nativeHasPermission(OneSignal)) {
+                markAutoPromptedNativePush();
+                return;
+            }
+
+            if (!await nativeCanRequestPermission(OneSignal)) {
+                return;
+            }
+
             const accepted = await requestNativePermission(OneSignal);
+            markAutoPromptedNativePush();
             setStatus(accepted ? 'Push notifications are enabled for this device.' : 'Notifications were not enabled.', !accepted);
         } catch (error) {
             setStatus('Notifications could not be enabled on this device.', true);
