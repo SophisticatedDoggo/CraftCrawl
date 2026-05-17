@@ -225,10 +225,10 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
     if (preg_match('/^business_post:(\d+)$/', $item_key, $matches)) {
         $post_id = (int) $matches[1];
         $stmt = $conn->prepare("
-            SELECT bp.id, bp.business_id, bp.post_type, bp.title, bp.body, bp.created_at,
-                b.bName, b.bType, b.city, b.state
+            SELECT bp.id, l.id AS business_id, bp.post_type, bp.title, bp.body, bp.created_at,
+                l.name AS bName, l.location_type AS bType, l.city, l.state
             FROM business_posts bp
-            INNER JOIN businesses b ON b.id = bp.business_id AND b.approved=TRUE
+            INNER JOIN locations l ON l.id = bp.location_id AND l.visibility_status='public_claimed'
             WHERE bp.id=?
             LIMIT 1
         ");

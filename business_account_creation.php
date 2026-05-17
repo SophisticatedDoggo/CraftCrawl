@@ -5,7 +5,7 @@ include 'db.php';
 include 'config.php';
 require_once 'lib/hcaptcha.php';
 require_once 'lib/email_verification.php';
-require_once 'lib/business_hours.php';
+require_once 'lib/location_hours.php';
 
 $message = null;
 $success = false;
@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $message = "Please enter a valid email address.";
     } else {
-        $stmt = $conn->prepare("SELECT id FROM businesses WHERE bEmail=?");
+        $stmt = $conn->prepare("SELECT id FROM business_accounts WHERE account_email=?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -102,14 +102,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $conn->begin_transaction();
 
                 try {
-                    $stmt = $conn->prepare("INSERT INTO businesses (bName, bEmail, bType, bPhone, bWebsite, bHours, password_hash, street_address, apt_suite, city, state, zip, latitude, longitude, createdAt, emailVerifiedAt, approved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)");
-                    $stmt->bind_param("ssssssssssssddsi", $business_name, $email, $type, $phone, $website, $hours, $hash, $address, $apt_suite, $city, $state, $zip, $latitude, $longitude, $date, $approved);
-                    $stmt->execute();
-                    $business_id = $stmt->insert_id;
-                    craftcrawl_save_business_hours($conn, $business_id, $business_hours);
+                    $normalized_name = strtolower(trim(preg_replace('/[^a-z0-9]+/', ' ', $business_name)));
+                    $normalized_address = strtolower(trim(preg_replace('/[^a-z0-9]+/', ' ', $address)));
+                    $location_stmt = $conn->prepare("INSERT INTO locations (name, phone, street_address, apt_suite, city, state, zip, latitude, longitude, website, location_type, about, hours_note, visibility_status, source_provider, normalized_name, normalized_address, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, 'pending_new_business', 'manual', ?, ?, ?)");
+                    $location_stmt->bind_param("sssssssddssssss", $business_name, $phone, $address, $apt_suite, $city, $state, $zip, $latitude, $longitude, $website, $type, $hours, $normalized_name, $normalized_address, $date);
+                    $location_stmt->execute();
+                    $location_id = $location_stmt->insert_id;
+
+                    $account_stmt = $conn->prepare("INSERT INTO business_accounts (account_email, password_hash, contact_name, account_status, createdAt, emailVerifiedAt) VALUES (?, ?, ?, 'pending', ?, NULL)");
+                    $account_stmt->bind_param("ssss", $email, $hash, $business_name, $date);
+                    $account_stmt->execute();
+                    $business_account_id = $account_stmt->insert_id;
+
+                    $manager_stmt = $conn->prepare("INSERT INTO business_location_managers (business_account_id, location_id, role_at_location, relationship_status, createdAt) VALUES (?, ?, 'owner', 'pending', ?)");
+                    $manager_stmt->bind_param("iis", $business_account_id, $location_id, $date);
+                    $manager_stmt->execute();
+                    craftcrawl_save_location_hours($conn, $location_id, $business_hours);
                     $conn->commit();
 
-                    $email_sent = craftcrawl_issue_email_verification($conn, 'business', $business_id, $email);
+                    $email_sent = craftcrawl_issue_email_verification($conn, 'business', $business_account_id, $email);
                     $message = $email_sent
                         ? "Account created. Please check your email to verify your address before logging in."
                         : "Account created, but the verification email could not be sent. Please contact support.";
@@ -225,13 +236,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <textarea id="hours" name="hours" rows="3" placeholder="Optional note, such as seasonal exceptions"><?php echo escape_output($hours) ?></textarea>
 
             <h3>Business Address</h3>
-            <input id="street_address" name="address" autocomplete="address-line1" placeholder="Address" required>
+            <label for="street_address">Street Address</label>
+            <input id="street_address" name="address" autocomplete="address-line1" required>
             <p class="form-help">Start typing a street address and select a Mapbox result so your map location stays accurate.</p>
-            <input name="apartment" autocomplete="address-line2" placeholder="Apartment">
+            <label for="apartment">Apartment / Suite</label>
+            <input id="apartment" name="apartment" autocomplete="address-line2">
             <div class="business-form-row business-form-row-address">
-                <input id="city" name="city" autocomplete="address-level2" placeholder="City" required readonly>
-                <input id="state" name="state" autocomplete="address-level1" placeholder="State" required readonly>
-                <input id="zip" name="postal_code" autocomplete="postal-code" placeholder="ZIP / Postcode" required readonly>
+                <div>
+                    <label for="city">City</label>
+                    <input id="city" name="city" autocomplete="address-level2" required readonly>
+                </div>
+                <div>
+                    <label for="state">State</label>
+                    <input id="state" name="state" autocomplete="address-level1" required readonly>
+                </div>
+                <div>
+                    <label for="zip">ZIP</label>
+                    <input id="zip" name="postal_code" autocomplete="postal-code" required readonly>
+                </div>
             </div>
             <input name="latitude" id="latitude" type="hidden" value="0.0">
             <input name="longitude" id="longitude" type="hidden" value="0.0"><br><br>

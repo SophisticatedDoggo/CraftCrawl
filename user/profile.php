@@ -195,7 +195,7 @@ if (!$profile) {
     $stats_stmt = $conn->prepare("
         SELECT
             (SELECT COUNT(*) FROM user_visits WHERE user_id=?) AS total_checkins,
-            (SELECT COUNT(DISTINCT business_id) FROM user_visits WHERE user_id=?) AS unique_locations,
+            (SELECT COUNT(DISTINCT location_id) FROM user_visits WHERE user_id=?) AS unique_locations,
             (SELECT COUNT(*) FROM reviews WHERE user_id=?) AS review_count,
             (SELECT COUNT(*) FROM user_badges WHERE user_id=?) AS badge_count
     ");
@@ -204,10 +204,10 @@ if (!$profile) {
     $profile_stats = $stats_stmt->get_result()->fetch_assoc();
 
     $past_checkins_stmt = $conn->prepare("
-        SELECT uv.id, uv.visit_type, uv.xp_awarded, uv.checkedInAt, b.id AS business_id, b.bName, b.bType, b.city, b.state
+        SELECT uv.id, uv.visit_type, uv.xp_awarded, uv.checkedInAt, l.id AS business_id, l.name AS bName, l.location_type AS bType, l.city, l.state
         FROM user_visits uv
-        INNER JOIN businesses b ON b.id = uv.business_id
-        WHERE uv.user_id=? AND b.approved=TRUE AND b.disabledAt IS NULL
+        INNER JOIN locations l ON l.id = uv.location_id
+        WHERE uv.user_id=? AND l.visibility_status IN ('public_unclaimed', 'public_claimed') AND l.disabledAt IS NULL
         ORDER BY uv.checkedInAt DESC, uv.id DESC
         LIMIT 20
     ");
@@ -217,12 +217,12 @@ if (!$profile) {
 
     if (!$is_own_profile) {
         $shared_stmt = $conn->prepare("
-            SELECT b.id, b.bName, b.bType, b.city, b.state
-            FROM businesses b
-            INNER JOIN user_visits mine ON mine.business_id = b.id AND mine.user_id=?
-            INNER JOIN user_visits theirs ON theirs.business_id = b.id AND theirs.user_id=?
-            GROUP BY b.id, b.bName, b.bType, b.city, b.state
-            ORDER BY b.bName
+            SELECT l.id, l.name AS bName, l.location_type AS bType, l.city, l.state
+            FROM locations l
+            INNER JOIN user_visits mine ON mine.location_id = l.id AND mine.user_id=?
+            INNER JOIN user_visits theirs ON theirs.location_id = l.id AND theirs.user_id=?
+            GROUP BY l.id, l.name, l.location_type, l.city, l.state
+            ORDER BY l.name
             LIMIT 8
         ");
         $shared_stmt->bind_param("ii", $viewer_id, $profile_id);
@@ -230,12 +230,12 @@ if (!$profile) {
         $shared_locations = $shared_stmt->get_result();
 
         $unvisited_stmt = $conn->prepare("
-            SELECT b.id, b.bName, b.bType, b.city, b.state, MAX(uv.checkedInAt) AS last_visit
+            SELECT l.id, l.name AS bName, l.location_type AS bType, l.city, l.state, MAX(uv.checkedInAt) AS last_visit
             FROM user_visits uv
-            INNER JOIN businesses b ON b.id = uv.business_id
-            LEFT JOIN user_visits mine ON mine.business_id = uv.business_id AND mine.user_id=?
+            INNER JOIN locations l ON l.id = uv.location_id
+            LEFT JOIN user_visits mine ON mine.location_id = uv.location_id AND mine.user_id=?
             WHERE uv.user_id=? AND mine.id IS NULL
-            GROUP BY b.id, b.bName, b.bType, b.city, b.state
+            GROUP BY l.id, l.name, l.location_type, l.city, l.state
             ORDER BY last_visit DESC
             LIMIT 8
         ");
@@ -247,10 +247,10 @@ if (!$profile) {
 
     if ($can_view_liked_businesses) {
         $followed_stmt = $conn->prepare("
-            SELECT b.id, b.bName, b.bType, b.city, b.state, lb.createdAt
+            SELECT l.id, l.name AS bName, l.location_type AS bType, l.city, l.state, lb.createdAt
             FROM liked_businesses lb
-            INNER JOIN businesses b ON b.id = lb.business_id
-            WHERE lb.user_id=? AND b.approved=TRUE
+            INNER JOIN locations l ON l.id = lb.location_id
+            WHERE lb.user_id=? AND l.visibility_status IN ('public_unclaimed', 'public_claimed')
             ORDER BY lb.createdAt DESC
             LIMIT 12
         ");
@@ -261,10 +261,10 @@ if (!$profile) {
 
     $visibility_filter = $is_own_profile ? '' : "AND wtg.visibility IN ('public', 'friends_only')";
     $want_to_go_stmt = $conn->prepare("
-        SELECT b.id, b.bName, b.bType, b.city, b.state
+        SELECT l.id, l.name AS bName, l.location_type AS bType, l.city, l.state
         FROM want_to_go_locations wtg
-        INNER JOIN businesses b ON b.id = wtg.business_id
-        WHERE wtg.user_id=? AND b.approved=TRUE $visibility_filter
+        INNER JOIN locations l ON l.id = wtg.location_id
+        WHERE wtg.user_id=? AND l.visibility_status IN ('public_unclaimed', 'public_claimed') $visibility_filter
         ORDER BY wtg.createdAt DESC
         LIMIT 12
     ");

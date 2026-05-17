@@ -141,7 +141,7 @@ function craftcrawl_email_verification_account_by_email($conn, $account_type, $e
     if ($account_type === 'user') {
         $stmt = $conn->prepare("SELECT id, email, emailVerifiedAt FROM users WHERE email=? AND disabledAt IS NULL");
     } elseif ($account_type === 'business') {
-        $stmt = $conn->prepare("SELECT id, bEmail AS email, emailVerifiedAt FROM businesses WHERE bEmail=? AND disabledAt IS NULL");
+        $stmt = $conn->prepare("SELECT id, account_email AS email, emailVerifiedAt FROM business_accounts WHERE account_email=? AND disabledAt IS NULL");
     } else {
         return null;
     }
@@ -257,7 +257,7 @@ function craftcrawl_mark_email_verified($conn, $token) {
         if ($verification['account_type'] === 'user') {
             $account_stmt = $conn->prepare("UPDATE users SET emailVerifiedAt=NOW() WHERE id=?");
         } elseif ($verification['account_type'] === 'business') {
-            $account_stmt = $conn->prepare("UPDATE businesses SET emailVerifiedAt=NOW() WHERE id=?");
+            $account_stmt = $conn->prepare("UPDATE business_accounts SET emailVerifiedAt=NOW() WHERE id=?");
         } else {
             throw new RuntimeException('Unknown account type.');
         }

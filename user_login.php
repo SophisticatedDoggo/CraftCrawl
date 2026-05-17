@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             session_regenerate_id(true);
-            unset($_SESSION['business_id'], $_SESSION['admin_id']);
+            unset($_SESSION['business_account_id'], $_SESSION['business_location_id'], $_SESSION['business_id'], $_SESSION['admin_id']);
             $_SESSION['user_id'] = $user['id'];
             setcookie('craftcrawl_account_palette', $user['display_palette'] ?: 'trail-map', [
                 'expires' => time() + 60 * 60 * 24 * 365,

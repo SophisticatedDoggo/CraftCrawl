@@ -821,6 +821,35 @@ a.text-link:focus {
     list-style: none;
 }
 
+.location-suggestion-prompt {
+    margin: 14px 0 0;
+    color: var(--color-muted);
+    font-size: 14px;
+}
+
+.location-suggestion-prompt .location-suggestion-link {
+    display: inline;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    color: var(--color-primary);
+    background: none;
+    box-shadow: none;
+    font-weight: 600;
+    line-height: inherit;
+    text-decoration: underline;
+}
+
+.location-suggestion-prompt .location-suggestion-link:hover,
+.location-suggestion-prompt .location-suggestion-link:focus {
+    border: 0;
+    color: var(--color-primary-dark);
+    background: none;
+    box-shadow: none;
+    text-decoration: underline;
+}
+
 .business-list-toolbar {
     display: flex;
     justify-content: flex-end;
@@ -4485,6 +4514,23 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 .business-details-hero h1 {
     margin: 0 0 12px;
+}
+
+.unclaimed-listing-notice {
+    margin: 14px 0 18px;
+    padding: 14px 16px;
+    border: 1px solid color-mix(in srgb, var(--color-accent) 40%, var(--color-border));
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface));
+}
+
+.unclaimed-listing-notice strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.unclaimed-listing-notice p {
+    margin: 0;
 }
 
 .business-gallery-panel {

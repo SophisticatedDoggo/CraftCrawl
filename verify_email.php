@@ -21,7 +21,7 @@ if (($result['reason'] ?? '') === 'expired' && !empty($result['account_id'])) {
     $account_id = (int) $result['account_id'];
 
     if ($account_type === 'business') {
-        $email_stmt = $conn->prepare("SELECT bEmail AS email FROM businesses WHERE id=? AND emailVerifiedAt IS NULL");
+        $email_stmt = $conn->prepare("SELECT account_email AS email FROM business_accounts WHERE id=? AND emailVerifiedAt IS NULL");
     } else {
         $email_stmt = $conn->prepare("SELECT email FROM users WHERE id=? AND emailVerifiedAt IS NULL");
     }

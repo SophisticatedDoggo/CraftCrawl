@@ -1,16 +1,19 @@
 <?php
 require '../login_check.php';
+require_once '../lib/business_context.php';
 include '../db.php';
 require_once '../lib/user_avatar.php';
 
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['business_id'])) {
+if (!isset($_SESSION['business_account_id'])) {
     echo json_encode(['ok' => false, 'message' => 'Please log in as a business.']);
     exit();
 }
 
-$business_id = (int) $_SESSION['business_id'];
+$selected_location = craftcrawl_require_selected_business_location($conn);
+$business_id = !empty($selected_location['legacy_business_id']) ? (int) $selected_location['legacy_business_id'] : null;
+$location_id = (int) $_SESSION['business_location_id'];
 $mode = strtolower(trim($_GET['mode'] ?? 'month'));
 $offset = (int) ($_GET['offset'] ?? 0);
 $allowed_modes = ['day', 'week', 'month', 'year', 'lifetime'];
@@ -118,8 +121,8 @@ function analytics_empty_points($mode, $start, $end) {
     return $points;
 }
 
-$first_stmt = $conn->prepare("SELECT MIN(checkedInAt) AS first_checkin FROM user_visits WHERE business_id=?");
-$first_stmt->bind_param('i', $business_id);
+$first_stmt = $conn->prepare("SELECT MIN(checkedInAt) AS first_checkin FROM user_visits WHERE location_id=?");
+$first_stmt->bind_param('i', $location_id);
 $first_stmt->execute();
 $first_checkin_at = $first_stmt->get_result()->fetch_assoc()['first_checkin'] ?? null;
 
@@ -143,15 +146,15 @@ $date_condition = $mode === 'lifetime'
 $trend_stmt = $conn->prepare("
     SELECT {$bucket_sql} AS bucket_key, COUNT(*) AS total
     FROM user_visits
-    WHERE business_id=?
+    WHERE location_id=?
     {$date_condition}
     GROUP BY bucket_key
     ORDER BY bucket_key
 ");
 if ($mode === 'lifetime') {
-    $trend_stmt->bind_param('i', $business_id);
+    $trend_stmt->bind_param('i', $location_id);
 } else {
-    $trend_stmt->bind_param('iss', $business_id, $start_sql, $end_sql);
+    $trend_stmt->bind_param('iss', $location_id, $start_sql, $end_sql);
 }
 $trend_stmt->execute();
 $trend_result = $trend_stmt->get_result();
@@ -171,13 +174,13 @@ $summary_stmt = $conn->prepare("
         COUNT(DISTINCT user_id) AS unique_visitors,
         COALESCE(SUM(xp_awarded), 0) AS total_xp
     FROM user_visits
-    WHERE business_id=?
+    WHERE location_id=?
     {$date_condition}
 ");
 if ($mode === 'lifetime') {
-    $summary_stmt->bind_param('i', $business_id);
+    $summary_stmt->bind_param('i', $location_id);
 } else {
-    $summary_stmt->bind_param('iss', $business_id, $start_sql, $end_sql);
+    $summary_stmt->bind_param('iss', $location_id, $start_sql, $end_sql);
 }
 $summary_stmt->execute();
 $summary = $summary_stmt->get_result()->fetch_assoc() ?: [];
@@ -185,13 +188,13 @@ $summary = $summary_stmt->get_result()->fetch_assoc() ?: [];
 $follower_stmt = $conn->prepare("
     SELECT COUNT(*) AS follower_count
     FROM liked_businesses
-    WHERE business_id=?
+    WHERE location_id=?
     " . ($mode === 'lifetime' ? '' : 'AND createdAt >= ? AND createdAt < ?') . "
 ");
 if ($mode === 'lifetime') {
-    $follower_stmt->bind_param('i', $business_id);
+    $follower_stmt->bind_param('i', $location_id);
 } else {
-    $follower_stmt->bind_param('iss', $business_id, $start_sql, $end_sql);
+    $follower_stmt->bind_param('iss', $location_id, $start_sql, $end_sql);
 }
 $follower_stmt->execute();
 $follower_count = (int) ($follower_stmt->get_result()->fetch_assoc()['follower_count'] ?? 0);
@@ -202,16 +205,16 @@ $top_visitors_stmt = $conn->prepare("
     FROM user_visits uv
     INNER JOIN users u ON u.id = uv.user_id
     LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
-    WHERE uv.business_id=? AND u.disabledAt IS NULL
+    WHERE uv.location_id=? AND u.disabledAt IS NULL
     " . ($mode === 'lifetime' ? '' : 'AND uv.checkedInAt >= ? AND uv.checkedInAt < ?') . "
     GROUP BY uv.user_id, u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key
     ORDER BY visit_count DESC, last_checkin DESC
     LIMIT 5
 ");
 if ($mode === 'lifetime') {
-    $top_visitors_stmt->bind_param('i', $business_id);
+    $top_visitors_stmt->bind_param('i', $location_id);
 } else {
-    $top_visitors_stmt->bind_param('iss', $business_id, $start_sql, $end_sql);
+    $top_visitors_stmt->bind_param('iss', $location_id, $start_sql, $end_sql);
 }
 $top_visitors_stmt->execute();
 $visitor_result = $top_visitors_stmt->get_result();

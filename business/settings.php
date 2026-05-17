@@ -1,16 +1,16 @@
 <?php
 require '../login_check.php';
+require_once '../lib/business_context.php';
 require_once '../lib/admin_auth.php';
 require_once '../lib/remember_auth.php';
 require_once '../lib/password_reset.php';
 require_once '../lib/business_account_deletion.php';
 include '../db.php';
 
-if (!isset($_SESSION['business_id'])) {
-    craftcrawl_redirect('business_login.php');
-}
+$selected_location = craftcrawl_require_selected_business_location($conn);
 
-$business_id = (int) $_SESSION['business_id'];
+$business_id = !empty($selected_location['legacy_business_id']) ? (int) $selected_location['legacy_business_id'] : null;
+$business_account_id = (int) $_SESSION['business_account_id'];
 $message = $_GET['message'] ?? null;
 $allowed_display_palettes = ['trail-map', 'trail-dark', 'ember', 'ember-dark'];
 
@@ -29,8 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $new_display_palette = 'trail-map';
         }
 
-        $theme_stmt = $conn->prepare("UPDATE businesses SET display_palette=? WHERE id=?");
-        $theme_stmt->bind_param("si", $new_display_palette, $business_id);
+        $theme_stmt = $conn->prepare("UPDATE business_accounts SET display_palette=? WHERE id=?");
+        $theme_stmt->bind_param("si", $new_display_palette, $business_account_id);
         $theme_stmt->execute();
         setcookie('craftcrawl_account_palette', $new_display_palette, [
             'expires' => time() + 60 * 60 * 24 * 365,
@@ -45,19 +45,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($form_action === 'disable_account') {
         $disable_password = (string) ($_POST['disable_password'] ?? '');
-        $stmt = $conn->prepare("SELECT password_hash FROM businesses WHERE id=?");
-        $stmt->bind_param("i", $business_id);
+        $stmt = $conn->prepare("SELECT password_hash FROM business_accounts WHERE id=?");
+        $stmt->bind_param("i", $business_account_id);
         $stmt->execute();
         $business_account = $stmt->get_result()->fetch_assoc();
 
         if (!$business_account || !password_verify($disable_password, $business_account['password_hash'])) {
             $message = 'disable_password_error';
         } else {
-            $disable_stmt = $conn->prepare("UPDATE businesses SET disabledAt=NOW() WHERE id=?");
-            $disable_stmt->bind_param("i", $business_id);
+            $disable_stmt = $conn->prepare("UPDATE business_accounts SET disabledAt=NOW() WHERE id=?");
+            $disable_stmt->bind_param("i", $business_account_id);
             $disable_stmt->execute();
-            craftcrawl_revoke_remember_tokens_for_account($conn, 'business', $business_id);
-            craftcrawl_revoke_password_reset_tokens_for_account($conn, 'business', $business_id);
+            craftcrawl_revoke_remember_tokens_for_account($conn, 'business', $business_account_id);
+            craftcrawl_revoke_password_reset_tokens_for_account($conn, 'business', $business_account_id);
             craftcrawl_clear_remember_cookie();
             $_SESSION = [];
             session_destroy();
@@ -67,8 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($form_action === 'delete_account') {
         $delete_password = (string) ($_POST['delete_password'] ?? '');
-        $stmt = $conn->prepare("SELECT password_hash FROM businesses WHERE id=?");
-        $stmt->bind_param("i", $business_id);
+        $stmt = $conn->prepare("SELECT password_hash FROM business_accounts WHERE id=?");
+        $stmt->bind_param("i", $business_account_id);
         $stmt->execute();
         $business_account = $stmt->get_result()->fetch_assoc();
 
@@ -93,8 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $new_password = (string) ($_POST['new_password'] ?? '');
     $verify_password = (string) ($_POST['verify_password'] ?? '');
 
-    $stmt = $conn->prepare("SELECT password_hash FROM businesses WHERE id=?");
-    $stmt->bind_param("i", $business_id);
+        $stmt = $conn->prepare("SELECT password_hash FROM business_accounts WHERE id=?");
+        $stmt->bind_param("i", $business_account_id);
     $stmt->execute();
     $business_account = $stmt->get_result()->fetch_assoc();
 
@@ -109,11 +109,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = 'password_rule_error';
         } else {
             $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
-            $update_stmt = $conn->prepare("UPDATE businesses SET password_hash=? WHERE id=?");
-            $update_stmt->bind_param("si", $password_hash, $business_id);
+            $update_stmt = $conn->prepare("UPDATE business_accounts SET password_hash=? WHERE id=?");
+            $update_stmt->bind_param("si", $password_hash, $business_account_id);
             $update_stmt->execute();
-            craftcrawl_revoke_remember_tokens_for_account($conn, 'business', $business_id);
-            craftcrawl_revoke_password_reset_tokens_for_account($conn, 'business', $business_id);
+            craftcrawl_revoke_remember_tokens_for_account($conn, 'business', $business_account_id);
+            craftcrawl_revoke_password_reset_tokens_for_account($conn, 'business', $business_account_id);
             header('Location: settings.php?message=password_saved');
             exit();
         }
@@ -121,8 +121,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$stmt = $conn->prepare("SELECT bName, display_palette FROM businesses WHERE id=?");
-$stmt->bind_param("i", $business_id);
+$stmt = $conn->prepare("
+    SELECT l.name AS bName, ba.display_palette
+    FROM business_accounts ba
+    INNER JOIN locations l ON l.id=?
+    WHERE ba.id=?
+");
+$stmt->bind_param("ii", $_SESSION['business_location_id'], $business_account_id);
 $stmt->execute();
 $business = $stmt->get_result()->fetch_assoc();
 $display_palette = in_array($business['display_palette'] ?? '', $allowed_display_palettes, true)

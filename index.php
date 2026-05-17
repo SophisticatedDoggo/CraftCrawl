@@ -1,10 +1,11 @@
 <?php
 require_once __DIR__ . '/lib/security.php';
 require_once __DIR__ . '/lib/remember_auth.php';
+require_once __DIR__ . '/lib/business_context.php';
 craftcrawl_secure_session_start();
 include 'db.php';
 
-if (!isset($_SESSION['user_id']) && !isset($_SESSION['business_id']) && !isset($_SESSION['admin_id'])) {
+if (!isset($_SESSION['user_id']) && !isset($_SESSION['business_account_id']) && !isset($_SESSION['admin_id'])) {
     craftcrawl_restore_remembered_login($conn);
 }
 
@@ -22,9 +23,9 @@ if (isset($_SESSION['user_id'])) {
     }
 }
 
-if (isset($_SESSION['business_id'])) {
-    $account_id = (int) $_SESSION['business_id'];
-    $stmt = $conn->prepare("SELECT id FROM businesses WHERE id=? AND disabledAt IS NULL");
+if (isset($_SESSION['business_account_id'])) {
+    $account_id = (int) $_SESSION['business_account_id'];
+    $stmt = $conn->prepare("SELECT id FROM business_accounts WHERE id=? AND disabledAt IS NULL");
     $stmt->bind_param("i", $account_id);
     $stmt->execute();
 
@@ -32,7 +33,7 @@ if (isset($_SESSION['business_id'])) {
         $_SESSION = [];
         craftcrawl_clear_remember_cookie();
     } else {
-    craftcrawl_redirect('business/business_portal.php');
+    craftcrawl_redirect(craftcrawl_business_location_destination($conn, $account_id));
     }
 }
 

@@ -978,16 +978,16 @@ function craftcrawl_award_eligible_badges($conn, $user_id) {
     return $earned;
 }
 
-function craftcrawl_award_review_xp($conn, $user_id, $business_id) {
-    $visit_stmt = $conn->prepare("SELECT id FROM user_visits WHERE user_id=? AND business_id=? LIMIT 1");
-    $visit_stmt->bind_param("ii", $user_id, $business_id);
+function craftcrawl_award_review_xp($conn, $user_id, $location_id) {
+    $visit_stmt = $conn->prepare("SELECT id FROM user_visits WHERE user_id=? AND location_id=? LIMIT 1");
+    $visit_stmt->bind_param("ii", $user_id, $location_id);
     $visit_stmt->execute();
 
     if (!$visit_stmt->get_result()->fetch_assoc()) {
         return false;
     }
 
-    return craftcrawl_add_xp($conn, $user_id, CRAFTCRAWL_XP_REVIEW, 'review', (string) $business_id, 'Review');
+    return craftcrawl_add_xp($conn, $user_id, CRAFTCRAWL_XP_REVIEW, 'review', (string) $location_id, 'Review');
 }
 
 function craftcrawl_user_badges($conn, $user_id) {

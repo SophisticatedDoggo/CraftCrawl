@@ -1,8 +1,18 @@
 <?php
 require_once __DIR__ . '/lib/security.php';
 require_once __DIR__ . '/lib/remember_auth.php';
+require_once __DIR__ . '/lib/business_context.php';
 craftcrawl_secure_session_start();
 include 'db.php';
+
+if (!isset($_SESSION['business_account_id'])) {
+    craftcrawl_restore_remembered_login($conn);
+}
+
+if (isset($_SESSION['business_account_id'])) {
+    header("Location: " . craftcrawl_business_location_destination($conn, (int) $_SESSION['business_account_id']));
+    exit();
+}
 
 $login_error = false;
 $captcha_error = false;
@@ -58,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: business_login.php");
         exit();
     } else {
-        $stmt = $conn->prepare("SELECT id, password_hash, emailVerifiedAt, disabledAt, display_palette FROM businesses WHERE bEmail=?");
+        $stmt = $conn->prepare("SELECT id, password_hash, emailVerifiedAt, disabledAt, display_palette FROM business_accounts WHERE account_email=?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -84,8 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             session_regenerate_id(true);
-            unset($_SESSION['user_id'], $_SESSION['admin_id']);
-            $_SESSION['business_id'] = $business['id'];
+            unset($_SESSION['user_id'], $_SESSION['admin_id'], $_SESSION['business_id'], $_SESSION['business_location_id']);
+            $_SESSION['business_account_id'] = $business['id'];
             setcookie('craftcrawl_account_palette', $business['display_palette'] ?: 'trail-map', [
                 'expires' => time() + 60 * 60 * 24 * 365,
                 'path' => '/',
@@ -100,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 craftcrawl_revoke_current_remember_token($conn);
             }
 
-            header("Location: business/business_portal.php");
+            header("Location: " . craftcrawl_business_location_destination($conn, (int) $business['id']));
             exit();
         } else {
             $_SESSION['business_login_feedback'] = [

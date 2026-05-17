@@ -2,7 +2,7 @@
 require 'login_check.php';
 include 'db.php';
 require_once 'lib/leveling.php';
-require_once 'lib/business_hours.php';
+require_once 'lib/location_hours.php';
 
 header('Content-Type: application/json');
 
@@ -22,17 +22,32 @@ craftcrawl_verify_csrf();
 
 $user_id = (int) $_SESSION['user_id'];
 $business_id = filter_var($_POST['business_id'] ?? null, FILTER_VALIDATE_INT);
+$location_id_input = filter_var($_POST['location_id'] ?? null, FILTER_VALIDATE_INT);
 $user_latitude = filter_var($_POST['latitude'] ?? null, FILTER_VALIDATE_FLOAT);
 $user_longitude = filter_var($_POST['longitude'] ?? null, FILTER_VALIDATE_FLOAT);
 
-if (!$business_id || $user_latitude === false || $user_longitude === false) {
+if ((!$business_id && !$location_id_input) || $user_latitude === false || $user_longitude === false) {
     http_response_code(400);
     echo json_encode(['ok' => false, 'message' => 'Location could not be verified.']);
     exit();
 }
 
-$business_stmt = $conn->prepare("SELECT id, bName, latitude, longitude, checkin_message FROM businesses WHERE id=? AND approved=TRUE AND disabledAt IS NULL");
-$business_stmt->bind_param("i", $business_id);
+$business_stmt = $conn->prepare("
+    SELECT
+        b.id AS legacy_business_id,
+        l.id AS location_id,
+        l.name,
+        l.latitude,
+        l.longitude,
+        l.checkin_message,
+        l.checkin_verification_enabled
+    FROM locations l
+    LEFT JOIN businesses b ON b.id = l.legacy_business_id
+    WHERE (l.id=? OR b.id=?)
+      AND l.visibility_status IN ('public_unclaimed', 'public_claimed')
+      AND l.disabledAt IS NULL
+");
+$business_stmt->bind_param("ii", $location_id_input, $business_id);
 $business_stmt->execute();
 $business = $business_stmt->get_result()->fetch_assoc();
 
@@ -58,7 +73,18 @@ if ($distance_meters > CRAFTCRAWL_CHECKIN_RADIUS_METERS) {
     exit();
 }
 
-if (!craftcrawl_business_is_open_now($conn, $business_id)) {
+if (empty($business['checkin_verification_enabled'])) {
+    echo json_encode([
+        'ok' => false,
+        'message' => 'Check-ins are not available for this location yet.'
+    ]);
+    exit();
+}
+
+$location_id = (int) $business['location_id'];
+$legacy_business_id = !empty($business['legacy_business_id']) ? (int) $business['legacy_business_id'] : null;
+
+if (!craftcrawl_location_is_open_now($conn, $location_id)) {
     echo json_encode([
         'ok' => false,
         'message' => 'Visit XP is only available while this business is open.'
@@ -66,8 +92,8 @@ if (!craftcrawl_business_is_open_now($conn, $business_id)) {
     exit();
 }
 
-$visit_count_stmt = $conn->prepare("SELECT COUNT(*) AS total FROM user_visits WHERE user_id=? AND business_id=?");
-$visit_count_stmt->bind_param("ii", $user_id, $business_id);
+$visit_count_stmt = $conn->prepare("SELECT COUNT(*) AS total FROM user_visits WHERE user_id=? AND location_id=?");
+$visit_count_stmt->bind_param("ii", $user_id, $location_id);
 $visit_count_stmt->execute();
 $visit_count = (int) ($visit_count_stmt->get_result()->fetch_assoc()['total'] ?? 0);
 
@@ -75,8 +101,8 @@ $visit_type = $visit_count > 0 ? 'repeat' : 'first_time';
 $xp_awarded = $visit_type === 'first_time' ? CRAFTCRAWL_XP_FIRST_TIME_VISIT : CRAFTCRAWL_XP_REPEAT_VISIT;
 
 if ($visit_type === 'repeat') {
-    $cooldown_stmt = $conn->prepare("SELECT checkedInAt FROM user_visits WHERE user_id=? AND business_id=? AND xp_awarded > 0 ORDER BY checkedInAt DESC LIMIT 1");
-    $cooldown_stmt->bind_param("ii", $user_id, $business_id);
+    $cooldown_stmt = $conn->prepare("SELECT checkedInAt FROM user_visits WHERE user_id=? AND location_id=? AND xp_awarded > 0 ORDER BY checkedInAt DESC LIMIT 1");
+    $cooldown_stmt->bind_param("ii", $user_id, $location_id);
     $cooldown_stmt->execute();
     $last_visit = $cooldown_stmt->get_result()->fetch_assoc();
 
@@ -93,14 +119,14 @@ try {
     $conn->begin_transaction();
     $progress_before = craftcrawl_user_level_progress($conn, $user_id);
 
-    $visit_stmt = $conn->prepare("INSERT INTO user_visits (user_id, business_id, visit_type, xp_awarded, user_latitude, user_longitude, distance_meters, checkedInAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
-    $visit_stmt->bind_param("iisiddd", $user_id, $business_id, $visit_type, $xp_awarded, $user_latitude, $user_longitude, $distance_meters);
+    $visit_stmt = $conn->prepare("INSERT INTO user_visits (user_id, business_id, location_id, visit_type, xp_awarded, user_latitude, user_longitude, distance_meters, checkedInAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+    $visit_stmt->bind_param("iiisiddd", $user_id, $legacy_business_id, $location_id, $visit_type, $xp_awarded, $user_latitude, $user_longitude, $distance_meters);
     $visit_stmt->execute();
     $visit_id = $visit_stmt->insert_id;
 
     $source_type = $visit_type === 'first_time' ? 'first_time_visit' : 'repeat_visit';
-    $source_id = $visit_type === 'first_time' ? (string) $business_id : (string) $visit_id;
-    craftcrawl_add_xp($conn, $user_id, $xp_awarded, $source_type, $source_id, $business['bName']);
+    $source_id = $visit_type === 'first_time' ? (string) $location_id : (string) $visit_id;
+    craftcrawl_add_xp($conn, $user_id, $xp_awarded, $source_type, $source_id, $business['name']);
     $badges = craftcrawl_award_eligible_badges($conn, $user_id);
     $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges);
     $progress = $reward_payload['progress'] ?? craftcrawl_user_level_progress($conn, $user_id);

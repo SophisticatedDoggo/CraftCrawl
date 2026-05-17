@@ -310,7 +310,7 @@ function craftcrawl_social_sign_in_user($conn, $identity) {
     $user = craftcrawl_social_find_or_create_user($conn, $identity);
 
     session_regenerate_id(true);
-    unset($_SESSION['business_id'], $_SESSION['admin_id']);
+    unset($_SESSION['business_account_id'], $_SESSION['business_location_id'], $_SESSION['business_id'], $_SESSION['admin_id']);
     $_SESSION['user_id'] = (int) $user['id'];
 
     setcookie('craftcrawl_account_palette', $user['display_palette'] ?: 'trail-map', [

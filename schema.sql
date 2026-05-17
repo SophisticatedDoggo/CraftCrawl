@@ -80,12 +80,130 @@ CREATE TABLE IF NOT EXISTS businesses (
     bType VARCHAR(255) NOT NULL,
     bAbout TEXT,
     bHours TEXT,
+    checkin_message VARCHAR(500),
     createdAt DATETIME NOT NULL,
     emailVerifiedAt DATETIME,
     disabledAt DATETIME,
     display_palette VARCHAR(20) NOT NULL DEFAULT 'trail-map',
     approved BOOL NOT NULL DEFAULT FALSE,
     UNIQUE KEY unique_business_email (bEmail)
+);
+
+CREATE TABLE IF NOT EXISTS locations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    legacy_business_id INT,
+    name VARCHAR(255) NOT NULL,
+    phone VARCHAR(20),
+    street_address VARCHAR(255) NOT NULL,
+    apt_suite VARCHAR(100),
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(2) NOT NULL,
+    zip VARCHAR(10) NOT NULL,
+    latitude DECIMAL(9,6) NOT NULL,
+    longitude DECIMAL(9,6) NOT NULL,
+    website VARCHAR(2048),
+    location_type VARCHAR(255) NOT NULL,
+    about TEXT,
+    hours_note TEXT,
+    display_palette VARCHAR(20) NOT NULL DEFAULT 'trail-map',
+    checkin_message VARCHAR(500),
+    visibility_status ENUM('pending_new_business', 'pending_import_review', 'public_unclaimed', 'public_claimed', 'rejected', 'hidden') NOT NULL DEFAULT 'pending_new_business',
+    source_provider ENUM('manual', 'mapbox', 'google', 'user_suggested') NOT NULL DEFAULT 'manual',
+    source_place_id VARCHAR(255),
+    normalized_name VARCHAR(255),
+    normalized_address VARCHAR(255),
+    website_domain VARCHAR(255),
+    importedAt DATETIME,
+    approvedAt DATETIME,
+    approvedByAdminId INT,
+    rejectedAt DATETIME,
+    rejectionReason VARCHAR(1024),
+    adminNotes TEXT,
+    checkin_verification_enabled BOOL NOT NULL DEFAULT FALSE,
+    checkin_enabled_at DATETIME,
+    checkin_enabled_by_admin_id INT,
+    createdAt DATETIME NOT NULL,
+    disabledAt DATETIME,
+    UNIQUE KEY unique_locations_legacy_business_id (legacy_business_id),
+    UNIQUE KEY unique_locations_source (source_provider, source_place_id),
+    KEY idx_locations_visibility_status (visibility_status),
+    KEY idx_locations_source (source_provider, source_place_id),
+    KEY idx_locations_lat_lng (latitude, longitude),
+    KEY idx_locations_normalized_name (normalized_name),
+    KEY idx_locations_normalized_address (normalized_address),
+    KEY idx_locations_website_domain (website_domain),
+    CONSTRAINT fk_location_legacyBusinessId FOREIGN KEY (legacy_business_id)
+    REFERENCES businesses(id),
+    CONSTRAINT fk_location_approvedByAdminId FOREIGN KEY (approvedByAdminId)
+    REFERENCES admins(id),
+    CONSTRAINT fk_location_checkinEnabledByAdminId FOREIGN KEY (checkin_enabled_by_admin_id)
+    REFERENCES admins(id)
+);
+
+CREATE TABLE IF NOT EXISTS business_accounts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    legacy_business_id INT,
+    account_email VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    contact_name VARCHAR(100) NOT NULL,
+    display_palette VARCHAR(20) NOT NULL DEFAULT 'trail-map',
+    account_status ENUM('pending', 'approved', 'rejected', 'suspended') NOT NULL DEFAULT 'pending',
+    emailVerifiedAt DATETIME,
+    approvedAt DATETIME,
+    approvedByAdminId INT,
+    rejectedAt DATETIME,
+    rejectionReason VARCHAR(1024),
+    createdAt DATETIME NOT NULL,
+    disabledAt DATETIME,
+    UNIQUE KEY unique_business_accounts_legacy_business_id (legacy_business_id),
+    UNIQUE KEY unique_business_account_email (account_email),
+    KEY idx_business_accounts_status (account_status),
+    CONSTRAINT fk_business_account_legacyBusinessId FOREIGN KEY (legacy_business_id)
+    REFERENCES businesses(id),
+    CONSTRAINT fk_business_account_adminId FOREIGN KEY (approvedByAdminId)
+    REFERENCES admins(id)
+);
+
+CREATE TABLE IF NOT EXISTS business_location_managers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    business_account_id INT NOT NULL,
+    location_id INT NOT NULL,
+    role_at_location ENUM('owner', 'manager', 'marketing', 'employee', 'other') NOT NULL DEFAULT 'owner',
+    relationship_status ENUM('pending', 'approved', 'rejected', 'suspended') NOT NULL DEFAULT 'pending',
+    approvedAt DATETIME,
+    approvedByAdminId INT,
+    createdAt DATETIME NOT NULL,
+    disabledAt DATETIME,
+    UNIQUE KEY unique_business_location_manager (business_account_id, location_id),
+    KEY idx_business_location_managers_location (location_id),
+    KEY idx_business_location_managers_account (business_account_id),
+    KEY idx_business_location_managers_status (relationship_status),
+    CONSTRAINT fk_business_location_manager_accountId FOREIGN KEY (business_account_id)
+    REFERENCES business_accounts(id),
+    CONSTRAINT fk_business_location_manager_locationId FOREIGN KEY (location_id)
+    REFERENCES locations(id),
+    CONSTRAINT fk_business_location_manager_adminId FOREIGN KEY (approvedByAdminId)
+    REFERENCES admins(id)
+);
+
+CREATE TABLE IF NOT EXISTS location_hours (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    location_id INT NOT NULL,
+    day_of_week TINYINT NOT NULL,
+    opens_at TIME,
+    closes_at TIME,
+    is_closed BOOL NOT NULL DEFAULT FALSE,
+    source ENUM('admin_manual', 'business_owner', 'provider_import') NOT NULL DEFAULT 'admin_manual',
+    verifiedAt DATETIME,
+    verifiedByAdminId INT,
+    createdAt DATETIME NOT NULL,
+    updatedAt DATETIME,
+    UNIQUE KEY unique_location_hours_day (location_id, day_of_week),
+    KEY idx_location_hours_location_id (location_id),
+    CONSTRAINT fk_location_hours_locationId FOREIGN KEY (location_id)
+    REFERENCES locations(id),
+    CONSTRAINT fk_location_hours_verifiedByAdminId FOREIGN KEY (verifiedByAdminId)
+    REFERENCES admins(id)
 );
 
 CREATE TABLE IF NOT EXISTS business_hours (
@@ -156,17 +274,22 @@ CREATE TABLE IF NOT EXISTS reviews (
     id INT AUTO_INCREMENT PRIMARY KEY,
     rating INT NOT NULL,
     user_id INT NOT NULL,
-    business_id INT NOT NULL,
+    business_id INT,
+    location_id INT,
     notes VARCHAR(2048),
     createdAt DATETIME NOT NULL,
     business_response VARCHAR(2048),
     business_responseAt DATETIME,
     UNIQUE KEY unique_user_business_review (user_id, business_id),
+    UNIQUE KEY unique_user_location_review (user_id, location_id),
     KEY idx_reviews_business_user (business_id, user_id),
+    KEY idx_reviews_location_user (location_id, user_id),
     CONSTRAINT fk_userId FOREIGN KEY (user_id)
     REFERENCES users(id),
     CONSTRAINT fk_review_businessId FOREIGN KEY (business_id)
-    REFERENCES businesses(id)
+    REFERENCES businesses(id),
+    CONSTRAINT fk_review_locationId FOREIGN KEY (location_id)
+    REFERENCES locations(id)
 );
 
 CREATE TABLE IF NOT EXISTS events (
@@ -180,11 +303,15 @@ CREATE TABLE IF NOT EXISTS events (
     recurrenceRule VARCHAR(50),
     recurrenceEnd DATE,
     createdAt DATETIME NOT NULL,
-    business_id INT NOT NULL,
+    business_id INT,
+    location_id INT,
     cover_photo_id INT,
     KEY idx_events_cover_photo_id (cover_photo_id),
+    KEY idx_events_location_id (location_id),
     CONSTRAINT fk_event_businessId FOREIGN KEY (business_id)
     REFERENCES businesses(id),
+    CONSTRAINT fk_event_locationId FOREIGN KEY (location_id)
+    REFERENCES locations(id),
     CONSTRAINT fk_event_cover_photoId FOREIGN KEY (cover_photo_id)
     REFERENCES photos(id)
 );
@@ -192,13 +319,18 @@ CREATE TABLE IF NOT EXISTS events (
 CREATE TABLE IF NOT EXISTS liked_businesses (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    business_id INT NOT NULL,
+    business_id INT,
+    location_id INT,
     createdAt DATETIME NOT NULL,
     UNIQUE KEY unique_user_business_like (user_id, business_id),
+    UNIQUE KEY unique_user_location_like (user_id, location_id),
+    KEY idx_liked_location_id (location_id),
     CONSTRAINT fk_liked_userId FOREIGN KEY (user_id)
     REFERENCES users(id),
     CONSTRAINT fk_liked_businessId FOREIGN KEY (business_id)
-    REFERENCES businesses(id)
+    REFERENCES businesses(id),
+    CONSTRAINT fk_liked_locationId FOREIGN KEY (location_id)
+    REFERENCES locations(id)
 );
 
 CREATE TABLE IF NOT EXISTS event_want_to_go (
@@ -278,33 +410,43 @@ CREATE TABLE IF NOT EXISTS location_recommendations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     recommender_user_id INT NOT NULL,
     recipient_user_id INT NOT NULL,
-    business_id INT NOT NULL,
+    business_id INT,
+    location_id INT,
     message VARCHAR(255),
     status ENUM('pending', 'viewed', 'visited', 'dismissed') NOT NULL DEFAULT 'pending',
     createdAt DATETIME NOT NULL,
     updatedAt DATETIME,
     UNIQUE KEY unique_location_recommendation (recommender_user_id, recipient_user_id, business_id),
+    UNIQUE KEY unique_location_recommendation_by_location (recommender_user_id, recipient_user_id, location_id),
     KEY idx_location_recommendations_recipient (recipient_user_id, status),
+    KEY idx_location_recommendations_location_id (location_id),
     CONSTRAINT fk_location_recommendations_recommenderId FOREIGN KEY (recommender_user_id)
     REFERENCES users(id),
     CONSTRAINT fk_location_recommendations_recipientId FOREIGN KEY (recipient_user_id)
     REFERENCES users(id),
     CONSTRAINT fk_location_recommendations_businessId FOREIGN KEY (business_id)
-    REFERENCES businesses(id)
+    REFERENCES businesses(id),
+    CONSTRAINT fk_location_recommendations_locationId FOREIGN KEY (location_id)
+    REFERENCES locations(id)
 );
 
 CREATE TABLE IF NOT EXISTS want_to_go_locations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    business_id INT NOT NULL,
+    business_id INT,
+    location_id INT,
     visibility ENUM('private', 'friends_only', 'public') NOT NULL DEFAULT 'friends_only',
     createdAt DATETIME NOT NULL,
     UNIQUE KEY unique_want_to_go_location (user_id, business_id),
+    UNIQUE KEY unique_want_to_go_location_id (user_id, location_id),
     KEY idx_want_to_go_business (business_id),
+    KEY idx_want_to_go_location_id (location_id),
     CONSTRAINT fk_want_to_go_userId FOREIGN KEY (user_id)
     REFERENCES users(id),
     CONSTRAINT fk_want_to_go_businessId FOREIGN KEY (business_id)
-    REFERENCES businesses(id)
+    REFERENCES businesses(id),
+    CONSTRAINT fk_want_to_go_locationId FOREIGN KEY (location_id)
+    REFERENCES locations(id)
 );
 
 CREATE TABLE IF NOT EXISTS review_photos (
@@ -324,7 +466,8 @@ CREATE TABLE IF NOT EXISTS review_photos (
 CREATE TABLE IF NOT EXISTS user_visits (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    business_id INT NOT NULL,
+    business_id INT,
+    location_id INT,
     visit_type ENUM('first_time', 'repeat') NOT NULL,
     xp_awarded INT NOT NULL DEFAULT 0,
     user_latitude DECIMAL(9,6) NOT NULL,
@@ -332,11 +475,14 @@ CREATE TABLE IF NOT EXISTS user_visits (
     distance_meters DECIMAL(8,2) NOT NULL,
     checkedInAt DATETIME NOT NULL,
     KEY idx_user_visits_user_business (user_id, business_id),
+    KEY idx_user_visits_user_location (user_id, location_id),
     KEY idx_user_visits_checked_in (checkedInAt),
     CONSTRAINT fk_user_visits_userId FOREIGN KEY (user_id)
     REFERENCES users(id),
     CONSTRAINT fk_user_visits_businessId FOREIGN KEY (business_id)
-    REFERENCES businesses(id)
+    REFERENCES businesses(id),
+    CONSTRAINT fk_user_visits_locationId FOREIGN KEY (location_id)
+    REFERENCES locations(id)
 );
 
 CREATE TABLE IF NOT EXISTS xp_log (
@@ -374,16 +520,102 @@ CREATE TABLE IF NOT EXISTS user_badges (
 
 CREATE TABLE IF NOT EXISTS business_photos (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    business_id INT NOT NULL,
+    business_id INT,
+    location_id INT,
     photo_id INT NOT NULL,
     photo_type ENUM('gallery', 'cover') NOT NULL DEFAULT 'gallery',
     sort_order INT NOT NULL DEFAULT 0,
     UNIQUE KEY unique_business_photo (business_id, photo_id),
+    UNIQUE KEY unique_location_photo (location_id, photo_id),
     KEY idx_business_photos_business_id (business_id),
+    KEY idx_business_photos_location_id (location_id),
     KEY idx_business_photos_photo_id (photo_id),
     KEY idx_business_photos_type (photo_type),
     CONSTRAINT fk_business_photo_businessId FOREIGN KEY (business_id)
     REFERENCES businesses(id),
+    CONSTRAINT fk_business_photo_locationId FOREIGN KEY (location_id)
+    REFERENCES locations(id),
     CONSTRAINT fk_business_photo_photoId FOREIGN KEY (photo_id)
     REFERENCES photos(id)
 );
+
+CREATE TABLE IF NOT EXISTS business_claims (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    location_id INT NOT NULL,
+    requester_account_id INT NOT NULL,
+    contact_name VARCHAR(100) NOT NULL,
+    role_at_location ENUM('owner', 'manager', 'marketing', 'employee', 'other') NOT NULL DEFAULT 'owner',
+    verification_method ENUM('business_email', 'website_verification', 'official_social_message', 'document_manual_review', 'other') NOT NULL,
+    verification_notes TEXT,
+    official_social_url VARCHAR(2048),
+    proof_photo_id INT,
+    status ENUM('pending', 'needs_more_info', 'approved', 'rejected', 'cancelled') NOT NULL DEFAULT 'pending',
+    adminNotes TEXT,
+    reviewedByAdminId INT,
+    reviewedAt DATETIME,
+    createdAt DATETIME NOT NULL,
+    updatedAt DATETIME,
+    KEY idx_business_claims_location_status (location_id, status),
+    KEY idx_business_claims_requester_status (requester_account_id, status),
+    KEY idx_business_claims_status_created (status, createdAt),
+    CONSTRAINT fk_business_claim_locationId FOREIGN KEY (location_id)
+    REFERENCES locations(id),
+    CONSTRAINT fk_business_claim_requesterId FOREIGN KEY (requester_account_id)
+    REFERENCES business_accounts(id),
+    CONSTRAINT fk_business_claim_proofPhotoId FOREIGN KEY (proof_photo_id)
+    REFERENCES photos(id),
+    CONSTRAINT fk_business_claim_adminId FOREIGN KEY (reviewedByAdminId)
+    REFERENCES admins(id)
+);
+
+CREATE TABLE IF NOT EXISTS location_suggestions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    suggested_by_user_id INT NOT NULL,
+    suggested_name VARCHAR(255) NOT NULL,
+    suggested_type VARCHAR(255) NOT NULL,
+    mapbox_place_id VARCHAR(255) NOT NULL,
+    street_address VARCHAR(255) NOT NULL,
+    apt_suite VARCHAR(100),
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(2) NOT NULL,
+    zip VARCHAR(10),
+    latitude DECIMAL(9,6) NOT NULL,
+    longitude DECIMAL(9,6) NOT NULL,
+    phone VARCHAR(20),
+    website VARCHAR(2048),
+    user_notes VARCHAR(1024),
+    status ENUM('pending', 'approved', 'rejected', 'duplicate') NOT NULL DEFAULT 'pending',
+    matched_location_id INT,
+    created_location_id INT,
+    adminNotes TEXT,
+    reviewedByAdminId INT,
+    reviewedAt DATETIME,
+    createdAt DATETIME NOT NULL,
+    updatedAt DATETIME,
+    KEY idx_location_suggestions_status_created (status, createdAt),
+    KEY idx_location_suggestions_mapbox_place_id (mapbox_place_id),
+    KEY idx_location_suggestions_user (suggested_by_user_id, createdAt),
+    CONSTRAINT fk_location_suggestion_userId FOREIGN KEY (suggested_by_user_id)
+    REFERENCES users(id),
+    CONSTRAINT fk_location_suggestion_matchedLocationId FOREIGN KEY (matched_location_id)
+    REFERENCES locations(id),
+    CONSTRAINT fk_location_suggestion_createdLocationId FOREIGN KEY (created_location_id)
+    REFERENCES locations(id),
+    CONSTRAINT fk_location_suggestion_adminId FOREIGN KEY (reviewedByAdminId)
+    REFERENCES admins(id)
+);
+
+CREATE TABLE IF NOT EXISTS admin_review_actions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    admin_id INT NOT NULL,
+    target_type ENUM('location', 'business_account', 'business_location_manager', 'business_claim', 'location_suggestion', 'photo', 'review') NOT NULL,
+    target_id INT NOT NULL,
+    action ENUM('approved', 'rejected', 'needs_more_info', 'marked_duplicate', 'hidden', 'unhidden', 'suspended', 'checkins_enabled', 'checkins_disabled') NOT NULL,
+    notes TEXT,
+    createdAt DATETIME NOT NULL,
+    KEY idx_admin_review_target (target_type, target_id),
+    KEY idx_admin_review_admin_created (admin_id, createdAt),
+    CONSTRAINT fk_admin_review_adminId FOREIGN KEY (admin_id)
+    REFERENCES admins(id)
+);
+

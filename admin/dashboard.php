@@ -188,6 +188,7 @@ $businesses = $business_stmt->get_result();
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
                     <a href="dashboard.php">Dashboard</a>
                     <a href="accounts.php">Accounts</a>
+                    <a href="review_center.php">Review Center</a>
                     <a href="reviews.php">Reviews</a>
                     <a href="content.php">Content</a>
                     <form action="../logout.php" method="POST">

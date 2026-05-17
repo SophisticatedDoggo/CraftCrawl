@@ -8,7 +8,7 @@ function craftcrawl_password_reset_account_by_email($conn, $account_type, $email
     if ($account_type === 'user') {
         $stmt = $conn->prepare("SELECT id, email FROM users WHERE email=? AND disabledAt IS NULL");
     } elseif ($account_type === 'business') {
-        $stmt = $conn->prepare("SELECT id, bEmail AS email FROM businesses WHERE bEmail=? AND disabledAt IS NULL");
+        $stmt = $conn->prepare("SELECT id, account_email AS email FROM business_accounts WHERE account_email=? AND disabledAt IS NULL");
     } elseif ($account_type === 'admin') {
         $stmt = $conn->prepare("SELECT id, email FROM admins WHERE email=? AND active=TRUE AND disabledAt IS NULL");
     } else {
@@ -128,7 +128,7 @@ function craftcrawl_complete_password_reset($conn, $token, $password_hash) {
         if ($account_type === 'user') {
             $account_stmt = $conn->prepare("UPDATE users SET password_hash=?, password_auth_enabled=TRUE WHERE id=?");
         } elseif ($account_type === 'business') {
-            $account_stmt = $conn->prepare("UPDATE businesses SET password_hash=? WHERE id=?");
+            $account_stmt = $conn->prepare("UPDATE business_accounts SET password_hash=? WHERE id=?");
         } elseif ($account_type === 'admin') {
             $account_stmt = $conn->prepare("UPDATE admins SET password_hash=? WHERE id=? AND active=TRUE");
         } else {

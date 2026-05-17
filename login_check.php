@@ -1,10 +1,11 @@
 <?php
 require_once __DIR__ . '/lib/security.php';
 require_once __DIR__ . '/lib/remember_auth.php';
+require_once __DIR__ . '/lib/business_context.php';
 craftcrawl_secure_session_start();
 include_once __DIR__ . '/db.php';
 
-if (!isset($_SESSION['user_id']) && !isset($_SESSION['business_id']) && !isset($_SESSION['admin_id'])) {
+if (!isset($_SESSION['user_id']) && !isset($_SESSION['business_account_id']) && !isset($_SESSION['admin_id'])) {
     craftcrawl_restore_remembered_login($conn);
 }
 
@@ -32,9 +33,9 @@ if (isset($_SESSION['user_id'])) {
     }
 }
 
-if (isset($_SESSION['business_id'])) {
-    $account_id = (int) $_SESSION['business_id'];
-    $stmt = $conn->prepare("SELECT id, display_palette FROM businesses WHERE id=? AND disabledAt IS NULL");
+if (isset($_SESSION['business_account_id'])) {
+    $account_id = (int) $_SESSION['business_account_id'];
+    $stmt = $conn->prepare("SELECT id, display_palette FROM business_accounts WHERE id=? AND disabledAt IS NULL");
     $stmt->bind_param("i", $account_id);
     $stmt->execute();
     $account = $stmt->get_result()->fetch_assoc();
@@ -54,6 +55,15 @@ if (isset($_SESSION['business_id'])) {
             'samesite' => 'Lax',
         ]);
     }
+
+    if (isset($_SESSION['business_location_id'])) {
+        $selected_location = craftcrawl_business_selected_location($conn, $account_id, (int) $_SESSION['business_location_id']);
+        if ($selected_location) {
+            craftcrawl_business_select_location($selected_location);
+        } else {
+            craftcrawl_business_clear_selected_location();
+        }
+    }
 }
 
 if (isset($_SESSION['admin_id'])) {
@@ -69,7 +79,7 @@ if (isset($_SESSION['admin_id'])) {
     }
 }
 
-if (!isset($_SESSION['user_id']) && !isset($_SESSION['business_id']) && !isset($_SESSION['admin_id'])) {
+if (!isset($_SESSION['user_id']) && !isset($_SESSION['business_account_id']) && !isset($_SESSION['admin_id'])) {
     craftcrawl_redirect('index.php');
 }
 ?>
