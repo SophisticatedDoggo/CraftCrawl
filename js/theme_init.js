@@ -51,6 +51,70 @@ function isCraftCrawlNativeApp() {
     );
 }
 
+function initCraftCrawlNativeVerificationLinks() {
+    const capacitor = window.Capacitor;
+
+    if (!isCraftCrawlNativeApp() || typeof capacitor.registerPlugin !== 'function') {
+        return;
+    }
+
+    const App = capacitor.Plugins?.App || capacitor.registerPlugin('App');
+
+    if (!App) {
+        return;
+    }
+
+    function verificationPathFromUrl(value) {
+        if (typeof value !== 'string' || value.trim() === '') {
+            return '';
+        }
+
+        let url;
+
+        try {
+            url = new URL(value);
+        } catch (error) {
+            return '';
+        }
+
+        if (url.protocol !== 'https:' || url.origin !== window.location.origin) {
+            return '';
+        }
+
+        const normalizedPath = url.pathname.replace(/\/+$/, '');
+
+        if (!normalizedPath.endsWith('/verify_email.php')) {
+            return '';
+        }
+
+        return `${url.pathname}${url.search}${url.hash}`;
+    }
+
+    function openVerificationUrl(value) {
+        const path = verificationPathFromUrl(value);
+
+        if (!path) {
+            return;
+        }
+
+        const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+        if (currentPath !== path) {
+            window.location.assign(path);
+        }
+    }
+
+    App.getLaunchUrl?.()
+        .then((launch) => openVerificationUrl(launch?.url))
+        .catch(() => {});
+
+    App.addListener?.('appUrlOpen', (event) => {
+        openVerificationUrl(event?.url);
+    });
+}
+
+initCraftCrawlNativeVerificationLinks();
+
 function isCraftCrawlInternalLink(link) {
     if (!(link instanceof HTMLAnchorElement)) {
         return false;

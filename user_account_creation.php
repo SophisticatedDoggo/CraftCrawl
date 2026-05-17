@@ -70,9 +70,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->execute();
                     $user_id = $stmt->insert_id;
                     $email_sent = craftcrawl_issue_email_verification($conn, 'user', $user_id, $email);
-                    $message = $email_sent
-                        ? "Account created. Please check your email to verify your address before logging in."
-                        : "Account created, but the verification email could not be sent. Please contact support.";
+                    if ($email_sent) {
+                        $_SESSION['user_login_feedback'] = [
+                            'signup_success' => true,
+                            'email' => $email
+                        ];
+                        header('Location: user_login.php');
+                        exit();
+                    }
+
+                    $message = "Account created, but the verification email could not be sent. Please contact support.";
                     $success = true;
                 }
             } else {

@@ -8,6 +8,7 @@ $login_error = false;
 $captcha_error = false;
 $verification_error = false;
 $disabled_error = false;
+$signup_success = false;
 $email = "";
 
 $login_feedback = $_SESSION['user_login_feedback'] ?? null;
@@ -18,6 +19,7 @@ if ($login_feedback) {
     $captcha_error = !empty($login_feedback['captcha_error']);
     $verification_error = !empty($login_feedback['verification_error']);
     $disabled_error = !empty($login_feedback['disabled_error']);
+    $signup_success = !empty($login_feedback['signup_success']);
     $email = $login_feedback['email'] ?? '';
 }
 
@@ -182,6 +184,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
                 <?php if ($disabled_error) : ?>
                     <p class="form-message form-message-error">This account has been disabled.</p>
+                <?php endif; ?>
+                <?php if ($signup_success) : ?>
+                    <p class="form-message form-message-success">Account created. Please check your email to verify your address before logging in.</p>
                 <?php endif; ?>
             </div>
         </form>

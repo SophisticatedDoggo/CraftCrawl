@@ -46,12 +46,12 @@ $craftcrawl_portal_shell = true;
             <div class="welcome-modal-panel">
                 <span class="welcome-modal-kicker">Welcome to CraftCrawl</span>
                 <h2 id="welcome-modal-title">Hi<?php echo !empty($welcome_user['fName']) ? ', ' . escape_output($welcome_user['fName']) : ''; ?>.</h2>
-                <p>Your portal is where your crawl comes together:</p>
+                <p>Check in as you explore to earn XP and unlock rewards.</p>
                 <ul>
-                    <li><strong>Map</strong> nearby breweries, wineries, cideries, distilleries, and meaderies.</li>
-                    <li><strong>Check in</strong> when you visit to earn XP, level up, and unlock rewards.</li>
-                    <li><strong>Events</strong> help you find what is happening next at CraftCrawl locations.</li>
-                    <li><strong>Feed</strong> lets you follow friends' milestones and discoveries.</li>
+                    <li><strong>First-time visits</strong> earn 100 XP.</li>
+                    <li><strong>Return visits</strong> earn 25 XP once every 7 days per location.</li>
+                    <li>As your XP grows, you <strong>level up</strong> and unlock profile titles, themes, app icons, badge showcase slots, and profile customizations.</li>
+                    <li>You can also earn <strong>badges</strong> for milestones along the way.</li>
                 </ul>
                 <button type="button" data-welcome-dismiss>Start exploring</button>
             </div>

@@ -16,3 +16,7 @@ DirectoryIndex index.php index.html
 <FilesMatch "\.apk$">
     ForceType application/vnd.android.package-archive
 </FilesMatch>
+
+<Files "apple-app-site-association">
+    ForceType application/json
+</Files>

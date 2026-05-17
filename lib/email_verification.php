@@ -238,7 +238,32 @@ function craftcrawl_mark_email_verified($conn, $token) {
     $stmt->execute();
     $verification = $stmt->get_result()->fetch_assoc();
 
-    if (!$verification || !empty($verification['usedAt'])) {
+    if (!$verification) {
+        return ['success' => false, 'reason' => 'invalid'];
+    }
+
+    if (!empty($verification['usedAt'])) {
+        if ($verification['account_type'] === 'user') {
+            $account_stmt = $conn->prepare("SELECT emailVerifiedAt FROM users WHERE id=? LIMIT 1");
+        } elseif ($verification['account_type'] === 'business') {
+            $account_stmt = $conn->prepare("SELECT emailVerifiedAt FROM businesses WHERE id=? LIMIT 1");
+        } else {
+            return ['success' => false, 'reason' => 'invalid'];
+        }
+
+        $account_id = (int) $verification['account_id'];
+        $account_stmt->bind_param("i", $account_id);
+        $account_stmt->execute();
+        $account = $account_stmt->get_result()->fetch_assoc();
+
+        if (!empty($account['emailVerifiedAt'])) {
+            return [
+                'success' => true,
+                'reason' => 'already_verified',
+                'account_type' => $verification['account_type']
+            ];
+        }
+
         return ['success' => false, 'reason' => 'invalid'];
     }
 

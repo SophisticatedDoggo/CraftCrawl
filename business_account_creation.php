@@ -110,9 +110,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $conn->commit();
 
                     $email_sent = craftcrawl_issue_email_verification($conn, 'business', $business_id, $email);
-                    $message = $email_sent
-                        ? "Account created. Please check your email to verify your address before logging in."
-                        : "Account created, but the verification email could not be sent. Please contact support.";
+                    if ($email_sent) {
+                        $_SESSION['business_login_feedback'] = [
+                            'signup_success' => true,
+                            'email' => $email
+                        ];
+                        header('Location: business_login.php');
+                        exit();
+                    }
+
+                    $message = "Account created, but the verification email could not be sent. Please contact support.";
                     $success = true;
                 } catch (Throwable $error) {
                     $conn->rollback();

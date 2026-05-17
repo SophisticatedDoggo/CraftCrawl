@@ -4305,11 +4305,19 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 .palette-switcher-settings {
     display: inline-flex;
     flex-wrap: wrap;
+    gap: 10px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
     margin-bottom: 10px;
 }
 
 .palette-switcher-settings button {
     min-width: 108px;
+    min-height: 62px;
+    padding: 11px 14px;
     border-width: 1px;
 }
 
@@ -4342,23 +4350,32 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 }
 
 .palette-switcher-settings button {
-    border-color: var(--palette-preview-border);
+    border-color: transparent;
     color: var(--palette-preview-primary);
     background: var(--palette-preview-bg);
 }
 
 .palette-switcher-settings button:not(.is-active) {
-    border-color: color-mix(in srgb, var(--palette-preview-primary) 42%, var(--palette-preview-border));
+    border-color: transparent;
     color: var(--palette-preview-primary);
     background: var(--palette-preview-bg);
 }
 
 .palette-switcher-settings button:hover,
 .palette-switcher-settings button:focus,
-.palette-switcher-settings button.is-active {
-    border-color: var(--palette-preview-primary);
+.palette-switcher-settings button:active {
+    border-color: transparent;
     color: var(--palette-preview-primary);
     background: var(--palette-preview-bg);
+}
+
+.palette-switcher-settings button.is-active {
+    border-color: var(--palette-preview-primary);
+}
+
+.palette-switcher-settings button:focus-visible {
+    outline: 2px solid var(--palette-preview-primary);
+    outline-offset: 2px;
 }
 
 .display-theme-form {
@@ -4382,7 +4399,7 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     justify-items: center;
     min-width: 0;
     padding: 10px 8px;
-    border: 1px solid var(--color-border);
+    border: 1px solid transparent;
     color: var(--color-text);
     background: var(--color-surface);
     box-shadow: var(--shadow-sm);
@@ -4390,13 +4407,19 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 .app-icon-switcher button:hover,
 .app-icon-switcher button:focus,
-.app-icon-switcher button.is-active {
-    border-color: var(--color-primary);
+.app-icon-switcher button:active {
+    border-color: transparent;
     color: var(--color-primary);
 }
 
 .app-icon-switcher button.is-active {
+    border-color: var(--color-primary);
     background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+}
+
+.app-icon-switcher button:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
 }
 
 .app-icon-switcher img {

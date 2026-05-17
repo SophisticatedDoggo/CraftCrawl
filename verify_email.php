@@ -34,6 +34,10 @@ if (($result['reason'] ?? '') === 'expired' && !empty($result['account_id'])) {
 
 function verification_message($result) {
     if (!empty($result['success'])) {
+        if (($result['reason'] ?? '') === 'already_verified') {
+            return 'Your email is already verified. Redirecting you to login...';
+        }
+
         return 'Your email has been verified. Redirecting you to login...';
     }
 
