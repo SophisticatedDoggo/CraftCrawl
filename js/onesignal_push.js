@@ -1,11 +1,19 @@
 (function () {
-    const toggleInput = document.querySelector('[data-onesignal-toggle]');
-    const statusMessage = document.querySelector('[data-onesignal-status]');
     const isUserPath = /\/user\/?$|\/user\//.test(window.location.pathname);
     const nativeAutoPromptKey = 'craftcrawl_native_push_auto_prompted_v2';
+    const initializedToggles = new WeakSet();
+    let oneSignalPromise = null;
 
     function userEndpoint(file) {
         return isUserPath ? file : `user/${file}`;
+    }
+
+    function getToggle(root = document) {
+        return root.querySelector?.('[data-onesignal-toggle]') || null;
+    }
+
+    function getStatus(root = document) {
+        return root.querySelector?.('[data-onesignal-status]') || document.querySelector('[data-onesignal-status]');
     }
 
     function getNativeOneSignalPlugin() {
@@ -27,13 +35,10 @@
             return null;
         }
 
-        // Bundled OneSignal clients expose the rich namespace API already.
         if (rawPlugin.Notifications && rawPlugin.User?.pushSubscription) {
             return rawPlugin;
         }
 
-        // Remote web content inside Capacitor sees the raw native bridge instead.
-        // Adapt that bridge to the smaller OneSignal shape the rest of this file uses.
         return {
             initialize(appId) {
                 return rawPlugin.initialize({ appId });
@@ -54,7 +59,8 @@
                     return Boolean((await rawPlugin.canRequestPermission()).canRequest);
                 },
                 async requestPermission(fallbackToSettings) {
-                    return Boolean((await rawPlugin.requestPermission({ fallbackToSettings })).accepted);
+                    const response = await rawPlugin.requestPermission({ fallbackToSettings });
+                    return Boolean(response.permission ?? response.accepted);
                 }
             },
             User: {
@@ -89,7 +95,8 @@
         }
     }
 
-    function setStatus(message, isError) {
+    function setStatus(message, isError, root = document) {
+        const statusMessage = getStatus(root);
         if (!statusMessage) {
             return;
         }
@@ -186,6 +193,26 @@
         });
     }
 
+    function ensureOneSignal() {
+        if (oneSignalPromise) {
+            return oneSignalPromise;
+        }
+
+        oneSignalPromise = fetch(userEndpoint('onesignal_config.php'), { credentials: 'same-origin' })
+            .then((response) => response.ok ? response.json() : null)
+            .then((config) => {
+                if (!config || !config.enabled || !config.app_id) {
+                    return null;
+                }
+
+                return getNativeOneSignalPlugin()
+                    ? initNativeOneSignal(config)
+                    : initOneSignal(config);
+            });
+
+        return oneSignalPromise;
+    }
+
     async function requestPermission(OneSignal) {
         if (OneSignal.Notifications && typeof OneSignal.Notifications.requestPermission === 'function') {
             return OneSignal.Notifications.requestPermission();
@@ -274,11 +301,7 @@
         return false;
     }
 
-    async function syncToggleState(OneSignal) {
-        if (!toggleInput) {
-            return;
-        }
-
+    async function syncToggleState(OneSignal, toggleInput) {
         toggleInput.checked = getNativeOneSignalPlugin()
             ? await nativePushIsEnabledOnThisDevice(OneSignal)
             : await webPushIsEnabledInThisBrowser(OneSignal);
@@ -298,8 +321,6 @@
             return accepted;
         }
 
-        // Older native bridges exposed this lower-level plugin method directly.
-        // Keep it as a fallback so existing installed builds fail gracefully.
         if (typeof OneSignal.requestPermission === 'function') {
             const response = await OneSignal.requestPermission({ fallbackToSettings: true });
             const accepted = typeof response === 'boolean'
@@ -337,46 +358,47 @@
         }
     }
 
-    fetch(userEndpoint('onesignal_config.php'), { credentials: 'same-origin' })
-        .then((response) => response.ok ? response.json() : null)
-        .then((config) => {
-            if (!config || !config.enabled || !config.app_id) {
-                if (toggleInput) {
-                    toggleInput.disabled = true;
-                    setStatus('Push notifications are not configured yet.', true);
-                }
-                return null;
-            }
+    async function refreshToggleState(toggleInput) {
+        toggleInput.disabled = true;
+        let keepDisabled = false;
 
-            return getNativeOneSignalPlugin()
-                ? initNativeOneSignal(config)
-                : initOneSignal(config);
-        })
-        .then(async (OneSignal) => {
+        try {
+            const OneSignal = await ensureOneSignal();
             if (!OneSignal) {
+                keepDisabled = true;
+                setStatus('Push notifications are not configured yet.', true);
                 return;
             }
 
-            await autoPromptNativePush(OneSignal);
+            await syncToggleState(OneSignal, toggleInput);
+        } catch (error) {
+            toggleInput.checked = false;
+        } finally {
+            toggleInput.disabled = keepDisabled;
+        }
+    }
 
-            if (!toggleInput) {
-                return;
-            }
+    async function initToggle(root = document) {
+        const toggleInput = getToggle(root);
+        if (!toggleInput) {
+            return;
+        }
 
-            syncToggleState(OneSignal)
-                .catch(() => {
-                    toggleInput.checked = false;
-                })
-                .finally(() => {
-                    toggleInput.disabled = false;
-                });
-
+        if (!initializedToggles.has(toggleInput)) {
+            initializedToggles.add(toggleInput);
             toggleInput.addEventListener('change', async () => {
                 const shouldEnable = toggleInput.checked;
                 toggleInput.disabled = true;
                 setStatus(shouldEnable ? 'Opening notification permission prompt...' : 'Turning off push notifications...', false);
 
                 try {
+                    const OneSignal = await ensureOneSignal();
+                    if (!OneSignal) {
+                        toggleInput.checked = false;
+                        setStatus('Push notifications are not configured yet.', true);
+                        return;
+                    }
+
                     if (getNativeOneSignalPlugin()) {
                         if (shouldEnable) {
                             const accepted = await requestNativePermission(OneSignal);
@@ -399,20 +421,51 @@
                         setStatus('Use your browser settings to turn off web push notifications.', true);
                     }
                 } catch (error) {
-                    await syncToggleState(OneSignal).catch(() => {
+                    const OneSignal = await ensureOneSignal().catch(() => null);
+                    if (OneSignal) {
+                        await syncToggleState(OneSignal, toggleInput).catch(() => {
+                            toggleInput.checked = !shouldEnable;
+                        });
+                    } else {
                         toggleInput.checked = !shouldEnable;
-                    });
+                    }
                     setStatus('Notifications could not be updated on this device.', true);
                 } finally {
                     toggleInput.disabled = false;
                 }
             });
+        }
+
+        await refreshToggleState(toggleInput);
+    }
+
+    function refreshVisibleToggle() {
+        initToggle(document);
+    }
+
+    ensureOneSignal()
+        .then(async (OneSignal) => {
+            if (OneSignal) {
+                await autoPromptNativePush(OneSignal);
+            }
+            await initToggle(document);
         })
         .catch((error) => {
             console.error('CraftCrawl OneSignal initialization failed:', error);
+            const toggleInput = getToggle();
             if (toggleInput) {
                 toggleInput.disabled = true;
                 setStatus(error && error.message ? error.message : 'Push notifications could not be initialized.', true);
             }
         });
+
+    document.addEventListener('craftcrawl:user-shell-navigated', refreshVisibleToggle);
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            refreshVisibleToggle();
+        }
+    });
+    window.addEventListener('pageshow', refreshVisibleToggle);
+    window.addEventListener('focus', refreshVisibleToggle);
+    window.CraftCrawlInitOneSignalPush = initToggle;
 })();
