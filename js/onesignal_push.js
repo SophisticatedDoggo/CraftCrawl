@@ -208,14 +208,14 @@
         }
     }
 
-    async function requestNativePermission(OneSignal) {
+    async function requestNativePermission(OneSignal, fallbackToSettings = false) {
         if (await nativeHasPermission(OneSignal)) {
             await ensureNativePushOptIn(OneSignal);
             return true;
         }
 
         if (OneSignal.Notifications && typeof OneSignal.Notifications.requestPermission === 'function') {
-            const accepted = Boolean(await OneSignal.Notifications.requestPermission(true));
+            const accepted = Boolean(await OneSignal.Notifications.requestPermission(fallbackToSettings));
             if (accepted) {
                 await ensureNativePushOptIn(OneSignal);
             }
@@ -223,7 +223,7 @@
         }
 
         if (typeof OneSignal.requestPermission === 'function') {
-            const response = await OneSignal.requestPermission({ fallbackToSettings: true });
+            const response = await OneSignal.requestPermission({ fallbackToSettings });
             const accepted = typeof response === 'boolean'
                 ? response
                 : Boolean(response?.permission || response?.accepted);
