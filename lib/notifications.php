@@ -116,10 +116,6 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
             WHERE xl.createdAt > ?
                 AND xl.user_id<>?
                 AND xl.level_after > xl.level_before
-                AND (
-                    (MOD(xl.level_after - 1, 5) = 0 AND xl.level_after > 1)
-                    OR xl.level_after IN (50, 75, 100)
-                )
                 AND actor.show_feed_activity=TRUE
                 AND actor.disabledAt IS NULL
                 AND $friend_activity_exists

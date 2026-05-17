@@ -84,10 +84,6 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
             INNER JOIN users u ON u.id = xl.user_id
             LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
             WHERE xl.id=? AND xl.level_after > xl.level_before
-                AND (
-                    (MOD(xl.level_after - 1, 5) = 0 AND xl.level_after > 1)
-                    OR xl.level_after IN (50, 75, 100)
-                )
                 AND u.disabledAt IS NULL
             LIMIT 1
         ");

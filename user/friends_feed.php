@@ -183,10 +183,6 @@ $xp_sql = "
     INNER JOIN users u ON u.id = xl.user_id
     WHERE xl.user_id IN ($placeholders)
         AND xl.level_after > xl.level_before
-        AND (
-            (MOD(xl.level_after - 1, 5) = 0 AND xl.level_after > 1)
-            OR xl.level_after IN (50, 75, 100)
-        )
     $before_clause_created
     ORDER BY xl.createdAt DESC, xl.id DESC
     LIMIT 80
