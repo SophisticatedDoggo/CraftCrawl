@@ -4418,11 +4418,6 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 .palette-switcher button:disabled,
 .app-icon-switcher button:disabled {
     cursor: not-allowed;
-    opacity: 0.78;
-}
-
-.palette-switcher-settings button:disabled {
-    opacity: 1;
 }
 
 .business-edit-panel button {
