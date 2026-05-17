@@ -565,7 +565,7 @@ label {
     margin: 0 0 14px;
 }
 
-.mobile-context-back {
+a.mobile-context-back {
     display: none;
 }
 
@@ -5489,7 +5489,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
         display: none !important;
     }
 
-    .mobile-context-back {
+    a.mobile-context-back {
         display: inline-flex;
         justify-self: start;
         width: fit-content;
