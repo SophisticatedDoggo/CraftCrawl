@@ -4284,32 +4284,28 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 }
 
 .palette-switcher-settings button[data-palette-option="trail-map"] {
-    --palette-preview-surface: #fffdf8;
-    --palette-preview-text: #20231f;
+    --palette-preview-bg: #f4f1ea;
     --palette-preview-muted: #6b705c;
     --palette-preview-border: #d8d0bf;
     --palette-preview-primary: #3f6f3a;
 }
 
 .palette-switcher-settings button[data-palette-option="trail-dark"] {
-    --palette-preview-surface: #202328;
-    --palette-preview-text: #f4f5f7;
+    --palette-preview-bg: #15171a;
     --palette-preview-muted: #b8bec8;
     --palette-preview-border: #3a4049;
     --palette-preview-primary: #8fbc6a;
 }
 
 .palette-switcher-settings button[data-palette-option="ember"] {
-    --palette-preview-surface: #ffffff;
-    --palette-preview-text: #211f1c;
+    --palette-preview-bg: #f7f3ed;
     --palette-preview-muted: #6f6a61;
     --palette-preview-border: #ddd2c4;
     --palette-preview-primary: #c05c23;
 }
 
 .palette-switcher-settings button[data-palette-option="ember-dark"] {
-    --palette-preview-surface: #202328;
-    --palette-preview-text: #f4f5f7;
+    --palette-preview-bg: #15171a;
     --palette-preview-muted: #b8bec8;
     --palette-preview-border: #3a4049;
     --palette-preview-primary: #c05c23;
@@ -4317,22 +4313,22 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 .palette-switcher-settings button {
     border-color: var(--palette-preview-border);
-    color: var(--palette-preview-text);
-    background: var(--palette-preview-surface);
+    color: var(--palette-preview-primary);
+    background: var(--palette-preview-bg);
 }
 
 .palette-switcher-settings button:not(.is-active) {
     border-color: color-mix(in srgb, var(--palette-preview-primary) 42%, var(--palette-preview-border));
-    color: var(--palette-preview-text);
-    background: color-mix(in srgb, var(--palette-preview-primary) 8%, var(--palette-preview-surface));
+    color: var(--palette-preview-primary);
+    background: var(--palette-preview-bg);
 }
 
 .palette-switcher-settings button:hover,
 .palette-switcher-settings button:focus,
 .palette-switcher-settings button.is-active {
     border-color: var(--palette-preview-primary);
-    color: var(--palette-preview-text);
-    background: color-mix(in srgb, var(--palette-preview-primary) 14%, var(--palette-preview-surface));
+    color: var(--palette-preview-primary);
+    background: var(--palette-preview-bg);
 }
 
 .display-theme-form {
