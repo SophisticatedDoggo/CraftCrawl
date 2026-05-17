@@ -157,6 +157,20 @@ function render_feed_thread_post($item, $actions_html = '') {
         ';
     }
 
+    if (($item['type'] ?? '') === 'location_want') {
+        return '
+            <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
+                ' . $avatar . '
+                <div>
+                    <strong>' . escape_output($want_phrase) . ' to visit ' . escape_output($item['business_name']) . '</strong>
+                    <p>' . escape_output($item['business_type']) . ' · ' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
+                    <a href="../business_details.php?id=' . escape_output($item['business_id']) . '">View business</a>
+                    ' . $actions_html . '
+                </div>
+            </article>
+        ';
+    }
+
     if (($item['type'] ?? '') === 'business_post') {
         $is_poll = ($item['post_type'] ?? '') === 'poll';
         return '
