@@ -389,26 +389,33 @@ function format_event_time_range($event) {
 </head>
 <body>
     <div data-user-page-content>
-    <main class="business-details-page">
+    <main class="business-details-page pull-refresh-surface" data-pull-refresh>
+        <div class="pull-refresh-indicator" data-refresh-indicator aria-live="polite">
+            <span aria-hidden="true"></span>
+            <strong data-refresh-label>Pull to refresh</strong>
+        </div>
         <div class="details-nav">
             <a href="user/portal.php" data-back-link>Back</a>
-            <div class="mobile-actions-menu details-actions-menu" data-mobile-actions-menu>
-                <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-                <div class="mobile-actions-panel" data-mobile-actions-panel>
-                    <a href="user/friends.php">
-                        Friends
-                        <span class="notification-badge" data-friends-menu-badge hidden></span>
-                    </a>
-                    <a href="user/profile.php">Profile</a>
-                    <a href="user/settings.php">Settings</a>
-                    <form action="logout.php" method="POST">
-                        <?php echo craftcrawl_csrf_input(); ?>
-                        <button type="submit">Logout</button>
-                    </form>
+            <div class="business-header-actions">
+                <button type="button" class="refresh-page-button" data-refresh-button>Refresh</button>
+                <div class="mobile-actions-menu details-actions-menu" data-mobile-actions-menu>
+                    <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <div class="mobile-actions-panel" data-mobile-actions-panel>
+                        <a href="user/friends.php">
+                            Friends
+                            <span class="notification-badge" data-friends-menu-badge hidden></span>
+                        </a>
+                        <a href="user/profile.php">Profile</a>
+                        <a href="user/settings.php">Settings</a>
+                        <form action="logout.php" method="POST">
+                            <?php echo craftcrawl_csrf_input(); ?>
+                            <button type="submit">Logout</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -821,6 +828,7 @@ function format_event_time_range($event) {
 <script src="js/review_photos.js?v=<?php echo filemtime(__DIR__ . '/js/review_photos.js'); ?>"></script>
 <script src="js/review_edit_toggle.js?v=<?php echo filemtime(__DIR__ . '/js/review_edit_toggle.js'); ?>"></script>
 <script src="js/friends.js?v=<?php echo filemtime(__DIR__ . '/js/friends.js'); ?>"></script>
+<script src="js/pull_to_refresh.js?v=<?php echo filemtime(__DIR__ . '/js/pull_to_refresh.js'); ?>"></script>
 <script src="js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/js/mobile_actions_menu.js'); ?>"></script>
 <script src="js/palette_switcher.js?v=<?php echo filemtime(__DIR__ . '/js/palette_switcher.js'); ?>"></script>
 <script src="js/app_icon_switcher.js?v=<?php echo filemtime(__DIR__ . '/js/app_icon_switcher.js'); ?>"></script>

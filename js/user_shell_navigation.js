@@ -77,6 +77,7 @@
         window.CraftCrawlInitProfilePhotoCrop?.(root);
         window.CraftCrawlInitBadgeShowcase?.(root);
         window.CraftCrawlInitFeedThread?.(root);
+        window.CraftCrawlInitPullToRefresh?.(root);
         window.CraftCrawlInitMobileActionsMenu?.();
     }
 

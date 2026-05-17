@@ -53,12 +53,17 @@ $craftcrawl_portal_active = $craftcrawl_portal_active ?? 'map';
     </div>
 
     <div data-user-tab-panel="feed" <?php echo $craftcrawl_portal_active !== 'feed' ? 'hidden' : ''; ?>>
-        <section id="friends-panel" class="portal-panel feed-panel" data-friends-panel data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
+        <section id="friends-panel" class="portal-panel feed-panel pull-refresh-surface" data-friends-panel data-pull-refresh data-refresh-action="feed" data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
+            <div class="pull-refresh-indicator" data-refresh-indicator aria-live="polite">
+                <span aria-hidden="true"></span>
+                <strong data-refresh-label>Pull to refresh</strong>
+            </div>
             <div class="friends-panel-header">
                 <div>
                     <h2>Feed</h2>
                     <p>Follow your friends' CraftCrawl milestones.</p>
                 </div>
+                <button type="button" class="refresh-page-button" data-refresh-button>Refresh</button>
             </div>
             <div class="friends-feed-header">
                 <h3>Friends Feed</h3>

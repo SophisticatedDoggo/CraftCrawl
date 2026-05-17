@@ -2267,6 +2267,13 @@ a.text-link:focus {
     width: 100%;
 }
 
+.friends-panel-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+}
+
 .friends-panel-header h2 {
     margin: 0 0 4px;
     color: var(--color-primary);
@@ -2675,6 +2682,71 @@ a.text-link:focus {
 .feed-panel .friends-feed {
     gap: 0;
     margin-bottom: 0;
+}
+
+.pull-refresh-surface {
+    --pull-refresh-distance: 0px;
+    position: relative;
+    transform: translateY(var(--pull-refresh-distance));
+    transition: transform 180ms ease;
+}
+
+.pull-refresh-surface.is-pulling {
+    transition: none;
+}
+
+.pull-refresh-indicator {
+    position: absolute;
+    top: -54px;
+    left: 50%;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    color: var(--color-muted);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    font-size: 13px;
+    transform: translateX(-50%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 140ms ease, color 140ms ease;
+}
+
+.pull-refresh-surface.is-pulling .pull-refresh-indicator,
+.pull-refresh-surface.is-refreshing .pull-refresh-indicator {
+    opacity: 1;
+}
+
+.pull-refresh-indicator span {
+    width: 14px;
+    height: 14px;
+    border: 2px solid color-mix(in srgb, var(--color-muted) 35%, transparent);
+    border-top-color: currentColor;
+    border-radius: 999px;
+}
+
+.pull-refresh-surface.is-ready-to-refresh .pull-refresh-indicator,
+.pull-refresh-surface.is-refreshing .pull-refresh-indicator {
+    color: var(--color-primary);
+}
+
+.pull-refresh-surface.is-refreshing .pull-refresh-indicator span {
+    animation: pull-refresh-spin 700ms linear infinite;
+}
+
+.refresh-page-button {
+    min-height: 38px;
+    padding: 8px 12px;
+}
+
+@keyframes pull-refresh-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .feed-comments-link:hover,

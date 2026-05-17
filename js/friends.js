@@ -6,6 +6,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     const input = root.querySelector('#friend-search-input');
     const results = root.querySelector('[data-friends-search-results]');
     const requestsList = root.querySelector('[data-friend-requests-list]');
+    const sentRequestsList = root.querySelector('[data-sent-friend-requests]');
     const currentFriendsList = root.querySelector('[data-current-friends-list]');
     const currentFriendsFilter = root.querySelector('[data-current-friends-filter]');
     const recommendationButtons = root.querySelectorAll('[data-recommendation-id]');
@@ -473,6 +474,67 @@ window.CraftCrawlInitFriends = function (scope = document) {
                         button.disabled = false;
                         button.classList.remove('is-loading');
                         button.textContent = response === 'accepted' ? 'Approve' : 'Decline';
+                    });
+            });
+        });
+    }
+
+    function renderSentRequests(requests) {
+        if (!sentRequestsList) {
+            return;
+        }
+
+        if (!requests.length) {
+            sentRequestsList.innerHTML = '';
+            sentRequestsList.hidden = true;
+            return;
+        }
+
+        sentRequestsList.innerHTML = requests.map((request) => `
+            <article class="friend-search-result is-invite-sent" data-sent-request-id="${request.id}">
+                ${renderAvatar(request.actor, request.name)}
+                <div class="friend-search-summary">
+                    <strong>${escapeHtml(request.name)}</strong>
+                    <span class="friend-search-meta">Level ${escapeHtml(request.level || 1)}${request.title ? ` &middot; ${escapeHtml(request.title)}` : ''}</span>
+                    <span class="friend-search-email">${escapeHtml(request.email)}</span>
+                    <span class="friend-search-status is-sent">✓ Invitation sent</span>
+                </div>
+                <button type="button" data-request-id="${request.id}" data-friend-action="cancel">Cancel Invite</button>
+            </article>
+        `).join('');
+        sentRequestsList.hidden = Boolean(input?.value.trim());
+
+        sentRequestsList.querySelectorAll('button[data-friend-action="cancel"]').forEach((button) => {
+            button.addEventListener('click', () => {
+                button.disabled = true;
+                button.classList.add('is-loading');
+                button.textContent = 'Canceling...';
+
+                postForm(userEndpoint('friend_cancel.php'), {
+                    csrf_token: csrfToken,
+                    request_id: button.dataset.requestId
+                })
+                    .then((data) => {
+                        if (!data.ok) {
+                            showStatus(data.message || 'Friend invite could not be canceled.', true);
+                            button.disabled = false;
+                            button.classList.remove('is-loading');
+                            button.textContent = 'Cancel Invite';
+                            return;
+                        }
+
+                        showStatus(data.message || 'Friend invite canceled.', false);
+                        button.closest('[data-sent-request-id]')?.remove();
+                        if (!sentRequestsList.querySelector('[data-sent-request-id]')) {
+                            sentRequestsList.hidden = true;
+                        }
+                        refreshFriendsData();
+                    })
+                    .catch(() => {
+                        showStatus('Friend invite could not be canceled. Please try again.', true);
+                        button.disabled = false;
+                        button.classList.remove('is-loading');
+                        button.textContent = 'Cancel Invite';
                     });
             });
         });
@@ -981,6 +1043,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
         return loadFeed();
     }
 
+    window.CraftCrawlRefreshFriendsFeed = refreshVisibleFeed;
+
     window.addEventListener('craftcrawl:event-want-updated', () => {
         loadFeed();
     });
@@ -994,6 +1058,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
             loadStatus();
+            if (managerPage) {
+                loadRequests();
+            }
             refreshVisibleFeed();
         }
     });
@@ -1012,6 +1079,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 }
 
                 renderRequests(data.requests || []);
+                renderSentRequests(data.sent_requests || []);
             })
             .catch(() => {
                 showStatus('Friend invites could not be loaded.', true);
@@ -1039,6 +1107,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 results.innerHTML = '';
                 results.hidden = true;
             }
+            if (sentRequestsList) {
+                sentRequestsList.hidden = !sentRequestsList.querySelector('[data-sent-request-id]');
+            }
             if (showShortQueryMessage) {
                 showStatus('Search by at least two characters.', true);
             }
@@ -1058,6 +1129,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     }
 
                     renderSearchResults(data.users || []);
+                    if (sentRequestsList) {
+                        sentRequestsList.hidden = true;
+                    }
                 })
                 .catch(() => {
                     if (requestId === friendSearchRequestId) {

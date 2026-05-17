@@ -157,7 +157,11 @@ $leaderboard = $leaderboard_stmt->get_result();
 </head>
 <body>
     <div data-user-page-content>
-    <main class="settings-page friends-page" data-friends-manager-page data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
+    <main class="settings-page friends-page pull-refresh-surface" data-friends-manager-page data-pull-refresh data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
+        <div class="pull-refresh-indicator" data-refresh-indicator aria-live="polite">
+            <span aria-hidden="true"></span>
+            <strong data-refresh-label>Pull to refresh</strong>
+        </div>
         <header class="settings-header">
             <div>
                 <img class="site-logo" src="../images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
@@ -167,6 +171,7 @@ $leaderboard = $leaderboard_stmt->get_result();
                 </div>
             </div>
             <div class="business-header-actions user-subpage-header-actions">
+                <button type="button" class="refresh-page-button" data-refresh-button>Refresh</button>
                 <a href="portal.php" data-back-link>Back</a>
                 <a href="profile.php">Profile</a>
                 <a href="settings.php">Settings</a>
@@ -261,6 +266,7 @@ $leaderboard = $leaderboard_stmt->get_result();
                     <input type="search" id="friend-search-input" name="q" placeholder="Search by name or email" autocomplete="off">
                 </div>
             </form>
+            <div class="friends-search-results" data-sent-friend-requests></div>
             <div class="friends-search-results" data-friends-search-results hidden></div>
         </section>
 
@@ -277,6 +283,7 @@ $leaderboard = $leaderboard_stmt->get_result();
     <?php include __DIR__ . '/app_nav.php'; ?>
     <script src="../js/level_celebration.js?v=<?php echo filemtime(__DIR__ . '/../js/level_celebration.js'); ?>"></script>
     <script src="../js/friends.js?v=<?php echo filemtime(__DIR__ . '/../js/friends.js'); ?>"></script>
+    <script src="../js/pull_to_refresh.js?v=<?php echo filemtime(__DIR__ . '/../js/pull_to_refresh.js'); ?>"></script>
     <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
     <script src="../js/palette_switcher.js?v=<?php echo filemtime(__DIR__ . '/../js/palette_switcher.js'); ?>"></script>
     <script src="../js/app_icon_switcher.js?v=<?php echo filemtime(__DIR__ . '/../js/app_icon_switcher.js'); ?>"></script>
