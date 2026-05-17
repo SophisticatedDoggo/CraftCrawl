@@ -2628,7 +2628,7 @@ a.text-link:focus {
     align-items: flex-end;
     justify-content: space-between;
     gap: 8px;
-    margin-top: 12px;
+    margin-top: 16px;
     flex-wrap: wrap;
 }
 
@@ -6253,7 +6253,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .feed-action-row {
-        margin-top: 8px;
+        margin-top: 12px;
     }
 
     .feed-reactions {
