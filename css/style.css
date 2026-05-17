@@ -1321,6 +1321,10 @@ a.text-link:focus {
     grid-template-columns: 1fr;
 }
 
+.reward-goal-card:has(.appearance-reward-preview) {
+    grid-template-columns: 66px minmax(0, 1fr);
+}
+
 .badge-goal-card {
     grid-template-columns: 56px minmax(0, 1fr);
     align-items: start;
@@ -1380,6 +1384,15 @@ a.text-link:focus {
 .badge-goal-card.is-unlocked .badge-goal-title-row span {
     border-color: color-mix(in srgb, var(--color-primary) 48%, var(--color-border));
     color: var(--color-primary);
+}
+
+.appearance-reward-preview {
+    width: 58px;
+    height: 58px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    object-fit: cover;
 }
 
 .badge-goal-card.is-showcased {
@@ -1771,6 +1784,9 @@ a.text-link:focus {
 }
 
 .palette-switcher button {
+    display: grid;
+    gap: 4px;
+    justify-items: center;
     padding: 7px 10px;
     border-color: var(--color-primary);
     color: var(--color-muted);
@@ -4256,6 +4272,69 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     margin-bottom: 10px;
 }
 
+.palette-switcher-settings button {
+    min-width: 108px;
+    border-width: 1px;
+}
+
+.palette-switcher-settings button[data-palette-option="trail-map"] {
+    --palette-preview-surface: #fffdf8;
+    --palette-preview-text: #20231f;
+    --palette-preview-muted: #6b705c;
+    --palette-preview-border: #d8d0bf;
+    --palette-preview-primary: #3f6f3a;
+}
+
+.palette-switcher-settings button[data-palette-option="trail-dark"] {
+    --palette-preview-surface: #202328;
+    --palette-preview-text: #f4f5f7;
+    --palette-preview-muted: #b8bec8;
+    --palette-preview-border: #3a4049;
+    --palette-preview-primary: #8fbc6a;
+}
+
+.palette-switcher-settings button[data-palette-option="ember"] {
+    --palette-preview-surface: #ffffff;
+    --palette-preview-text: #211f1c;
+    --palette-preview-muted: #6f6a61;
+    --palette-preview-border: #ddd2c4;
+    --palette-preview-primary: #c05c23;
+}
+
+.palette-switcher-settings button[data-palette-option="ember-dark"] {
+    --palette-preview-surface: #202328;
+    --palette-preview-text: #f4f5f7;
+    --palette-preview-muted: #b8bec8;
+    --palette-preview-border: #3a4049;
+    --palette-preview-primary: #c05c23;
+}
+
+.palette-switcher-settings button {
+    border-color: var(--palette-preview-border);
+    color: var(--palette-preview-text);
+    background: var(--palette-preview-surface);
+}
+
+.palette-switcher-settings button .settings-option-status {
+    border-color: color-mix(in srgb, var(--palette-preview-primary) 48%, var(--palette-preview-border));
+    color: var(--palette-preview-primary);
+}
+
+.palette-switcher-settings button:hover,
+.palette-switcher-settings button:focus,
+.palette-switcher-settings button.is-active {
+    border-color: var(--palette-preview-primary);
+    color: var(--palette-preview-text);
+    background: color-mix(in srgb, var(--palette-preview-primary) 14%, var(--palette-preview-surface));
+}
+
+.palette-switcher-settings button:hover .settings-option-status,
+.palette-switcher-settings button:focus .settings-option-status,
+.palette-switcher-settings button.is-active .settings-option-status {
+    border-color: var(--palette-preview-primary);
+    color: var(--palette-preview-primary);
+}
+
 .display-theme-form {
     max-width: none;
 }
@@ -4308,6 +4387,47 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     font-weight: 800;
     line-height: 1.1;
     overflow-wrap: anywhere;
+}
+
+.settings-option-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 7px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    color: var(--color-muted);
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1.1;
+    text-transform: uppercase;
+}
+
+.palette-switcher button:not(:disabled) .settings-option-status,
+.app-icon-switcher button:not(:disabled) .settings-option-status {
+    border-color: color-mix(in srgb, var(--color-primary) 48%, var(--color-border));
+    color: var(--color-primary);
+}
+
+.palette-switcher button.is-active .settings-option-status,
+.palette-switcher button:hover .settings-option-status,
+.palette-switcher button:focus .settings-option-status {
+    border-color: color-mix(in srgb, var(--color-on-primary) 70%, transparent);
+    color: var(--color-on-primary);
+}
+
+.palette-switcher-settings button:not(:disabled) .settings-option-status,
+.palette-switcher-settings button.is-active .settings-option-status,
+.palette-switcher-settings button:hover .settings-option-status,
+.palette-switcher-settings button:focus .settings-option-status {
+    border-color: var(--palette-preview-primary);
+    color: var(--palette-preview-primary);
+}
+
+.palette-switcher button:disabled,
+.app-icon-switcher button:disabled {
+    cursor: not-allowed;
+    opacity: 0.78;
 }
 
 .business-edit-panel button {

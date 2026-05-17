@@ -295,10 +295,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php echo craftcrawl_csrf_input(); ?>
                 <input type="hidden" name="form_action" value="display_theme">
                 <div class="palette-switcher palette-switcher-settings" aria-label="Design palette">
-                    <button type="submit" name="display_palette" value="trail-map" data-palette-option="trail-map" <?php echo $display_palette === 'trail-map' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?>>Trail</button>
-                    <button type="submit" name="display_palette" value="trail-dark" data-palette-option="trail-dark" <?php echo $display_palette === 'trail-dark' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?> <?php echo in_array('trail-dark', $allowed_display_palettes, true) ? '' : 'disabled title="Unlocks at Level 2"'; ?>>Trail Dark</button>
-                    <button type="submit" name="display_palette" value="ember" data-palette-option="ember" <?php echo $display_palette === 'ember' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?> <?php echo in_array('ember', $allowed_display_palettes, true) ? '' : 'disabled title="Unlocks at Level 14"'; ?>>Ember</button>
-                    <button type="submit" name="display_palette" value="ember-dark" data-palette-option="ember-dark" <?php echo $display_palette === 'ember-dark' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?> <?php echo in_array('ember-dark', $allowed_display_palettes, true) ? '' : 'disabled title="Unlocks at Level 38"'; ?>>Ember Dark</button>
+                    <button type="submit" name="display_palette" value="trail-map" data-palette-option="trail-map" <?php echo $display_palette === 'trail-map' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?>>
+                        <span class="settings-option-label">Trail</span>
+                        <span class="settings-option-status">Unlocked</span>
+                    </button>
+                    <button type="submit" name="display_palette" value="trail-dark" data-palette-option="trail-dark" <?php echo $display_palette === 'trail-dark' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?> <?php echo in_array('trail-dark', $allowed_display_palettes, true) ? '' : 'disabled title="Unlocks at Level 2"'; ?>>
+                        <span class="settings-option-label">Trail Dark</span>
+                        <span class="settings-option-status"><?php echo in_array('trail-dark', $allowed_display_palettes, true) ? 'Unlocked' : 'Locked'; ?></span>
+                    </button>
+                    <button type="submit" name="display_palette" value="ember" data-palette-option="ember" <?php echo $display_palette === 'ember' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?> <?php echo in_array('ember', $allowed_display_palettes, true) ? '' : 'disabled title="Unlocks at Level 14"'; ?>>
+                        <span class="settings-option-label">Ember</span>
+                        <span class="settings-option-status"><?php echo in_array('ember', $allowed_display_palettes, true) ? 'Unlocked' : 'Locked'; ?></span>
+                    </button>
+                    <button type="submit" name="display_palette" value="ember-dark" data-palette-option="ember-dark" <?php echo $display_palette === 'ember-dark' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?> <?php echo in_array('ember-dark', $allowed_display_palettes, true) ? '' : 'disabled title="Unlocks at Level 38"'; ?>>
+                        <span class="settings-option-label">Ember Dark</span>
+                        <span class="settings-option-status"><?php echo in_array('ember-dark', $allowed_display_palettes, true) ? 'Unlocked' : 'Locked'; ?></span>
+                    </button>
                 </div>
             </form>
             <p class="form-message" data-palette-status hidden></p>
@@ -310,19 +322,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="app-icon-switcher" aria-label="App icon">
                 <button type="button" data-app-icon-option="trail" aria-pressed="false">
                     <img src="../images/craft-crawl-logo-trail.png" alt="" aria-hidden="true">
-                    <span>Trail</span>
+                    <span class="settings-option-label">Trail</span>
+                    <span class="settings-option-status">Unlocked</span>
                 </button>
                 <button type="button" data-app-icon-option="trail-dark" aria-pressed="false" <?php echo in_array('trail-dark', $allowed_app_icons, true) ? '' : 'disabled data-app-icon-locked="true" title="Unlocks at Level 48"'; ?>>
                     <img src="../images/craft-crawl-logo-trail-dark.png" alt="" aria-hidden="true">
-                    <span>Trail Dark</span>
+                    <span class="settings-option-label">Trail Dark</span>
+                    <span class="settings-option-status"><?php echo in_array('trail-dark', $allowed_app_icons, true) ? 'Unlocked' : 'Locked'; ?></span>
                 </button>
                 <button type="button" data-app-icon-option="ember" aria-pressed="false" <?php echo in_array('ember', $allowed_app_icons, true) ? '' : 'disabled data-app-icon-locked="true" title="Unlocks at Level 22"'; ?>>
                     <img src="../images/craft-crawl-logo-ember.png" alt="" aria-hidden="true">
-                    <span>Ember</span>
+                    <span class="settings-option-label">Ember</span>
+                    <span class="settings-option-status"><?php echo in_array('ember', $allowed_app_icons, true) ? 'Unlocked' : 'Locked'; ?></span>
                 </button>
                 <button type="button" data-app-icon-option="ember-dark" aria-pressed="false" <?php echo in_array('ember-dark', $allowed_app_icons, true) ? '' : 'disabled data-app-icon-locked="true" title="Unlocks at Level 63"'; ?>>
                     <img src="../images/craft-crawl-logo-ember-dark.png" alt="" aria-hidden="true">
-                    <span>Ember Dark</span>
+                    <span class="settings-option-label">Ember Dark</span>
+                    <span class="settings-option-status"><?php echo in_array('ember-dark', $allowed_app_icons, true) ? 'Unlocked' : 'Locked'; ?></span>
                 </button>
             </div>
             <p class="form-message" data-app-icon-status hidden></p>

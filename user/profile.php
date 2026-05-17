@@ -574,6 +574,15 @@ if (!$profile) {
                         <div class="reward-list">
                             <?php foreach ($appearance_rewards as $reward) : ?>
                                 <article class="reward-goal-card<?php echo $reward['unlocked'] ? ' is-unlocked' : ' is-locked'; ?>">
+                                    <img
+                                        class="appearance-reward-preview"
+                                        src="../images/craft-crawl-logo-<?php echo escape_output($reward['reward_key'] ?? 'trail'); ?>.png"
+                                        alt=""
+                                        aria-hidden="true"
+                                        loading="lazy"
+                                        width="58"
+                                        height="58"
+                                    >
                                     <div>
                                         <div class="reward-goal-title-row">
                                             <strong><?php echo escape_output($reward['name']); ?></strong>
