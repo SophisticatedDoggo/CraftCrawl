@@ -33,6 +33,8 @@ function toggleMobileActionsMenu() {
 }
 
 function setupMobileActionsMenu() {
+    ensureViewportAnchoredMobileUi();
+
     const menus = document.querySelectorAll('[data-mobile-actions-menu]');
 
     menus.forEach((menu) => {
@@ -68,6 +70,16 @@ function setupMobileActionsMenu() {
             });
         });
     }
+}
+
+function ensureViewportAnchoredMobileUi() {
+    const persistentUi = document.querySelectorAll('.mobile-app-tabbar, [data-mobile-actions-menu]');
+
+    persistentUi.forEach((element) => {
+        if (element.parentElement !== document.body) {
+            document.body.appendChild(element);
+        }
+    });
 }
 
 function setupMomentumSafeMobileTabs() {
@@ -202,6 +214,8 @@ function setMobileTabThumb(tabbar, tab, options = {}) {
 }
 
 function setupMobileTabThumbs() {
+    ensureViewportAnchoredMobileUi();
+
     const tabbars = document.querySelectorAll('.mobile-app-tabbar');
 
     if (!tabbars.length) {

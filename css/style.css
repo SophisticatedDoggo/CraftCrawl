@@ -6714,6 +6714,8 @@ a.event-calendar-event:focus .event-calendar-event-name {
             color-mix(in srgb, var(--color-surface) 94%, transparent);
         box-shadow: 0 18px 42px rgba(15, 23, 42, 0.2);
         touch-action: manipulation;
+        transform: translate3d(0, 0, 0);
+        will-change: transform;
         backdrop-filter: blur(22px) saturate(1.16);
         -webkit-backdrop-filter: blur(22px) saturate(1.16);
     }
