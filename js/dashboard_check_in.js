@@ -108,7 +108,7 @@
 
                 postForm('../check_in.php', {
                     csrf_token: csrfToken,
-                    business_id: location.id,
+                    location_id: location.id,
                     latitude: currentPosition.latitude,
                     longitude: currentPosition.longitude
                 })

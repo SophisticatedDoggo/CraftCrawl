@@ -35,6 +35,9 @@ $craftcrawl_portal_active = $craftcrawl_portal_active ?? 'map';
                 </select>
             </div>
             <ol id="business-list" class="business-list"></ol>
+            <p class="location-suggestion-prompt">
+                Not seeing a location? Make a location suggestion <a class="location-suggestion-link" href="../suggest_location.php">here</a>.
+            </p>
         </section>
     </div>
 

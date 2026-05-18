@@ -141,10 +141,10 @@ function craftcrawl_feed_person_payload($person) {
 
 $before_clause_checkin = $before_dt ? ' AND uv.checkedInAt < ?' : '';
 $visit_sql = "
-    SELECT uv.id, uv.user_id, uv.checkedInAt, b.id AS business_id, b.bName, b.city, b.state,
+    SELECT uv.id, uv.user_id, uv.checkedInAt, l.id AS business_id, l.name AS bName, l.city, l.state,
         u.allow_post_interactions
     FROM user_visits uv
-    INNER JOIN businesses b ON b.id = uv.business_id
+    INNER JOIN locations l ON l.id = uv.location_id
     INNER JOIN users u ON u.id = uv.user_id
     WHERE uv.visit_type='first_time' AND uv.user_id IN ($placeholders)
     $before_clause_checkin
@@ -215,11 +215,11 @@ while ($xp = $xp_result->fetch_assoc()) {
 $before_clause_ew = $before_dt ? ' AND ew.createdAt < ?' : '';
 $event_want_sql = "
     SELECT ew.id, ew.user_id, ew.event_id, ew.occurrence_date, ew.createdAt,
-        e.eName, e.startTime, b.id AS business_id, b.bName, b.city, b.state,
+        e.eName, e.startTime, l.id AS business_id, l.name AS bName, l.city, l.state,
         u.allow_post_interactions
     FROM event_want_to_go ew
     INNER JOIN events e ON e.id = ew.event_id
-    INNER JOIN businesses b ON b.id = e.business_id
+    INNER JOIN locations l ON l.id = e.location_id
     INNER JOIN users u ON u.id = ew.user_id
     WHERE ew.user_id IN ($placeholders)
     $before_clause_ew
@@ -257,12 +257,12 @@ while ($event_want = $event_want_result->fetch_assoc()) {
 
 $before_clause_wtg = $before_dt ? ' AND wtg.createdAt < ?' : '';
 $location_want_sql = "
-    SELECT wtg.id, wtg.user_id, wtg.createdAt, b.id AS business_id, b.bName, b.bType, b.city, b.state,
+    SELECT wtg.id, wtg.user_id, wtg.createdAt, l.id AS business_id, l.name AS bName, l.location_type AS bType, l.city, l.state,
         u.allow_post_interactions
     FROM want_to_go_locations wtg
-    INNER JOIN businesses b ON b.id = wtg.business_id
+    INNER JOIN locations l ON l.id = wtg.location_id
     INNER JOIN users u ON u.id = wtg.user_id
-    WHERE wtg.user_id IN ($placeholders) AND b.approved=TRUE AND wtg.visibility = 'friends_only'
+    WHERE wtg.user_id IN ($placeholders) AND l.visibility_status IN ('public_unclaimed', 'public_claimed') AND wtg.visibility = 'friends_only'
     $before_clause_wtg
     ORDER BY wtg.createdAt DESC
     LIMIT 80
@@ -331,11 +331,11 @@ while ($badge = $badge_result->fetch_assoc()) {
 // Business posts from followed businesses — viewer-specific, not friend-based
 if ($before_dt) {
     $post_feed_stmt = $conn->prepare("
-        SELECT bp.id, bp.business_id, bp.post_type, bp.title, bp.body, bp.created_at, bp.ends_at,
-            b.bName, b.bType, b.city, b.state
+        SELECT bp.id, l.id AS business_id, bp.post_type, bp.title, bp.body, bp.created_at, bp.ends_at,
+            l.name AS bName, l.location_type AS bType, l.city, l.state
         FROM business_posts bp
-        INNER JOIN businesses b ON b.id = bp.business_id AND b.approved=TRUE
-        INNER JOIN liked_businesses lb ON lb.business_id = bp.business_id AND lb.user_id=?
+        INNER JOIN locations l ON l.id = bp.location_id AND l.visibility_status='public_claimed'
+        INNER JOIN liked_businesses lb ON lb.location_id = bp.location_id AND lb.user_id=?
         WHERE bp.created_at < ?
         ORDER BY bp.created_at DESC
         LIMIT 40
@@ -343,11 +343,11 @@ if ($before_dt) {
     $post_feed_stmt->bind_param("is", $user_id, $before_dt);
 } else {
     $post_feed_stmt = $conn->prepare("
-        SELECT bp.id, bp.business_id, bp.post_type, bp.title, bp.body, bp.created_at, bp.ends_at,
-            b.bName, b.bType, b.city, b.state
+        SELECT bp.id, l.id AS business_id, bp.post_type, bp.title, bp.body, bp.created_at, bp.ends_at,
+            l.name AS bName, l.location_type AS bType, l.city, l.state
         FROM business_posts bp
-        INNER JOIN businesses b ON b.id = bp.business_id AND b.approved=TRUE
-        INNER JOIN liked_businesses lb ON lb.business_id = bp.business_id AND lb.user_id=?
+        INNER JOIN locations l ON l.id = bp.location_id AND l.visibility_status='public_claimed'
+        INNER JOIN liked_businesses lb ON lb.location_id = bp.location_id AND lb.user_id=?
         ORDER BY bp.created_at DESC
         LIMIT 40
     ");

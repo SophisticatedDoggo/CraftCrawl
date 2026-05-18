@@ -62,8 +62,17 @@ function format_event_time_range($event) {
     return $time;
 }
 
-$business_stmt = $conn->prepare("SELECT * FROM businesses WHERE id=? AND approved=TRUE");
-$business_stmt->bind_param("i", $business_id);
+$business_stmt = $conn->prepare("
+    SELECT l.*, l.id AS location_id, b.id AS legacy_business_id, l.name AS bName
+    FROM locations l
+    LEFT JOIN businesses b ON b.id = l.legacy_business_id
+    WHERE (l.id=? OR b.id=?)
+      AND l.visibility_status IN ('public_unclaimed', 'public_claimed')
+      AND l.disabledAt IS NULL
+    ORDER BY (l.id = ?) DESC
+    LIMIT 1
+");
+$business_stmt->bind_param("iii", $business_id, $business_id, $business_id);
 $business_stmt->execute();
 $business = $business_stmt->get_result()->fetch_assoc();
 
@@ -72,8 +81,8 @@ if (!$business) {
     exit();
 }
 
-$events_stmt = $conn->prepare("SELECT * FROM events WHERE business_id=? AND (eventDate BETWEEN ? AND ? OR (isRecurring=TRUE AND eventDate <= ? AND recurrenceEnd >= ?)) ORDER BY eventDate, startTime");
-$events_stmt->bind_param("issss", $business_id, $month_start, $month_end, $month_end, $month_start);
+$events_stmt = $conn->prepare("SELECT * FROM events WHERE location_id=? AND (eventDate BETWEEN ? AND ? OR (isRecurring=TRUE AND eventDate <= ? AND recurrenceEnd >= ?)) ORDER BY eventDate, startTime");
+$events_stmt->bind_param("issss", $business['location_id'], $month_start, $month_end, $month_end, $month_start);
 $events_stmt->execute();
 $events_result = $events_stmt->get_result();
 $events_by_date = [];

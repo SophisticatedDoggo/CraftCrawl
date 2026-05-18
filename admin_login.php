@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             session_regenerate_id(true);
-            unset($_SESSION['user_id'], $_SESSION['business_id']);
+            unset($_SESSION['user_id'], $_SESSION['business_account_id'], $_SESSION['business_location_id'], $_SESSION['business_id']);
             $_SESSION['admin_id'] = $admin['id'];
 
             if ($remember_me) {

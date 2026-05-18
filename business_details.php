@@ -77,15 +77,33 @@ function add_recurring_event_occurrences(&$events, $event, $start_date, $end_dat
 require_once 'config.php';
 require_once 'lib/cloudinary_upload.php';
 require_once 'lib/leveling.php';
-require_once 'lib/business_hours.php';
+require_once 'lib/location_hours.php';
 
 if (!$business_id) {
     header('Location: user/portal.php');
     exit();
 }
 
-$business_stmt = $conn->prepare("SELECT * FROM businesses WHERE id=? AND approved=TRUE");
-$business_stmt->bind_param("i", $business_id);
+$business_stmt = $conn->prepare("
+    SELECT
+        l.*,
+        l.id AS location_id,
+        b.id AS legacy_business_id,
+        l.name AS bName,
+        l.phone AS bPhone,
+        l.website AS bWebsite,
+        l.location_type AS bType,
+        l.about AS bAbout,
+        l.hours_note AS bHours
+    FROM locations l
+    LEFT JOIN businesses b ON b.id = l.legacy_business_id
+    WHERE (l.id=? OR b.id=?)
+      AND l.visibility_status IN ('public_unclaimed', 'public_claimed')
+      AND l.disabledAt IS NULL
+    ORDER BY (l.id = ?) DESC
+    LIMIT 1
+");
+$business_stmt->bind_param("iii", $business_id, $business_id, $business_id);
 $business_stmt->execute();
 $business_result = $business_stmt->get_result();
 $business = $business_result->fetch_assoc();
@@ -95,17 +113,20 @@ if (!$business) {
     exit();
 }
 
-$business_hours = craftcrawl_business_hours_for_form($conn, $business_id);
+$location_id = (int) $business['location_id'];
+$legacy_business_id = !empty($business['legacy_business_id']) ? (int) $business['legacy_business_id'] : null;
+$is_claimed_location = $business['visibility_status'] === 'public_claimed';
+$business_hours = craftcrawl_location_hours_for_form($conn, $location_id);
 $business_hours_text = craftcrawl_business_hours_have_saved_hours($business_hours)
     ? craftcrawl_format_business_hours($business_hours)
     : '';
 
 $review_eligibility_stmt = $conn->prepare("
     SELECT
-        EXISTS(SELECT 1 FROM user_visits WHERE user_id=? AND business_id=? LIMIT 1) AS has_checked_in,
-        EXISTS(SELECT 1 FROM reviews WHERE user_id=? AND business_id=? LIMIT 1) AS has_reviewed
+        EXISTS(SELECT 1 FROM user_visits WHERE user_id=? AND location_id=? LIMIT 1) AS has_checked_in,
+        EXISTS(SELECT 1 FROM reviews WHERE user_id=? AND location_id=? LIMIT 1) AS has_reviewed
 ");
-$review_eligibility_stmt->bind_param("iiii", $user_id, $business_id, $user_id, $business_id);
+$review_eligibility_stmt->bind_param("iiii", $user_id, $location_id, $user_id, $location_id);
 $review_eligibility_stmt->execute();
 $review_eligibility = $review_eligibility_stmt->get_result()->fetch_assoc();
 $user_has_checked_in = !empty($review_eligibility['has_checked_in']);
@@ -113,8 +134,8 @@ $user_has_reviewed = !empty($review_eligibility['has_reviewed']);
 $user_review = null;
 
 if ($user_has_reviewed) {
-    $user_review_stmt = $conn->prepare("SELECT id, rating, notes FROM reviews WHERE user_id=? AND business_id=? LIMIT 1");
-    $user_review_stmt->bind_param("ii", $user_id, $business_id);
+    $user_review_stmt = $conn->prepare("SELECT id, rating, notes FROM reviews WHERE user_id=? AND location_id=? LIMIT 1");
+    $user_review_stmt->bind_param("ii", $user_id, $location_id);
     $user_review_stmt->execute();
     $user_review = $user_review_stmt->get_result()->fetch_assoc();
 }
@@ -133,15 +154,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $is_following = (int) ($_POST['is_following'] ?? 0);
 
         if ($is_following) {
-            $stmt = $conn->prepare("DELETE FROM liked_businesses WHERE user_id=? AND business_id=?");
-            $stmt->bind_param("ii", $user_id, $business_id);
+            $stmt = $conn->prepare("DELETE FROM liked_businesses WHERE user_id=? AND location_id=?");
+            $stmt->bind_param("ii", $user_id, $location_id);
             $stmt->execute();
             header("Location: business_details.php?id=" . $business_id . "&message=unfollowed");
             exit();
         }
 
-        $stmt = $conn->prepare("INSERT IGNORE INTO liked_businesses (user_id, business_id, createdAt) VALUES (?, ?, NOW())");
-        $stmt->bind_param("ii", $user_id, $business_id);
+        $stmt = $conn->prepare("INSERT IGNORE INTO liked_businesses (user_id, business_id, location_id, createdAt) VALUES (?, ?, ?, NOW())");
+        $stmt->bind_param("iii", $user_id, $legacy_business_id, $location_id);
         $stmt->execute();
         header("Location: business_details.php?id=" . $business_id . "&message=followed");
         exit();
@@ -158,8 +179,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (!$user_has_reviewed) {
             $message = 'review_missing';
         } else {
-            $update_stmt = $conn->prepare("UPDATE reviews SET rating=?, notes=? WHERE user_id=? AND business_id=?");
-            $update_stmt->bind_param("isii", $rating, $notes, $user_id, $business_id);
+            $update_stmt = $conn->prepare("UPDATE reviews SET rating=?, notes=? WHERE user_id=? AND location_id=?");
+            $update_stmt->bind_param("isii", $rating, $notes, $user_id, $location_id);
             $update_stmt->execute();
             header("Location: business_details.php?id=" . $business_id . "&message=review_updated");
             exit();
@@ -183,11 +204,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $conn->begin_transaction();
                 $progress_before = craftcrawl_user_level_progress($conn, $user_id);
 
-                $stmt = $conn->prepare("INSERT INTO reviews (rating, user_id, business_id, notes, createdAt) VALUES (?, ?, ?, ?, NOW())");
-                $stmt->bind_param("iiis", $rating, $user_id, $business_id, $notes);
+                $stmt = $conn->prepare("INSERT INTO reviews (rating, user_id, business_id, location_id, notes, createdAt) VALUES (?, ?, ?, ?, ?, NOW())");
+                $stmt->bind_param("iiiis", $rating, $user_id, $legacy_business_id, $location_id, $notes);
                 $stmt->execute();
                 $review_id = $stmt->insert_id;
-                $review_xp_awarded = craftcrawl_award_review_xp($conn, $user_id, $business_id);
+                $review_xp_awarded = craftcrawl_award_review_xp($conn, $user_id, $location_id);
 
                 foreach ($review_photo_uploads as $sort_order => $photo_upload) {
                     $upload_result = craftcrawl_upload_photo_to_cloudinary($photo_upload, 'reviews', $user_id);
@@ -228,8 +249,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$rating_stmt = $conn->prepare("SELECT AVG(rating) AS average_rating, COUNT(*) AS review_count FROM reviews WHERE business_id=?");
-$rating_stmt->bind_param("i", $business_id);
+$rating_stmt = $conn->prepare("SELECT AVG(rating) AS average_rating, COUNT(*) AS review_count FROM reviews WHERE location_id=?");
+$rating_stmt->bind_param("i", $location_id);
 $rating_stmt->execute();
 $rating_result = $rating_stmt->get_result();
 $rating_summary = $rating_result->fetch_assoc();
@@ -240,10 +261,10 @@ $review_stmt = $conn->prepare("
     FROM reviews r
     INNER JOIN users u ON u.id = r.user_id
     LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
-    WHERE r.business_id=? AND u.disabledAt IS NULL
+    WHERE r.location_id=? AND u.disabledAt IS NULL
     ORDER BY r.id DESC
 ");
-$review_stmt->bind_param("i", $business_id);
+$review_stmt->bind_param("i", $location_id);
 $review_stmt->execute();
 $review_result = $review_stmt->get_result();
 $reviews = [];
@@ -278,13 +299,13 @@ if (!empty($review_ids)) {
     }
 }
 
-$follow_stmt = $conn->prepare("SELECT id FROM liked_businesses WHERE user_id=? AND business_id=?");
-$follow_stmt->bind_param("ii", $user_id, $business_id);
+$follow_stmt = $conn->prepare("SELECT id FROM liked_businesses WHERE user_id=? AND location_id=?");
+$follow_stmt->bind_param("ii", $user_id, $location_id);
 $follow_stmt->execute();
 $is_following = (bool) $follow_stmt->get_result()->fetch_assoc();
 
-$want_stmt = $conn->prepare("SELECT id FROM want_to_go_locations WHERE user_id=? AND business_id=?");
-$want_stmt->bind_param("ii", $user_id, $business_id);
+$want_stmt = $conn->prepare("SELECT id FROM want_to_go_locations WHERE user_id=? AND location_id=?");
+$want_stmt->bind_param("ii", $user_id, $location_id);
 $want_stmt->execute();
 $is_want_to_go = (bool) $want_stmt->get_result()->fetch_assoc();
 
@@ -294,13 +315,16 @@ $posts_fetch_limit = 2;
 $posts_stmt = $conn->prepare("
     SELECT id, post_type, title, body, created_at, ends_at
     FROM business_posts
-    WHERE business_id=?
+    WHERE location_id=?
     ORDER BY created_at DESC
     LIMIT ?
 ");
-$posts_stmt->bind_param("ii", $business_id, $posts_fetch_limit);
-$posts_stmt->execute();
-$posts_raw = $posts_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$posts_raw = [];
+if ($is_claimed_location && $legacy_business_id) {
+    $posts_stmt->bind_param("ii", $location_id, $posts_fetch_limit);
+    $posts_stmt->execute();
+    $posts_raw = $posts_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
 
 $has_more_posts = count($posts_raw) > 1;
 $posts_raw = array_slice($posts_raw, 0, 1);
@@ -321,12 +345,12 @@ $business_photo_stmt = $conn->prepare("
     SELECT p.object_key, p.public_url, p.width, p.height, bp.photo_type, bp.sort_order
     FROM business_photos bp
     INNER JOIN photos p ON p.id = bp.photo_id
-    WHERE bp.business_id=?
+    WHERE bp.location_id=?
     AND p.deletedAt IS NULL
     AND p.status = 'approved'
     ORDER BY bp.photo_type = 'cover' DESC, bp.sort_order, bp.id
 ");
-$business_photo_stmt->bind_param("i", $business_id);
+$business_photo_stmt->bind_param("i", $location_id);
 $business_photo_stmt->execute();
 $business_photo_result = $business_photo_stmt->get_result();
 $business_cover_photo = null;
@@ -348,11 +372,11 @@ $event_stmt = $conn->prepare("
     SELECT e.*, p.object_key AS cover_photo_key
     FROM events e
     LEFT JOIN photos p ON p.id = e.cover_photo_id AND p.deletedAt IS NULL
-    WHERE e.business_id=?
+    WHERE e.location_id=?
     AND (e.eventDate BETWEEN ? AND ? OR (e.isRecurring=TRUE AND e.eventDate <= ? AND e.recurrenceEnd >= ?))
     ORDER BY e.eventDate, e.startTime
 ");
-$event_stmt->bind_param("issss", $business_id, $today, $event_range_end, $event_range_end, $today);
+$event_stmt->bind_param("issss", $location_id, $today, $event_range_end, $event_range_end, $today);
 $event_stmt->execute();
 $event_result = $event_stmt->get_result();
 
@@ -466,6 +490,19 @@ function format_event_time_range($event) {
 
             <p class="business-preview-type"><?php echo escape_output(format_business_type($business['bType'])); ?></p>
             <h1><?php echo escape_output($business['bName']); ?></h1>
+            <?php if ($is_claimed_location) : ?>
+                <div class="claimed-listing-notice">
+                    <strong>Verified Business</strong>
+                    <p>This page is managed by a verified business representative.</p>
+                </div>
+            <?php else : ?>
+                <div class="unclaimed-listing-notice">
+                    <strong>Unclaimed Listing</strong>
+                    <p>This page is maintained by Craft Crawl and is not currently managed by the business itself. Details may be incomplete or need confirmation.</p>
+                </div>
+                <p><a href="business_claim_start.php?location_id=<?php echo escape_output($location_id); ?>">Own or manage this business? Claim this listing.</a></p>
+                <p class="form-help">Claiming lets you update your profile, add photos, post updates, and respond to reviews after admin approval.</p>
+            <?php endif; ?>
 
             <p>
                 <?php if ((int) $rating_summary['review_count'] > 0) : ?>
@@ -506,7 +543,8 @@ function format_event_time_range($event) {
             <div class="business-details-actions">
                 <form method="POST" action="check_in.php" class="check-in-form" data-check-in-form>
                     <?php echo craftcrawl_csrf_input(); ?>
-                    <input type="hidden" name="business_id" value="<?php echo escape_output($business_id); ?>">
+                    <input type="hidden" name="business_id" value="<?php echo escape_output($legacy_business_id); ?>">
+                    <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
                     <input type="hidden" name="latitude" value="">
                     <input type="hidden" name="longitude" value="">
                     <button type="submit">Check In</button>
@@ -526,7 +564,8 @@ function format_event_time_range($event) {
                 </form>
                 <form method="POST" action="user/want_to_go_toggle.php" class="want-to-go-form">
                     <?php echo craftcrawl_csrf_input(); ?>
-                    <input type="hidden" name="business_id" value="<?php echo escape_output($business_id); ?>">
+                    <input type="hidden" name="business_id" value="<?php echo escape_output($legacy_business_id); ?>">
+                    <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
                     <input type="hidden" name="is_saved" value="<?php echo $is_want_to_go ? '1' : '0'; ?>">
                     <button type="submit" class="want-to-go-button<?php echo $is_want_to_go ? ' is-saved' : ''; ?>">
                         <?php echo $is_want_to_go ? 'Remove from Want to Go' : 'Want to Go'; ?>
@@ -536,7 +575,8 @@ function format_event_time_range($event) {
             <?php if ($user_has_checked_in && $friend_options->num_rows > 0) : ?>
                 <form method="POST" action="user/recommend_location.php" class="recommend-location-form">
                     <?php echo craftcrawl_csrf_input(); ?>
-                    <input type="hidden" name="business_id" value="<?php echo escape_output($business_id); ?>">
+                    <input type="hidden" name="business_id" value="<?php echo escape_output($legacy_business_id); ?>">
+                    <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
                     <label for="recommend_friend">Recommend to a friend</label>
                     <div>
                         <select id="recommend_friend" name="friend_id" required>
@@ -623,7 +663,7 @@ function format_event_time_range($event) {
         <section class="business-events-panel">
             <div class="business-section-header">
                 <h2>Upcoming Events</h2>
-                <a href="business_calendar.php?id=<?php echo escape_output($business_id); ?>">View Calendar</a>
+                <a href="business_calendar.php?id=<?php echo escape_output($location_id); ?>">View Calendar</a>
             </div>
 
             <?php if (empty($upcoming_events)) : ?>
@@ -646,16 +686,17 @@ function format_event_time_range($event) {
             <?php endforeach; ?>
         </section>
 
+        <?php if ($is_claimed_location) : ?>
         <section
             class="business-posts-panel"
             data-business-posts-panel
-            data-business-id="<?php echo escape_output($business_id); ?>"
+            data-business-id="<?php echo escape_output($location_id); ?>"
             data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>"
         >
             <div class="business-section-header">
                 <h2>Posts</h2>
                 <?php if (!empty($posts)) : ?>
-                    <a href="posts.php?id=<?php echo escape_output($business_id); ?>">More Posts</a>
+                    <a href="posts.php?id=<?php echo escape_output($location_id); ?>">More Posts</a>
                 <?php endif; ?>
             </div>
             <?php if (empty($posts)) : ?>
@@ -665,10 +706,11 @@ function format_event_time_range($event) {
                     <?php echo craftcrawl_render_business_post($posts[0]); ?>
                 </div>
                 <?php if ($has_more_posts) : ?>
-                    <a class="business-posts-more-link" href="posts.php?id=<?php echo escape_output($business_id); ?>">More Posts</a>
+                    <a class="business-posts-more-link" href="posts.php?id=<?php echo escape_output($location_id); ?>">More Posts</a>
                 <?php endif; ?>
             <?php endif; ?>
         </section>
+        <?php endif; ?>
 
         <section class="review-form-panel">
             <h2><?php echo $user_has_reviewed ? 'Edit Your Review' : 'Leave a Review'; ?></h2>

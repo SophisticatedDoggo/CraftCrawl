@@ -22,7 +22,7 @@ function admin_details_account_table($account_type) {
     }
 
     if ($account_type === 'business') {
-        return 'businesses';
+        return 'business_accounts';
     }
 
     if ($account_type === 'admin') {
@@ -42,7 +42,15 @@ function admin_details_account_fetch($conn, $account_type, $account_id) {
             WHERE u.id=?
         ");
     } elseif ($account_type === 'business') {
-        $stmt = $conn->prepare("SELECT id, bName AS account_name, bEmail AS email, createdAt, emailVerifiedAt, disabledAt, approved, city, state FROM businesses WHERE id=?");
+        $stmt = $conn->prepare("
+            SELECT ba.id, ba.contact_name AS account_name, ba.account_email AS email, ba.createdAt, ba.emailVerifiedAt, ba.disabledAt, ba.account_status,
+                GROUP_CONCAT(CONCAT(l.name, ' — ', l.city, ', ', l.state) ORDER BY l.name SEPARATOR '\\n') AS managed_locations
+            FROM business_accounts ba
+            LEFT JOIN business_location_managers blm ON blm.business_account_id=ba.id AND blm.disabledAt IS NULL
+            LEFT JOIN locations l ON l.id=blm.location_id
+            WHERE ba.id=?
+            GROUP BY ba.id
+        ");
     } elseif ($account_type === 'admin') {
         $stmt = $conn->prepare("SELECT id, CONCAT(fName, ' ', lName) AS account_name, email, createdAt, NULL AS emailVerifiedAt, CASE WHEN active=FALSE THEN COALESCE(disabledAt, createdAt) ELSE disabledAt END AS disabledAt FROM admins WHERE id=?");
     } else {
@@ -195,12 +203,12 @@ if (!empty($account['disabledAt'])) {
                 </div>
                 <?php if ($account_type === 'business') : ?>
                     <div>
-                        <dt>Location</dt>
-                        <dd><?php echo craftcrawl_admin_escape(trim(($account['city'] ?? '') . ', ' . ($account['state'] ?? ''), ', ')); ?></dd>
+                        <dt>Account Status</dt>
+                        <dd><?php echo craftcrawl_admin_escape(ucwords(str_replace('_', ' ', $account['account_status'] ?? 'pending'))); ?></dd>
                     </div>
                     <div>
-                        <dt>Approval</dt>
-                        <dd><?php echo !empty($account['approved']) ? 'Approved' : 'Pending'; ?></dd>
+                        <dt>Locations</dt>
+                        <dd><?php echo nl2br(craftcrawl_admin_escape($account['managed_locations'] ?: 'None yet')); ?></dd>
                     </div>
                 <?php endif; ?>
             </dl>
@@ -244,7 +252,7 @@ if (!empty($account['disabledAt'])) {
     <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
     <script src="../js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/../js/depth_animations.js'); ?>"></script>
     <script src="../js/admin_review_edit_toggle.js?v=<?php echo filemtime(__DIR__ . '/../js/admin_review_edit_toggle.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'admin', home: 'dashboard.php', routes: ['dashboard.php','accounts.php','reviews.php','content.php','account_details.php','business_edit.php'], active: { 'dashboard.php':'dashboard', 'business_edit.php':'dashboard', 'accounts.php':'accounts', 'account_details.php':'accounts', 'reviews.php':'reviews', 'content.php':'content' } };</script>
+    <script>window.CraftCrawlAreaShellConfig = { area: 'admin', home: 'dashboard.php', routes: ['dashboard.php','accounts.php','reviews.php','content.php','account_details.php'], active: { 'dashboard.php':'dashboard', 'accounts.php':'accounts', 'account_details.php':'accounts', 'reviews.php':'reviews', 'content.php':'content' } };</script>
     <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
 </body>
 </html>

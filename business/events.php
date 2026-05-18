@@ -1,12 +1,12 @@
 <?php
 require '../login_check.php';
+require_once '../lib/business_context.php';
 include '../db.php';
 
-if (!isset($_SESSION['business_id'])) {
-    craftcrawl_redirect('business_login.php');
-}
+$selected_location = craftcrawl_require_selected_business_location($conn);
 
-$business_id = (int) $_SESSION['business_id'];
+$business_id = !empty($selected_location['legacy_business_id']) ? (int) $selected_location['legacy_business_id'] : null;
+$location_id = (int) $_SESSION['business_location_id'];
 $message = $_GET['message'] ?? null;
 $edit_event_id = filter_var($_GET['edit'] ?? null, FILTER_VALIDATE_INT);
 $calendar_month = $_GET['month'] ?? date('Y-m');
@@ -66,13 +66,13 @@ function add_recurring_event_occurrences(&$events_by_date, $event, $month_start,
     }
 }
 
-$business_stmt = $conn->prepare("SELECT bName FROM businesses WHERE id=?");
-$business_stmt->bind_param("i", $business_id);
+$business_stmt = $conn->prepare("SELECT name AS bName FROM locations WHERE id=?");
+$business_stmt->bind_param("i", $location_id);
 $business_stmt->execute();
 $business = $business_stmt->get_result()->fetch_assoc();
 
-$events_stmt = $conn->prepare("SELECT * FROM events WHERE business_id=? AND (eventDate BETWEEN ? AND ? OR (isRecurring=TRUE AND eventDate <= ? AND recurrenceEnd >= ?)) ORDER BY eventDate, startTime");
-$events_stmt->bind_param("issss", $business_id, $month_start, $month_end, $month_end, $month_start);
+$events_stmt = $conn->prepare("SELECT * FROM events WHERE location_id=? AND (eventDate BETWEEN ? AND ? OR (isRecurring=TRUE AND eventDate <= ? AND recurrenceEnd >= ?)) ORDER BY eventDate, startTime");
+$events_stmt->bind_param("issss", $location_id, $month_start, $month_end, $month_end, $month_start);
 $events_stmt->execute();
 $events_result = $events_stmt->get_result();
 $events_by_date = [];
@@ -115,6 +115,7 @@ foreach ($events_by_date as $date => $events) {
                     <span></span>
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
+                    <a href="locations.php">Locations</a>
                     <a href="analytics.php">Stats</a>
                     <a href="event_edit.php?month=<?php echo escape_output($calendar_month); ?>">Add Event</a>
                     <a href="settings.php">Settings</a>
@@ -188,7 +189,7 @@ foreach ($events_by_date as $date => $events) {
     <script src="../js/business_review_responses.js?v=<?php echo filemtime(__DIR__ . '/../js/business_review_responses.js'); ?>"></script>
     <script src="../js/business_hours_editor.js?v=<?php echo filemtime(__DIR__ . '/../js/business_hours_editor.js'); ?>"></script>
     <script src="../js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/../js/business_posts.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
+    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','locations.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'locations.php':'locations', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
     <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
 </body>
 </html>

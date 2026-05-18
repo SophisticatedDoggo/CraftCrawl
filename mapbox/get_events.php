@@ -15,7 +15,7 @@ $events = [];
 function add_event_occurrence(&$events, $event, $date) {
     $events[] = [
         'id' => $event['id'],
-        'businessId' => $event['business_id'],
+        'businessId' => $event['location_id'],
         'businessName' => $event['bName'],
         'businessType' => $event['bType'],
         'city' => $event['city'],
@@ -54,12 +54,12 @@ function add_recurring_event_occurrences(&$events, $event, $today, $range_end) {
     }
 }
 
-$sql = "SELECT e.*, b.bName, b.bType, b.city, b.state, p.object_key AS cover_photo_key
+$sql = "SELECT e.*, l.name AS bName, l.location_type AS bType, l.city, l.state, p.object_key AS cover_photo_key
         FROM events e
-        INNER JOIN businesses b ON b.id = e.business_id
+        INNER JOIN locations l ON l.id = e.location_id
         LEFT JOIN photos p ON p.id = e.cover_photo_id AND p.deletedAt IS NULL
-        " . ($liked_only ? "INNER JOIN liked_businesses lb ON lb.business_id = b.id AND lb.user_id = ?" : "") . "
-        WHERE b.approved = TRUE
+        " . ($liked_only ? "INNER JOIN liked_businesses lb ON lb.location_id = l.id AND lb.user_id = ?" : "") . "
+        WHERE l.visibility_status IN ('public_unclaimed', 'public_claimed')
         AND (e.eventDate BETWEEN ? AND ? OR (e.isRecurring=TRUE AND e.eventDate <= ? AND e.recurrenceEnd >= ?))";
 
 try {

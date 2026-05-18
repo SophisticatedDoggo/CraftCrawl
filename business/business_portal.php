@@ -1,11 +1,10 @@
 <?php
 require '../login_check.php';
+require_once '../lib/business_context.php';
 include '../db.php';
 require_once '../lib/user_avatar.php';
 
-if (!isset($_SESSION['business_id'])) {
-    craftcrawl_redirect('business_login.php');
-}
+$selected_location = craftcrawl_require_selected_business_location($conn);
 
 $message = $_GET['message'] ?? null;
 
@@ -45,9 +44,11 @@ function render_star_rating($rating, $label = '') {
 
 require_once '../config.php';
 require_once '../lib/cloudinary_upload.php';
-require_once '../lib/business_hours.php';
+require_once '../lib/location_hours.php';
 
-$business_id = (int) $_SESSION['business_id'];
+$business_id = !empty($selected_location['legacy_business_id']) ? (int) $selected_location['legacy_business_id'] : null;
+$location_id = (int) $_SESSION['business_location_id'];
+$managed_locations = craftcrawl_business_account_locations($conn, (int) $_SESSION['business_account_id']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (craftcrawl_request_exceeds_post_max_size()) {
@@ -76,8 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         try {
-            $sort_stmt = $conn->prepare("SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_sort_order FROM business_photos WHERE business_id=?");
-            $sort_stmt->bind_param("i", $business_id);
+            $sort_stmt = $conn->prepare("SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_sort_order FROM business_photos WHERE location_id=?");
+            $sort_stmt->bind_param("i", $location_id);
             $sort_stmt->execute();
             $sort_result = $sort_stmt->get_result()->fetch_assoc();
             $next_sort_order = (int) ($sort_result['next_sort_order'] ?? 0);
@@ -89,8 +90,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $photo_id = craftcrawl_insert_cloudinary_photo($conn, $upload_result, null, $business_id);
                 $photo_type = 'gallery';
 
-                $photo_stmt = $conn->prepare("INSERT INTO business_photos (business_id, photo_id, photo_type, sort_order) VALUES (?, ?, ?, ?)");
-                $photo_stmt->bind_param("iisi", $business_id, $photo_id, $photo_type, $next_sort_order);
+                $photo_stmt = $conn->prepare("INSERT INTO business_photos (business_id, location_id, photo_id, photo_type, sort_order) VALUES (?, ?, ?, ?, ?)");
+                $photo_stmt->bind_param("iiisi", $business_id, $location_id, $photo_id, $photo_type, $next_sort_order);
                 $photo_stmt->execute();
                 $next_sort_order++;
             }
@@ -113,11 +114,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             SELECT bp.id
             FROM business_photos bp
             INNER JOIN photos p ON p.id = bp.photo_id
-            WHERE bp.business_id=?
+            WHERE bp.location_id=?
             AND bp.photo_id=?
             AND p.deletedAt IS NULL
         ");
-        $owned_photo_stmt->bind_param("ii", $business_id, $photo_id);
+        $owned_photo_stmt->bind_param("ii", $location_id, $photo_id);
         $owned_photo_stmt->execute();
 
         if (!$owned_photo_stmt->get_result()->fetch_assoc()) {
@@ -126,12 +127,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $conn->begin_transaction();
-        $reset_stmt = $conn->prepare("UPDATE business_photos SET photo_type='gallery' WHERE business_id=? AND photo_type='cover'");
-        $reset_stmt->bind_param("i", $business_id);
+        $reset_stmt = $conn->prepare("UPDATE business_photos SET photo_type='gallery' WHERE location_id=? AND photo_type='cover'");
+        $reset_stmt->bind_param("i", $location_id);
         $reset_stmt->execute();
 
-        $cover_stmt = $conn->prepare("UPDATE business_photos SET photo_type='cover' WHERE business_id=? AND photo_id=?");
-        $cover_stmt->bind_param("ii", $business_id, $photo_id);
+        $cover_stmt = $conn->prepare("UPDATE business_photos SET photo_type='cover' WHERE location_id=? AND photo_id=?");
+        $cover_stmt->bind_param("ii", $location_id, $photo_id);
         $cover_stmt->execute();
         $conn->commit();
 
@@ -147,13 +148,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             INNER JOIN business_photos bp ON bp.photo_id = p.id
             SET p.deletedAt=NOW()
             WHERE p.id=?
-            AND bp.business_id=?
+            AND bp.location_id=?
         ");
-        $delete_stmt->bind_param("ii", $photo_id, $business_id);
+        $delete_stmt->bind_param("ii", $photo_id, $location_id);
         $delete_stmt->execute();
 
-        $link_stmt = $conn->prepare("DELETE FROM business_photos WHERE business_id=? AND photo_id=?");
-        $link_stmt->bind_param("ii", $business_id, $photo_id);
+        $link_stmt = $conn->prepare("DELETE FROM business_photos WHERE location_id=? AND photo_id=?");
+        $link_stmt->bind_param("ii", $location_id, $photo_id);
         $link_stmt->execute();
 
         header('Location: business_portal.php?message=photo_deleted');
@@ -163,8 +164,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($form_action === 'save_checkin_message') {
         $checkin_message = clean_text($_POST['checkin_message'] ?? '');
         $checkin_message = $checkin_message !== '' ? substr($checkin_message, 0, 500) : null;
-        $msg_stmt = $conn->prepare("UPDATE businesses SET checkin_message=? WHERE id=?");
-        $msg_stmt->bind_param("si", $checkin_message, $business_id);
+        $msg_stmt = $conn->prepare("UPDATE locations SET checkin_message=? WHERE id=?");
+        $msg_stmt->bind_param("si", $checkin_message, $location_id);
         $msg_stmt->execute();
         header('Location: business_portal.php?message=checkin_message_saved');
         exit();
@@ -173,16 +174,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $review_id = (int) ($_POST['review_id'] ?? 0);
     $business_response = clean_text($_POST['business_response'] ?? '');
 
-    $stmt = $conn->prepare("UPDATE reviews SET business_response=?, business_responseAt=NOW() WHERE id=? AND business_id=?");
-    $stmt->bind_param("sii", $business_response, $review_id, $business_id);
+    $stmt = $conn->prepare("UPDATE reviews SET business_response=?, business_responseAt=NOW() WHERE id=? AND location_id=?");
+    $stmt->bind_param("sii", $business_response, $review_id, $location_id);
     $stmt->execute();
 
     header('Location: business_portal.php?message=response_saved');
     exit();
 }
 
-$stmt = $conn->prepare("SELECT * FROM businesses WHERE id=?");
-$stmt->bind_param("i", $business_id);
+$stmt = $conn->prepare("
+    SELECT l.*, l.name AS bName, l.location_type AS bType, l.about AS bAbout, l.hours_note AS bHours, l.phone AS bPhone, l.website AS bWebsite,
+        (l.visibility_status='public_claimed') AS approved
+    FROM locations l
+    WHERE l.id=?
+");
+$stmt->bind_param("i", $location_id);
 $stmt->execute();
 $result = $stmt->get_result();
 $business = $result->fetch_assoc();
@@ -192,13 +198,13 @@ if (!$business) {
     craftcrawl_redirect('business_login.php');
 }
 
-$business_hours = craftcrawl_business_hours_for_form($conn, $business_id);
+$business_hours = craftcrawl_location_hours_for_form($conn, $location_id);
 $business_hours_text = craftcrawl_business_hours_have_saved_hours($business_hours)
     ? craftcrawl_format_business_hours($business_hours)
     : '';
 
-$rating_stmt = $conn->prepare("SELECT AVG(rating) AS average_rating, COUNT(*) AS review_count FROM reviews WHERE business_id=?");
-$rating_stmt->bind_param("i", $business_id);
+$rating_stmt = $conn->prepare("SELECT AVG(rating) AS average_rating, COUNT(*) AS review_count FROM reviews WHERE location_id=?");
+$rating_stmt->bind_param("i", $location_id);
 $rating_stmt->execute();
 $rating_result = $rating_stmt->get_result();
 $rating_summary = $rating_result->fetch_assoc();
@@ -209,10 +215,10 @@ $review_stmt = $conn->prepare("
     FROM reviews r
     INNER JOIN users u ON u.id = r.user_id
     LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
-    WHERE r.business_id=? AND u.disabledAt IS NULL
+    WHERE r.location_id=? AND u.disabledAt IS NULL
     ORDER BY r.id DESC
 ");
-$review_stmt->bind_param("i", $business_id);
+$review_stmt->bind_param("i", $location_id);
 $review_stmt->execute();
 $reviews = $review_stmt->get_result();
 
@@ -220,12 +226,12 @@ $photo_stmt = $conn->prepare("
     SELECT p.id, p.object_key, p.public_url, p.width, p.height, bp.photo_type, bp.sort_order
     FROM business_photos bp
     INNER JOIN photos p ON p.id = bp.photo_id
-    WHERE bp.business_id=?
+    WHERE bp.location_id=?
     AND p.deletedAt IS NULL
     AND p.status = 'approved'
     ORDER BY bp.photo_type = 'cover' DESC, bp.sort_order, bp.id
 ");
-$photo_stmt->bind_param("i", $business_id);
+$photo_stmt->bind_param("i", $location_id);
 $photo_stmt->execute();
 $business_photos = $photo_stmt->get_result();
 
@@ -262,6 +268,7 @@ $business_photos = $photo_stmt->get_result();
                 </span>
                 <a href="analytics.php">Stats</a>
                 <a href="events.php">Events</a>
+                <a href="locations.php">Locations</a>
                 <a href="settings.php">Settings</a>
                 <form action="../logout.php" method="POST">
                     <?php echo craftcrawl_csrf_input(); ?>
@@ -499,7 +506,7 @@ $business_photos = $photo_stmt->get_result();
     <script src="../js/business_review_responses.js?v=<?php echo filemtime(__DIR__ . '/../js/business_review_responses.js'); ?>"></script>
     <script src="../js/business_hours_editor.js?v=<?php echo filemtime(__DIR__ . '/../js/business_hours_editor.js'); ?>"></script>
     <script src="../js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/../js/business_posts.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
+    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','locations.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'locations.php':'locations', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
     <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
 </body>
 </html>

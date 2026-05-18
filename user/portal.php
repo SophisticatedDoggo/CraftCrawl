@@ -11,6 +11,7 @@ $welcome_stmt->bind_param('i', $user_id);
 $welcome_stmt->execute();
 $welcome_user = $welcome_stmt->get_result()->fetch_assoc();
 $show_welcome_modal = $welcome_user && empty($welcome_user['welcomeSeenAt']);
+$show_suggestion_saved_modal = ($_GET['message'] ?? '') === 'suggestion_saved';
 $craftcrawl_portal_active = 'map';
 $craftcrawl_portal_show_search = true;
 $craftcrawl_portal_shell = true;
@@ -57,6 +58,23 @@ $craftcrawl_portal_shell = true;
             </div>
         </section>
     <?php endif; ?>
+    <?php if ($show_suggestion_saved_modal) : ?>
+        <section
+            class="welcome-modal"
+            data-portal-notice-modal
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="suggestion-saved-title"
+        >
+            <div class="welcome-modal-backdrop" aria-hidden="true"></div>
+            <div class="welcome-modal-panel">
+                <span class="welcome-modal-kicker">Suggestion sent</span>
+                <h2 id="suggestion-saved-title">Thanks for helping CraftCrawl grow.</h2>
+                <p>Your location suggestion has been submitted and sent to our admin team for review.</p>
+                <button type="button" data-portal-notice-dismiss>Got it</button>
+            </div>
+        </section>
+    <?php endif; ?>
     <?php include __DIR__ . '/app_nav.php'; ?>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
@@ -82,5 +100,6 @@ $craftcrawl_portal_shell = true;
 <script src="../js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/../js/depth_animations.js'); ?>"></script>
 <script src="../js/onesignal_push.js?v=<?php echo filemtime(__DIR__ . '/../js/onesignal_push.js'); ?>"></script>
 <script src="../js/welcome_modal.js?v=<?php echo filemtime(__DIR__ . '/../js/welcome_modal.js'); ?>"></script>
+<script src="../js/portal_notice_modal.js?v=<?php echo filemtime(__DIR__ . '/../js/portal_notice_modal.js'); ?>"></script>
 </body>
 </html>

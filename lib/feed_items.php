@@ -44,10 +44,10 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
     if (preg_match('/^first_visit:(\d+)$/', $item_key, $matches)) {
         $visit_id = (int) $matches[1];
         $stmt = $conn->prepare("
-            SELECT uv.id, uv.user_id, uv.checkedInAt, b.id AS business_id, b.bName, b.city, b.state,
+            SELECT uv.id, uv.user_id, uv.checkedInAt, l.id AS business_id, l.name AS bName, l.city, l.state,
                 u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
             FROM user_visits uv
-            INNER JOIN businesses b ON b.id = uv.business_id
+            INNER JOIN locations l ON l.id = uv.location_id
             INNER JOIN users u ON u.id = uv.user_id
             LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
             WHERE uv.id=? AND uv.visit_type='first_time' AND u.disabledAt IS NULL
@@ -114,11 +114,11 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
         $want_id = (int) $matches[1];
         $stmt = $conn->prepare("
             SELECT ew.id, ew.user_id, ew.event_id, ew.occurrence_date, ew.createdAt,
-                e.eName, e.startTime, b.id AS business_id, b.bName, b.city, b.state,
+                e.eName, e.startTime, l.id AS business_id, l.name AS bName, l.city, l.state,
                 u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
             FROM event_want_to_go ew
             INNER JOIN events e ON e.id = ew.event_id
-            INNER JOIN businesses b ON b.id = e.business_id
+            INNER JOIN locations l ON l.id = e.location_id
             INNER JOIN users u ON u.id = ew.user_id
             LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
             WHERE ew.id=? AND u.disabledAt IS NULL
@@ -153,13 +153,13 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
     if (preg_match('/^location_want:(\d+)$/', $item_key, $matches)) {
         $want_id = (int) $matches[1];
         $stmt = $conn->prepare("
-            SELECT wtg.id, wtg.user_id, wtg.createdAt, b.id AS business_id, b.bName, b.bType, b.city, b.state,
+            SELECT wtg.id, wtg.user_id, wtg.createdAt, l.id AS business_id, l.name AS bName, l.location_type AS bType, l.city, l.state,
                 u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
             FROM want_to_go_locations wtg
-            INNER JOIN businesses b ON b.id = wtg.business_id
+            INNER JOIN locations l ON l.id = wtg.location_id
             INNER JOIN users u ON u.id = wtg.user_id
             LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
-            WHERE wtg.id=? AND b.approved=TRUE AND u.disabledAt IS NULL
+            WHERE wtg.id=? AND l.visibility_status IN ('public_unclaimed','public_claimed') AND u.disabledAt IS NULL
             LIMIT 1
         ");
         $stmt->bind_param("i", $want_id);
@@ -221,10 +221,10 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
     if (preg_match('/^business_post:(\d+)$/', $item_key, $matches)) {
         $post_id = (int) $matches[1];
         $stmt = $conn->prepare("
-            SELECT bp.id, bp.business_id, bp.post_type, bp.title, bp.body, bp.created_at,
-                b.bName, b.bType, b.city, b.state
+            SELECT bp.id, l.id AS business_id, bp.post_type, bp.title, bp.body, bp.created_at,
+                l.name AS bName, l.location_type AS bType, l.city, l.state
             FROM business_posts bp
-            INNER JOIN businesses b ON b.id = bp.business_id AND b.approved=TRUE
+            INNER JOIN locations l ON l.id = bp.location_id AND l.visibility_status='public_claimed'
             WHERE bp.id=?
             LIMIT 1
         ");

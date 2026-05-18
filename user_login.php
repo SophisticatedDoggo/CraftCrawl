@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             session_regenerate_id(true);
-            unset($_SESSION['business_id'], $_SESSION['admin_id']);
+            unset($_SESSION['business_account_id'], $_SESSION['business_location_id'], $_SESSION['business_id'], $_SESSION['admin_id']);
             $_SESSION['user_id'] = $user['id'];
             setcookie('craftcrawl_account_palette', $user['display_palette'] ?: 'trail-map', [
                 'expires' => time() + 60 * 60 * 24 * 365,
@@ -129,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="auth-body">
     <main class="auth-card">
-        <a class="auth-back-link text-link" href="index.php" data-back-link>Back</a>
+        <a class="auth-back-link text-link" href="index.php">Back</a>
         <div class="auth-top-section">
             <img class="site-logo auth-logo" src="images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
             <h1>Login</h1>

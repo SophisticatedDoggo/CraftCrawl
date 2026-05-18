@@ -58,9 +58,10 @@ if (!$event_id) {
 }
 
 $event_stmt = $conn->prepare("
-    SELECT e.*, b.bName, b.bType, b.bAbout, b.bPhone, b.bWebsite, b.street_address, b.city, b.state, b.zip, b.approved, p.object_key AS cover_photo_key
+    SELECT e.*, l.name AS bName, l.location_type AS bType, l.about AS bAbout, l.phone AS bPhone, l.website AS bWebsite, l.street_address, l.city, l.state, l.zip,
+        (l.visibility_status IN ('public_unclaimed', 'public_claimed')) AS approved, p.object_key AS cover_photo_key
     FROM events e
-    INNER JOIN businesses b ON b.id = e.business_id
+    INNER JOIN locations l ON l.id = e.location_id
     LEFT JOIN photos p ON p.id = e.cover_photo_id AND p.deletedAt IS NULL
     WHERE e.id=?
 ");
@@ -72,7 +73,7 @@ if (!$event) {
     craftcrawl_redirect('user/portal.php');
 }
 
-$is_business_owner = isset($_SESSION['business_id']) && (int) $_SESSION['business_id'] === (int) $event['business_id'];
+$is_business_owner = isset($_SESSION['business_location_id']) && (int) $_SESSION['business_location_id'] === (int) $event['location_id'];
 
 if (!$event['approved'] && !$is_business_owner) {
     craftcrawl_redirect('user/portal.php');
@@ -114,7 +115,7 @@ if (isset($_SESSION['user_id'])) {
             <?php if ($is_business_owner) : ?>
                 <a href="business/events.php?month=<?php echo escape_output(date('Y-m', strtotime($occurrence_date))); ?>" data-back-link>Back</a>
             <?php else : ?>
-                <a href="business_details.php?id=<?php echo escape_output($event['business_id']); ?>" data-back-link>Back</a>
+                <a href="business_details.php?id=<?php echo escape_output($event['location_id']); ?>" data-back-link>Back</a>
             <?php endif; ?>
             <form action="logout.php" method="POST">
                 <?php echo craftcrawl_csrf_input(); ?>
@@ -151,7 +152,7 @@ if (isset($_SESSION['user_id'])) {
             <?php endif; ?>
 
             <div class="business-details-actions">
-                <a href="business_details.php?id=<?php echo escape_output($event['business_id']); ?>">View Business</a>
+                <a href="business_details.php?id=<?php echo escape_output($event['location_id']); ?>">View Business</a>
                 <?php if (!empty($event['bWebsite'])) : ?>
                     <a href="<?php echo escape_output($event['bWebsite']); ?>" target="_blank" rel="noopener">Visit Website</a>
                 <?php endif; ?>

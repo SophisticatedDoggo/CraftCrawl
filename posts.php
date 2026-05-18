@@ -31,8 +31,15 @@ if (!$business_id) {
     exit();
 }
 
-$biz_stmt = $conn->prepare("SELECT id, bName, bType FROM businesses WHERE id=? AND approved=TRUE LIMIT 1");
-$biz_stmt->bind_param("i", $business_id);
+$biz_stmt = $conn->prepare("
+    SELECT l.legacy_business_id, l.id AS location_id, l.name AS bName, l.location_type AS bType
+    FROM locations l
+    WHERE (l.id=? OR l.legacy_business_id=?)
+      AND l.visibility_status = 'public_claimed'
+    ORDER BY (l.id = ?) DESC
+    LIMIT 1
+");
+$biz_stmt->bind_param("iii", $business_id, $business_id, $business_id);
 $biz_stmt->execute();
 $business = $biz_stmt->get_result()->fetch_assoc();
 
@@ -45,11 +52,11 @@ $posts_fetch_limit = 11;
 $posts_stmt = $conn->prepare("
     SELECT id, post_type, title, body, created_at
     FROM business_posts
-    WHERE business_id=?
+    WHERE location_id=?
     ORDER BY created_at DESC
     LIMIT ?
 ");
-$posts_stmt->bind_param("ii", $business_id, $posts_fetch_limit);
+$posts_stmt->bind_param("ii", $business['location_id'], $posts_fetch_limit);
 $posts_stmt->execute();
 $posts_raw = $posts_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
@@ -99,7 +106,7 @@ require_once 'config.php';
         <section
             class="business-posts-panel"
             data-business-posts-panel
-            data-business-id="<?php echo escape_output($business_id); ?>"
+            data-business-id="<?php echo escape_output($business['location_id']); ?>"
             data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>"
         >
             <?php if (empty($posts)) : ?>

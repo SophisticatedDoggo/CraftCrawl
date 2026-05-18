@@ -1,13 +1,13 @@
 <?php
 require '../login_check.php';
+require_once '../lib/business_context.php';
 include '../db.php';
 require_once '../lib/user_avatar.php';
 
-if (!isset($_SESSION['business_id'])) {
-    craftcrawl_redirect('business_login.php');
-}
+$selected_location = craftcrawl_require_selected_business_location($conn);
 
-$business_id = (int) $_SESSION['business_id'];
+$business_id = !empty($selected_location['legacy_business_id']) ? (int) $selected_location['legacy_business_id'] : null;
+$location_id = (int) $_SESSION['business_location_id'];
 
 function escape_output($value) {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
@@ -25,8 +25,8 @@ function format_checkin_time($value) {
     return date('M j, g:i A', strtotime($value));
 }
 
-$business_stmt = $conn->prepare("SELECT bName FROM businesses WHERE id=?");
-$business_stmt->bind_param("i", $business_id);
+$business_stmt = $conn->prepare("SELECT name AS bName FROM locations WHERE id=?");
+$business_stmt->bind_param("i", $location_id);
 $business_stmt->execute();
 $business = $business_stmt->get_result()->fetch_assoc();
 
@@ -48,9 +48,9 @@ $summary_stmt = $conn->prepare("
         COUNT(DISTINCT CASE WHEN DATE(checkedInAt)=CURDATE() THEN user_id END) AS today_unique_visitors,
         COALESCE(SUM(CASE WHEN DATE(checkedInAt)=CURDATE() THEN xp_awarded ELSE 0 END), 0) AS today_xp
     FROM user_visits
-    WHERE business_id=?
+    WHERE location_id=?
 ");
-$summary_stmt->bind_param("i", $business_id);
+$summary_stmt->bind_param("i", $location_id);
 $summary_stmt->execute();
 $summary = $summary_stmt->get_result()->fetch_assoc() ?: [];
 
@@ -72,11 +72,11 @@ $recent_stmt = $conn->prepare("
     FROM user_visits uv
     INNER JOIN users u ON u.id = uv.user_id
     LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
-    WHERE uv.business_id=? AND u.disabledAt IS NULL
+    WHERE uv.location_id=? AND u.disabledAt IS NULL
     ORDER BY uv.checkedInAt DESC
     LIMIT 12
 ");
-$recent_stmt->bind_param("i", $business_id);
+$recent_stmt->bind_param("i", $location_id);
 $recent_stmt->execute();
 $recent_checkins = $recent_stmt->get_result();
 
@@ -108,6 +108,7 @@ $recent_checkins = $recent_stmt->get_result();
                     <span></span>
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
+                    <a href="locations.php">Locations</a>
                     <a href="events.php">Events</a>
                     <a href="settings.php">Settings</a>
                     <form action="../logout.php" method="POST">
@@ -213,7 +214,7 @@ $recent_checkins = $recent_stmt->get_result();
     <script src="../js/business_review_responses.js?v=<?php echo filemtime(__DIR__ . '/../js/business_review_responses.js'); ?>"></script>
     <script src="../js/business_hours_editor.js?v=<?php echo filemtime(__DIR__ . '/../js/business_hours_editor.js'); ?>"></script>
     <script src="../js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/../js/business_posts.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
+    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','locations.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'locations.php':'locations', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
     <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
 </body>
 </html>

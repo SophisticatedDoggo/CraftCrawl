@@ -84,9 +84,9 @@ if (!isset($leaderboard_modes[$leaderboard_mode])) {
 $active_leaderboard = $leaderboard_modes[$leaderboard_mode];
 
 $recommendation_stmt = $conn->prepare("
-    SELECT lr.id, lr.message, lr.status, lr.createdAt, b.id AS business_id, b.bName, b.bType, b.city, b.state, u.fName, u.lName
+    SELECT lr.id, lr.message, lr.status, lr.createdAt, l.id AS business_id, l.name AS bName, l.location_type AS bType, l.city, l.state, u.fName, u.lName
     FROM location_recommendations lr
-    INNER JOIN businesses b ON b.id = lr.business_id
+    INNER JOIN locations l ON l.id = lr.location_id
     INNER JOIN users u ON u.id = lr.recommender_user_id
     WHERE lr.recipient_user_id=? AND lr.status='pending'
     ORDER BY lr.createdAt DESC
@@ -120,13 +120,13 @@ $leaderboard_stmt = $conn->prepare("
         SELECT
             uv.user_id,
             COUNT(*) AS total_checkins,
-            COUNT(DISTINCT uv.business_id) AS unique_locations,
+            COUNT(DISTINCT uv.location_id) AS unique_locations,
             SUM(uv.checkedInAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)) AS recent_checkins
         FROM user_visits uv
         GROUP BY uv.user_id
     ) stats ON stats.user_id = u.id
     LEFT JOIN (
-        SELECT user_id, COUNT(DISTINCT business_id) AS review_count
+        SELECT user_id, COUNT(DISTINCT location_id) AS review_count
         FROM reviews
         GROUP BY user_id
     ) review_stats ON review_stats.user_id = u.id

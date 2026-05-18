@@ -28,12 +28,12 @@ if (!$post_id || !$option_id) {
     exit();
 }
 
-// Verify the option belongs to the post, it's a poll on an approved business, and it hasn't expired
+// Verify the option belongs to the post, it's a poll on a claimed public location, and it hasn't expired
 $verify_stmt = $conn->prepare("
     SELECT bpo.id
     FROM business_poll_options bpo
     INNER JOIN business_posts bp ON bp.id = bpo.post_id AND bp.post_type = 'poll'
-    INNER JOIN businesses b ON b.id = bp.business_id AND b.approved = TRUE
+    INNER JOIN locations l ON l.id = bp.location_id AND l.visibility_status='public_claimed'
     WHERE bpo.id=? AND bpo.post_id=?
         AND (bp.ends_at IS NULL OR bp.ends_at > NOW())
     LIMIT 1

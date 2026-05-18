@@ -2,7 +2,7 @@
 require 'login_check.php';
 include 'db.php';
 require_once 'lib/leveling.php';
-require_once 'lib/business_hours.php';
+require_once 'lib/location_hours.php';
 
 header('Content-Type: application/json');
 
@@ -31,9 +31,10 @@ if ($user_latitude === false || $user_longitude === false) {
 }
 
 $business_stmt = $conn->prepare("
-    SELECT id, bName, bType, city, state, latitude, longitude
-    FROM businesses
-    WHERE approved=TRUE AND disabledAt IS NULL
+    SELECT id, name, location_type, city, state, latitude, longitude, checkin_verification_enabled
+    FROM locations
+    WHERE visibility_status IN ('public_unclaimed', 'public_claimed')
+      AND disabledAt IS NULL
 ");
 $business_stmt->execute();
 $businesses = $business_stmt->get_result();
@@ -54,7 +55,7 @@ while ($business = $businesses->fetch_assoc()) {
     $visit_stmt = $conn->prepare("
         SELECT COUNT(*) AS visit_count, MAX(CASE WHEN xp_awarded > 0 THEN checkedInAt ELSE NULL END) AS last_xp_checkin
         FROM user_visits
-        WHERE user_id=? AND business_id=?
+        WHERE user_id=? AND location_id=?
     ");
     $visit_stmt->bind_param("ii", $user_id, $business['id']);
     $visit_stmt->execute();
@@ -62,10 +63,11 @@ while ($business = $businesses->fetch_assoc()) {
     $visit_count = (int) ($visit_info['visit_count'] ?? 0);
     $last_xp_checkin = $visit_info['last_xp_checkin'] ?? null;
     $visit_type = $visit_count > 0 ? 'repeat' : 'first_time';
-    $is_open = craftcrawl_business_is_open_now($conn, (int) $business['id']);
-    $eligible = $is_open;
+    $is_open = craftcrawl_location_is_open_now($conn, (int) $business['id']);
+    $checkins_enabled = !empty($business['checkin_verification_enabled']);
+    $eligible = $is_open && $checkins_enabled;
     $eligible_at = null;
-    $unavailable_reason = $is_open ? null : 'Currently closed';
+    $unavailable_reason = !$checkins_enabled ? 'Check-ins not available yet' : ($is_open ? null : 'Currently closed');
     $xp_awarded = $visit_type === 'first_time' ? CRAFTCRAWL_XP_FIRST_TIME_VISIT : CRAFTCRAWL_XP_REPEAT_VISIT;
 
     if ($visit_type === 'repeat' && $last_xp_checkin && strtotime($last_xp_checkin) > strtotime('-' . CRAFTCRAWL_REPEAT_VISIT_COOLDOWN_DAYS . ' days')) {
@@ -81,8 +83,8 @@ while ($business = $businesses->fetch_assoc()) {
 
     $nearby[] = [
         'id' => (int) $business['id'],
-        'name' => $business['bName'],
-        'type' => $business['bType'],
+        'name' => $business['name'],
+        'type' => $business['location_type'],
         'city' => $business['city'],
         'state' => $business['state'],
         'distance_meters' => round($distance_meters),

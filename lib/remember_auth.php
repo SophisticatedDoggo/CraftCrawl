@@ -23,7 +23,7 @@ function craftcrawl_clear_remember_cookie() {
 function craftcrawl_session_key_for_account_type($account_type) {
     $keys = [
         'user' => 'user_id',
-        'business' => 'business_id',
+        'business' => 'business_account_id',
         'admin' => 'admin_id'
     ];
 
@@ -34,7 +34,7 @@ function craftcrawl_account_exists_for_remember_token($conn, $account_type, $acc
     if ($account_type === 'user') {
         $stmt = $conn->prepare("SELECT id FROM users WHERE id=? AND disabledAt IS NULL");
     } elseif ($account_type === 'business') {
-        $stmt = $conn->prepare("SELECT id FROM businesses WHERE id=? AND disabledAt IS NULL");
+        $stmt = $conn->prepare("SELECT id FROM business_accounts WHERE id=? AND disabledAt IS NULL");
     } elseif ($account_type === 'admin') {
         $stmt = $conn->prepare("SELECT id FROM admins WHERE id=? AND active=TRUE AND disabledAt IS NULL");
     } else {
@@ -48,7 +48,7 @@ function craftcrawl_account_exists_for_remember_token($conn, $account_type, $acc
 }
 
 function craftcrawl_set_remember_session($account_type, $account_id) {
-    unset($_SESSION['user_id'], $_SESSION['business_id'], $_SESSION['admin_id']);
+    unset($_SESSION['user_id'], $_SESSION['business_account_id'], $_SESSION['business_location_id'], $_SESSION['business_id'], $_SESSION['admin_id']);
 
     $session_key = craftcrawl_session_key_for_account_type($account_type);
 
@@ -109,7 +109,7 @@ function craftcrawl_revoke_remember_tokens_by_email($conn, $account_type, $email
     if ($account_type === 'user') {
         $stmt = $conn->prepare("SELECT id FROM users WHERE email=?");
     } elseif ($account_type === 'business') {
-        $stmt = $conn->prepare("SELECT id FROM businesses WHERE bEmail=?");
+        $stmt = $conn->prepare("SELECT id FROM business_accounts WHERE account_email=?");
     } elseif ($account_type === 'admin') {
         $stmt = $conn->prepare("SELECT id FROM admins WHERE email=?");
     } else {
@@ -128,7 +128,7 @@ function craftcrawl_revoke_remember_tokens_by_email($conn, $account_type, $email
 function craftcrawl_restore_remembered_login($conn) {
     craftcrawl_secure_session_start();
 
-    if (isset($_SESSION['user_id']) || isset($_SESSION['business_id']) || isset($_SESSION['admin_id'])) {
+    if (isset($_SESSION['user_id']) || isset($_SESSION['business_account_id']) || isset($_SESSION['admin_id'])) {
         return true;
     }
 

@@ -15,12 +15,13 @@ craftcrawl_verify_csrf();
 
 $user_id = (int) $_SESSION['user_id'];
 $business_id = filter_var($_POST['business_id'] ?? null, FILTER_VALIDATE_INT);
+$location_id = filter_var($_POST['location_id'] ?? null, FILTER_VALIDATE_INT);
 $friend_id = filter_var($_POST['friend_id'] ?? null, FILTER_VALIDATE_INT);
 $message = trim(strip_tags($_POST['message'] ?? ''));
 $message = substr($message, 0, 255);
 
-if (!$business_id || !$friend_id || $friend_id === $user_id) {
-    craftcrawl_redirect('business_details.php?id=' . (int) $business_id . '&message=recommend_error');
+if (!$location_id || !$friend_id || $friend_id === $user_id) {
+    craftcrawl_redirect('business_details.php?id=' . (int) $location_id . '&message=recommend_error');
 }
 
 $friend_stmt = $conn->prepare("SELECT id FROM user_friends WHERE user_id=? AND friend_user_id=? LIMIT 1");
@@ -28,23 +29,23 @@ $friend_stmt->bind_param("ii", $user_id, $friend_id);
 $friend_stmt->execute();
 
 if (!$friend_stmt->get_result()->fetch_assoc()) {
-    craftcrawl_redirect('business_details.php?id=' . $business_id . '&message=recommend_error');
+    craftcrawl_redirect('business_details.php?id=' . $location_id . '&message=recommend_error');
 }
 
-$business_stmt = $conn->prepare("SELECT id FROM businesses WHERE id=? AND approved=TRUE LIMIT 1");
-$business_stmt->bind_param("i", $business_id);
+$business_stmt = $conn->prepare("SELECT id FROM locations WHERE id=? AND visibility_status IN ('public_unclaimed', 'public_claimed') LIMIT 1");
+$business_stmt->bind_param("i", $location_id);
 $business_stmt->execute();
 
 if (!$business_stmt->get_result()->fetch_assoc()) {
     craftcrawl_redirect('portal.php');
 }
 
-$visit_stmt = $conn->prepare("SELECT id FROM user_visits WHERE user_id=? AND business_id=? LIMIT 1");
-$visit_stmt->bind_param("ii", $user_id, $business_id);
+$visit_stmt = $conn->prepare("SELECT id FROM user_visits WHERE user_id=? AND location_id=? LIMIT 1");
+$visit_stmt->bind_param("ii", $user_id, $location_id);
 $visit_stmt->execute();
 
 if (!$visit_stmt->get_result()->fetch_assoc()) {
-    craftcrawl_redirect('business_details.php?id=' . $business_id . '&message=recommend_checkin_required');
+    craftcrawl_redirect('business_details.php?id=' . $location_id . '&message=recommend_checkin_required');
 }
 
 try {
@@ -53,11 +54,11 @@ try {
 
     $pending = 'pending';
     $stmt = $conn->prepare("
-        INSERT INTO location_recommendations (recommender_user_id, recipient_user_id, business_id, message, status, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, NOW(), NOW())
+        INSERT INTO location_recommendations (recommender_user_id, recipient_user_id, business_id, location_id, message, status, createdAt, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
         ON DUPLICATE KEY UPDATE message=VALUES(message), status='pending', updatedAt=NOW()
     ");
-    $stmt->bind_param("iiiss", $user_id, $friend_id, $business_id, $message, $pending);
+    $stmt->bind_param("iiiiss", $user_id, $friend_id, $business_id, $location_id, $message, $pending);
     $stmt->execute();
     $badges = craftcrawl_award_eligible_badges($conn, $user_id);
     $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Recommendation Sent');
@@ -69,8 +70,8 @@ try {
 } catch (Throwable $error) {
     $conn->rollback();
     error_log('Recommendation failed: ' . $error->getMessage());
-    craftcrawl_redirect('business_details.php?id=' . $business_id . '&message=recommend_error');
+    craftcrawl_redirect('business_details.php?id=' . $location_id . '&message=recommend_error');
 }
 
-craftcrawl_redirect('business_details.php?id=' . $business_id . '&message=recommended');
+craftcrawl_redirect('business_details.php?id=' . $location_id . '&message=recommended');
 ?>

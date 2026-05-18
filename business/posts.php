@@ -1,12 +1,12 @@
 <?php
 require '../login_check.php';
+require_once '../lib/business_context.php';
 include '../db.php';
 
-if (!isset($_SESSION['business_id'])) {
-    craftcrawl_redirect('business_login.php');
-}
+$selected_location = craftcrawl_require_selected_business_location($conn);
 
-$business_id = (int) $_SESSION['business_id'];
+$business_id = !empty($selected_location['legacy_business_id']) ? (int) $selected_location['legacy_business_id'] : null;
+$location_id = (int) $_SESSION['business_location_id'];
 $message = $_GET['message'] ?? null;
 
 function escape_output($value) {
@@ -21,8 +21,8 @@ require_once '../config.php';
 require_once '../lib/business_post_render.php';
 require_once '../lib/user_avatar.php';
 
-$business_stmt = $conn->prepare("SELECT bName FROM businesses WHERE id=?");
-$business_stmt->bind_param("i", $business_id);
+$business_stmt = $conn->prepare("SELECT name AS bName FROM locations WHERE id=?");
+$business_stmt->bind_param("i", $location_id);
 $business_stmt->execute();
 $business = $business_stmt->get_result()->fetch_assoc();
 
@@ -49,8 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $type = 'post';
-        $ins_stmt = $conn->prepare("INSERT INTO business_posts (business_id, post_type, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())");
-        $ins_stmt->bind_param("isss", $business_id, $type, $post_title, $post_body);
+        $ins_stmt = $conn->prepare("INSERT INTO business_posts (business_id, location_id, post_type, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())");
+        $ins_stmt->bind_param("iisss", $business_id, $location_id, $type, $post_title, $post_body);
         $ins_stmt->execute();
         header('Location: posts.php?message=post_saved');
         exit();
@@ -87,8 +87,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $conn->begin_transaction();
         $type = 'poll';
-        $ins_stmt = $conn->prepare("INSERT INTO business_posts (business_id, post_type, title, body, ends_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())");
-        $ins_stmt->bind_param("issss", $business_id, $type, $poll_title, $poll_body, $poll_ends_at);
+        $ins_stmt = $conn->prepare("INSERT INTO business_posts (business_id, location_id, post_type, title, body, ends_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())");
+        $ins_stmt->bind_param("iissss", $business_id, $location_id, $type, $poll_title, $poll_body, $poll_ends_at);
         $ins_stmt->execute();
         $new_post_id = $ins_stmt->insert_id;
 
@@ -104,8 +104,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($form_action === 'delete_post') {
         $del_post_id = (int) ($_POST['post_id'] ?? 0);
-        $del_stmt = $conn->prepare("DELETE FROM business_posts WHERE id=? AND business_id=?");
-        $del_stmt->bind_param("ii", $del_post_id, $business_id);
+        $del_stmt = $conn->prepare("DELETE FROM business_posts WHERE id=? AND location_id=?");
+        $del_stmt->bind_param("ii", $del_post_id, $location_id);
         $del_stmt->execute();
         header('Location: posts.php?message=post_deleted');
         exit();
@@ -122,8 +122,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         }
 
-        $upd_stmt = $conn->prepare("UPDATE business_posts SET title=?, body=?, updated_at=NOW() WHERE id=? AND business_id=?");
-        $upd_stmt->bind_param("ssii", $new_title, $new_body, $edit_post_id, $business_id);
+        $upd_stmt = $conn->prepare("UPDATE business_posts SET title=?, body=?, updated_at=NOW() WHERE id=? AND location_id=?");
+        $upd_stmt->bind_param("ssii", $new_title, $new_body, $edit_post_id, $location_id);
         $upd_stmt->execute();
         header('Location: posts.php?message=post_updated#post-' . $edit_post_id);
         exit();
@@ -144,8 +144,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $body = substr($body, 0, 500);
         }
 
-        $own_stmt = $conn->prepare("SELECT id FROM business_posts WHERE id=? AND business_id=? LIMIT 1");
-        $own_stmt->bind_param("ii", $comment_post_id, $business_id);
+        $own_stmt = $conn->prepare("SELECT id FROM business_posts WHERE id=? AND location_id=? LIMIT 1");
+        $own_stmt->bind_param("ii", $comment_post_id, $location_id);
         $own_stmt->execute();
 
         if (!$own_stmt->get_result()->fetch_assoc()) {
@@ -196,8 +196,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $target_post_id = (int) $m[1];
-        $own_stmt = $conn->prepare("SELECT id FROM business_posts WHERE id=? AND business_id=? LIMIT 1");
-        $own_stmt->bind_param("ii", $target_post_id, $business_id);
+        $own_stmt = $conn->prepare("SELECT id FROM business_posts WHERE id=? AND location_id=? LIMIT 1");
+        $own_stmt->bind_param("ii", $target_post_id, $location_id);
         $own_stmt->execute();
 
         if (!$own_stmt->get_result()->fetch_assoc()) {
@@ -234,10 +234,10 @@ $posts_stmt = $conn->prepare("
     LEFT JOIN (
         SELECT feed_item_key, COUNT(*) AS total FROM feed_reactions GROUP BY feed_item_key
     ) rc ON rc.feed_item_key = CONCAT('business_post:', bp.id)
-    WHERE bp.business_id=?
+    WHERE bp.location_id=?
     ORDER BY bp.created_at DESC
 ");
-$posts_stmt->bind_param("i", $business_id);
+$posts_stmt->bind_param("i", $location_id);
 $posts_stmt->execute();
 $all_posts_raw = $posts_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
@@ -354,6 +354,7 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '📍 Want to Go'
                     <span></span>
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
+                    <a href="locations.php">Locations</a>
                     <a href="analytics.php">Stats</a>
                     <a href="settings.php">Settings</a>
                     <form action="../logout.php" method="POST">
@@ -774,7 +775,7 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '📍 Want to Go'
     <script src="../js/business_review_responses.js?v=<?php echo filemtime(__DIR__ . '/../js/business_review_responses.js'); ?>"></script>
     <script src="../js/business_hours_editor.js?v=<?php echo filemtime(__DIR__ . '/../js/business_hours_editor.js'); ?>"></script>
     <script src="../js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/../js/business_posts.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
+    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','locations.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'locations.php':'locations', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
     <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
 </body>
 </html>

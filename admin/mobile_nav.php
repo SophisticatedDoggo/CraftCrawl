@@ -1,7 +1,7 @@
 <?php
 $craftcrawl_admin_nav_page = basename($_SERVER['SCRIPT_NAME'] ?? '');
 
-$craftcrawl_admin_nav_is_dashboard = in_array($craftcrawl_admin_nav_page, ['dashboard.php', 'business_edit.php'], true);
+$craftcrawl_admin_nav_is_dashboard = $craftcrawl_admin_nav_page === 'dashboard.php';
 $craftcrawl_admin_nav_is_accounts = in_array($craftcrawl_admin_nav_page, ['accounts.php', 'account_details.php'], true);
 $craftcrawl_admin_nav_is_reviews = $craftcrawl_admin_nav_page === 'reviews.php';
 $craftcrawl_admin_nav_is_content = $craftcrawl_admin_nav_page === 'content.php';

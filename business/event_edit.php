@@ -1,12 +1,12 @@
 <?php
 require '../login_check.php';
+require_once '../lib/business_context.php';
 include '../db.php';
 
-if (!isset($_SESSION['business_id'])) {
-    craftcrawl_redirect('business_login.php');
-}
+$selected_location = craftcrawl_require_selected_business_location($conn);
 
-$business_id = (int) $_SESSION['business_id'];
+$business_id = !empty($selected_location['legacy_business_id']) ? (int) $selected_location['legacy_business_id'] : null;
+$location_id = (int) $_SESSION['business_location_id'];
 $message = $_GET['message'] ?? null;
 $selected_date = $_GET['date'] ?? date('Y-m-d');
 $edit_event_id = filter_var($_GET['edit'] ?? null, FILTER_VALIDATE_INT);
@@ -69,8 +69,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $event_id = (int) ($_POST['event_id'] ?? 0);
 
     if ($form_action === 'delete_event') {
-        $stmt = $conn->prepare("DELETE FROM events WHERE id=? AND business_id=?");
-        $stmt->bind_param("ii", $event_id, $business_id);
+        $stmt = $conn->prepare("DELETE FROM events WHERE id=? AND location_id=?");
+        $stmt->bind_param("ii", $event_id, $location_id);
         $stmt->execute();
         redirect_to_calendar($calendar_month, 'event_deleted');
     }
@@ -104,12 +104,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conn->begin_transaction();
 
         if ($event_id > 0) {
-            $stmt = $conn->prepare("UPDATE events SET eName=?, eDescription=?, eventDate=?, startTime=?, endTime=?, isRecurring=?, recurrenceRule=?, recurrenceEnd=? WHERE id=? AND business_id=?");
-            $stmt->bind_param("sssssissii", $event_name, $description, $event_date, $start_time, $end_time, $is_recurring, $recurrence_rule, $recurrence_end, $event_id, $business_id);
+            $stmt = $conn->prepare("UPDATE events SET eName=?, eDescription=?, eventDate=?, startTime=?, endTime=?, isRecurring=?, recurrenceRule=?, recurrenceEnd=? WHERE id=? AND location_id=?");
+            $stmt->bind_param("sssssissii", $event_name, $description, $event_date, $start_time, $end_time, $is_recurring, $recurrence_rule, $recurrence_end, $event_id, $location_id);
             $stmt->execute();
         } else {
-            $stmt = $conn->prepare("INSERT INTO events (eName, eDescription, eventDate, startTime, endTime, isRecurring, recurrenceRule, recurrenceEnd, createdAt, business_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
-            $stmt->bind_param("sssssissi", $event_name, $description, $event_date, $start_time, $end_time, $is_recurring, $recurrence_rule, $recurrence_end, $business_id);
+            $stmt = $conn->prepare("INSERT INTO events (eName, eDescription, eventDate, startTime, endTime, isRecurring, recurrenceRule, recurrenceEnd, createdAt, business_id, location_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)");
+            $stmt->bind_param("sssssissii", $event_name, $description, $event_date, $start_time, $end_time, $is_recurring, $recurrence_rule, $recurrence_end, $business_id, $location_id);
             $stmt->execute();
             $event_id = $stmt->insert_id;
         }
@@ -118,8 +118,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $upload_result = craftcrawl_upload_photo_to_cloudinary($event_cover_upload, 'events/covers', $business_id);
             $photo_id = craftcrawl_insert_cloudinary_photo($conn, $upload_result, null, $business_id);
 
-            $cover_stmt = $conn->prepare("UPDATE events SET cover_photo_id=? WHERE id=? AND business_id=?");
-            $cover_stmt->bind_param("iii", $photo_id, $event_id, $business_id);
+            $cover_stmt = $conn->prepare("UPDATE events SET cover_photo_id=? WHERE id=? AND location_id=?");
+            $cover_stmt->bind_param("iii", $photo_id, $event_id, $location_id);
             $cover_stmt->execute();
         }
 
@@ -132,8 +132,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$business_stmt = $conn->prepare("SELECT bName FROM businesses WHERE id=?");
-$business_stmt->bind_param("i", $business_id);
+$business_stmt = $conn->prepare("SELECT name AS bName FROM locations WHERE id=?");
+$business_stmt->bind_param("i", $location_id);
 $business_stmt->execute();
 $business = $business_stmt->get_result()->fetch_assoc();
 
@@ -145,9 +145,9 @@ if ($edit_event_id) {
         FROM events e
         LEFT JOIN photos p ON p.id = e.cover_photo_id AND p.deletedAt IS NULL
         WHERE e.id=?
-        AND e.business_id=?
+        AND e.location_id=?
     ");
-    $edit_stmt->bind_param("ii", $edit_event_id, $business_id);
+    $edit_stmt->bind_param("ii", $edit_event_id, $location_id);
     $edit_stmt->execute();
     $editing_event = $edit_stmt->get_result()->fetch_assoc();
 
@@ -185,6 +185,7 @@ $form_date = $editing_event['eventDate'] ?? $selected_date;
                     <span></span>
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
+                    <a href="locations.php">Locations</a>
                     <a href="events.php?month=<?php echo escape_output($calendar_month); ?>" data-back-link>Back</a>
                     <a href="analytics.php">Stats</a>
                     <a href="settings.php">Settings</a>
@@ -280,7 +281,7 @@ $form_date = $editing_event['eventDate'] ?? $selected_date;
     <script src="../js/business_review_responses.js?v=<?php echo filemtime(__DIR__ . '/../js/business_review_responses.js'); ?>"></script>
     <script src="../js/business_hours_editor.js?v=<?php echo filemtime(__DIR__ . '/../js/business_hours_editor.js'); ?>"></script>
     <script src="../js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/../js/business_posts.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
+    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','locations.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'locations.php':'locations', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
     <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
 </body>
 </html>
