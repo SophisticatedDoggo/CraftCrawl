@@ -560,7 +560,7 @@ function craftcrawl_user_habit_streak_stats($conn, $user_id) {
             SELECT MIN(checkedInAt) AS first_visit_at
             FROM user_visits
             WHERE user_id=?
-            GROUP BY business_id
+            GROUP BY location_id
         ) first_visits
         ORDER BY period_start
     ");
@@ -582,7 +582,7 @@ function craftcrawl_user_badge_progress($conn, $user_id) {
     $earned_map = array_fill_keys($earned_keys, true);
 
     $visit_stmt = $conn->prepare("
-        SELECT COUNT(*) AS total_visits, COUNT(DISTINCT business_id) AS unique_visits
+        SELECT COUNT(*) AS total_visits, COUNT(DISTINCT location_id) AS unique_visits
         FROM user_visits
         WHERE user_id=?
     ");
@@ -598,27 +598,27 @@ function craftcrawl_user_badge_progress($conn, $user_id) {
             SELECT COUNT(*) AS visit_count
             FROM user_visits
             WHERE user_id=?
-            GROUP BY business_id
+            GROUP BY location_id
         ) repeat_locations
     ");
     $repeat_stmt->bind_param("i", $user_id);
     $repeat_stmt->execute();
     $max_location_visits = (int) ($repeat_stmt->get_result()->fetch_assoc()['max_visits'] ?? 0);
 
-    $review_stmt = $conn->prepare("SELECT COUNT(DISTINCT business_id) AS total FROM reviews WHERE user_id=?");
+    $review_stmt = $conn->prepare("SELECT COUNT(DISTINCT location_id) AS total FROM reviews WHERE user_id=?");
     $review_stmt->bind_param("i", $user_id);
     $review_stmt->execute();
     $review_count = (int) ($review_stmt->get_result()->fetch_assoc()['total'] ?? 0);
 
     $type_stmt = $conn->prepare("
         SELECT
-            COUNT(DISTINCT CASE WHEN b.bType = 'distilery' THEN 'distillery' ELSE b.bType END) AS total,
-            COUNT(DISTINCT CASE WHEN b.bType='brewery' THEN b.id END) AS breweries,
-            COUNT(DISTINCT CASE WHEN b.bType='winery' THEN b.id END) AS wineries,
-            COUNT(DISTINCT CASE WHEN b.bType IN ('distillery', 'distilery') THEN b.id END) AS distilleries,
-            COUNT(DISTINCT CASE WHEN b.bType='cidery' THEN b.id END) AS cideries
+            COUNT(DISTINCT CASE WHEN l.location_type = 'distilery' THEN 'distillery' ELSE l.location_type END) AS total,
+            COUNT(DISTINCT CASE WHEN l.location_type='brewery' THEN l.id END) AS breweries,
+            COUNT(DISTINCT CASE WHEN l.location_type='winery' THEN l.id END) AS wineries,
+            COUNT(DISTINCT CASE WHEN l.location_type IN ('distillery', 'distilery') THEN l.id END) AS distilleries,
+            COUNT(DISTINCT CASE WHEN l.location_type='cidery' THEN l.id END) AS cideries
         FROM user_visits uv
-        INNER JOIN businesses b ON b.id = uv.business_id
+        INNER JOIN locations l ON l.id = uv.location_id
         WHERE uv.user_id=?
     ");
     $type_stmt->bind_param("i", $user_id);
@@ -647,10 +647,10 @@ function craftcrawl_user_badge_progress($conn, $user_id) {
     $recommendation_count = (int) ($recommendation_stmt->get_result()->fetch_assoc()['total'] ?? 0);
 
     $shared_stmt = $conn->prepare("
-        SELECT COUNT(DISTINCT uv.business_id) AS total
+        SELECT COUNT(DISTINCT uv.location_id) AS total
         FROM user_visits uv
         INNER JOIN user_friends uf ON uf.user_id=?
-        INNER JOIN user_visits friend_visits ON friend_visits.user_id=uf.friend_user_id AND friend_visits.business_id=uv.business_id
+        INNER JOIN user_visits friend_visits ON friend_visits.user_id=uf.friend_user_id AND friend_visits.location_id=uv.location_id
         WHERE uv.user_id=?
     ");
     $shared_stmt->bind_param("ii", $user_id, $user_id);
@@ -759,7 +759,7 @@ function craftcrawl_award_eligible_badges($conn, $user_id) {
     $earned = [];
 
     $visit_stmt = $conn->prepare("
-        SELECT COUNT(*) AS total_visits, COUNT(DISTINCT business_id) AS unique_visits
+        SELECT COUNT(*) AS total_visits, COUNT(DISTINCT location_id) AS unique_visits
         FROM user_visits
         WHERE user_id=?
     ");
@@ -769,20 +769,20 @@ function craftcrawl_award_eligible_badges($conn, $user_id) {
     $total_visits = (int) ($visit_stats['total_visits'] ?? 0);
     $unique_visits = (int) ($visit_stats['unique_visits'] ?? 0);
 
-    $review_stmt = $conn->prepare("SELECT COUNT(DISTINCT business_id) AS total FROM reviews WHERE user_id=?");
+    $review_stmt = $conn->prepare("SELECT COUNT(DISTINCT location_id) AS total FROM reviews WHERE user_id=?");
     $review_stmt->bind_param("i", $user_id);
     $review_stmt->execute();
     $review_count = (int) ($review_stmt->get_result()->fetch_assoc()['total'] ?? 0);
 
     $type_stmt = $conn->prepare("
         SELECT
-            COUNT(DISTINCT CASE WHEN b.bType = 'distilery' THEN 'distillery' ELSE b.bType END) AS total,
-            COUNT(DISTINCT CASE WHEN b.bType='brewery' THEN b.id END) AS breweries,
-            COUNT(DISTINCT CASE WHEN b.bType='winery' THEN b.id END) AS wineries,
-            COUNT(DISTINCT CASE WHEN b.bType IN ('distillery', 'distilery') THEN b.id END) AS distilleries,
-            COUNT(DISTINCT CASE WHEN b.bType='cidery' THEN b.id END) AS cideries
+            COUNT(DISTINCT CASE WHEN l.location_type = 'distilery' THEN 'distillery' ELSE l.location_type END) AS total,
+            COUNT(DISTINCT CASE WHEN l.location_type='brewery' THEN l.id END) AS breweries,
+            COUNT(DISTINCT CASE WHEN l.location_type='winery' THEN l.id END) AS wineries,
+            COUNT(DISTINCT CASE WHEN l.location_type IN ('distillery', 'distilery') THEN l.id END) AS distilleries,
+            COUNT(DISTINCT CASE WHEN l.location_type='cidery' THEN l.id END) AS cideries
         FROM user_visits uv
-        INNER JOIN businesses b ON b.id = uv.business_id
+        INNER JOIN locations l ON l.id = uv.location_id
         WHERE uv.user_id=?
     ");
     $type_stmt->bind_param("i", $user_id);
@@ -800,7 +800,7 @@ function craftcrawl_award_eligible_badges($conn, $user_id) {
             SELECT COUNT(*) AS visit_count
             FROM user_visits
             WHERE user_id=?
-            GROUP BY business_id
+            GROUP BY location_id
         ) repeat_locations
     ");
     $repeat_stmt->bind_param("i", $user_id);
@@ -823,10 +823,10 @@ function craftcrawl_award_eligible_badges($conn, $user_id) {
     $recommendation_count = (int) ($recommendation_stmt->get_result()->fetch_assoc()['total'] ?? 0);
 
     $shared_stmt = $conn->prepare("
-        SELECT COUNT(DISTINCT uv.business_id) AS total
+        SELECT COUNT(DISTINCT uv.location_id) AS total
         FROM user_visits uv
         INNER JOIN user_friends uf ON uf.user_id=?
-        INNER JOIN user_visits friend_visits ON friend_visits.user_id=uf.friend_user_id AND friend_visits.business_id=uv.business_id
+        INNER JOIN user_visits friend_visits ON friend_visits.user_id=uf.friend_user_id AND friend_visits.location_id=uv.location_id
         WHERE uv.user_id=?
     ");
     $shared_stmt->bind_param("ii", $user_id, $user_id);
@@ -839,7 +839,7 @@ function craftcrawl_award_eligible_badges($conn, $user_id) {
             SELECT COUNT(*) AS visit_count
             FROM user_visits
             WHERE user_id=? AND checkedInAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-            GROUP BY business_id
+            GROUP BY location_id
         ) repeat_locations
     ");
     $weekly_repeat_stmt->bind_param("i", $user_id);
@@ -852,7 +852,7 @@ function craftcrawl_award_eligible_badges($conn, $user_id) {
             SELECT COUNT(*) AS visit_count
             FROM user_visits
             WHERE user_id=? AND checkedInAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-            GROUP BY business_id
+            GROUP BY location_id
         ) repeat_locations
     ");
     $monthly_repeat_stmt->bind_param("i", $user_id);
@@ -865,7 +865,7 @@ function craftcrawl_award_eligible_badges($conn, $user_id) {
             SELECT COUNT(*) AS visit_count
             FROM user_visits
             WHERE user_id=? AND checkedInAt >= DATE_SUB(NOW(), INTERVAL 365 DAY)
-            GROUP BY business_id
+            GROUP BY location_id
         ) repeat_locations
     ");
     $yearly_repeat_stmt->bind_param("i", $user_id);
@@ -874,13 +874,13 @@ function craftcrawl_award_eligible_badges($conn, $user_id) {
 
     $weekly_type_stmt = $conn->prepare("
         SELECT
-            COUNT(DISTINCT CASE WHEN b.bType='brewery' THEN b.id END) AS breweries,
-            COUNT(DISTINCT CASE WHEN b.bType='winery' THEN b.id END) AS wineries,
-            COUNT(DISTINCT CASE WHEN b.bType IN ('distillery', 'distilery') THEN b.id END) AS distilleries,
-            COUNT(DISTINCT CASE WHEN b.bType='cidery' THEN b.id END) AS cideries,
-            COUNT(DISTINCT uv.business_id) AS unique_visits
+            COUNT(DISTINCT CASE WHEN l.location_type='brewery' THEN l.id END) AS breweries,
+            COUNT(DISTINCT CASE WHEN l.location_type='winery' THEN l.id END) AS wineries,
+            COUNT(DISTINCT CASE WHEN l.location_type IN ('distillery', 'distilery') THEN l.id END) AS distilleries,
+            COUNT(DISTINCT CASE WHEN l.location_type='cidery' THEN l.id END) AS cideries,
+            COUNT(DISTINCT uv.location_id) AS unique_visits
         FROM user_visits uv
-        INNER JOIN businesses b ON b.id = uv.business_id
+        INNER JOIN locations l ON l.id = uv.location_id
         WHERE uv.user_id=? AND uv.checkedInAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)
     ");
     $weekly_type_stmt->bind_param("i", $user_id);
@@ -894,13 +894,13 @@ function craftcrawl_award_eligible_badges($conn, $user_id) {
 
     $monthly_type_stmt = $conn->prepare("
         SELECT
-            COUNT(DISTINCT CASE WHEN b.bType='brewery' THEN b.id END) AS breweries,
-            COUNT(DISTINCT CASE WHEN b.bType='winery' THEN b.id END) AS wineries,
-            COUNT(DISTINCT CASE WHEN b.bType IN ('distillery', 'distilery') THEN b.id END) AS distilleries,
-            COUNT(DISTINCT CASE WHEN b.bType='cidery' THEN b.id END) AS cideries,
-            COUNT(DISTINCT uv.business_id) AS unique_visits
+            COUNT(DISTINCT CASE WHEN l.location_type='brewery' THEN l.id END) AS breweries,
+            COUNT(DISTINCT CASE WHEN l.location_type='winery' THEN l.id END) AS wineries,
+            COUNT(DISTINCT CASE WHEN l.location_type IN ('distillery', 'distilery') THEN l.id END) AS distilleries,
+            COUNT(DISTINCT CASE WHEN l.location_type='cidery' THEN l.id END) AS cideries,
+            COUNT(DISTINCT uv.location_id) AS unique_visits
         FROM user_visits uv
-        INNER JOIN businesses b ON b.id = uv.business_id
+        INNER JOIN locations l ON l.id = uv.location_id
         WHERE uv.user_id=? AND uv.checkedInAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
     ");
     $monthly_type_stmt->bind_param("i", $user_id);
@@ -1164,7 +1164,7 @@ function craftcrawl_user_event_attendance_stats($conn, $user_id) {
     $stmt = $conn->prepare("
         SELECT
             COUNT(DISTINCT CONCAT(e.id, ':', DATE(uv.checkedInAt))) AS total,
-            COUNT(DISTINCT e.business_id) AS venues,
+            COUNT(DISTINCT e.location_id) AS venues,
             COUNT(DISTINCT CASE
                 WHEN uv.checkedInAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)
                 THEN CONCAT(e.id, ':', DATE(uv.checkedInAt))
@@ -1174,7 +1174,7 @@ function craftcrawl_user_event_attendance_stats($conn, $user_id) {
                 THEN CONCAT(e.id, ':', DATE(uv.checkedInAt))
             END) AS monthly_total
         FROM user_visits uv
-        INNER JOIN events e ON e.business_id = uv.business_id
+        INNER JOIN events e ON e.location_id = uv.location_id
         WHERE uv.user_id=?
             AND DATE(uv.checkedInAt) >= e.eventDate
             AND (
@@ -1214,7 +1214,7 @@ function craftcrawl_user_frame_activity_stats($conn, $user_id) {
     ];
 
     $visit_stmt = $conn->prepare("
-        SELECT COUNT(*) AS total_visits, COUNT(DISTINCT business_id) AS unique_locations
+        SELECT COUNT(*) AS total_visits, COUNT(DISTINCT location_id) AS unique_locations
         FROM user_visits
         WHERE user_id=?
     ");
@@ -1230,7 +1230,7 @@ function craftcrawl_user_frame_activity_stats($conn, $user_id) {
             SELECT COUNT(*) AS visit_count
             FROM user_visits
             WHERE user_id=?
-            GROUP BY business_id
+            GROUP BY location_id
         ) repeat_locations
     ");
     $repeat_stmt->bind_param("i", $user_id);
@@ -1238,9 +1238,9 @@ function craftcrawl_user_frame_activity_stats($conn, $user_id) {
     $stats['max_location_visits'] = (int) ($repeat_stmt->get_result()->fetch_assoc()['max_visits'] ?? 0);
 
     $type_stmt = $conn->prepare("
-        SELECT COUNT(DISTINCT CASE WHEN b.bType = 'distilery' THEN 'distillery' ELSE b.bType END) AS total
+        SELECT COUNT(DISTINCT CASE WHEN l.location_type = 'distilery' THEN 'distillery' ELSE l.location_type END) AS total
         FROM user_visits uv
-        INNER JOIN businesses b ON b.id = uv.business_id
+        INNER JOIN locations l ON l.id = uv.location_id
         WHERE uv.user_id=?
     ");
     $type_stmt->bind_param("i", $user_id);

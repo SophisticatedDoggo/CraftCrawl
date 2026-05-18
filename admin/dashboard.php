@@ -1,163 +1,95 @@
 <?php
 require_once __DIR__ . '/../lib/admin_auth.php';
+require_once __DIR__ . '/../lib/admin_review.php';
 craftcrawl_require_admin();
 include '../db.php';
 
-$message = $_GET['message'] ?? null;
+$admin_id = (int) $_SESSION['admin_id'];
 $search = trim($_GET['q'] ?? '');
 $status = $_GET['status'] ?? 'all';
-$allowed_statuses = ['all', 'approved', 'pending'];
-
+$allowed_statuses = ['all', 'pending', 'public_unclaimed', 'public_claimed', 'rejected', 'hidden', 'disabled'];
 if (!in_array($status, $allowed_statuses, true)) {
     $status = 'all';
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
-
     $form_action = $_POST['form_action'] ?? '';
+    $location_id = (int) ($_POST['location_id'] ?? 0);
+    $notes = craftcrawl_admin_clean_text($_POST['admin_notes'] ?? '');
 
-    if ($form_action === 'approve_business' || $form_action === 'remove_business_approval') {
-        $business_id = (int) ($_POST['business_id'] ?? 0);
-        $approved = $form_action === 'approve_business' ? 1 : 0;
-        $stmt = $conn->prepare("UPDATE businesses SET approved=? WHERE id=?");
-        $stmt->bind_param("ii", $approved, $business_id);
+    if ($location_id && in_array($form_action, ['disable_location', 'reenable_location', 'hide_location', 'unhide_location'], true)) {
+        if ($form_action === 'hide_location' || $form_action === 'unhide_location') {
+            $visibility_status = $form_action === 'hide_location' ? 'hidden' : 'public_unclaimed';
+            $stmt = $conn->prepare("UPDATE locations SET visibility_status=?, adminNotes=? WHERE id=? AND disabledAt IS NULL");
+            $stmt->bind_param('ssi', $visibility_status, $notes, $location_id);
+            $stmt->execute();
+            craftcrawl_log_admin_review_action($conn, $admin_id, 'location', $location_id, $form_action === 'hide_location' ? 'hidden' : 'unhidden', $notes);
+            craftcrawl_redirect('admin/dashboard.php?message=' . ($form_action === 'hide_location' ? 'location_hidden' : 'location_unhidden'));
+        }
+
+        if ($form_action === 'disable_location') {
+            $stmt = $conn->prepare("UPDATE locations SET disabledAt=NOW(), adminNotes=? WHERE id=? AND disabledAt IS NULL");
+            $stmt->bind_param('si', $notes, $location_id);
+            $stmt->execute();
+            craftcrawl_log_admin_review_action($conn, $admin_id, 'location', $location_id, 'disabled', $notes);
+            craftcrawl_redirect('admin/dashboard.php?message=location_disabled');
+        }
+
+        $stmt = $conn->prepare("UPDATE locations SET disabledAt=NULL, adminNotes=? WHERE id=? AND disabledAt IS NOT NULL");
+        $stmt->bind_param('si', $notes, $location_id);
         $stmt->execute();
-        header('Location: dashboard.php?message=' . ($approved ? 'business_approved' : 'business_unapproved'));
-        exit();
+        craftcrawl_log_admin_review_action($conn, $admin_id, 'location', $location_id, 'reenabled', $notes);
+        craftcrawl_redirect('admin/dashboard.php?message=location_reenabled');
     }
-
-    if ($form_action === 'delete_business') {
-        $business_id = (int) ($_POST['business_id'] ?? 0);
-        $business_stmt = $conn->prepare("SELECT approved FROM businesses WHERE id=?");
-        $business_stmt->bind_param("i", $business_id);
-        $business_stmt->execute();
-        $business = $business_stmt->get_result()->fetch_assoc();
-
-        if (!$business) {
-            header('Location: dashboard.php?message=business_not_found');
-            exit();
-        }
-
-        if ((int) $business['approved'] === 1) {
-            header('Location: dashboard.php?message=business_delete_blocked');
-            exit();
-        }
-
-        $photo_ids = [];
-        $photo_result = $conn->query("
-            SELECT photo_id FROM business_photos WHERE business_id={$business_id}
-            UNION
-            SELECT cover_photo_id AS photo_id FROM events WHERE business_id={$business_id} AND cover_photo_id IS NOT NULL
-            UNION
-            SELECT id AS photo_id FROM photos WHERE uploaded_by_business_id={$business_id}
-        ");
-
-        while ($photo = $photo_result->fetch_assoc()) {
-            $photo_ids[] = (int) $photo['photo_id'];
-        }
-
-        $conn->begin_transaction();
-
-        try {
-            if (!$conn->query("DELETE FROM liked_businesses WHERE business_id={$business_id}")) {
-                throw new RuntimeException($conn->error);
-            }
-
-            if (!$conn->query("DELETE rp FROM review_photos rp INNER JOIN reviews r ON r.id = rp.review_id WHERE r.business_id={$business_id}")) {
-                throw new RuntimeException($conn->error);
-            }
-
-            if (!$conn->query("DELETE FROM reviews WHERE business_id={$business_id}")) {
-                throw new RuntimeException($conn->error);
-            }
-
-            if (!$conn->query("DELETE FROM events WHERE business_id={$business_id}")) {
-                throw new RuntimeException($conn->error);
-            }
-
-            if (!$conn->query("DELETE FROM business_photos WHERE business_id={$business_id}")) {
-                throw new RuntimeException($conn->error);
-            }
-
-            if (!empty($photo_ids)) {
-                $photo_id_list = implode(',', array_map('intval', $photo_ids));
-
-                if (!$conn->query("DELETE FROM photos WHERE id IN ({$photo_id_list})")) {
-                    throw new RuntimeException($conn->error);
-                }
-            }
-
-            $delete_stmt = $conn->prepare("DELETE FROM businesses WHERE id=? AND approved=FALSE");
-            $delete_stmt->bind_param("i", $business_id);
-            $delete_stmt->execute();
-
-            if ($delete_stmt->affected_rows === 0) {
-                throw new RuntimeException('Business could not be deleted.');
-            }
-
-            $conn->commit();
-            header('Location: dashboard.php?message=business_deleted');
-            exit();
-        } catch (Throwable $error) {
-            $conn->rollback();
-            header('Location: dashboard.php?message=business_delete_error');
-            exit();
-        }
-    }
-
 }
 
 $counts = [
-    'pending' => 0,
-    'approved' => 0,
-    'businesses' => 0,
-    'users' => 0,
-    'reviews' => 0
+    'pending_new_business' => (int) $conn->query("SELECT COUNT(*) FROM locations WHERE visibility_status='pending_new_business'")->fetch_row()[0],
+    'pending_claims' => (int) $conn->query("SELECT COUNT(*) FROM business_claims WHERE status IN ('pending','needs_more_info')")->fetch_row()[0],
+    'pending_suggestions' => (int) $conn->query("SELECT COUNT(*) FROM location_suggestions WHERE status='pending'")->fetch_row()[0],
+    'pending_imports' => (int) $conn->query("SELECT COUNT(*) FROM locations WHERE visibility_status='pending_import_review'")->fetch_row()[0],
+    'users' => (int) $conn->query("SELECT COUNT(*) FROM users")->fetch_row()[0],
+    'reviews' => (int) $conn->query("SELECT COUNT(*) FROM reviews")->fetch_row()[0],
 ];
 
-$count_result = $conn->query("
-    SELECT
-        SUM(approved = FALSE) AS pending_count,
-        SUM(approved = TRUE) AS approved_count,
-        COUNT(*) AS business_count
-    FROM businesses
-");
-$business_counts = $count_result->fetch_assoc();
-$counts['pending'] = (int) ($business_counts['pending_count'] ?? 0);
-$counts['approved'] = (int) ($business_counts['approved_count'] ?? 0);
-$counts['businesses'] = (int) ($business_counts['business_count'] ?? 0);
-$counts['users'] = (int) $conn->query("SELECT COUNT(*) FROM users")->fetch_row()[0];
-$counts['reviews'] = (int) $conn->query("SELECT COUNT(*) FROM reviews")->fetch_row()[0];
-
-$pending_businesses = $conn->query("SELECT * FROM businesses WHERE approved=FALSE ORDER BY createdAt DESC, id DESC LIMIT 12");
-
-$business_sql = "SELECT * FROM businesses WHERE 1=1";
-$business_params = [];
-$business_types = "";
+$location_sql = "
+    SELECT l.*, COUNT(DISTINCT blm.id) AS manager_count
+    FROM locations l
+    LEFT JOIN business_location_managers blm ON blm.location_id=l.id AND blm.relationship_status='approved' AND blm.disabledAt IS NULL
+    WHERE 1=1
+";
+$params = [];
+$types = '';
 
 if ($search !== '') {
-    $like_search = '%' . $search . '%';
-    $business_sql .= " AND (bName LIKE ? OR bEmail LIKE ? OR city LIKE ? OR bType LIKE ?)";
-    $business_params = [$like_search, $like_search, $like_search, $like_search];
-    $business_types .= "ssss";
+    $like = '%' . $search . '%';
+    $location_sql .= " AND (l.name LIKE ? OR l.city LIKE ? OR l.street_address LIKE ? OR l.location_type LIKE ?)";
+    $params = [$like, $like, $like, $like];
+    $types .= 'ssss';
 }
 
-if ($status === 'approved') {
-    $business_sql .= " AND approved=TRUE";
+if ($status === 'disabled') {
+    $location_sql .= " AND l.disabledAt IS NOT NULL";
 } elseif ($status === 'pending') {
-    $business_sql .= " AND approved=FALSE";
+    $location_sql .= " AND l.disabledAt IS NULL";
+    $location_sql .= " AND l.visibility_status IN ('pending_new_business','pending_import_review')";
+} elseif ($status !== 'all') {
+    $location_sql .= " AND l.disabledAt IS NULL";
+    $location_sql .= " AND l.visibility_status=?";
+    $params[] = $status;
+    $types .= 's';
+} else {
+    $location_sql .= " AND l.disabledAt IS NULL";
 }
 
-$business_sql .= " ORDER BY approved ASC, bName ASC LIMIT 50";
-$business_stmt = $conn->prepare($business_sql);
-
-if (!empty($business_params)) {
-    $business_stmt->bind_param($business_types, ...$business_params);
+$location_sql .= " GROUP BY l.id ORDER BY FIELD(l.visibility_status,'pending_new_business','pending_import_review','public_unclaimed','public_claimed','rejected','hidden'), l.name LIMIT 60";
+$stmt = $conn->prepare($location_sql);
+if (!empty($params)) {
+    $stmt->bind_param($types, ...$params);
 }
-
-$business_stmt->execute();
-$businesses = $business_stmt->get_result();
+$stmt->execute();
+$locations = $stmt->get_result();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -176,136 +108,88 @@ $businesses = $business_stmt->get_result();
                 <img class="site-logo" src="../images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
                 <div>
                     <h1>Admin Dashboard</h1>
-                    <p>Approve businesses, search accounts, and handle site moderation.</p>
+                    <p>Monitor location health and route approval work to the approval center.</p>
                 </div>
             </div>
             <div class="business-header-actions mobile-actions-menu business-actions-menu" data-mobile-actions-menu>
                 <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open admin menu">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                    <span></span><span></span><span></span>
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
                     <a href="dashboard.php">Dashboard</a>
                     <a href="accounts.php">Accounts</a>
-                    <a href="review_center.php">Review Center</a>
+                    <a href="review_center.php">Approval Center</a>
                     <a href="reviews.php">Reviews</a>
                     <a href="content.php">Content</a>
-                    <form action="../logout.php" method="POST">
-                        <?php echo craftcrawl_csrf_input(); ?>
-                        <button type="submit">Logout</button>
-                    </form>
+                    <form action="../logout.php" method="POST"><?php echo craftcrawl_csrf_input(); ?><button type="submit">Logout</button></form>
                 </div>
             </div>
         </header>
 
-        <?php if ($message === 'business_approved') : ?>
-            <p class="form-message form-message-success">Business approved.</p>
-        <?php elseif ($message === 'business_unapproved') : ?>
-            <p class="form-message form-message-success">Business approval removed.</p>
-        <?php elseif ($message === 'business_saved') : ?>
-            <p class="form-message form-message-success">Business information saved.</p>
-        <?php elseif ($message === 'business_deleted') : ?>
-            <p class="form-message form-message-success">Business deleted.</p>
-        <?php elseif ($message === 'business_delete_blocked') : ?>
-            <p class="form-message form-message-error">Only businesses that are not approved can be deleted.</p>
-        <?php elseif ($message === 'business_not_found') : ?>
-            <p class="form-message form-message-error">Business could not be found.</p>
-        <?php elseif ($message === 'business_delete_error') : ?>
-            <p class="form-message form-message-error">Business could not be deleted.</p>
-        <?php endif; ?>
-
         <section class="admin-stat-grid">
-            <article><strong><?php echo craftcrawl_admin_escape($counts['pending']); ?></strong><span>Pending businesses</span></article>
-            <article><strong><?php echo craftcrawl_admin_escape($counts['approved']); ?></strong><span>Approved businesses</span></article>
+            <article><strong><?php echo craftcrawl_admin_escape($counts['pending_new_business']); ?></strong><span>New submissions</span></article>
+            <article><strong><?php echo craftcrawl_admin_escape($counts['pending_claims']); ?></strong><span>Claims to review</span></article>
+            <article><strong><?php echo craftcrawl_admin_escape($counts['pending_suggestions']); ?></strong><span>Suggestions</span></article>
+            <article><strong><?php echo craftcrawl_admin_escape($counts['pending_imports']); ?></strong><span>Imports</span></article>
             <article><strong><?php echo craftcrawl_admin_escape($counts['users']); ?></strong><span>User accounts</span></article>
             <article><strong><?php echo craftcrawl_admin_escape($counts['reviews']); ?></strong><span>Reviews</span></article>
         </section>
 
         <section class="admin-panel">
             <div class="business-section-header">
-                <h2>Businesses to Approve</h2>
+                <h2>Review Work</h2>
+                <a href="review_center.php">Open Approval Center</a>
             </div>
-            <?php if ($pending_businesses->num_rows === 0) : ?>
-                <p>No businesses are waiting for approval.</p>
-            <?php endif; ?>
-            <?php while ($business = $pending_businesses->fetch_assoc()) : ?>
-                <article class="admin-list-item">
-                    <div>
-                        <h3><?php echo craftcrawl_admin_escape($business['bName']); ?></h3>
-                        <p><?php echo craftcrawl_admin_escape(craftcrawl_admin_business_type_label($business['bType'])); ?> · <?php echo craftcrawl_admin_escape($business['city']); ?>, <?php echo craftcrawl_admin_escape($business['state']); ?> · <?php echo craftcrawl_admin_escape($business['bEmail']); ?></p>
-                    </div>
-                    <div class="business-header-actions admin-business-list-actions admin-business-pending-actions">
-                        <form method="POST" action="">
-                            <?php echo craftcrawl_csrf_input(); ?>
-                            <input type="hidden" name="form_action" value="approve_business">
-                            <input type="hidden" name="business_id" value="<?php echo craftcrawl_admin_escape($business['id']); ?>">
-                            <button type="submit">Approve</button>
-                        </form>
-                        <a href="business_edit.php?id=<?php echo craftcrawl_admin_escape($business['id']); ?>">Edit</a>
-                        <form method="POST" action="" onsubmit="return confirm('Are you sure? Deleting a business will get rid of it forever');">
-                            <?php echo craftcrawl_csrf_input(); ?>
-                            <input type="hidden" name="form_action" value="delete_business">
-                            <input type="hidden" name="business_id" value="<?php echo craftcrawl_admin_escape($business['id']); ?>">
-                            <button type="submit" class="danger-button">Delete</button>
-                        </form>
-                    </div>
-                </article>
-            <?php endwhile; ?>
+            <p>New submissions, claims, suggestions, imports, and check-in readiness work are reviewed in one place.</p>
         </section>
 
         <section class="admin-panel">
-            <div class="business-section-header">
-                <h2>Business Search</h2>
-            </div>
-            <form method="GET" action="" class="admin-search-form admin-business-search-form">
+            <div class="business-section-header"><h2>Location Search</h2></div>
+            <form method="GET" class="admin-search-form admin-business-search-form">
                 <div class="admin-field admin-field-wide">
                     <label for="q">Search</label>
-                    <input type="search" id="q" name="q" value="<?php echo craftcrawl_admin_escape($search); ?>" placeholder="Name, email, type, or city">
+                    <input id="q" name="q" value="<?php echo craftcrawl_admin_escape($search); ?>" placeholder="Name, address, type, or city">
                 </div>
                 <div class="admin-field">
                     <label for="status">Status</label>
                     <select id="status" name="status">
-                        <option value="all" <?php echo $status === 'all' ? 'selected' : ''; ?>>All</option>
-                        <option value="pending" <?php echo $status === 'pending' ? 'selected' : ''; ?>>Pending</option>
-                        <option value="approved" <?php echo $status === 'approved' ? 'selected' : ''; ?>>Approved</option>
+                        <?php foreach ($allowed_statuses as $candidate) : ?>
+                            <option value="<?php echo craftcrawl_admin_escape($candidate); ?>" <?php echo $status === $candidate ? 'selected' : ''; ?>>
+                                <?php echo craftcrawl_admin_escape(ucwords(str_replace('_', ' ', $candidate))); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <button type="submit">Search</button>
             </form>
-
-            <?php if ($businesses->num_rows === 0) : ?>
-                <p>No businesses matched that search.</p>
-            <?php endif; ?>
-
-            <?php while ($business = $businesses->fetch_assoc()) : ?>
+            <?php while ($location = $locations->fetch_assoc()) : ?>
                 <article class="admin-list-item">
-                    <div>
-                        <h3><?php echo craftcrawl_admin_escape($business['bName']); ?></h3>
-                        <p>
-                            <?php echo craftcrawl_admin_escape(craftcrawl_admin_business_type_label($business['bType'])); ?> ·
-                            <?php echo craftcrawl_admin_escape($business['city']); ?>, <?php echo craftcrawl_admin_escape($business['state']); ?> ·
-                            <span class="approval-status <?php echo $business['approved'] ? 'approval-status-approved' : 'approval-status-pending'; ?>">
-                                <?php echo $business['approved'] ? 'Approved' : 'Pending approval'; ?>
-                            </span>
-                        </p>
+                    <div class="admin-location-search-summary">
+                        <h3><?php echo craftcrawl_admin_escape($location['name']); ?></h3>
+                        <p><?php echo craftcrawl_admin_escape(craftcrawl_admin_business_type_label($location['location_type'])); ?> · <?php echo craftcrawl_admin_escape($location['city'] . ', ' . $location['state']); ?> · <?php echo !empty($location['disabledAt']) ? 'Disabled' : craftcrawl_admin_escape(ucwords(str_replace('_', ' ', $location['visibility_status']))); ?> · <?php echo craftcrawl_admin_escape($location['manager_count']); ?> manager(s)</p>
+                        <label class="admin-location-note-field">
+                            <span>Admin notes</span>
+                            <input form="location_action_<?php echo craftcrawl_admin_escape($location['id']); ?>" name="admin_notes" value="<?php echo craftcrawl_admin_escape($location['adminNotes']); ?>" placeholder="Reason or internal note">
+                        </label>
                     </div>
-                    <div class="business-header-actions admin-business-list-actions">
-                        <form method="POST" action="">
-                            <?php echo craftcrawl_csrf_input(); ?>
-                            <input type="hidden" name="form_action" value="<?php echo $business['approved'] ? 'remove_business_approval' : 'approve_business'; ?>">
-                            <input type="hidden" name="business_id" value="<?php echo craftcrawl_admin_escape($business['id']); ?>">
-                            <button type="submit"><?php echo $business['approved'] ? 'Remove Approval' : 'Approve'; ?></button>
-                        </form>
-                        <a href="business_edit.php?id=<?php echo craftcrawl_admin_escape($business['id']); ?>">Edit</a>
-                        <?php if (!$business['approved']) : ?>
-                            <form method="POST" action="" onsubmit="return confirm('Are you sure? Deleting a business will get rid of it forever');">
-                                <?php echo craftcrawl_csrf_input(); ?>
-                                <input type="hidden" name="form_action" value="delete_business">
-                                <input type="hidden" name="business_id" value="<?php echo craftcrawl_admin_escape($business['id']); ?>">
-                                <button type="submit" class="danger-button">Delete</button>
-                            </form>
+                    <div class="admin-location-search-actions">
+                        <?php if (empty($location['disabledAt']) && !in_array($location['visibility_status'], ['public_unclaimed','public_claimed'], true)) : ?>
+                            <a class="admin-location-review-link" href="review_center.php">Review</a>
                         <?php endif; ?>
+                        <form id="location_action_<?php echo craftcrawl_admin_escape($location['id']); ?>" class="admin-location-action-form" method="POST">
+                            <?php echo craftcrawl_csrf_input(); ?>
+                            <input type="hidden" name="location_id" value="<?php echo craftcrawl_admin_escape($location['id']); ?>">
+                            <?php if (empty($location['disabledAt']) && in_array($location['visibility_status'], ['public_unclaimed','public_claimed'], true)) : ?>
+                                <button name="form_action" value="hide_location">Hide location</button>
+                            <?php elseif (empty($location['disabledAt']) && $location['visibility_status'] === 'hidden') : ?>
+                                <button name="form_action" value="unhide_location">Restore as unclaimed</button>
+                            <?php endif; ?>
+                            <?php if (empty($location['disabledAt'])) : ?>
+                                <button class="danger-button" name="form_action" value="disable_location">Disable location</button>
+                            <?php else : ?>
+                                <button name="form_action" value="reenable_location">Re-enable location</button>
+                            <?php endif; ?>
+                        </form>
                     </div>
                 </article>
             <?php endwhile; ?>
@@ -315,8 +199,7 @@ $businesses = $business_stmt->get_result();
     <?php include __DIR__ . '/mobile_nav.php'; ?>
     <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
     <script src="../js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/../js/depth_animations.js'); ?>"></script>
-    <script src="../js/admin_review_edit_toggle.js?v=<?php echo filemtime(__DIR__ . '/../js/admin_review_edit_toggle.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'admin', home: 'dashboard.php', routes: ['dashboard.php','accounts.php','reviews.php','content.php','account_details.php','business_edit.php'], active: { 'dashboard.php':'dashboard', 'business_edit.php':'dashboard', 'accounts.php':'accounts', 'account_details.php':'accounts', 'reviews.php':'reviews', 'content.php':'content' } };</script>
+    <script>window.CraftCrawlAreaShellConfig = { area: 'admin', home: 'dashboard.php', routes: ['dashboard.php','accounts.php','reviews.php','content.php','account_details.php'], active: { 'dashboard.php':'dashboard', 'accounts.php':'accounts', 'account_details.php':'accounts', 'reviews.php':'reviews', 'content.php':'content' } };</script>
     <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
 </body>
 </html>

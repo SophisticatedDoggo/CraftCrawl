@@ -1,2 +1,0 @@
-ALTER TABLE businesses
-    ADD COLUMN checkin_message VARCHAR(500) NULL DEFAULT NULL;

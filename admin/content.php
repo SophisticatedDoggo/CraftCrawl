@@ -49,12 +49,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── Business posts query ──────────────────────────────────────────────────
 $post_sql = "
     SELECT bp.id, bp.post_type, bp.title, bp.body, bp.created_at,
-        b.bName, b.id AS business_id,
+        l.name AS bName, l.id AS business_id,
         COALESCE(cc.total, 0) AS comment_count,
         COALESCE(rc.total, 0) AS reaction_count,
         COALESCE(vc.total, 0) AS vote_count
     FROM business_posts bp
-    INNER JOIN businesses b ON b.id = bp.business_id
+    INNER JOIN locations l ON l.id = bp.location_id
     LEFT JOIN (
         SELECT feed_item_key, COUNT(*) AS total
         FROM feed_comments WHERE deletedAt IS NULL GROUP BY feed_item_key
@@ -73,7 +73,7 @@ $post_types = "";
 
 if ($post_search !== '') {
     $like = '%' . $post_search . '%';
-    $post_sql .= " WHERE b.bName LIKE ? OR bp.title LIKE ?";
+    $post_sql .= " WHERE l.name LIKE ? OR bp.title LIKE ?";
     $post_params = [$like, $like];
     $post_types = "ss";
 }
@@ -90,11 +90,12 @@ $posts = $post_stmt->get_result();
 $comment_sql = "
     SELECT fc.id, fc.feed_item_key, fc.body, fc.createdAt, fc.user_id, fc.business_id,
         u.fName, u.lName, u.email, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key,
-        b.bName
+        l.name AS bName
     FROM feed_comments fc
     LEFT JOIN users u ON u.id = fc.user_id
     LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
-    LEFT JOIN businesses b ON b.id = fc.business_id
+    LEFT JOIN business_posts bp ON fc.feed_item_key = CONCAT('business_post:', bp.id)
+    LEFT JOIN locations l ON l.id = bp.location_id
     WHERE fc.deletedAt IS NULL
 ";
 $comment_params = [];
@@ -273,7 +274,7 @@ $comments = $comment_stmt->get_result();
     <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
     <script src="../js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/../js/depth_animations.js'); ?>"></script>
     <script src="../js/admin_review_edit_toggle.js?v=<?php echo filemtime(__DIR__ . '/../js/admin_review_edit_toggle.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'admin', home: 'dashboard.php', routes: ['dashboard.php','accounts.php','reviews.php','content.php','account_details.php','business_edit.php'], active: { 'dashboard.php':'dashboard', 'business_edit.php':'dashboard', 'accounts.php':'accounts', 'account_details.php':'accounts', 'reviews.php':'reviews', 'content.php':'content' } };</script>
+    <script>window.CraftCrawlAreaShellConfig = { area: 'admin', home: 'dashboard.php', routes: ['dashboard.php','accounts.php','reviews.php','content.php','account_details.php'], active: { 'dashboard.php':'dashboard', 'accounts.php':'accounts', 'account_details.php':'accounts', 'reviews.php':'reviews', 'content.php':'content' } };</script>
     <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
 </body>
 </html>

@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="auth-body">
     <main class="auth-card auth-card-wide">
-        <a class="auth-back-link text-link" href="user_login.php" data-back-link>Back</a>
+        <a class="auth-back-link text-link" href="user_login.php">Back</a>
         <div class="auth-top-section">
             <img class="site-logo auth-logo" src="images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
             <h1>Create An Account</h1>

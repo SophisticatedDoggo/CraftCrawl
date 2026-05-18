@@ -17,7 +17,7 @@ if (!in_array($account_filter, $allowed_account_filters, true)) {
 }
 
 function admin_account_email_column($account_type) {
-    return $account_type === 'business' ? 'bEmail' : 'email';
+    return $account_type === 'business' ? 'account_email' : 'email';
 }
 
 function admin_account_table($account_type) {
@@ -26,7 +26,7 @@ function admin_account_table($account_type) {
     }
 
     if ($account_type === 'business') {
-        return 'businesses';
+        return 'business_accounts';
     }
 
     if ($account_type === 'admin') {
@@ -129,12 +129,12 @@ $users_sql = "
     FROM users u
     LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
 ";
-$business_sql = "SELECT 'business' AS account_type, id, bName AS account_name, NULL AS fName, NULL AS lName, bEmail AS email, emailVerifiedAt, disabledAt, NULL AS selected_profile_frame, NULL AS selected_profile_frame_style, NULL AS profile_photo_url, NULL AS profile_photo_object_key FROM businesses";
+$business_sql = "SELECT 'business' AS account_type, id, contact_name AS account_name, NULL AS fName, NULL AS lName, account_email AS email, emailVerifiedAt, disabledAt, NULL AS selected_profile_frame, NULL AS selected_profile_frame_style, NULL AS profile_photo_url, NULL AS profile_photo_object_key FROM business_accounts";
 $admins_sql = "SELECT 'admin' AS account_type, id, CONCAT(fName, ' ', lName) AS account_name, fName, lName, email, NULL AS emailVerifiedAt, CASE WHEN active=FALSE THEN COALESCE(disabledAt, createdAt) ELSE disabledAt END AS disabledAt, NULL AS selected_profile_frame, NULL AS selected_profile_frame_style, NULL AS profile_photo_url, NULL AS profile_photo_object_key FROM admins";
 
 if ($search !== '') {
     $users_sql .= " WHERE u.email LIKE ? OR u.fName LIKE ? OR u.lName LIKE ?";
-    $business_sql .= " WHERE bEmail LIKE ? OR bName LIKE ? OR city LIKE ?";
+    $business_sql .= " WHERE account_email LIKE ? OR contact_name LIKE ? OR account_status LIKE ?";
     $admins_sql .= " WHERE email LIKE ? OR fName LIKE ? OR lName LIKE ?";
 }
 
@@ -306,7 +306,7 @@ foreach ($account_queries as $type => $sql) {
     <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
     <script src="../js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/../js/depth_animations.js'); ?>"></script>
     <script src="../js/admin_review_edit_toggle.js?v=<?php echo filemtime(__DIR__ . '/../js/admin_review_edit_toggle.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'admin', home: 'dashboard.php', routes: ['dashboard.php','accounts.php','reviews.php','content.php','account_details.php','business_edit.php'], active: { 'dashboard.php':'dashboard', 'business_edit.php':'dashboard', 'accounts.php':'accounts', 'account_details.php':'accounts', 'reviews.php':'reviews', 'content.php':'content' } };</script>
+    <script>window.CraftCrawlAreaShellConfig = { area: 'admin', home: 'dashboard.php', routes: ['dashboard.php','accounts.php','reviews.php','content.php','account_details.php'], active: { 'dashboard.php':'dashboard', 'accounts.php':'accounts', 'account_details.php':'accounts', 'reviews.php':'reviews', 'content.php':'content' } };</script>
     <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
 </body>
 </html>

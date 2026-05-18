@@ -1,5 +1,5 @@
 <?php
-require 'login_check.php'; include 'db.php';
+require 'login_check.php'; include 'db.php'; include 'config.php';
 if (!isset($_SESSION['business_account_id'])) craftcrawl_redirect('business_login.php');
 $claim_id = filter_var($_GET['claim_id'] ?? null, FILTER_VALIDATE_INT); $account_id=(int)$_SESSION['business_account_id'];
 $stmt=$conn->prepare("SELECT bc.*, l.name FROM business_claims bc INNER JOIN locations l ON l.id=bc.location_id WHERE bc.id=? AND bc.requester_account_id=? LIMIT 1");

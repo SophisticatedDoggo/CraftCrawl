@@ -32,10 +32,9 @@ if (!$business_id) {
 }
 
 $biz_stmt = $conn->prepare("
-    SELECT b.id AS legacy_business_id, l.id AS location_id, l.name AS bName, l.location_type AS bType
+    SELECT l.legacy_business_id, l.id AS location_id, l.name AS bName, l.location_type AS bType
     FROM locations l
-    INNER JOIN businesses b ON b.id = l.legacy_business_id
-    WHERE (l.id=? OR b.id=?)
+    WHERE (l.id=? OR l.legacy_business_id=?)
       AND l.visibility_status = 'public_claimed'
     ORDER BY (l.id = ?) DESC
     LIMIT 1

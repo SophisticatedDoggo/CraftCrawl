@@ -9,7 +9,6 @@ include '../db.php';
 
 $selected_location = craftcrawl_require_selected_business_location($conn);
 
-$business_id = !empty($selected_location['legacy_business_id']) ? (int) $selected_location['legacy_business_id'] : null;
 $business_account_id = (int) $_SESSION['business_account_id'];
 $message = $_GET['message'] ?? null;
 $allowed_display_palettes = ['trail-map', 'trail-dark', 'ember', 'ember-dark'];
@@ -76,13 +75,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = 'delete_password_error';
         } else {
             try {
-                craftcrawl_delete_business_account($conn, $business_id);
+                craftcrawl_delete_business_account($conn, $business_account_id);
                 craftcrawl_clear_remember_cookie();
                 $_SESSION = [];
                 session_destroy();
                 craftcrawl_redirect('index.php');
             } catch (Throwable $e) {
-                error_log('Business account deletion failed for business ' . $business_id . ': ' . $e->getMessage());
+                error_log('Business account deletion failed for business account ' . $business_account_id . ': ' . $e->getMessage());
                 $message = 'delete_account_error';
             }
         }
@@ -161,6 +160,7 @@ $display_palette = in_array($business['display_palette'] ?? '', $allowed_display
                     <span></span>
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
+                    <a href="locations.php">Locations</a>
                     <a href="analytics.php">Stats</a>
                     <form action="../logout.php" method="POST">
                         <?php echo craftcrawl_csrf_input(); ?>
@@ -254,7 +254,7 @@ $display_palette = in_array($business['display_palette'] ?? '', $allowed_display
     <script src="../js/business_review_responses.js?v=<?php echo filemtime(__DIR__ . '/../js/business_review_responses.js'); ?>"></script>
     <script src="../js/business_hours_editor.js?v=<?php echo filemtime(__DIR__ . '/../js/business_hours_editor.js'); ?>"></script>
     <script src="../js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/../js/business_posts.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
+    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','locations.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'locations.php':'locations', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
     <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
 </body>
 </html>

@@ -1,2 +1,0 @@
-ALTER TABLE business_posts
-    ADD COLUMN ends_at DATETIME NULL DEFAULT NULL;

@@ -127,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="auth-body">
     <main class="auth-card">
-        <a class="auth-back-link text-link" href="index.php" data-back-link>Back</a>
+        <a class="auth-back-link text-link" href="index.php">Back</a>
         <div class="auth-top-section">
             <img class="site-logo auth-logo" src="images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
             <h1>Login</h1>

@@ -32,8 +32,8 @@ if (!$event_id || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $occurrence_date)) {
 $event_stmt = $conn->prepare("
     SELECT e.id
     FROM events e
-    INNER JOIN businesses b ON b.id = e.business_id
-    WHERE e.id=? AND b.approved=TRUE
+    INNER JOIN locations l ON l.id = e.location_id
+    WHERE e.id=? AND l.visibility_status IN ('public_unclaimed','public_claimed')
     LIMIT 1
 ");
 $event_stmt->bind_param("i", $event_id);

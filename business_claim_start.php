@@ -1,6 +1,7 @@
 <?php
 require 'login_check.php';
 include 'db.php';
+include 'config.php';
 
 if (!isset($_SESSION['business_account_id'])) {
     craftcrawl_redirect('business_login.php');
@@ -32,6 +33,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare("INSERT INTO business_claims (location_id, requester_account_id, contact_name, role_at_location, verification_method, verification_notes, official_social_url, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
         $stmt->bind_param('iisssss', $location_id, $account_id, $contact_name, $role, $method, $notes, $social);
         $stmt->execute();
+        $clear_pending = $conn->prepare("UPDATE business_accounts SET pending_claim_location_id=NULL WHERE id=? AND pending_claim_location_id=?");
+        $clear_pending->bind_param('ii', $account_id, $location_id);
+        $clear_pending->execute();
         craftcrawl_redirect('business_claim_status.php?claim_id=' . $stmt->insert_id);
     }
 }

@@ -23,6 +23,55 @@ function craftcrawl_business_account_locations($conn, $business_account_id) {
     return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 }
 
+function craftcrawl_business_account_pending_submissions($conn, $business_account_id) {
+    $stmt = $conn->prepare("
+        SELECT
+            l.id AS location_id,
+            l.name,
+            l.location_type,
+            l.city,
+            l.state,
+            l.visibility_status,
+            l.submission_review_status,
+            l.submission_response_notes,
+            l.adminNotes
+        FROM business_location_managers blm
+        INNER JOIN locations l ON l.id = blm.location_id
+        WHERE blm.business_account_id=?
+          AND blm.relationship_status='pending'
+          AND blm.disabledAt IS NULL
+          AND l.visibility_status='pending_new_business'
+          AND l.disabledAt IS NULL
+        ORDER BY l.createdAt DESC
+    ");
+    $stmt->bind_param('i', $business_account_id);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
+function craftcrawl_business_account_claims($conn, $business_account_id) {
+    $stmt = $conn->prepare("
+        SELECT
+            bc.id AS claim_id,
+            bc.status,
+            bc.adminNotes,
+            bc.createdAt,
+            bc.updatedAt,
+            l.id AS location_id,
+            l.name,
+            l.location_type,
+            l.city,
+            l.state
+        FROM business_claims bc
+        INNER JOIN locations l ON l.id = bc.location_id
+        WHERE bc.requester_account_id=?
+        ORDER BY COALESCE(bc.updatedAt, bc.createdAt) DESC, bc.createdAt DESC
+    ");
+    $stmt->bind_param('i', $business_account_id);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
 function craftcrawl_business_select_location($location) {
     $_SESSION['business_location_id'] = (int) $location['location_id'];
     $_SESSION['business_id'] = !empty($location['legacy_business_id']) ? (int) $location['legacy_business_id'] : null;
@@ -58,13 +107,6 @@ function craftcrawl_business_selected_location($conn, $business_account_id, $loc
 }
 
 function craftcrawl_business_location_destination($conn, $business_account_id) {
-    $locations = craftcrawl_business_account_locations($conn, $business_account_id);
-
-    if (count($locations) === 1) {
-        craftcrawl_business_select_location($locations[0]);
-        return 'business/business_portal.php';
-    }
-
     craftcrawl_business_clear_selected_location();
     return 'business/locations.php';
 }

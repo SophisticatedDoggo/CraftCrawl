@@ -54,18 +54,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $review_sql = "
     SELECT r.id, r.rating, r.notes, r.business_response, r.business_responseAt,
         u.fName, u.lName, u.email, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key,
-        b.bName, b.id AS business_id
+        l.name AS bName, l.id AS business_id
     FROM reviews r
     INNER JOIN users u ON u.id = r.user_id
     LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
-    INNER JOIN businesses b ON b.id = r.business_id
+    INNER JOIN locations l ON l.id = r.location_id
 ";
 $review_params = [];
 $review_types = "";
 
 if ($search !== '') {
     $like_search = '%' . $search . '%';
-    $review_sql .= " WHERE b.bName LIKE ? OR u.email LIKE ? OR u.fName LIKE ? OR u.lName LIKE ? OR r.notes LIKE ?";
+    $review_sql .= " WHERE l.name LIKE ? OR u.email LIKE ? OR u.fName LIKE ? OR u.lName LIKE ? OR r.notes LIKE ?";
     $review_params = [$like_search, $like_search, $like_search, $like_search, $like_search];
     $review_types = "sssss";
 }
@@ -200,7 +200,7 @@ $reviews = $review_stmt->get_result();
     <script src="../js/admin_review_edit_toggle.js?v=<?php echo filemtime(__DIR__ . '/../js/admin_review_edit_toggle.js'); ?>"></script>
     <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
     <script src="../js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/../js/depth_animations.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'admin', home: 'dashboard.php', routes: ['dashboard.php','accounts.php','reviews.php','content.php','account_details.php','business_edit.php'], active: { 'dashboard.php':'dashboard', 'business_edit.php':'dashboard', 'accounts.php':'accounts', 'account_details.php':'accounts', 'reviews.php':'reviews', 'content.php':'content' } };</script>
+    <script>window.CraftCrawlAreaShellConfig = { area: 'admin', home: 'dashboard.php', routes: ['dashboard.php','accounts.php','reviews.php','content.php','account_details.php'], active: { 'dashboard.php':'dashboard', 'accounts.php':'accounts', 'account_details.php':'accounts', 'reviews.php':'reviews', 'content.php':'content' } };</script>
     <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
 </body>
 </html>

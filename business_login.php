@@ -5,12 +5,19 @@ require_once __DIR__ . '/lib/business_context.php';
 craftcrawl_secure_session_start();
 include 'db.php';
 
+$claim_location_id = filter_var($_GET['claim_location_id'] ?? null, FILTER_VALIDATE_INT);
+if ($claim_location_id) {
+    $_SESSION['business_post_login_redirect'] = 'business_claim_start.php?location_id=' . $claim_location_id;
+}
+
 if (!isset($_SESSION['business_account_id'])) {
     craftcrawl_restore_remembered_login($conn);
 }
 
 if (isset($_SESSION['business_account_id'])) {
-    header("Location: " . craftcrawl_business_location_destination($conn, (int) $_SESSION['business_account_id']));
+    $destination = $_SESSION['business_post_login_redirect'] ?? craftcrawl_business_location_destination($conn, (int) $_SESSION['business_account_id']);
+    unset($_SESSION['business_post_login_redirect']);
+    header("Location: " . $destination);
     exit();
 }
 
@@ -68,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: business_login.php");
         exit();
     } else {
-        $stmt = $conn->prepare("SELECT id, password_hash, emailVerifiedAt, disabledAt, display_palette FROM business_accounts WHERE account_email=?");
+        $stmt = $conn->prepare("SELECT id, password_hash, emailVerifiedAt, disabledAt, display_palette, pending_claim_location_id FROM business_accounts WHERE account_email=?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -110,7 +117,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 craftcrawl_revoke_current_remember_token($conn);
             }
 
-            header("Location: " . craftcrawl_business_location_destination($conn, (int) $business['id']));
+            if (empty($_SESSION['business_post_login_redirect']) && !empty($business['pending_claim_location_id'])) {
+                $_SESSION['business_post_login_redirect'] = 'business_claim_start.php?location_id=' . (int) $business['pending_claim_location_id'];
+            }
+            $destination = $_SESSION['business_post_login_redirect'] ?? craftcrawl_business_location_destination($conn, (int) $business['id']);
+            unset($_SESSION['business_post_login_redirect']);
+            header("Location: " . $destination);
             exit();
         } else {
             $_SESSION['business_login_feedback'] = [
@@ -136,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="auth-body">
     <main class="auth-card">
-        <a class="auth-back-link text-link" href="index.php" data-back-link>Back</a>
+        <a class="auth-back-link text-link" href="index.php">Back</a>
         <img class="site-logo auth-logo" src="images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
         <h1>Business Login</h1>
         <form id="business_login_form" action="" method="POST">
@@ -174,7 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </form>
         <p class="auth-switch"><a class="text-link" href="forgot_password.php?account_type=business">Forgot password?</a></p>
-        <p class="auth-switch"><a href="business_account_creation.php">Create An Account</a></p>
+        <p class="auth-switch"><a href="business_find_or_create.php">Create An Account</a></p>
         <?php if ($verification_error) : ?>
             <p class="auth-switch">
                 <a href="resend_verification.php?account_type=business&email=<?php echo escape_output(rawurlencode($email)); ?>">Resend verification email</a>

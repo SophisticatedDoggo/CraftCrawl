@@ -119,6 +119,8 @@ CREATE TABLE IF NOT EXISTS locations (
     rejectedAt DATETIME,
     rejectionReason VARCHAR(1024),
     adminNotes TEXT,
+    submission_review_status ENUM('pending', 'needs_more_info', 'resubmitted', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+    submission_response_notes TEXT,
     checkin_verification_enabled BOOL NOT NULL DEFAULT FALSE,
     checkin_enabled_at DATETIME,
     checkin_enabled_by_admin_id INT,
@@ -153,6 +155,7 @@ CREATE TABLE IF NOT EXISTS business_accounts (
     approvedByAdminId INT,
     rejectedAt DATETIME,
     rejectionReason VARCHAR(1024),
+    pending_claim_location_id INT,
     createdAt DATETIME NOT NULL,
     disabledAt DATETIME,
     UNIQUE KEY unique_business_accounts_legacy_business_id (legacy_business_id),
@@ -161,7 +164,9 @@ CREATE TABLE IF NOT EXISTS business_accounts (
     CONSTRAINT fk_business_account_legacyBusinessId FOREIGN KEY (legacy_business_id)
     REFERENCES businesses(id),
     CONSTRAINT fk_business_account_adminId FOREIGN KEY (approvedByAdminId)
-    REFERENCES admins(id)
+    REFERENCES admins(id),
+    CONSTRAINT fk_business_account_pendingClaimLocationId FOREIGN KEY (pending_claim_location_id)
+    REFERENCES locations(id)
 );
 
 CREATE TABLE IF NOT EXISTS business_location_managers (
@@ -610,7 +615,7 @@ CREATE TABLE IF NOT EXISTS admin_review_actions (
     admin_id INT NOT NULL,
     target_type ENUM('location', 'business_account', 'business_location_manager', 'business_claim', 'location_suggestion', 'photo', 'review') NOT NULL,
     target_id INT NOT NULL,
-    action ENUM('approved', 'rejected', 'needs_more_info', 'marked_duplicate', 'hidden', 'unhidden', 'suspended', 'checkins_enabled', 'checkins_disabled') NOT NULL,
+    action ENUM('approved', 'rejected', 'cancelled', 'needs_more_info', 'marked_duplicate', 'hidden', 'unhidden', 'disabled', 'reenabled', 'suspended', 'checkins_enabled', 'checkins_disabled') NOT NULL,
     notes TEXT,
     createdAt DATETIME NOT NULL,
     KEY idx_admin_review_target (target_type, target_id),
@@ -618,4 +623,3 @@ CREATE TABLE IF NOT EXISTS admin_review_actions (
     CONSTRAINT fk_admin_review_adminId FOREIGN KEY (admin_id)
     REFERENCES admins(id)
 );
-

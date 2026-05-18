@@ -150,11 +150,11 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
             SELECT COUNT(*) AS total
             FROM want_to_go_locations wtg
             INNER JOIN users actor ON actor.id = wtg.user_id
-            INNER JOIN businesses b ON b.id = wtg.business_id
+            INNER JOIN locations l ON l.id = wtg.location_id
             WHERE wtg.createdAt > ?
                 AND wtg.user_id<>?
                 AND wtg.visibility='friends_only'
-                AND b.approved=TRUE
+                AND l.visibility_status IN ('public_unclaimed','public_claimed')
                 AND actor.show_feed_activity=TRUE
                 AND actor.disabledAt IS NULL
                 AND $friend_activity_exists
@@ -184,8 +184,8 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
         "
             SELECT COUNT(*) AS total
             FROM business_posts bp
-            INNER JOIN businesses b ON b.id = bp.business_id AND b.approved=TRUE
-            INNER JOIN liked_businesses lb ON lb.business_id = bp.business_id AND lb.user_id=?
+            INNER JOIN locations l ON l.id = bp.location_id AND l.visibility_status='public_claimed'
+            INNER JOIN liked_businesses lb ON lb.location_id = bp.location_id AND lb.user_id=?
             WHERE bp.created_at > ?
         ",
         "is",

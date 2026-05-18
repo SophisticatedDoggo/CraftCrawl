@@ -16,6 +16,7 @@ function craftcrawl_location_website_domain($website) {
 }
 
 function craftcrawl_location_duplicate_candidates($conn, array $candidate) {
+    $exclude_location_id = isset($candidate['exclude_location_id']) ? (int) $candidate['exclude_location_id'] : 0;
     $source_provider = $candidate['source_provider'] ?? null;
     $source_place_id = $candidate['source_place_id'] ?? null;
     $normalized_name = craftcrawl_normalize_location_text($candidate['name'] ?? '');
@@ -28,8 +29,8 @@ function craftcrawl_location_duplicate_candidates($conn, array $candidate) {
     $matches = [];
 
     if ($source_provider && $source_place_id) {
-        $stmt = $conn->prepare("SELECT id, name, street_address, city, state, 'exact_provider_match' AS match_type FROM locations WHERE source_provider=? AND source_place_id=? LIMIT 1");
-        $stmt->bind_param('ss', $source_provider, $source_place_id);
+        $stmt = $conn->prepare("SELECT id, name, street_address, city, state, 'exact_provider_match' AS match_type FROM locations WHERE source_provider=? AND source_place_id=? AND id<>? LIMIT 1");
+        $stmt->bind_param('ssi', $source_provider, $source_place_id, $exclude_location_id);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
         if ($row) {
@@ -43,8 +44,9 @@ function craftcrawl_location_duplicate_candidates($conn, array $candidate) {
             FROM locations
             WHERE normalized_address=?
               AND normalized_name LIKE CONCAT('%', ?, '%')
+              AND id<>?
         ");
-        $stmt->bind_param('ss', $normalized_address, $normalized_name);
+        $stmt->bind_param('ssi', $normalized_address, $normalized_name, $exclude_location_id);
         $stmt->execute();
         $result = $stmt->get_result();
         while ($row = $result->fetch_assoc()) {
@@ -61,9 +63,12 @@ function craftcrawl_location_duplicate_candidates($conn, array $candidate) {
                     ELSE 'nearby_coordinates'
                 END AS match_type
             FROM locations
-            WHERE (? <> '' AND REPLACE(REPLACE(REPLACE(REPLACE(phone, '(', ''), ')', ''), '-', ''), ' ', '') = ?)
-               OR (? IS NOT NULL AND website_domain = ?)
-               OR (? IS NOT NULL AND ? IS NOT NULL AND latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ?)
+            WHERE (
+                    (? <> '' AND REPLACE(REPLACE(REPLACE(REPLACE(phone, '(', ''), ')', ''), '-', ''), ' ', '') = ?)
+                 OR (? IS NOT NULL AND website_domain = ?)
+                 OR (? IS NOT NULL AND ? IS NOT NULL AND latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ?)
+            )
+              AND id<>?
         ";
         $lat_delta = 0.001;
         $lng_delta = 0.001;
@@ -73,7 +78,7 @@ function craftcrawl_location_duplicate_candidates($conn, array $candidate) {
         $max_lng = $longitude !== null ? $longitude + $lng_delta : null;
         $stmt = $conn->prepare($sql);
         $stmt->bind_param(
-            'ssssssssdddddd',
+            'ssssssssddddddi',
             $phone,
             $phone,
             $website_domain,
@@ -87,7 +92,8 @@ function craftcrawl_location_duplicate_candidates($conn, array $candidate) {
             $min_lat,
             $max_lat,
             $min_lng,
-            $max_lng
+            $max_lng,
+            $exclude_location_id
         );
         $stmt->execute();
         $result = $stmt->get_result();
@@ -97,5 +103,23 @@ function craftcrawl_location_duplicate_candidates($conn, array $candidate) {
     }
 
     return $matches;
+}
+
+function craftcrawl_location_duplicate_summary(array $matches) {
+    $summary = [
+        'hard_block' => [],
+        'soft_block' => [],
+        'warning' => [],
+    ];
+
+    foreach ($matches as $match) {
+        $confidence = $match['confidence'] ?? 'warning';
+        if (!isset($summary[$confidence])) {
+            $summary[$confidence] = [];
+        }
+        $summary[$confidence][] = $match;
+    }
+
+    return $summary;
 }
 ?>

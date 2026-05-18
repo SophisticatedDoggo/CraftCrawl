@@ -483,12 +483,18 @@ function format_event_time_range($event) {
 
             <p class="business-preview-type"><?php echo escape_output(format_business_type($business['bType'])); ?></p>
             <h1><?php echo escape_output($business['bName']); ?></h1>
-            <?php if (!$is_claimed_location) : ?>
+            <?php if ($is_claimed_location) : ?>
+                <div class="claimed-listing-notice">
+                    <strong>Verified Business</strong>
+                    <p>This page is managed by a verified business representative.</p>
+                </div>
+            <?php else : ?>
                 <div class="unclaimed-listing-notice">
                     <strong>Unclaimed Listing</strong>
                     <p>This page is maintained by Craft Crawl and is not currently managed by the business itself. Details may be incomplete or need confirmation.</p>
                 </div>
                 <p><a href="business_claim_start.php?location_id=<?php echo escape_output($location_id); ?>">Own or manage this business? Claim this listing.</a></p>
+                <p class="form-help">Claiming lets you update your profile, add photos, post updates, and respond to reviews after admin approval.</p>
             <?php endif; ?>
 
             <p>

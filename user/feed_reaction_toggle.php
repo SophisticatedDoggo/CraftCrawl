@@ -163,7 +163,7 @@ function craftcrawl_feed_item_is_visible($conn, $user_id, $item_key) {
         $stmt = $conn->prepare("
             SELECT bp.id
             FROM business_posts bp
-            INNER JOIN businesses b ON b.id = bp.business_id AND b.approved=TRUE
+            INNER JOIN locations l ON l.id = bp.location_id AND l.visibility_status='public_claimed'
             WHERE bp.id=?
             LIMIT 1
         ");
