@@ -1,4 +1,4 @@
-USE craft_crawl;
+
 
 ALTER TABLE business_accounts
     ADD COLUMN pending_claim_location_id INT NULL AFTER rejectionReason,

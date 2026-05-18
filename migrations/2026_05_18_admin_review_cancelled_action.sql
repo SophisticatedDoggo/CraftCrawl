@@ -1,4 +1,4 @@
-USE craft_crawl;
+
 
 ALTER TABLE admin_review_actions
     MODIFY COLUMN action ENUM(

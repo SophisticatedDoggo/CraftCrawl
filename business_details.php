@@ -21,6 +21,18 @@ function clean_text($value) {
     return trim(strip_tags($value ?? ''));
 }
 
+function dialable_phone_number($value) {
+    $value = trim((string) ($value ?? ''));
+    $has_leading_plus = str_starts_with($value, '+');
+    $digits = preg_replace('/\D+/', '', $value);
+
+    if ($digits === '') {
+        return '';
+    }
+
+    return $has_leading_plus ? '+' . $digits : $digits;
+}
+
 function format_business_type($type) {
     $labels = [
         'brewery' => 'Brewery',
@@ -116,6 +128,7 @@ if (!$business) {
 $location_id = (int) $business['location_id'];
 $legacy_business_id = !empty($business['legacy_business_id']) ? (int) $business['legacy_business_id'] : null;
 $is_claimed_location = $business['visibility_status'] === 'public_claimed';
+$business_phone_href = dialable_phone_number($business['bPhone'] ?? '');
 $business_hours = craftcrawl_location_hours_for_form($conn, $location_id);
 $business_hours_text = craftcrawl_business_hours_have_saved_hours($business_hours)
     ? craftcrawl_format_business_hours($business_hours)
@@ -525,7 +538,13 @@ function format_event_time_range($event) {
             </p>
 
             <?php if (!empty($business['bPhone'])) : ?>
-                <p><?php echo escape_output($business['bPhone']); ?></p>
+                <p>
+                    <?php if ($business_phone_href !== '') : ?>
+                        <a href="tel:<?php echo escape_output($business_phone_href); ?>"><?php echo escape_output($business['bPhone']); ?></a>
+                    <?php else : ?>
+                        <?php echo escape_output($business['bPhone']); ?>
+                    <?php endif; ?>
+                </p>
             <?php endif; ?>
 
             <?php if ($business_hours_text !== '' || !empty($business['bHours'])) : ?>

@@ -5770,6 +5770,16 @@ a.event-calendar-event:focus .event-calendar-event-name {
     align-items: center;
 }
 
+.admin-readiness-hours {
+    line-height: 1.5;
+    margin-top: 2px;
+}
+
+.admin-readiness-actions button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
 .admin-duplicate-summary {
     display: grid;
     gap: 6px;
