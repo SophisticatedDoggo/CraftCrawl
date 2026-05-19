@@ -1,6 +1,33 @@
 (function () {
-    const script = document.getElementById('search-js');
+    const searchJsUrl = 'https://api.mapbox.com/search-js/v1.5.0/web.js';
     let initialized = false;
+    let loadingScript = false;
+
+    function ensureSearchJs() {
+        const existingScript = document.getElementById('search-js');
+
+        if (window.mapboxsearch) {
+            initLocationSuggestionAutofill();
+            return;
+        }
+
+        if (existingScript) {
+            existingScript.addEventListener('load', initLocationSuggestionAutofill, { once: true });
+            return;
+        }
+
+        if (loadingScript) {
+            return;
+        }
+
+        loadingScript = true;
+        const script = document.createElement('script');
+        script.id = 'search-js';
+        script.src = searchJsUrl;
+        script.defer = true;
+        script.addEventListener('load', initLocationSuggestionAutofill, { once: true });
+        document.head.appendChild(script);
+    }
 
     function getContextValue(context, type, preferredKeys) {
         if (Array.isArray(context)) {
@@ -96,9 +123,18 @@
         }
     }
 
-    if (window.mapboxsearch) {
-        initLocationSuggestionAutofill();
-    } else if (script) {
-        script.addEventListener('load', initLocationSuggestionAutofill, { once: true });
+    const form = document.querySelector('.business-add-location-form');
+    const toggle = document.querySelector('.business-manual-location-toggle');
+
+    if (form?.classList.contains('is-visible') || toggle?.open) {
+        ensureSearchJs();
+    }
+
+    if (toggle) {
+        toggle.addEventListener('toggle', function () {
+            if (toggle.open) {
+                ensureSearchJs();
+            }
+        });
     }
 })();
