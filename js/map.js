@@ -164,7 +164,7 @@ map.on('load', function () {
                 'distillery', '#2563eb',
                 'meadery', '#facc15',
                 'bar', '#0f766e',
-                'social_club', '#be123c',
+                'social_club', '#92400e',
                 '#6b7280'
             ],
             'circle-stroke-width': isMobileMapViewport ? 4 : 3,
@@ -228,7 +228,7 @@ map.on('load', function () {
                 'distillery', '#1d4ed8',
                 'meadery', '#a16207',
                 'bar', '#0f766e',
-                'social_club', '#be123c',
+                'social_club', '#92400e',
                 '#6b7280'
             ],
             'text-halo-color': '#ffffff',
