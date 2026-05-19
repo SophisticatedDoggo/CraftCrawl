@@ -107,14 +107,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="email" id="email" name="email" required value="<?php echo escape_output($email) ?>"><br><br>
             <label for="password">Password:</label>
             <div class="password-field">
-                <input type="password" id="password" name="password" autocomplete="new-password" required>
+                <input type="password" id="password" name="password" autocomplete="new-password" aria-describedby="password_requirements" data-password-requirements required>
                 <button type="button" class="password-toggle" data-password-toggle="password" aria-label="Show password" aria-pressed="false"><span class="password-toggle-eye" aria-hidden="true"></span></button>
-            </div><br><br>
+            </div>
+            <ul id="password_requirements" class="password-requirements" aria-live="polite">
+                <li data-password-rule="length">At least 10 characters</li>
+                <li data-password-rule="uppercase">At least 1 uppercase letter</li>
+                <li data-password-rule="lowercase">At least 1 lowercase letter</li>
+                <li data-password-rule="number">At least 1 number</li>
+                <li data-password-rule="symbol">At least 1 symbol (!@#$%^&*)</li>
+            </ul>
             <label for="verify_password">Verify Password:</label>
             <div class="password-field">
-                <input type="password" id="verify_password" name="verify_password" autocomplete="new-password" required>
+                <input type="password" id="verify_password" name="verify_password" autocomplete="new-password" aria-describedby="password_match_helper" data-password-match-for="password" required>
                 <button type="button" class="password-toggle" data-password-toggle="verify_password" aria-label="Show password" aria-pressed="false"><span class="password-toggle-eye" aria-hidden="true"></span></button>
-            </div><br><br>
+            </div>
+            <p id="password_match_helper" class="password-match-helper" aria-live="polite">Passwords must match.</p>
             <div class="captcha-field"><?php echo craftcrawl_hcaptcha_widget(); ?></div>
             <input type="submit" value="Create Account">
         </form>
@@ -122,5 +130,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php include __DIR__ . '/legal_nav.php'; ?>
     </main>
     <script src="js/password_visibility.js?v=<?php echo filemtime(__DIR__ . '/js/password_visibility.js'); ?>"></script>
+    <script src="js/password_requirements.js?v=<?php echo filemtime(__DIR__ . '/js/password_requirements.js'); ?>"></script>
 </body>
 </html>

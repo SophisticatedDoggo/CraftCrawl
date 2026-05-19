@@ -640,6 +640,56 @@ label {
     display: block;
 }
 
+.password-requirements,
+.password-match-helper {
+    margin: 8px 0 18px;
+    color: var(--color-muted);
+    font-size: 14px;
+    line-height: 1.35;
+}
+
+.password-requirements {
+    display: grid;
+    gap: 5px;
+    padding: 0;
+    list-style: none;
+}
+
+.password-requirements li,
+.password-match-helper {
+    position: relative;
+    padding-left: 22px;
+}
+
+.password-requirements li::before,
+.password-match-helper::before {
+    content: "";
+    position: absolute;
+    top: 0.27em;
+    left: 0;
+    width: 12px;
+    height: 12px;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+}
+
+.password-requirements .is-met,
+.password-match-helper.is-met {
+    color: var(--color-success-text);
+}
+
+.password-requirements .is-unmet,
+.password-match-helper.is-unmet {
+    color: var(--color-error-text);
+}
+
+.password-requirements .is-met::before,
+.password-match-helper.is-met::before {
+    border-color: currentColor;
+    background: currentColor;
+    box-shadow: inset 0 0 0 3px var(--color-surface);
+}
+
 .auth-body {
     display: grid;
     place-items: center;

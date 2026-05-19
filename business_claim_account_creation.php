@@ -94,13 +94,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label for="email">Email</label>
             <input id="email" name="email" type="email" required value="<?php echo escape_output($email); ?>">
             <label for="password">Password</label>
-            <input id="password" name="password" type="password" required>
+            <input id="password" name="password" type="password" autocomplete="new-password" aria-describedby="password_requirements" data-password-requirements required>
+            <ul id="password_requirements" class="password-requirements" aria-live="polite">
+                <li data-password-rule="length">At least 10 characters</li>
+                <li data-password-rule="uppercase">At least 1 uppercase letter</li>
+                <li data-password-rule="lowercase">At least 1 lowercase letter</li>
+                <li data-password-rule="number">At least 1 number</li>
+                <li data-password-rule="symbol">At least 1 symbol (!@#$%^&*)</li>
+            </ul>
             <label for="verify_password">Verify password</label>
-            <input id="verify_password" name="verify_password" type="password" required>
+            <input id="verify_password" name="verify_password" type="password" autocomplete="new-password" aria-describedby="password_match_helper" data-password-match-for="password" required>
+            <p id="password_match_helper" class="password-match-helper" aria-live="polite">Passwords must match.</p>
             <div class="captcha-field"><?php echo craftcrawl_hcaptcha_widget(); ?></div>
             <button type="submit">Create account</button>
         </form>
         <p class="auth-switch">Already have an account? <a href="business_login.php?claim_location_id=<?php echo escape_output($location_id); ?>">Log in to claim this location</a></p>
     </main>
+    <script src="js/password_requirements.js?v=<?php echo filemtime(__DIR__ . '/js/password_requirements.js'); ?>"></script>
 </body>
 </html>
