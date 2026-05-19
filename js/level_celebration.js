@@ -229,10 +229,20 @@
         const badgeNames = Array.isArray(reward.badges)
             ? reward.badges.filter((badgeName) => String(badgeName || '').trim() !== '')
             : [];
+        const xpItems = Array.isArray(reward.xp_items)
+            ? reward.xp_items
+                .map((item) => ({
+                    label: String(item && item.label ? item.label : '').trim(),
+                    type: String(item && item.type ? item.type : '').trim(),
+                    amount: Number(item && item.amount ? item.amount : 0)
+                }))
+                .filter((item) => item.label !== '' && item.amount > 0)
+            : [];
         const levelRewards = Array.isArray(reward.level_rewards)
             ? reward.level_rewards.filter((item) => item && String(item.name || '').trim() !== '')
             : [];
         let badgesWrap = null;
+        let itemsWrap = null;
         let levelRewardsWrap = null;
 
         overlay.className = 'level-celebration xp-reward-celebration';
@@ -254,9 +264,11 @@
         heading.textContent = levelUp ? 'Level progress incoming' : 'XP added';
         xpAmount.className = 'xp-reward-amount';
         xpAmount.textContent = `+${reward.xp_awarded || 0} XP`;
-        message.textContent = levelUp
-            ? 'Watch your progress roll into the next level.'
-            : 'Your progress is moving forward.';
+        message.textContent = xpItems.some((item) => item.type.toLowerCase() === 'quest')
+            ? 'Quest complete. Your rewards are ready.'
+            : (levelUp
+                ? 'Watch your progress roll into the next level.'
+                : 'Your progress is moving forward.');
 
         progressWrap.className = 'xp-reward-progress';
         progressMeta.className = 'xp-reward-progress-meta';
@@ -270,6 +282,37 @@
         progressMeta.append(levelLabel, levelTitle, xpText);
         bar.appendChild(fill);
         progressWrap.append(progressMeta, bar);
+
+        if (!xpItems.length && Number(reward.xp_awarded || 0) > 0) {
+            xpItems.push({
+                label: actionLabel || 'XP Earned',
+                type: '',
+                amount: Number(reward.xp_awarded || 0)
+            });
+        }
+
+        if (xpItems.length) {
+            const itemsHeading = document.createElement('strong');
+            const itemsList = document.createElement('div');
+
+            itemsWrap = document.createElement('div');
+            itemsWrap.className = 'xp-reward-items';
+            itemsHeading.textContent = 'XP Breakdown';
+            itemsList.className = 'xp-reward-item-list';
+
+            xpItems.forEach((item) => {
+                const row = document.createElement('div');
+                const label = document.createElement('span');
+                const amount = document.createElement('strong');
+
+                label.textContent = item.type ? `${item.type}: ${item.label}` : item.label;
+                amount.textContent = `+${item.amount} XP`;
+                row.append(label, amount);
+                itemsList.appendChild(row);
+            });
+
+            itemsWrap.append(itemsHeading, itemsList);
+        }
 
         if (badgeNames.length) {
             const badgeHeading = document.createElement('strong');
@@ -315,6 +358,9 @@
         }
 
         panel.append(closeButton, kicker, heading, xpAmount, message, progressWrap);
+        if (itemsWrap) {
+            panel.appendChild(itemsWrap);
+        }
         if (badgesWrap) {
             panel.appendChild(badgesWrap);
         }

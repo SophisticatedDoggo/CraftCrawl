@@ -75,7 +75,8 @@ try {
         $user_id,
         $progress_before,
         $badges,
-        $response === 'accepted' ? 'Friend Added' : null
+        $response === 'accepted' ? 'Friend Added' : null,
+        craftcrawl_badge_xp_items($badges)
     );
     $conn->commit();
 

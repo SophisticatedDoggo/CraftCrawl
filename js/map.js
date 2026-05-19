@@ -1188,6 +1188,9 @@ function renderEventsFeed(events) {
                     button.dataset.isSaved = data.is_saved ? '1' : '0';
                     button.classList.toggle('is-active', Boolean(data.is_saved));
                     button.textContent = `📍 Want to Go ${Number(data.count || 0)}`;
+                    if (data.xp_reward && window.craftcrawlShowXpReward) {
+                        window.craftcrawlShowXpReward(data.xp_reward);
+                    }
                     window.dispatchEvent(new CustomEvent('craftcrawl:event-want-updated'));
                 })
                 .finally(() => {

@@ -2,6 +2,7 @@
 require '../login_check.php';
 include '../db.php';
 require_once '../lib/leveling.php';
+require_once '../lib/quests.php';
 require_once '../lib/user_avatar.php';
 
 header('Content-Type: application/json');
@@ -325,6 +326,100 @@ while ($badge = $badge_result->fetch_assoc()) {
         'badge_name' => $badge['badge_name'],
         'badge_description' => $badge['badge_description'],
         'badge_tier' => $badge['badge_tier']
+    ];
+}
+
+$before_clause_quest = $before_dt ? ' AND uqc.completedAt < ?' : '';
+$quest_sql = "
+    SELECT uqc.id, uqc.user_id, uqc.quest_key, uqc.period_type, uqc.xp_awarded, uqc.completedAt,
+        u.allow_post_interactions
+    FROM user_quest_completions uqc
+    INNER JOIN users u ON u.id = uqc.user_id
+    WHERE uqc.user_id IN ($placeholders)
+    $before_clause_quest
+    ORDER BY uqc.completedAt DESC
+    LIMIT 80
+";
+$quest_stmt = $conn->prepare($quest_sql);
+$before_dt
+    ? craftcrawl_bind_feed_user_ids_before($quest_stmt, $types, $feed_user_ids, $before_dt)
+    : craftcrawl_bind_feed_user_ids($quest_stmt, $types, $feed_user_ids);
+$quest_stmt->execute();
+$quest_result = $quest_stmt->get_result();
+
+while ($quest = $quest_result->fetch_assoc()) {
+    $actor_id = (int) $quest['user_id'];
+    $feed[] = [
+        'item_key' => 'quest_complete:' . (int) $quest['id'],
+        'type' => 'quest_complete',
+        'created_at' => $quest['completedAt'],
+        'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
+        'actor' => craftcrawl_feed_person_payload($people[$actor_id] ?? []),
+        'owner_user_id' => $actor_id,
+        'is_self' => $actor_id === $user_id,
+        'allow_interactions' => (bool) $quest['allow_post_interactions'],
+        'quest_name' => craftcrawl_quest_name($quest['quest_key']),
+        'period_type' => $quest['period_type'],
+        'xp_awarded' => (int) $quest['xp_awarded'],
+    ];
+}
+
+$daily_required = CRAFTCRAWL_DAILY_QUEST_COUNT;
+$weekly_required = CRAFTCRAWL_WEEKLY_QUEST_COUNT;
+$before_clause_sweep = $before_dt ? ' AND completedAt < ?' : '';
+$sweep_sql = "
+    SELECT user_id, period_type, period_start, MAX(completedAt) AS completedAt, SUM(xp_awarded) AS xp_awarded, COUNT(*) AS quest_count, MAX(allow_post_interactions) AS allow_post_interactions
+    FROM (
+        SELECT uqc.user_id, uqc.period_type, uqc.period_start, uqc.completedAt, uqc.xp_awarded, u.allow_post_interactions
+        FROM user_quest_completions uqc
+        INNER JOIN users u ON u.id = uqc.user_id
+        WHERE uqc.user_id IN ($placeholders)
+    ) quest_periods
+    GROUP BY user_id, period_type, period_start
+    HAVING quest_count >= CASE WHEN period_type='weekly' THEN ? ELSE ? END
+    $before_clause_sweep
+    ORDER BY completedAt DESC
+    LIMIT 80
+";
+$sweep_stmt = $conn->prepare($sweep_sql);
+if ($before_dt) {
+    $sweep_types = $types . 'iis';
+    $sweep_params = [$sweep_types];
+    foreach ($feed_user_ids as $index => $feed_user_id) {
+        $sweep_params[] = &$feed_user_ids[$index];
+    }
+    $sweep_params[] = &$weekly_required;
+    $sweep_params[] = &$daily_required;
+    $sweep_params[] = &$before_dt;
+    call_user_func_array([$sweep_stmt, 'bind_param'], $sweep_params);
+} else {
+    $sweep_types = $types . 'ii';
+    $sweep_params = [$sweep_types];
+    foreach ($feed_user_ids as $index => $feed_user_id) {
+        $sweep_params[] = &$feed_user_ids[$index];
+    }
+    $sweep_params[] = &$weekly_required;
+    $sweep_params[] = &$daily_required;
+    call_user_func_array([$sweep_stmt, 'bind_param'], $sweep_params);
+}
+$sweep_stmt->execute();
+$sweep_result = $sweep_stmt->get_result();
+
+while ($sweep = $sweep_result->fetch_assoc()) {
+    $actor_id = (int) $sweep['user_id'];
+    $period_key = str_replace('-', '', $sweep['period_start']);
+    $feed[] = [
+        'item_key' => 'quest_sweep:' . $sweep['period_type'] . ':' . $actor_id . ':' . $period_key,
+        'type' => 'quest_sweep',
+        'created_at' => $sweep['completedAt'],
+        'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
+        'actor' => craftcrawl_feed_person_payload($people[$actor_id] ?? []),
+        'owner_user_id' => $actor_id,
+        'is_self' => $actor_id === $user_id,
+        'allow_interactions' => (bool) $sweep['allow_post_interactions'],
+        'period_type' => $sweep['period_type'],
+        'quest_count' => (int) $sweep['quest_count'],
+        'xp_awarded' => (int) $sweep['xp_awarded'],
     ];
 }
 

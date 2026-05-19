@@ -2,6 +2,7 @@
 require '../login_check.php';
 include '../db.php';
 require_once '../lib/leveling.php';
+require_once '../lib/quests.php';
 require_once '../lib/onesignal.php';
 
 header('Content-Type: application/json');
@@ -31,11 +32,14 @@ $reaction_options_by_type = [
     'event_want'    => ['cheers', 'nice_find'],
     'location_want' => ['cheers', 'nice_find', 'want_to_go'],
     'badge_earned'  => ['cheers', 'nice_find', 'trophy'],
+    'quest_complete' => ['cheers', 'nice_find', 'trophy'],
+    'quest_sweep' => ['cheers', 'nice_find', 'trophy'],
     'business_post' => ['cheers', 'want_to_go'],
 ];
 
 $item_type = null;
-if (preg_match('/^(first_visit|level_up|event_want|location_want|badge_earned|business_post):\d+$/', $item_key, $type_matches)) {
+if (preg_match('/^(first_visit|level_up|event_want|location_want|badge_earned|quest_complete|business_post):\d+$/', $item_key, $type_matches)
+    || preg_match('/^(quest_sweep):(daily|weekly):\d+:\d{8}$/', $item_key, $type_matches)) {
     $item_type = $type_matches[1];
 }
 $item_reaction_options = $reaction_options_by_type[$item_type] ?? [];
@@ -159,6 +163,54 @@ function craftcrawl_feed_item_is_visible($conn, $user_id, $item_key) {
         return (bool) $stmt->get_result()->fetch_assoc();
     }
 
+    if (preg_match('/^quest_complete:(\d+)$/', $item_key, $matches)) {
+        $completion_id = (int) $matches[1];
+        $stmt = $conn->prepare("
+            SELECT uqc.id
+            FROM user_quest_completions uqc
+            INNER JOIN users u ON u.id = uqc.user_id
+            WHERE uqc.id=?
+                AND u.show_feed_activity=TRUE
+                AND u.disabledAt IS NULL
+                AND (
+                    uqc.user_id=?
+                    OR EXISTS (
+                        SELECT 1 FROM user_friends uf
+                        WHERE uf.user_id=? AND uf.friend_user_id=uqc.user_id
+                    )
+                )
+            LIMIT 1
+        ");
+        $stmt->bind_param("iii", $completion_id, $user_id, $user_id);
+        $stmt->execute();
+        return (bool) $stmt->get_result()->fetch_assoc();
+    }
+
+    if (preg_match('/^quest_sweep:(daily|weekly):(\d+):(\d{8})$/', $item_key, $matches)) {
+        $period_type = $matches[1];
+        $actor_id = (int) $matches[2];
+        $period_start = substr($matches[3], 0, 4) . '-' . substr($matches[3], 4, 2) . '-' . substr($matches[3], 6, 2);
+        $required_count = $period_type === 'weekly' ? CRAFTCRAWL_WEEKLY_QUEST_COUNT : CRAFTCRAWL_DAILY_QUEST_COUNT;
+        $stmt = $conn->prepare("
+            SELECT COUNT(*) AS total
+            FROM user_quest_completions uqc
+            INNER JOIN users u ON u.id = uqc.user_id
+            WHERE uqc.user_id=? AND uqc.period_type=? AND uqc.period_start=?
+                AND u.show_feed_activity=TRUE
+                AND u.disabledAt IS NULL
+                AND (
+                    uqc.user_id=?
+                    OR EXISTS (
+                        SELECT 1 FROM user_friends uf
+                        WHERE uf.user_id=? AND uf.friend_user_id=uqc.user_id
+                    )
+                )
+        ");
+        $stmt->bind_param("issii", $actor_id, $period_type, $period_start, $user_id, $user_id);
+        $stmt->execute();
+        return (int) ($stmt->get_result()->fetch_assoc()['total'] ?? 0) >= $required_count;
+    }
+
     // Business posts are public — any logged-in user can react
     if (preg_match('/^business_post:(\d+)$/', $item_key, $matches)) {
         $post_id = (int) $matches[1];
@@ -226,6 +278,13 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user
         $s = $conn->prepare("SELECT user_id FROM user_badges WHERE id=? LIMIT 1");
         $s->bind_param("i", $item_id); $s->execute();
         $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
+    } elseif (preg_match('/^quest_complete:(\d+)$/', $item_key, $m)) {
+        $item_id = (int) $m[1];
+        $s = $conn->prepare("SELECT user_id FROM user_quest_completions WHERE id=? LIMIT 1");
+        $s->bind_param("i", $item_id); $s->execute();
+        $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
+    } elseif (preg_match('/^quest_sweep:(daily|weekly):(\d+):\d{8}$/', $item_key, $m)) {
+        $owner_user_id = (int) $m[2];
     }
 
     if (!$owner_user_id || $owner_user_id === (int) $viewer_user_id) {
@@ -271,7 +330,7 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user
             $reaction_stage = 'award_badges';
             $badges = craftcrawl_award_eligible_badges($conn, $user_id);
             $reaction_stage = 'build_reward_payload';
-            $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Feed Reaction');
+            $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Feed Reaction', craftcrawl_badge_xp_items($badges));
         } catch (Throwable $reward_error) {
             error_log(
                 'Feed reaction reward side effect failed at stage ' . $reaction_stage

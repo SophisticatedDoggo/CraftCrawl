@@ -1043,7 +1043,45 @@ function craftcrawl_level_rewards_unlocked_between($from_level, $to_level) {
     return $rewards;
 }
 
-function craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges = [], $action_label = null) {
+function craftcrawl_xp_item($label, $amount, $type = '') {
+    $amount = (int) $amount;
+    $label = trim((string) $label);
+
+    if ($label === '' || $amount <= 0) {
+        return null;
+    }
+
+    return [
+        'label' => $label,
+        'amount' => $amount,
+        'type' => trim((string) $type),
+    ];
+}
+
+function craftcrawl_badge_xp_items($badges) {
+    if (empty($badges)) {
+        return [];
+    }
+
+    $definitions = craftcrawl_badge_definitions();
+    $xp_by_name = [];
+
+    foreach ($definitions as $badge) {
+        $xp_by_name[$badge['name']] = (int) $badge['xp'];
+    }
+
+    $items = [];
+    foreach ($badges as $badge_name) {
+        $item = craftcrawl_xp_item($badge_name, $xp_by_name[$badge_name] ?? 0, 'Badge');
+        if ($item !== null) {
+            $items[] = $item;
+        }
+    }
+
+    return $items;
+}
+
+function craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges = [], $action_label = null, $xp_items = []) {
     $progress = craftcrawl_user_level_progress($conn, $user_id);
     $xp_awarded = max(0, (int) ($progress['total_xp'] ?? 0) - (int) ($progress_before['total_xp'] ?? 0));
     $level_before = (int) ($progress_before['level'] ?? 1);
@@ -1057,6 +1095,7 @@ function craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges
         'xp_awarded' => $xp_awarded,
         'action_label' => $action_label,
         'badges' => array_values($badges),
+        'xp_items' => array_values(array_filter($xp_items, fn($item) => is_array($item) && (int) ($item['amount'] ?? 0) > 0)),
         'level_up' => $level_after > $level_before
             ? [
                 'level' => $level_after,

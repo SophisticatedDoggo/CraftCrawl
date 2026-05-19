@@ -182,6 +182,20 @@ function craftcrawl_feed_item_owner_id($conn, $item_key) {
         return $badge ? (int) $badge['user_id'] : 0;
     }
 
+    if (preg_match('/^quest_complete:(\d+)$/', $item_key, $matches)) {
+        $completion_id = (int) $matches[1];
+        $stmt = $conn->prepare("SELECT user_id FROM user_quest_completions WHERE id=? LIMIT 1");
+        $stmt->bind_param("i", $completion_id);
+        $stmt->execute();
+        $quest = $stmt->get_result()->fetch_assoc();
+
+        return $quest ? (int) $quest['user_id'] : 0;
+    }
+
+    if (preg_match('/^quest_sweep:(daily|weekly):(\d+):\d{8}$/', $item_key, $matches)) {
+        return (int) $matches[2];
+    }
+
     if (preg_match('/^business_post:(\d+)$/', $item_key, $matches)) {
         return 0; // Business owns this; no user push notification
     }

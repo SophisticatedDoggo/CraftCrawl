@@ -236,8 +236,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 $badges = craftcrawl_award_eligible_badges($conn, $user_id);
-                craftcrawl_award_eligible_quest_rewards($conn, $user_id);
-                $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Review');
+                $quest_rewards = craftcrawl_award_eligible_quest_rewards($conn, $user_id);
+                $xp_items = array_values(array_filter(array_merge(
+                    [$review_xp_awarded ? craftcrawl_xp_item('Review', CRAFTCRAWL_XP_REVIEW, 'Review') : null],
+                    craftcrawl_badge_xp_items($badges),
+                    craftcrawl_quest_xp_items($quest_rewards)
+                )));
+                $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Review', $xp_items);
                 $progress = $reward_payload['progress'] ?? craftcrawl_user_level_progress($conn, $user_id);
                 $conn->commit();
 

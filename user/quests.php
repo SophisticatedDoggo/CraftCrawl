@@ -15,7 +15,14 @@ try {
     $awarded_quests = craftcrawl_award_eligible_quest_rewards($conn, $user_id);
 
     if (!empty($awarded_quests)) {
-        $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, [], 'Quest Reward');
+        $reward_payload = craftcrawl_xp_reward_payload(
+            $conn,
+            $user_id,
+            $progress_before,
+            [],
+            'Quest Complete',
+            craftcrawl_quest_xp_items($awarded_quests)
+        );
         if ($reward_payload) {
             $xp_reward_popup = $reward_payload;
         }

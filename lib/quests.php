@@ -306,11 +306,30 @@ function craftcrawl_award_eligible_quest_rewards($conn, $user_id) {
         $did_award_xp = craftcrawl_add_xp($conn, $user_id, $xp_awarded, 'quest', $source_id, $quest['name']);
 
         if ($did_award_xp) {
+            $quest['completion_id'] = (int) $insert_stmt->insert_id;
             $awarded[] = $quest;
         }
     }
 
     return $awarded;
+}
+
+function craftcrawl_quest_name($quest_key) {
+    $pool = craftcrawl_quest_pool();
+    return $pool[$quest_key]['name'] ?? 'Quest Complete';
+}
+
+function craftcrawl_quest_xp_items($quests) {
+    $items = [];
+
+    foreach ($quests as $quest) {
+        $item = craftcrawl_xp_item($quest['name'] ?? 'Quest Reward', (int) ($quest['xp'] ?? 0), 'Quest');
+        if ($item !== null) {
+            $items[] = $item;
+        }
+    }
+
+    return $items;
 }
 
 function craftcrawl_quest_period_label($quest) {

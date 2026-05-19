@@ -61,7 +61,7 @@ try {
     $stmt->bind_param("iiiiss", $user_id, $friend_id, $business_id, $location_id, $message, $pending);
     $stmt->execute();
     $badges = craftcrawl_award_eligible_badges($conn, $user_id);
-    $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Recommendation Sent');
+    $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Recommendation Sent', craftcrawl_badge_xp_items($badges));
     $conn->commit();
 
     if ($reward_payload) {

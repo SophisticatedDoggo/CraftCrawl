@@ -59,6 +59,36 @@ function craftcrawl_business_hours_have_saved_hours($hours) {
     return false;
 }
 
+function craftcrawl_normalize_business_time($value) {
+    $value = trim((string) ($value ?? ''));
+
+    if ($value === '') {
+        return '';
+    }
+
+    if (preg_match('/^([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/', $value, $matches)) {
+        return sprintf('%02d:%02d', (int) $matches[1], (int) $matches[2]);
+    }
+
+    if (preg_match('/^(\d{1,2}):([0-5]\d)\s*([AP]M)$/i', $value, $matches)) {
+        $hour = (int) $matches[1];
+        if ($hour < 1 || $hour > 12) {
+            return $value;
+        }
+
+        $period = strtoupper($matches[3]);
+        if ($period === 'AM') {
+            $hour = $hour === 12 ? 0 : $hour;
+        } else {
+            $hour = $hour === 12 ? 12 : $hour + 12;
+        }
+
+        return sprintf('%02d:%02d', $hour, (int) $matches[2]);
+    }
+
+    return $value;
+}
+
 function craftcrawl_business_hours_from_post($post) {
     $hours = craftcrawl_default_business_hours();
     $open_times = $post['hours_open'] ?? [];
@@ -67,8 +97,8 @@ function craftcrawl_business_hours_from_post($post) {
 
     foreach ($hours as $day => $hour) {
         $hours[$day]['is_closed'] = isset($closed_days[$day]);
-        $hours[$day]['opens_at'] = trim($open_times[$day] ?? '');
-        $hours[$day]['closes_at'] = trim($close_times[$day] ?? '');
+        $hours[$day]['opens_at'] = craftcrawl_normalize_business_time($open_times[$day] ?? '');
+        $hours[$day]['closes_at'] = craftcrawl_normalize_business_time($close_times[$day] ?? '');
     }
 
     return $hours;
@@ -86,7 +116,7 @@ function craftcrawl_validate_business_hours($hours) {
             return 'Please enter opening and closing times for every open day.';
         }
 
-        if (!preg_match('/^\d{2}:\d{2}$/', $hour['opens_at']) || !preg_match('/^\d{2}:\d{2}$/', $hour['closes_at'])) {
+        if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $hour['opens_at']) || !preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $hour['closes_at'])) {
             return 'Please enter business hours using valid times.';
         }
 

@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/leveling.php';
+require_once __DIR__ . '/quests.php';
 require_once __DIR__ . '/user_avatar.php';
 
 function craftcrawl_feed_actor_name($actor_id, $viewer_id, $first_name, $last_name) {
@@ -214,6 +215,79 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
             'badge_name' => $badge['badge_name'],
             'badge_description' => $badge['badge_description'],
             'badge_tier' => $badge['badge_tier']
+        ];
+    }
+
+    if (preg_match('/^quest_complete:(\d+)$/', $item_key, $matches)) {
+        $completion_id = (int) $matches[1];
+        $stmt = $conn->prepare("
+            SELECT uqc.id, uqc.user_id, uqc.quest_key, uqc.period_type, uqc.period_start, uqc.period_end, uqc.xp_awarded, uqc.completedAt,
+                u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
+            FROM user_quest_completions uqc
+            INNER JOIN users u ON u.id = uqc.user_id
+            LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+            WHERE uqc.id=? AND u.disabledAt IS NULL
+            LIMIT 1
+        ");
+        $stmt->bind_param("i", $completion_id);
+        $stmt->execute();
+        $quest = $stmt->get_result()->fetch_assoc();
+
+        if (!$quest || !craftcrawl_user_can_view_feed_actor($conn, $viewer_id, (int) $quest['user_id'])) {
+            return null;
+        }
+
+        return [
+            'item_key' => $item_key,
+            'type' => 'quest_complete',
+            'created_at' => $quest['completedAt'],
+            'friend_name' => craftcrawl_feed_actor_name($quest['user_id'], $viewer_id, $quest['fName'], $quest['lName']),
+            'actor' => craftcrawl_feed_actor_payload($quest),
+            'is_self' => (int) $quest['user_id'] === (int) $viewer_id,
+            'quest_name' => craftcrawl_quest_name($quest['quest_key']),
+            'period_type' => $quest['period_type'],
+            'xp_awarded' => (int) $quest['xp_awarded'],
+        ];
+    }
+
+    if (preg_match('/^quest_sweep:(daily|weekly):(\d+):(\d{8})$/', $item_key, $matches)) {
+        $period_type = $matches[1];
+        $actor_id = (int) $matches[2];
+        $period_start = substr($matches[3], 0, 4) . '-' . substr($matches[3], 4, 2) . '-' . substr($matches[3], 6, 2);
+        $required_count = $period_type === 'weekly' ? CRAFTCRAWL_WEEKLY_QUEST_COUNT : CRAFTCRAWL_DAILY_QUEST_COUNT;
+        $stmt = $conn->prepare("
+            SELECT uqc.user_id, uqc.period_type, uqc.period_start, MAX(uqc.completedAt) AS completedAt, SUM(uqc.xp_awarded) AS xp_awarded, COUNT(*) AS quest_count,
+                MAX(u.fName) AS fName, MAX(u.lName) AS lName,
+                MAX(u.selected_profile_frame) AS selected_profile_frame,
+                MAX(u.selected_profile_frame_style) AS selected_profile_frame_style,
+                MAX(u.profile_photo_url) AS profile_photo_url,
+                MAX(p.object_key) AS profile_photo_object_key
+            FROM user_quest_completions uqc
+            INNER JOIN users u ON u.id = uqc.user_id
+            LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+            WHERE uqc.user_id=? AND uqc.period_type=? AND uqc.period_start=? AND u.disabledAt IS NULL
+            GROUP BY uqc.user_id, uqc.period_type, uqc.period_start
+            HAVING quest_count >= ?
+            LIMIT 1
+        ");
+        $stmt->bind_param("issi", $actor_id, $period_type, $period_start, $required_count);
+        $stmt->execute();
+        $sweep = $stmt->get_result()->fetch_assoc();
+
+        if (!$sweep || !craftcrawl_user_can_view_feed_actor($conn, $viewer_id, (int) $sweep['user_id'])) {
+            return null;
+        }
+
+        return [
+            'item_key' => $item_key,
+            'type' => 'quest_sweep',
+            'created_at' => $sweep['completedAt'],
+            'friend_name' => craftcrawl_feed_actor_name($sweep['user_id'], $viewer_id, $sweep['fName'], $sweep['lName']),
+            'actor' => craftcrawl_feed_actor_payload($sweep),
+            'is_self' => (int) $sweep['user_id'] === (int) $viewer_id,
+            'period_type' => $period_type,
+            'quest_count' => (int) $sweep['quest_count'],
+            'xp_awarded' => (int) $sweep['xp_awarded'],
         ];
     }
 

@@ -62,6 +62,7 @@ function import_render_duplicate_summary(array $summary) {
     <link rel="stylesheet" href="../css/style.css?v=<?php echo filemtime(__DIR__ . '/../css/style.css'); ?>">
 </head>
 <body>
+    <div data-area-page-content>
     <main class="business-portal admin-page">
         <header class="business-portal-header">
             <h1>Import Locations</h1>
@@ -147,5 +148,11 @@ function import_render_duplicate_summary(array $summary) {
             </section>
         <?php endif; ?>
     </main>
+    </div>
+    <?php include __DIR__ . '/mobile_nav.php'; ?>
+    <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
+    <script src="../js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/../js/depth_animations.js'); ?>"></script>
+    <script>window.CraftCrawlAreaShellConfig = { area: 'admin', home: 'dashboard.php', routes: ['dashboard.php','accounts.php','reviews.php','content.php','account_details.php','review_center.php','location_hours.php','import_locations.php'], active: { 'dashboard.php':'dashboard', 'accounts.php':'accounts', 'account_details.php':'accounts', 'reviews.php':'reviews', 'content.php':'content', 'review_center.php':'dashboard', 'location_hours.php':'dashboard', 'import_locations.php':'dashboard' } };</script>
+    <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
 </body>
 </html>

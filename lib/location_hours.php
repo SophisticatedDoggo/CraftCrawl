@@ -14,8 +14,8 @@ function craftcrawl_location_hours_for_form($conn, $location_id) {
             continue;
         }
 
-        $hours[$day]['opens_at'] = $row['opens_at'];
-        $hours[$day]['closes_at'] = $row['closes_at'];
+        $hours[$day]['opens_at'] = $row['opens_at'] ? substr($row['opens_at'], 0, 5) : '';
+        $hours[$day]['closes_at'] = $row['closes_at'] ? substr($row['closes_at'], 0, 5) : '';
         $hours[$day]['is_closed'] = !empty($row['is_closed']);
     }
 
@@ -23,7 +23,7 @@ function craftcrawl_location_hours_for_form($conn, $location_id) {
 }
 
 function craftcrawl_location_has_verified_hours($conn, $location_id) {
-    $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM location_hours WHERE location_id=? AND verifiedAt IS NOT NULL");
+    $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM location_hours WHERE location_id=? AND (verifiedAt IS NOT NULL OR source='business_owner')");
     $stmt->bind_param("i", $location_id);
     $stmt->execute();
     return (int) ($stmt->get_result()->fetch_assoc()['total'] ?? 0) > 0;
@@ -35,16 +35,27 @@ function craftcrawl_save_location_hours($conn, $location_id, $hours, $source = '
     $delete_stmt->execute();
 
     $insert_stmt = $conn->prepare("
-        INSERT INTO location_hours (location_id, day_of_week, opens_at, closes_at, is_closed, source, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
+        INSERT INTO location_hours (location_id, day_of_week, opens_at, closes_at, is_closed, source, verifiedAt, createdAt, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, CASE WHEN ?='business_owner' THEN NOW() ELSE NULL END, NOW(), NOW())
     ");
 
     foreach ($hours as $day => $hour) {
         $is_closed = $hour['is_closed'] ? 1 : 0;
         $opens_at = $is_closed ? null : $hour['opens_at'];
         $closes_at = $is_closed ? null : $hour['closes_at'];
-        $insert_stmt->bind_param("iissis", $location_id, $day, $opens_at, $closes_at, $is_closed, $source);
+        $insert_stmt->bind_param("iississ", $location_id, $day, $opens_at, $closes_at, $is_closed, $source, $source);
         $insert_stmt->execute();
+    }
+
+    if ($source === 'business_owner') {
+        $enable_stmt = $conn->prepare("
+            UPDATE locations
+            SET checkin_verification_enabled=TRUE,
+                checkin_enabled_at=COALESCE(checkin_enabled_at, NOW())
+            WHERE id=?
+        ");
+        $enable_stmt->bind_param("i", $location_id);
+        $enable_stmt->execute();
     }
 }
 

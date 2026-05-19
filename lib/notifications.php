@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/quests.php';
+
 function craftcrawl_notification_count_value($conn, $sql, $types = '', $params = []) {
     $stmt = $conn->prepare($sql);
 
@@ -179,6 +181,45 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
         $conn,
         "
             SELECT COUNT(*) AS total
+            FROM user_quest_completions uqc
+            INNER JOIN users actor ON actor.id = uqc.user_id
+            WHERE uqc.completedAt > ?
+                AND uqc.user_id<>?
+                AND actor.show_feed_activity=TRUE
+                AND actor.disabledAt IS NULL
+                AND $friend_activity_exists
+        ",
+        "sii",
+        [$friends_seen_at, $user_id, $user_id]
+    );
+
+    $daily_required = CRAFTCRAWL_DAILY_QUEST_COUNT;
+    $weekly_required = CRAFTCRAWL_WEEKLY_QUEST_COUNT;
+    $new_feed_items += craftcrawl_notification_count_value(
+        $conn,
+        "
+            SELECT COUNT(*) AS total
+            FROM (
+                SELECT uqc.user_id, uqc.period_type, uqc.period_start, MAX(uqc.completedAt) AS completedAt, COUNT(*) AS quest_count
+                FROM user_quest_completions uqc
+                INNER JOIN users actor ON actor.id = uqc.user_id
+                WHERE uqc.user_id<>?
+                    AND actor.show_feed_activity=TRUE
+                    AND actor.disabledAt IS NULL
+                    AND $friend_activity_exists
+                GROUP BY uqc.user_id, uqc.period_type, uqc.period_start
+                HAVING completedAt > ?
+                    AND quest_count >= CASE WHEN period_type='weekly' THEN ? ELSE ? END
+            ) quest_sweeps
+        ",
+        "iisii",
+        [$user_id, $user_id, $friends_seen_at, $weekly_required, $daily_required]
+    );
+
+    $new_feed_items += craftcrawl_notification_count_value(
+        $conn,
+        "
+            SELECT COUNT(*) AS total
             FROM business_posts bp
             INNER JOIN locations l ON l.id = bp.location_id AND l.visibility_status='public_claimed'
             INNER JOIN liked_businesses lb ON lb.location_id = bp.location_id AND lb.user_id=?
@@ -215,6 +256,11 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                     SELECT 1 FROM user_badges ub
                     WHERE CONCAT('badge_earned:', ub.id)=activity.feed_item_key AND ub.user_id=?
                 )
+                OR EXISTS (
+                    SELECT 1 FROM user_quest_completions uqc
+                    WHERE CONCAT('quest_complete:', uqc.id)=activity.feed_item_key AND uqc.user_id=?
+                )
+                OR activity.feed_item_key REGEXP CONCAT('^quest_sweep:(daily|weekly):', ?, ':[0-9]{8}$')
             )
         ";
 
@@ -227,8 +273,8 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                     AND activity.createdAt > ?
                     AND $owned_item_exists
             ",
-            "isiiiii",
-            [$user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id]
+            "isiiiiiis",
+            [$user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, (string) $user_id]
         );
 
         $social_notifications += craftcrawl_notification_count_value(
@@ -241,8 +287,8 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                     AND activity.createdAt > ?
                     AND $owned_item_exists
             ",
-            "isiiiii",
-            [$user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id]
+            "isiiiiiis",
+            [$user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, (string) $user_id]
         );
     }
 

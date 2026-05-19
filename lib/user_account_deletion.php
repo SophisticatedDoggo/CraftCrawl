@@ -83,6 +83,7 @@ function craftcrawl_user_feed_item_keys(mysqli $conn, int $user_id): array {
         ['event_want', 'event_want_to_go'],
         ['location_want', 'want_to_go_locations'],
         ['badge_earned', 'user_badges'],
+        ['quest_complete', 'user_quest_completions'],
     ];
 
     $keys = [];
@@ -96,6 +97,21 @@ function craftcrawl_user_feed_item_keys(mysqli $conn, int $user_id): array {
         while ($row = $result->fetch_assoc()) {
             $keys[] = $prefix . ':' . (int) $row['id'];
         }
+    }
+
+    $sweep_stmt = $conn->prepare("
+        SELECT period_type, period_start
+        FROM user_quest_completions
+        WHERE user_id=?
+        GROUP BY period_type, period_start
+    ");
+    $sweep_stmt->bind_param('i', $user_id);
+    $sweep_stmt->execute();
+    $sweep_result = $sweep_stmt->get_result();
+
+    while ($row = $sweep_result->fetch_assoc()) {
+        $period_type = $row['period_type'] === 'weekly' ? 'weekly' : 'daily';
+        $keys[] = 'quest_sweep:' . $period_type . ':' . $user_id . ':' . str_replace('-', '', $row['period_start']);
     }
 
     return $keys;

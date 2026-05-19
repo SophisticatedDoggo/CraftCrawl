@@ -74,7 +74,7 @@ if ($distance_meters > CRAFTCRAWL_CHECKIN_RADIUS_METERS) {
     exit();
 }
 
-if (empty($business['checkin_verification_enabled'])) {
+if (empty($business['checkin_verification_enabled']) && !craftcrawl_location_has_verified_hours($conn, $location_id)) {
     echo json_encode([
         'ok' => false,
         'message' => 'Check-ins are not available for this location yet.'
@@ -131,7 +131,12 @@ try {
     $badges = craftcrawl_award_eligible_badges($conn, $user_id);
     $quest_rewards = craftcrawl_award_eligible_quest_rewards($conn, $user_id);
     $action_label = $visit_type === 'first_time' ? 'First-Time Check-In' : 'Repeat Check-In';
-    $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, $action_label);
+    $xp_items = array_values(array_filter(array_merge(
+        [craftcrawl_xp_item($action_label, $xp_awarded, 'Check-In')],
+        craftcrawl_badge_xp_items($badges),
+        craftcrawl_quest_xp_items($quest_rewards)
+    )));
+    $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, $action_label, $xp_items);
     $progress = $reward_payload['progress'] ?? craftcrawl_user_level_progress($conn, $user_id);
 
     $conn->commit();

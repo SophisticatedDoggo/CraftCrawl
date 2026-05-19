@@ -996,9 +996,15 @@ a.text-link:focus {
 }
 
 .location-suggestion-prompt {
-    margin: 14px 0 0;
-    color: var(--color-muted);
-    font-size: 14px;
+    margin: 18px 0 0;
+    padding: 14px 16px;
+    border: 1px solid color-mix(in srgb, var(--color-accent) 40%, var(--color-border));
+    border-radius: 8px;
+    color: var(--color-text);
+    background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface));
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.45;
 }
 
 .location-suggestion-prompt .location-suggestion-link {
@@ -1010,7 +1016,7 @@ a.text-link:focus {
     color: var(--color-primary);
     background: none;
     box-shadow: none;
-    font-weight: 600;
+    font-weight: 800;
     line-height: inherit;
     text-decoration: underline;
 }
@@ -3867,6 +3873,46 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 .xp-reward-bar span.is-resetting {
     transition: none;
+}
+
+.xp-reward-items {
+    display: grid;
+    gap: 8px;
+    padding: 14px 16px;
+    text-align: left;
+    background: rgba(39, 131, 217, 0.08);
+    border: 1px solid rgba(39, 131, 217, 0.16);
+    border-radius: var(--radius-sm);
+}
+
+.xp-reward-items > strong {
+    color: #245f9b;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+.xp-reward-item-list {
+    display: grid;
+    gap: 8px;
+}
+
+.xp-reward-item-list div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    color: #172033;
+    font-weight: 800;
+}
+
+.xp-reward-item-list span {
+    min-width: 0;
+    color: #4d5a70;
+}
+
+.xp-reward-item-list strong {
+    color: var(--color-primary);
+    white-space: nowrap;
 }
 
 .xp-reward-badges {

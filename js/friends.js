@@ -46,6 +46,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
         event_want: ['cheers', 'nice_find'],
         location_want: ['cheers', 'nice_find', 'want_to_go'],
         badge_earned: ['cheers', 'nice_find', 'trophy'],
+        quest_complete: ['cheers', 'nice_find', 'trophy'],
+        quest_sweep: ['cheers', 'nice_find', 'trophy'],
         business_post: ['cheers', 'want_to_go']
     };
     const isUserPath = /\/user\/?$|\/user\//.test(window.location.pathname);
@@ -140,6 +142,11 @@ window.CraftCrawlInitFriends = function (scope = document) {
             .replaceAll('>', '&gt;')
             .replaceAll('"', '&quot;')
             .replaceAll("'", '&#039;');
+    }
+
+    function capitalize(value) {
+        const text = String(value || '');
+        return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
     }
 
     function focusNotificationTarget(element) {
@@ -740,6 +747,35 @@ window.CraftCrawlInitFriends = function (scope = document) {
                         ${renderFeedMeta(actorName, date)}
                         <strong class="feed-item-title">Earned ${escapeHtml(item.badge_name)}</strong>
                         <p class="feed-item-detail">${escapeHtml(item.badge_description)}</p>
+                        ${actions}
+                    </div>
+                </article>
+            `;
+        }
+
+        if (item.type === 'quest_complete') {
+            return `
+                <article class="friends-feed-item" ${feedItemAttrs(item)}>
+                    ${renderAvatar(item.actor, item.friend_name)}
+                    <div class="feed-item-content">
+                        ${renderFeedMeta(actorName, date)}
+                        <strong class="feed-item-title">Completed ${escapeHtml(item.quest_name)}</strong>
+                        <p class="feed-item-detail">${escapeHtml(capitalize(item.period_type))} quest · +${escapeHtml(item.xp_awarded)} XP</p>
+                        ${actions}
+                    </div>
+                </article>
+            `;
+        }
+
+        if (item.type === 'quest_sweep') {
+            const periodLabel = item.period_type === 'weekly' ? 'weekly' : 'daily';
+            return `
+                <article class="friends-feed-item" ${feedItemAttrs(item)}>
+                    ${renderAvatar(item.actor, item.friend_name)}
+                    <div class="feed-item-content">
+                        ${renderFeedMeta(actorName, date)}
+                        <strong class="feed-item-title">Completed all ${escapeHtml(periodLabel)} quests</strong>
+                        <p class="feed-item-detail">${escapeHtml(item.quest_count)} quests cleared · +${escapeHtml(item.xp_awarded)} XP</p>
                         ${actions}
                     </div>
                 </article>

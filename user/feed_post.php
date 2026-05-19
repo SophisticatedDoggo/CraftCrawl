@@ -38,6 +38,8 @@ function feed_thread_reaction_options($item) {
         'event_want' => ['cheers', 'nice_find'],
         'location_want' => ['cheers', 'nice_find', 'want_to_go'],
         'badge_earned' => ['cheers', 'nice_find', 'trophy'],
+        'quest_complete' => ['cheers', 'nice_find', 'trophy'],
+        'quest_sweep' => ['cheers', 'nice_find', 'trophy'],
         'business_post' => ['cheers', 'want_to_go'],
     ];
 
@@ -187,6 +189,33 @@ function render_feed_thread_post($item, $actions_html = '') {
         ';
     }
 
+    if (($item['type'] ?? '') === 'quest_complete') {
+        return '
+            <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
+                ' . $avatar . '
+                <div>
+                    <strong>' . escape_output($actor_name) . ' completed ' . escape_output($item['quest_name']) . '</strong>
+                    <p>' . escape_output(ucfirst($item['period_type'])) . ' quest · +' . escape_output($item['xp_awarded']) . ' XP' . ($date ? ' · ' . escape_output($date) : '') . '</p>
+                    ' . $actions_html . '
+                </div>
+            </article>
+        ';
+    }
+
+    if (($item['type'] ?? '') === 'quest_sweep') {
+        $period_label = ($item['period_type'] ?? '') === 'weekly' ? 'weekly' : 'daily';
+        return '
+            <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
+                ' . $avatar . '
+                <div>
+                    <strong>' . escape_output($actor_name) . ' completed all ' . escape_output($period_label) . ' quests</strong>
+                    <p>' . escape_output($item['quest_count']) . ' quests cleared · +' . escape_output($item['xp_awarded']) . ' XP' . ($date ? ' · ' . escape_output($date) : '') . '</p>
+                    ' . $actions_html . '
+                </div>
+            </article>
+        ';
+    }
+
     return '
         <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
             ' . $avatar . '
@@ -232,7 +261,7 @@ if ($feed_item && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Block comments when item owner has disabled interactions
     $item_type_prefix = explode(':', $item_key)[0];
-    if (in_array($item_type_prefix, ['first_visit', 'level_up', 'event_want', 'location_want', 'badge_earned'], true)) {
+    if (in_array($item_type_prefix, ['first_visit', 'level_up', 'event_want', 'location_want', 'badge_earned', 'quest_complete', 'quest_sweep'], true)) {
         $item_owner_id = craftcrawl_feed_item_owner_id($conn, $item_key);
         if ($item_owner_id && $item_owner_id !== $user_id) {
             $interact_stmt = $conn->prepare("SELECT allow_post_interactions FROM users WHERE id=? LIMIT 1");
