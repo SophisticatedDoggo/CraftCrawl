@@ -7,7 +7,7 @@ include 'db.php';
 $name_query = trim($_GET['name_query'] ?? ($_GET['q'] ?? ''));
 $area = trim($_GET['area'] ?? '');
 $type = trim($_GET['location_type'] ?? '');
-$allowed_types = ['brewery', 'winery', 'cidery', 'distillery', 'meadery'];
+$allowed_types = ['brewery', 'winery', 'cidery', 'distillery', 'meadery', 'bar', 'social_club'];
 $has_search = $name_query !== '' || $area !== '' || $type !== '';
 $results = [];
 
@@ -91,7 +91,7 @@ if ($has_search) {
                     <option value="">Any type</option>
                     <?php foreach ($allowed_types as $candidate_type) : ?>
                         <option value="<?php echo escape_output($candidate_type); ?>" <?php echo $type === $candidate_type ? 'selected' : ''; ?>>
-                            <?php echo escape_output(ucfirst($candidate_type)); ?>
+                            <?php echo escape_output(ucwords(str_replace('_', ' ', $candidate_type))); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>

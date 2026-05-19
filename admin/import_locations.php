@@ -10,7 +10,7 @@ $area = trim($_GET['area'] ?? '');
 $type = trim($_GET['location_type'] ?? 'any');
 $name_query = trim($_GET['name_query'] ?? '');
 $scope = ($_GET['scope'] ?? 'area') === 'broadened' ? 'broadened' : 'area';
-$allowed_types = ['any', 'brewery', 'winery', 'cidery', 'distillery', 'meadery'];
+$allowed_types = ['any', 'brewery', 'winery', 'cidery', 'distillery', 'meadery', 'bar', 'social_club'];
 $results = [];
 
 if ($area !== '' && in_array($type, $allowed_types, true)) {
@@ -83,7 +83,7 @@ function import_render_duplicate_summary(array $summary) {
                     <select id="location_type" name="location_type">
                         <?php foreach ($allowed_types as $candidate_type) : ?>
                             <option value="<?php echo import_escape($candidate_type); ?>" <?php echo $type === $candidate_type ? 'selected' : ''; ?>>
-                                <?php echo import_escape($candidate_type === 'any' ? 'Any type' : ucfirst($candidate_type)); ?>
+                                <?php echo import_escape($candidate_type === 'any' ? 'Any type' : ucwords(str_replace('_', ' ', $candidate_type))); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>

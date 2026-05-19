@@ -22,7 +22,9 @@ window.CraftCrawlInitBusinessDetailsMap = function (root = document) {
         cidery: '#dc2626',
         distillery: '#2563eb',
         distilery: '#2563eb',
-        meadery: '#facc15'
+        meadery: '#facc15',
+        bar: '#0f766e',
+        social_club: '#be123c'
     };
 
     mapboxgl.accessToken = window.MAPBOX_ACCESS_TOKEN;

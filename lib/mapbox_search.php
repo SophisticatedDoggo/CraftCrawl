@@ -122,6 +122,7 @@ function craftcrawl_mapbox_import_search_options($location_type, array $bbox) {
         'brewery' => 'brewery',
         'winery' => 'winery',
         'distillery' => 'distillery',
+        'bar' => 'bar',
     ];
 
     $options = [
@@ -140,6 +141,7 @@ function craftcrawl_mapbox_import_result_matches_type(array $result, $location_t
     $name_keywords_by_type = [
         'cidery' => ['cider', 'cidery'],
         'meadery' => ['mead', 'meadery'],
+        'social_club' => ['social club', 'club', 'lodge', 'vfw', 'american legion'],
     ];
 
     if (($result['feature_type'] ?? '') !== 'poi' || empty($result['street_address'])) {
@@ -202,7 +204,11 @@ function craftcrawl_mapbox_import_candidates($access_token, $location_type, $are
 
     $unique_results = [];
     $trimmed_name_query = trim($name_query);
-    $search_queries = [$trimmed_name_query !== '' ? $trimmed_name_query : ($location_type === 'any' ? 'business' : $location_type)];
+    $query_by_type = [
+        'social_club' => 'social club',
+    ];
+    $default_type_query = $query_by_type[$location_type] ?? $location_type;
+    $search_queries = [$trimmed_name_query !== '' ? $trimmed_name_query : ($location_type === 'any' ? 'business' : $default_type_query)];
     if ($trimmed_name_query !== '') {
         $compact_name_query = preg_replace('/[^a-z0-9]+/i', '', $trimmed_name_query);
         if ($compact_name_query !== '' && strcasecmp($compact_name_query, $trimmed_name_query) !== 0) {

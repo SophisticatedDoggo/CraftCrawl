@@ -45,6 +45,8 @@ function craftcrawl_profile_business_type_label($type) {
         'distillery' => 'Distillery',
         'distilery' => 'Distillery',
         'meadery' => 'Meadery',
+        'bar' => 'Bar',
+        'social_club' => 'Social Club',
     ];
 
     return $labels[$type] ?? ucwords(str_replace('_', ' ', (string) $type));

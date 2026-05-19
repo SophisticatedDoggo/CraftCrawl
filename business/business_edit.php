@@ -20,6 +20,16 @@ function clean_text($value) {
     return trim(strip_tags($value ?? ''));
 }
 
+$business_type_labels = [
+    'brewery' => 'Brewery',
+    'winery' => 'Winery',
+    'cidery' => 'Cidery',
+    'distillery' => 'Distillery',
+    'meadery' => 'Meadery',
+    'bar' => 'Bar',
+    'social_club' => 'Social Club',
+];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
 
@@ -40,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $hours_message = craftcrawl_validate_business_hours($business_hours);
 
-    if ($business_name === '' || $business_type === '' || $street_address === '' || $city === '' || $state === '' || $zip === '' || $latitude === false || $longitude === false) {
+    if ($business_name === '' || !array_key_exists($business_type, $business_type_labels) || $street_address === '' || $city === '' || $state === '' || $zip === '' || $latitude === false || $longitude === false) {
         $message = 'Please select a complete address from the address search.';
     } elseif ($hours_message) {
         $message = $hours_message;
@@ -136,11 +146,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
                 <label for="business_type">Business Type</label>
                 <select id="business_type" name="business_type" required>
-                    <option value="brewery" <?php echo $business['bType'] === 'brewery' ? 'selected' : ''; ?>>Brewery</option>
-                    <option value="winery" <?php echo $business['bType'] === 'winery' ? 'selected' : ''; ?>>Winery</option>
-                    <option value="cidery" <?php echo $business['bType'] === 'cidery' ? 'selected' : ''; ?>>Cidery</option>
-                    <option value="distillery" <?php echo in_array($business['bType'], ['distillery', 'distilery'], true) ? 'selected' : ''; ?>>Distillery</option>
-                    <option value="meadery" <?php echo $business['bType'] === 'meadery' ? 'selected' : ''; ?>>Meadery</option>
+                    <?php foreach ($business_type_labels as $value => $label) : ?>
+                        <option value="<?php echo escape_output($value); ?>" <?php echo ($value === 'distillery' ? in_array($business['bType'], ['distillery', 'distilery'], true) : $business['bType'] === $value) ? 'selected' : ''; ?>><?php echo escape_output($label); ?></option>
+                    <?php endforeach; ?>
                 </select>
 
                 <label for="about">About</label>

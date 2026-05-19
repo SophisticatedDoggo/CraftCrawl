@@ -23,7 +23,8 @@ $search_area = trim($_GET['area'] ?? '');
 $search_type = trim($_GET['location_type'] ?? 'any');
 $search_name = trim($_GET['name_query'] ?? '');
 $search_scope = ($_GET['scope'] ?? 'area') === 'broadened' ? 'broadened' : 'area';
-$allowed_types = ['any', 'brewery', 'winery', 'cidery', 'distillery', 'meadery'];
+$allowed_types = ['any', 'brewery', 'winery', 'cidery', 'distillery', 'meadery', 'bar', 'social_club'];
+$location_type_labels = ['brewery'=>'Brewery','winery'=>'Winery','cidery'=>'Cidery','distillery'=>'Distillery','meadery'=>'Meadery','bar'=>'Bar','social_club'=>'Social Club'];
 $mapbox_results = [];
 $selected_candidate = null;
 $manual_mode = ($_GET['manual'] ?? '') === '1';
@@ -65,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $longitude = filter_var($_POST['longitude'] ?? 0, FILTER_VALIDATE_FLOAT);
     $hours_message = craftcrawl_validate_business_hours($business_hours);
 
-    if ($name === '' || !in_array($type, $allowed_types, true)) {
+    if ($name === '' || !array_key_exists($type, $location_type_labels)) {
         $message = 'Please complete the required location fields.';
     } elseif ($address === '' || $city === '' || $state === '' || $zip === '' || $latitude === false || $longitude === false || $latitude == 0.0 || $longitude == 0.0) {
         $message = 'Please select a complete address from the address search.';
@@ -123,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h2>Find the business on Mapbox</h2>
             <form method="GET" class="admin-search-form business-location-claim-search">
                 <div class="admin-field"><label for="area">City, ZIP, or area</label><input id="area" name="area" required value="<?php echo escape_output($search_area); ?>"></div>
-                <div class="admin-field"><label for="location_type">Type</label><select id="location_type" name="location_type"><?php foreach ($allowed_types as $candidate_type) : ?><option value="<?php echo escape_output($candidate_type); ?>" <?php echo $search_type === $candidate_type ? 'selected' : ''; ?>><?php echo escape_output($candidate_type === 'any' ? 'Any type' : ucfirst($candidate_type)); ?></option><?php endforeach; ?></select></div>
+                <div class="admin-field"><label for="location_type">Type</label><select id="location_type" name="location_type"><?php foreach ($allowed_types as $candidate_type) : ?><option value="<?php echo escape_output($candidate_type); ?>" <?php echo $search_type === $candidate_type ? 'selected' : ''; ?>><?php echo escape_output($candidate_type === 'any' ? 'Any type' : ucwords(str_replace('_', ' ', $candidate_type))); ?></option><?php endforeach; ?></select></div>
                 <div class="admin-field"><label for="name_query">Business name</label><input id="name_query" name="name_query" value="<?php echo escape_output($search_name); ?>" placeholder="Optional"></div>
                 <button type="submit">Search</button>
             </form>
@@ -146,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label for="business_types">Type</label>
             <select name="business_types" id="business_types" required>
                 <option value="">--Please Select a Type--</option>
-                <?php foreach (['brewery'=>'Brewery','winery'=>'Winery','cidery'=>'Cidery','distillery'=>'Distillery','meadery'=>'Meadery'] as $value=>$label) : ?>
+                <?php foreach ($location_type_labels as $value=>$label) : ?>
                     <option value="<?php echo escape_output($value); ?>" <?php echo $type === $value ? 'selected' : ''; ?>><?php echo escape_output($label); ?></option>
                 <?php endforeach; ?>
             </select>

@@ -22,7 +22,7 @@ const mapClusterRingRadius = isMobileMapViewport ? [30, 35, 40] : [24, 28, 32];
 const mapClusterTextSize = isMobileMapViewport ? 16 : 13;
 const mapMarkerHitboxRadius = isMobileMapViewport ? 34 : 24;
 const mapClusterHitboxRadius = isMobileMapViewport ? [38, 44, 50] : [28, 34, 40];
-const businessTypeFilters = ['brewery', 'winery', 'cidery', 'distillery', 'meadery'];
+const businessTypeFilters = ['brewery', 'winery', 'cidery', 'distillery', 'meadery', 'bar', 'social_club'];
 
 mapboxgl.accessToken = window.MAPBOX_ACCESS_TOKEN;
 // creates the map, setting the container to the id of the div you added in step 2, and setting the initial center and zoom level of the map
@@ -163,6 +163,8 @@ map.on('load', function () {
                 'cidery', '#dc2626',
                 'distillery', '#2563eb',
                 'meadery', '#facc15',
+                'bar', '#0f766e',
+                'social_club', '#be123c',
                 '#6b7280'
             ],
             'circle-stroke-width': isMobileMapViewport ? 4 : 3,
@@ -225,6 +227,8 @@ map.on('load', function () {
                 'cidery', '#991b1b',
                 'distillery', '#1d4ed8',
                 'meadery', '#a16207',
+                'bar', '#0f766e',
+                'social_club', '#be123c',
                 '#6b7280'
             ],
             'text-halo-color': '#ffffff',
@@ -348,7 +352,9 @@ function formatBusinessType(type) {
         winery: 'Winery',
         cidery: 'Cidery',
         distillery: 'Distillery',
-        meadery: 'Meadery'
+        meadery: 'Meadery',
+        bar: 'Bar',
+        social_club: 'Social Club'
     };
 
     return labels[type] || 'Business';

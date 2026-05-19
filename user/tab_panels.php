@@ -32,6 +32,8 @@ $craftcrawl_portal_active = $craftcrawl_portal_active ?? 'map';
                     <option value="cidery">Cideries</option>
                     <option value="distillery">Distilleries</option>
                     <option value="meadery">Meaderies</option>
+                    <option value="bar">Bars</option>
+                    <option value="social_club">Social Clubs</option>
                 </select>
             </div>
             <ol id="business-list" class="business-list"></ol>

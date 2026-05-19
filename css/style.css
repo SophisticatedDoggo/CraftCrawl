@@ -1110,6 +1110,14 @@ a.text-link:focus {
     background: #facc15;
 }
 
+.business-list-number-bar {
+    background: #0f766e;
+}
+
+.business-list-number-social_club {
+    background: #be123c;
+}
+
 .business-list-details {
     display: flex;
     flex-direction: column;

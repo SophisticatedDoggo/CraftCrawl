@@ -18,7 +18,9 @@ function format_business_type($type) {
         'cidery' => 'Cidery',
         'distillery' => 'Distillery',
         'distilery' => 'Distillery',
-        'meadery' => 'Meadery'
+        'meadery' => 'Meadery',
+        'bar' => 'Bar',
+        'social_club' => 'Social Club'
     ];
 
     return $labels[$type] ?? 'Business';

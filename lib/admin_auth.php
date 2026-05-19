@@ -71,7 +71,9 @@ function craftcrawl_admin_business_type_label($type) {
         'cidery' => 'Cidery',
         'distillery' => 'Distillery',
         'distilery' => 'Distillery',
-        'meadery' => 'Meadery'
+        'meadery' => 'Meadery',
+        'bar' => 'Bar',
+        'social_club' => 'Social Club'
     ];
 
     return $labels[$type] ?? 'Business';
