@@ -7365,30 +7365,30 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .mobile-app-tab-icon-quests {
+        width: 24px;
+        height: 24px;
         background:
-            linear-gradient(currentColor, currentColor) center 17px / 12px 2px no-repeat,
-            linear-gradient(currentColor, currentColor) center 13px / 2px 5px no-repeat;
+            linear-gradient(currentColor, currentColor) center 13px / 3px 7px no-repeat,
+            linear-gradient(currentColor, currentColor) center 20px / 14px 3px no-repeat;
     }
 
     .mobile-app-tab-icon-quests::before {
-        top: 3px;
-        left: 5px;
-        width: 14px;
-        height: 11px;
-        border: 2px solid currentColor;
-        border-top-width: 3px;
+        top: 2px;
+        left: 4px;
+        width: 16px;
+        height: 13px;
         border-radius: 3px 3px 8px 8px;
-        background: transparent;
+        background: currentColor;
+        clip-path: polygon(0 0, 100% 0, 82% 72%, 62% 100%, 38% 100%, 18% 72%);
     }
 
     .mobile-app-tab-icon-quests::after {
-        top: 15px;
-        left: 8px;
-        width: 8px;
-        height: 5px;
-        border-bottom: 2px solid currentColor;
-        border-radius: 0 0 8px 8px;
-        background: transparent;
+        top: 5px;
+        left: 7px;
+        width: 10px;
+        height: 3px;
+        border-radius: 999px;
+        background: color-mix(in srgb, currentColor 28%, transparent);
     }
 
     .mobile-app-tab-icon-checkin {
