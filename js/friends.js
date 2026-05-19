@@ -1097,7 +1097,14 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
     window.addEventListener('craftcrawl:user-tab-changed', (event) => {
         if (event.detail?.tab === 'feed') {
-            refreshVisibleFeed();
+            refreshVisibleFeed()
+                .then(() => {
+                    if (event.detail?.userInitiated) {
+                        return markFriendsSeen();
+                    }
+
+                    return null;
+                });
         }
     });
 
@@ -1241,8 +1248,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         refreshFriendsData();
     } else if (panel) {
         loadRequests();
-        loadFeed()
-            .then(() => markFriendsSeen());
+        loadFeed();
     } else {
         loadStatus();
     }

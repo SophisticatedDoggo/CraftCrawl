@@ -106,7 +106,7 @@
                 });
                 liveBaseContent.hidden = false;
                 document.body.className = 'portal-body';
-                window.CraftCrawlSwitchUserTab?.(url);
+                window.CraftCrawlSwitchUserTab?.(url, { userInitiated: Boolean(options.userInitiated) });
             } else {
                 const doc = await fetchDocument(url, { noStore: Boolean(options.noStore) });
                 const nextContent = doc.querySelector('[data-user-page-content]');
@@ -162,8 +162,9 @@
         event.preventDefault();
         event.stopPropagation();
 
-        if (typeof window.CraftCrawlSwitchUserTab === 'function' && window.CraftCrawlSwitchUserTab(link.href)) return;
-        navigate(link.href);
+        if (typeof window.CraftCrawlSwitchUserTab === 'function'
+            && window.CraftCrawlSwitchUserTab(link.href, { userInitiated: true })) return;
+        navigate(link.href, { userInitiated: true });
     }, true);
     window.addEventListener('popstate', () => { if (isShellUrl(window.location.href)) navigate(window.location.href, { replace: true }); });
     window.CraftCrawlNavigateUserShell = navigate;

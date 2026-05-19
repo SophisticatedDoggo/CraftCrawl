@@ -105,12 +105,12 @@ function setupMomentumSafeMobileTabs() {
 
         if (tab instanceof HTMLAnchorElement) {
             if (typeof window.CraftCrawlSwitchUserTab === 'function'
-                && window.CraftCrawlSwitchUserTab(tab.href)) {
+                && window.CraftCrawlSwitchUserTab(tab.href, { userInitiated: true })) {
                 return;
             }
 
             if (typeof window.CraftCrawlNavigateUserShell === 'function'
-                && window.CraftCrawlNavigateUserShell(tab.href)) {
+                && window.CraftCrawlNavigateUserShell(tab.href, { userInitiated: true })) {
                 return;
             }
 

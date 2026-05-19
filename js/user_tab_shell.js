@@ -35,15 +35,24 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
         window.CraftCrawlCloseMobileActionsMenu?.();
         document.title = titleByTab[tab];
         if (options.updateHistory) history.pushState({ craftcrawlUserTab: tab }, '', `${routeByTab[tab]}${options.hash || ''}`);
-        window.dispatchEvent(new CustomEvent('craftcrawl:user-tab-changed', { detail: { tab } }));
+        window.dispatchEvent(new CustomEvent('craftcrawl:user-tab-changed', {
+            detail: {
+                tab,
+                userInitiated: Boolean(options.userInitiated)
+            }
+        }));
     }
 
-    window.CraftCrawlSwitchUserTab = function (destination) {
+    window.CraftCrawlSwitchUserTab = function (destination, options = {}) {
         if (!document.contains(shell) || shell.closest('[data-user-page-content]')?.hidden) return false;
         const url = new URL(destination, window.location.href);
         const tab = tabFromPath(url.pathname);
         if (!routeByTab[tab]) return false;
-        syncTab(tab, { updateHistory: tab !== shell.dataset.activeUserTab || url.hash !== window.location.hash, hash: url.hash });
+        syncTab(tab, {
+            updateHistory: tab !== shell.dataset.activeUserTab || url.hash !== window.location.hash,
+            hash: url.hash,
+            userInitiated: Boolean(options.userInitiated)
+        });
         if (tab === 'map' && url.hash === '#checkin-panel') {
             document.getElementById('checkin-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
@@ -59,7 +68,7 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
             if (!link || !tabbar.contains(link)) return;
             const tab = tabFromPath(new URL(link.href, window.location.href).pathname);
             if (!routeByTab[tab]) return;
-            if (window.CraftCrawlSwitchUserTab?.(link.href)) event.preventDefault();
+            if (window.CraftCrawlSwitchUserTab?.(link.href, { userInitiated: true })) event.preventDefault();
         });
     }
 
