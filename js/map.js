@@ -42,7 +42,7 @@ const map = new mapboxgl.Map({
 
 // Start locating the user immediately so native iOS does not wait for Mapbox
 // style loading before beginning the first location lookup.
-requestUserLocation();
+requestInitialUserLocation();
 setupUserLocationLifecycleRefresh();
 
 map.on('load', function () {
@@ -396,12 +396,21 @@ function getAllLocations(){
     });
 }
 
+function requestInitialUserLocation() {
+    requestUserLocation({
+        enableHighAccuracy: false,
+        maximumAge: 300000,
+        timeout: 4500,
+        requestPreciseAfterCoarse: true
+    });
+}
+
 function requestUserLocation(options = {}) {
     const locationProvider = window.CraftCrawlLocation || null;
     const shouldShowErrors = options.showErrors !== false;
     const shouldUpdateDependentViews = options.updateDependentViews !== false;
     const locationOptions = {
-        enableHighAccuracy: true,
+        enableHighAccuracy: options.enableHighAccuracy !== false,
         timeout: options.timeout || 12000,
         maximumAge: options.maximumAge === undefined ? 60000 : options.maximumAge
     };
@@ -437,7 +446,8 @@ function requestUserLocation(options = {}) {
         isUserLocationRequestInFlight = false;
         userLocation = {
             latitude: position.coords.latitude,
-            longitude: position.coords.longitude
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy
         };
 
         updateUserLocationMarker();
@@ -448,6 +458,10 @@ function requestUserLocation(options = {}) {
 
         if (shouldUpdateDependentViews) {
             applyLocationAwareListAndMap(options);
+        }
+
+        if (options.requestPreciseAfterCoarse) {
+            requestPreciseUserLocationAfterCoarse(false);
         }
     }
 
@@ -460,6 +474,23 @@ function requestUserLocation(options = {}) {
         if (shouldUpdateDependentViews) {
             updateLocationAwareBusinessList();
         }
+
+        if (options.requestPreciseAfterCoarse && (!error || error.code !== 1)) {
+            requestPreciseUserLocationAfterCoarse(shouldShowErrors);
+        }
+    }
+
+    function requestPreciseUserLocationAfterCoarse(showErrors) {
+        window.setTimeout(() => {
+            requestUserLocation({
+                allowInitialCenter: false,
+                allowSortSwitch: false,
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                showErrors,
+                updateDependentViews: true
+            });
+        }, 0);
     }
 }
 
