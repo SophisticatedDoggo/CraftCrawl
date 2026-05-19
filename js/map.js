@@ -22,6 +22,7 @@ const mapClusterRingRadius = isMobileMapViewport ? [30, 35, 40] : [24, 28, 32];
 const mapClusterTextSize = isMobileMapViewport ? 16 : 13;
 const mapMarkerHitboxRadius = isMobileMapViewport ? 34 : 24;
 const mapClusterHitboxRadius = isMobileMapViewport ? [38, 44, 50] : [28, 34, 40];
+const businessTypeFilters = ['brewery', 'winery', 'cidery', 'distillery', 'meadery'];
 
 mapboxgl.accessToken = window.MAPBOX_ACCESS_TOKEN;
 // creates the map, setting the container to the id of the div you added in step 2, and setting the initial center and zoom level of the map
@@ -906,17 +907,10 @@ function getSortedBusinessFeatures(sortValue) {
         });
     }
 
-    if (sortValue && sortValue !== 'map') {
-        return features.sort((a, b) => {
-            const aMatches = a.properties.businessType === sortValue ? 0 : 1;
-            const bMatches = b.properties.businessType === sortValue ? 0 : 1;
-
-            if (aMatches !== bMatches) {
-                return aMatches - bMatches;
-            }
-
-            return compareBusinessTitles(a, b);
-        });
+    if (isBusinessTypeFilter(sortValue)) {
+        return features
+            .filter((feature) => feature.properties.businessType === sortValue)
+            .sort(compareBusinessTitles);
     }
 
     return features.sort(compareBusinessTitles);
@@ -939,17 +933,10 @@ function sortFeaturesForList(features, sortValue, reference) {
         return sortedFeatures.sort(compareBusinessTitles);
     }
 
-    if (sortValue && sortValue !== 'map') {
-        return sortedFeatures.sort((a, b) => {
-            const aMatches = a.properties.businessType === sortValue ? 0 : 1;
-            const bMatches = b.properties.businessType === sortValue ? 0 : 1;
-
-            if (aMatches !== bMatches) {
-                return aMatches - bMatches;
-            }
-
-            return compareBusinessTitles(a, b);
-        });
+    if (isBusinessTypeFilter(sortValue)) {
+        return sortedFeatures
+            .filter((feature) => feature.properties.businessType === sortValue)
+            .sort(compareBusinessTitles);
     }
 
     return sortedFeatures.sort(compareBusinessTitles);
@@ -962,6 +949,10 @@ function getMapRelevantBusinessFeatures() {
     }
 
     return sortFeaturesByReference(getVisibleBusinessFeatures(), center);
+}
+
+function isBusinessTypeFilter(sortValue) {
+    return businessTypeFilters.includes(sortValue);
 }
 
 function updateRenderedMapItemCount() {

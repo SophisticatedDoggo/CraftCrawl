@@ -27,11 +27,11 @@ $craftcrawl_portal_active = $craftcrawl_portal_active ?? 'map';
                     <option value="map">Map area</option>
                     <option value="nearby">Near me</option>
                     <option value="name">Name</option>
-                    <option value="brewery">Breweries first</option>
-                    <option value="winery">Wineries first</option>
-                    <option value="cidery">Cideries first</option>
-                    <option value="distillery">Distilleries first</option>
-                    <option value="meadery">Meaderies first</option>
+                    <option value="brewery">Breweries</option>
+                    <option value="winery">Wineries</option>
+                    <option value="cidery">Cideries</option>
+                    <option value="distillery">Distilleries</option>
+                    <option value="meadery">Meaderies</option>
                 </select>
             </div>
             <ol id="business-list" class="business-list"></ol>
