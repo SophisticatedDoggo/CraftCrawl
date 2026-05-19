@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $conn->begin_transaction();
 
             foreach ($business_photo_uploads as $photo_upload) {
-                $upload_result = craftcrawl_upload_photo_to_cloudinary($photo_upload, 'businesses/gallery', $business_id);
+                $upload_result = craftcrawl_upload_photo_to_cloudinary($photo_upload, 'locations/gallery', $location_id);
                 $photo_id = craftcrawl_insert_cloudinary_photo($conn, $upload_result, null, $business_id);
                 $photo_type = 'gallery';
 
@@ -103,6 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         } catch (Throwable $error) {
             $conn->rollback();
+            error_log('Business photo upload failed: ' . $error->getMessage());
             $upload_message = str_contains($error->getMessage(), 'server upload limit') ? 'photo_server_limit_error' : 'photo_upload_error';
             header('Location: business_portal.php?message=' . $upload_message);
             exit();
