@@ -71,6 +71,11 @@ After the secrets are set, run the `iOS TestFlight` workflow manually from
 certificate and provisioning profile, then stores them in the encrypted Match
 repo.
 
+Run `setup_signing` again after enabling or changing Apple Developer
+capabilities for `com.craftcrawl.app`. The lane refreshes the Match App Store
+profile so it includes the app entitlements, including Associated Domains for
+Universal Links.
+
 ## TestFlight Upload
 
 Run the `iOS TestFlight` workflow manually from `main` and choose the `beta`
