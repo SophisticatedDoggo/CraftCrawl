@@ -5187,6 +5187,10 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     margin-bottom: 28px;
 }
 
+.business-location-map-shell {
+    position: relative;
+}
+
 #business-location-map {
     width: 100%;
     height: min(46vh, 420px);
@@ -5195,6 +5199,17 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     background: var(--color-surface-muted);
+}
+
+.business-location-directions-button {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    z-index: 2;
+    min-height: 42px;
+    padding: 10px 15px;
+    border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+    box-shadow: var(--shadow-md);
 }
 
 .business-details-hero h1 {

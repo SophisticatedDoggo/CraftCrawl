@@ -626,8 +626,18 @@ function format_event_time_range($event) {
         <section class="business-location-panel">
             <div class="business-section-header">
                 <h2>Location</h2>
+            </div>
+            <div class="business-location-map-shell">
+                <div
+                    id="business-location-map"
+                    data-business-name="<?php echo escape_output($business['bName']); ?>"
+                    data-business-type="<?php echo escape_output($business['bType']); ?>"
+                    data-business-latitude="<?php echo escape_output($business['latitude']); ?>"
+                    data-business-longitude="<?php echo escape_output($business['longitude']); ?>"
+                    aria-label="Map showing <?php echo escape_output($business['bName']); ?> location"
+                ></div>
                 <a
-                    class="map-action-button"
+                    class="map-action-button business-location-directions-button"
                     href="https://www.google.com/maps/dir/?api=1&destination=<?php echo escape_output(rawurlencode($business['latitude'] . ',' . $business['longitude'])); ?>"
                     data-directions-address="<?php echo escape_output($business['street_address'] . ', ' . $business['city'] . ', ' . $business['state'] . ' ' . $business['zip']); ?>"
                     data-directions-latitude="<?php echo escape_output($business['latitude']); ?>"
@@ -636,14 +646,6 @@ function format_event_time_range($event) {
                     rel="noopener"
                 >Get Directions</a>
             </div>
-            <div
-                id="business-location-map"
-                data-business-name="<?php echo escape_output($business['bName']); ?>"
-                data-business-type="<?php echo escape_output($business['bType']); ?>"
-                data-business-latitude="<?php echo escape_output($business['latitude']); ?>"
-                data-business-longitude="<?php echo escape_output($business['longitude']); ?>"
-                aria-label="Map showing <?php echo escape_output($business['bName']); ?> location"
-            ></div>
         </section>
 
         <?php if (!empty($business_gallery_photos)) : ?>
