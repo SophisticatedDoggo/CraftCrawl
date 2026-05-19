@@ -3333,6 +3333,41 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     white-space: nowrap;
 }
 
+.profile-location-actions {
+    grid-column: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+    justify-self: end;
+}
+
+.profile-location-actions > a:not(.mapboxgl-ctrl-logo),
+.profile-location-actions button {
+    width: auto;
+    min-width: 112px;
+    max-width: 100%;
+    min-height: 36px;
+    padding: 7px 14px;
+    white-space: nowrap;
+}
+
+.profile-location-actions form {
+    margin: 0;
+}
+
+.profile-location-remove {
+    border-color: color-mix(in srgb, var(--color-danger) 42%, var(--color-border));
+    color: var(--color-danger);
+}
+
+.profile-location-remove:hover,
+.profile-location-remove:focus {
+    color: var(--color-on-primary);
+    background: var(--color-danger);
+    border-color: var(--color-danger);
+}
+
 .friend-recommendation-card p {
     margin: 8px 0 0;
 }
@@ -7573,6 +7608,19 @@ a.event-calendar-event:focus .event-calendar-event-name {
         white-space: normal;
     }
 
+    .profile-location-actions {
+        grid-column: auto;
+        justify-content: center;
+        justify-self: center;
+        width: 100%;
+    }
+
+    .profile-location-actions > a:not(.mapboxgl-ctrl-logo),
+    .profile-location-actions button {
+        min-width: 142px;
+        white-space: normal;
+    }
+
     .dashboard-checkin-panel > button,
     .dashboard-checkin-item button,
     .friends-search-form button,
@@ -9283,6 +9331,12 @@ a.event-calendar-event:focus .event-calendar-event-name {
     width: 48px;
     height: 48px;
     grid-row: 1 / span 4;
+}
+
+.badge-showcase-slot span:not(.badge-showcase-empty) {
+    color: var(--color-muted);
+    font-size: 0.82rem;
+    line-height: 1.35;
 }
 
 .badge-showcase-slot.is-filled {

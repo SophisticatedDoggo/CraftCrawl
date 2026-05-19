@@ -89,7 +89,7 @@ if ($action === 'remove') {
 }
 
 $showcase_stmt = $conn->prepare("
-    SELECT ubs.slot_order, ubs.badge_key, ub.badge_name, ub.badge_tier
+    SELECT ubs.slot_order, ubs.badge_key, ub.badge_name, ub.badge_description, ub.badge_tier
     FROM user_badge_showcase ubs
     INNER JOIN user_badges ub ON ub.user_id = ubs.user_id AND ub.badge_key = ubs.badge_key
     WHERE ubs.user_id=?
@@ -105,6 +105,7 @@ while ($row = $showcase_result->fetch_assoc()) {
         'slot_order' => (int) $row['slot_order'],
         'badge_key' => $row['badge_key'],
         'badge_name' => $row['badge_name'],
+        'badge_description' => $row['badge_description'],
         'badge_tier' => $row['badge_tier'],
     ];
 }

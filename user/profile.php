@@ -74,6 +74,28 @@ if (!$can_view_profile) {
     $profile = $profile_stmt->get_result()->fetch_assoc();
 }
 
+if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['form_action'] ?? ''), ['unfollow_business', 'remove_want_to_go'], true)) {
+    craftcrawl_verify_csrf();
+
+    $location_id = filter_var($_POST['location_id'] ?? null, FILTER_VALIDATE_INT);
+
+    if ($location_id) {
+        if ($_POST['form_action'] === 'unfollow_business') {
+            $remove_follow_stmt = $conn->prepare("DELETE FROM liked_businesses WHERE user_id=? AND location_id=?");
+            $remove_follow_stmt->bind_param("ii", $viewer_id, $location_id);
+            $remove_follow_stmt->execute();
+            craftcrawl_redirect('user/profile.php?message=business_unfollowed');
+        }
+
+        $remove_want_stmt = $conn->prepare("DELETE FROM want_to_go_locations WHERE user_id=? AND location_id=?");
+        $remove_want_stmt->bind_param("ii", $viewer_id, $location_id);
+        $remove_want_stmt->execute();
+        craftcrawl_redirect('user/profile.php?message=want_removed');
+    }
+
+    craftcrawl_redirect('user/profile.php');
+}
+
 if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form_action'] ?? '') === 'profile') {
     craftcrawl_verify_csrf();
 
@@ -321,6 +343,10 @@ if (!$profile) {
                 <p class="form-message form-message-error">Profile photo must be smaller than 12 MB.</p>
             <?php elseif ($is_own_profile && $message === 'profile_photo_error') : ?>
                 <p class="form-message form-message-error">Profile photo could not be saved. Please try another image.</p>
+            <?php elseif ($is_own_profile && $message === 'business_unfollowed') : ?>
+                <p class="form-message form-message-success">Business removed from your follows.</p>
+            <?php elseif ($is_own_profile && $message === 'want_removed') : ?>
+                <p class="form-message form-message-success">Business removed from Want to Go.</p>
             <?php endif; ?>
             <section class="settings-panel profile-hero-panel">
                 <?php if ($is_own_profile) : ?>
@@ -636,7 +662,7 @@ if (!$profile) {
 
             <?php if ($can_view_liked_businesses) : ?>
                 <section class="settings-panel">
-                    <h2>Businesses You Follow</h2>
+                    <h2><?php echo $is_own_profile ? 'Businesses You Follow' : 'Businesses They Follow'; ?></h2>
                     <div class="friend-location-grid">
                         <?php if ($followed_businesses->num_rows === 0) : ?>
                             <p>Not following any businesses yet.</p>
@@ -645,7 +671,17 @@ if (!$profile) {
                             <article class="friend-location-card">
                                 <strong><?php echo escape_output($business['bName']); ?></strong>
                                 <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
-                                <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View Business</a>
+                                <div class="profile-location-actions">
+                                    <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View Business</a>
+                                    <?php if ($is_own_profile) : ?>
+                                        <form method="POST" action="">
+                                            <?php echo craftcrawl_csrf_input(); ?>
+                                            <input type="hidden" name="form_action" value="unfollow_business">
+                                            <input type="hidden" name="location_id" value="<?php echo escape_output($business['id']); ?>">
+                                            <button type="submit" class="button-link-secondary profile-location-remove">Unfollow</button>
+                                        </form>
+                                    <?php endif; ?>
+                                </div>
                             </article>
                         <?php endwhile; ?>
                     </div>
@@ -663,7 +699,17 @@ if (!$profile) {
                             <article class="friend-location-card">
                                 <strong><?php echo escape_output($business['bName']); ?></strong>
                                 <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
-                                <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View Business</a>
+                                <div class="profile-location-actions">
+                                    <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View Business</a>
+                                    <?php if ($is_own_profile) : ?>
+                                        <form method="POST" action="">
+                                            <?php echo craftcrawl_csrf_input(); ?>
+                                            <input type="hidden" name="form_action" value="remove_want_to_go">
+                                            <input type="hidden" name="location_id" value="<?php echo escape_output($business['id']); ?>">
+                                            <button type="submit" class="button-link-secondary profile-location-remove">Remove</button>
+                                        </form>
+                                    <?php endif; ?>
+                                </div>
                             </article>
                         <?php endwhile; ?>
                     </div>
@@ -684,7 +730,7 @@ if (!$profile) {
                         ?>
                         <article class="friend-location-card">
                             <strong><?php echo escape_output($checkin['bName']); ?></strong>
-                            <span><?php echo escape_output($checkin['bType']); ?> · <?php echo escape_output($checkin['city']); ?>, <?php echo escape_output($checkin['state']); ?></span>
+                            <span><?php echo escape_output(craftcrawl_profile_business_type_label($checkin['bType'])); ?> · <?php echo escape_output($checkin['city']); ?>, <?php echo escape_output($checkin['state']); ?></span>
                             <span><?php echo escape_output($visit_type_text); ?><?php echo $checked_in_text !== '' ? ' · ' . escape_output($checked_in_text) : ''; ?><?php echo (int) $checkin['xp_awarded'] > 0 ? ' · +' . escape_output($checkin['xp_awarded']) . ' XP' : ''; ?></span>
                             <a href="../business_details.php?id=<?php echo escape_output($checkin['business_id']); ?>">View Location</a>
                         </article>
@@ -702,7 +748,7 @@ if (!$profile) {
                         <?php while ($location = $shared_locations->fetch_assoc()) : ?>
                             <article class="friend-location-card">
                                 <strong><?php echo escape_output($location['bName']); ?></strong>
-                                <span><?php echo escape_output($location['bType']); ?> · <?php echo escape_output($location['city']); ?>, <?php echo escape_output($location['state']); ?></span>
+                                <span><?php echo escape_output(craftcrawl_profile_business_type_label($location['bType'])); ?> · <?php echo escape_output($location['city']); ?>, <?php echo escape_output($location['state']); ?></span>
                                 <a href="../business_details.php?id=<?php echo escape_output($location['id']); ?>">View Location</a>
                             </article>
                         <?php endwhile; ?>
@@ -718,7 +764,7 @@ if (!$profile) {
                         <?php while ($location = $friend_unvisited_locations->fetch_assoc()) : ?>
                             <article class="friend-location-card">
                                 <strong><?php echo escape_output($location['bName']); ?></strong>
-                                <span><?php echo escape_output($location['bType']); ?> · <?php echo escape_output($location['city']); ?>, <?php echo escape_output($location['state']); ?></span>
+                                <span><?php echo escape_output(craftcrawl_profile_business_type_label($location['bType'])); ?> · <?php echo escape_output($location['city']); ?>, <?php echo escape_output($location['state']); ?></span>
                                 <a href="../business_details.php?id=<?php echo escape_output($location['id']); ?>">View Location</a>
                             </article>
                         <?php endwhile; ?>

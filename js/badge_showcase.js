@@ -48,7 +48,8 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
                     <article class="badge-showcase-slot is-filled" data-showcase-slot="${s}">
                         <img class="badge-icon" src="${badgeIconPath(badge.badge_key)}" alt="" loading="lazy" width="64" height="64">
                         <strong>${escapeHtml(badge.badge_name)}</strong>
-                        <small>${escapeHtml(badge.badge_tier)}</small>
+                        <span>${escapeHtml(badge.badge_description)}</span>
+                        <small>${escapeHtml(String(badge.badge_tier || '').replace(/^./, (first) => first.toUpperCase()))}</small>
                         <button type="button" class="badge-showcase-remove" data-showcase-action="remove" data-badge-key="${escapeHtml(badge.badge_key)}">Remove</button>
                     </article>
                 `;
