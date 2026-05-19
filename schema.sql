@@ -494,7 +494,7 @@ CREATE TABLE IF NOT EXISTS xp_log (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     amount INT NOT NULL,
-    source_type ENUM('first_time_visit', 'repeat_visit', 'review', 'badge') NOT NULL,
+    source_type ENUM('first_time_visit', 'repeat_visit', 'review', 'badge', 'quest') NOT NULL,
     source_id VARCHAR(64) NOT NULL,
     description VARCHAR(255),
     level_before INT NOT NULL DEFAULT 1,
@@ -504,6 +504,21 @@ CREATE TABLE IF NOT EXISTS xp_log (
     UNIQUE KEY unique_user_xp_source (user_id, source_type, source_id),
     KEY idx_xp_log_user_created (user_id, createdAt),
     CONSTRAINT fk_xp_log_userId FOREIGN KEY (user_id)
+    REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS user_quest_completions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    quest_key VARCHAR(64) NOT NULL,
+    period_type ENUM('daily', 'weekly') NOT NULL,
+    period_start DATE NOT NULL,
+    period_end DATE NOT NULL,
+    xp_awarded INT NOT NULL DEFAULT 0,
+    completedAt DATETIME NOT NULL,
+    UNIQUE KEY unique_user_quest_period (user_id, quest_key, period_start),
+    KEY idx_user_quest_completions_user_period (user_id, period_type, period_start),
+    CONSTRAINT fk_user_quest_completions_userId FOREIGN KEY (user_id)
     REFERENCES users(id)
 );
 

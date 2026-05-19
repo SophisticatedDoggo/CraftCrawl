@@ -692,17 +692,32 @@ function getBusinessSearchMatches(query) {
         return [];
     }
 
-    return allBusinessFeatures.filter((feature) => {
+    const terms = normalizedQuery
+        .split(/[^a-z0-9]+/i)
+        .filter((term) => term.length >= 2);
+
+    return allBusinessFeatures.map((feature) => {
         const properties = feature.properties;
         const searchableText = [
             properties.title,
             formatBusinessType(properties.businessType),
+            properties.streetAddress,
             properties.city,
-            properties.state
+            properties.state,
+            properties.zip
         ].join(' ').toLowerCase();
 
-        return searchableText.includes(normalizedQuery);
-    }).slice(0, 6);
+        if (searchableText.includes(normalizedQuery)) {
+            return { feature, score: 10 };
+        }
+
+        const matchedTerms = terms.filter((term) => searchableText.includes(term)).length;
+        return { feature, score: matchedTerms };
+    })
+        .filter((match) => match.score > 0)
+        .sort((a, b) => b.score - a.score || String(a.feature.properties.title).localeCompare(String(b.feature.properties.title)))
+        .map((match) => match.feature)
+        .slice(0, 6);
 }
 
 function renderBusinessSearchResults(matches) {

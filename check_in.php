@@ -3,6 +3,7 @@ require 'login_check.php';
 include 'db.php';
 require_once 'lib/leveling.php';
 require_once 'lib/location_hours.php';
+require_once 'lib/quests.php';
 
 header('Content-Type: application/json');
 
@@ -128,6 +129,7 @@ try {
     $source_id = $visit_type === 'first_time' ? (string) $location_id : (string) $visit_id;
     craftcrawl_add_xp($conn, $user_id, $xp_awarded, $source_type, $source_id, $business['name']);
     $badges = craftcrawl_award_eligible_badges($conn, $user_id);
+    $quest_rewards = craftcrawl_award_eligible_quest_rewards($conn, $user_id);
     $action_label = $visit_type === 'first_time' ? 'First-Time Check-In' : 'Repeat Check-In';
     $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, $action_label);
     $progress = $reward_payload['progress'] ?? craftcrawl_user_level_progress($conn, $user_id);
@@ -143,6 +145,7 @@ try {
         'xp_awarded' => $reward_payload['xp_awarded'] ?? $xp_awarded,
         'action_label' => $action_label,
         'badges' => $badges,
+        'quest_rewards' => array_map(fn($quest) => $quest['name'], $quest_rewards),
         'level_up' => $reward_payload['level_up'] ?? null,
         'level_rewards' => $reward_payload['level_rewards'] ?? [],
         'progress_before' => $progress_before,

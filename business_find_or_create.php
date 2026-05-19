@@ -10,25 +10,50 @@ $type = trim($_GET['location_type'] ?? '');
 $allowed_types = ['brewery', 'winery', 'cidery', 'distillery', 'meadery', 'bar', 'social_club'];
 $has_search = $name_query !== '' || $area !== '' || $type !== '';
 $results = [];
+$used_broadened_search = false;
 
 function escape_output($value) {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
-if ($has_search) {
+function craftcrawl_claim_search_terms($value) {
+    $normalized = strtolower(trim((string) $value));
+    $parts = preg_split('/[^a-z0-9]+/i', $normalized, -1, PREG_SPLIT_NO_EMPTY);
+    $stop_words = ['a', 'an', 'and', 'area', 'city', 'county', 'in', 'near', 'of', 'pa', 'pennsylvania', 'the'];
+
+    return array_values(array_unique(array_filter($parts, function ($part) use ($stop_words) {
+        return strlen($part) >= 2 && !in_array($part, $stop_words, true);
+    })));
+}
+
+function craftcrawl_claim_search_bind($stmt, $types, $params) {
+    if ($types === '') {
+        return;
+    }
+
+    $refs = [];
+    foreach ($params as $key => $value) {
+        $refs[$key] = &$params[$key];
+    }
+    array_unshift($refs, $types);
+    call_user_func_array([$stmt, 'bind_param'], $refs);
+}
+
+function craftcrawl_claim_location_search($conn, $name_query, $area, $type, $allowed_types, $broadened = false) {
     $sql = "
-        SELECT id, name, street_address, city, state, visibility_status
+        SELECT id, name, street_address, city, state, zip, location_type, visibility_status
         FROM locations
         WHERE visibility_status IN ('public_unclaimed', 'public_claimed')
           AND disabledAt IS NULL
     ";
     $params = [];
     $types = '';
+    $score_parts = [];
 
     if ($name_query !== '') {
         $name_like = '%' . $name_query . '%';
         $compact_name_like = '%' . strtolower(preg_replace('/[^a-z0-9]+/i', '', $name_query)) . '%';
-        $sql .= " AND (
+        $name_clause = "(
             name LIKE ?
             OR REPLACE(normalized_name, ' ', '') LIKE ?
             OR REPLACE(REPLACE(REPLACE(LOWER(name), ' ', ''), '-', ''), '.', '') LIKE ?
@@ -37,28 +62,78 @@ if ($has_search) {
         $params[] = $compact_name_like;
         $params[] = $compact_name_like;
         $types .= 'sss';
+
+        foreach (craftcrawl_claim_search_terms($name_query) as $term) {
+            $term_like = '%' . $term . '%';
+            $name_clause .= " OR LOWER(name) LIKE ?";
+            $params[] = $term_like;
+            $types .= 's';
+        }
+
+        if ($broadened) {
+            $score_parts[] = "CASE WHEN $name_clause THEN 12 ELSE 0 END";
+        } else {
+            $sql .= " AND ($name_clause)";
+        }
     }
 
     if ($area !== '') {
         $area_like = '%' . $area . '%';
-        $sql .= " AND (city LIKE ? OR state LIKE ? OR zip LIKE ? OR street_address LIKE ? OR CONCAT(city, ', ', state) LIKE ?)";
+        $area_clause = "(city LIKE ? OR state LIKE ? OR zip LIKE ? OR street_address LIKE ? OR CONCAT(city, ', ', state) LIKE ?)";
         array_push($params, $area_like, $area_like, $area_like, $area_like, $area_like);
         $types .= 'sssss';
+
+        foreach (craftcrawl_claim_search_terms($area) as $term) {
+            $term_like = '%' . $term . '%';
+            $area_clause .= " OR LOWER(city) LIKE ? OR LOWER(zip) LIKE ? OR LOWER(street_address) LIKE ?";
+            array_push($params, $term_like, $term_like, $term_like);
+            $types .= 'sss';
+        }
+
+        if ($broadened) {
+            $score_parts[] = "CASE WHEN $area_clause THEN 8 ELSE 0 END";
+        } else {
+            $sql .= " AND ($area_clause)";
+        }
     }
 
     if ($type !== '' && in_array($type, $allowed_types, true)) {
-        $sql .= " AND location_type=?";
+        if ($broadened) {
+            $score_parts[] = "CASE WHEN location_type=? THEN 3 ELSE 0 END";
+        } else {
+            $sql .= " AND location_type=?";
+        }
         $params[] = $type;
         $types .= 's';
     }
 
-    $sql .= " ORDER BY name, city, state LIMIT 12";
-    $stmt = $conn->prepare($sql);
-    if (!empty($params)) {
-        $stmt->bind_param($types, ...$params);
+    if ($broadened) {
+        if (empty($score_parts)) {
+            return [];
+        }
+
+        $score_sql = implode(' + ', $score_parts);
+        $sql .= " HAVING match_score > 0";
+        $sql = str_replace('SELECT id, name, street_address, city, state, zip, location_type, visibility_status', 'SELECT id, name, street_address, city, state, zip, location_type, visibility_status, (' . $score_sql . ') AS match_score', $sql);
+        $sql .= " ORDER BY match_score DESC, name, city, state LIMIT 12";
+    } else {
+        $sql .= " ORDER BY name, city, state LIMIT 12";
     }
+
+    $stmt = $conn->prepare($sql);
+    craftcrawl_claim_search_bind($stmt, $types, $params);
     $stmt->execute();
-    $results = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
+if ($has_search) {
+    $results = craftcrawl_claim_location_search($conn, $name_query, $area, $type, $allowed_types);
+
+    if (empty($results) && ($name_query !== '' || $area !== '')) {
+        $results = craftcrawl_claim_location_search($conn, $name_query, $area, $type, $allowed_types, true);
+        $used_broadened_search = !empty($results);
+    }
 }
 ?>
 <!doctype html>
@@ -104,6 +179,8 @@ if ($has_search) {
                 <h2>Search results</h2>
                 <?php if (empty($results)) : ?>
                     <p>No matching public locations found.</p>
+                <?php elseif ($used_broadened_search) : ?>
+                    <p class="form-help">Showing broader matches because no exact name and area match was found.</p>
                 <?php endif; ?>
                 <?php foreach ($results as $location) : ?>
                     <article class="admin-list-item">

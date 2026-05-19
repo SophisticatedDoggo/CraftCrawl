@@ -39,6 +39,10 @@ $craftcrawl_user_logout_action = $craftcrawl_user_logout_action ?? '/logout.php'
         <span>Feed</span>
         <span class="mobile-tab-badge" data-friends-tab-badge hidden></span>
     </a>
+    <a class="mobile-app-tab<?php echo $craftcrawl_portal_active === 'quests' ? ' is-active' : ''; ?>" href="<?php echo $craftcrawl_user_nav_prefix; ?>quests.php">
+        <span class="mobile-app-tab-icon mobile-app-tab-icon-quests" aria-hidden="true"></span>
+        <span>Quests</span>
+    </a>
     <a class="mobile-app-tab" href="<?php echo $craftcrawl_user_nav_prefix; ?>portal.php#checkin-panel">
         <span class="mobile-app-tab-icon mobile-app-tab-icon-checkin" aria-hidden="true"></span>
         <span>Check In</span>

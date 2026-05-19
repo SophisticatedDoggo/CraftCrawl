@@ -1,6 +1,6 @@
 (function () {
     const baseFiles = new Set(['portal.php', 'events.php', 'feed.php']);
-    const shellFiles = new Set([...baseFiles, 'friends.php', 'profile.php', 'settings.php', 'feed_post.php', 'business_details.php']);
+    const shellFiles = new Set([...baseFiles, 'quests.php', 'friends.php', 'profile.php', 'settings.php', 'feed_post.php', 'business_details.php']);
     let navigating = false;
 
     function absoluteUrl(value, base = window.location.href) { return new URL(value, base).href; }
@@ -17,11 +17,11 @@
 
     function setActiveTab(url) {
         const file = currentFile(url);
-        const active = file === 'portal.php' ? 'map' : file === 'events.php' ? 'events' : file === 'feed.php' ? 'feed' : '';
+        const active = file === 'portal.php' ? 'map' : file === 'events.php' ? 'events' : file === 'feed.php' ? 'feed' : file === 'quests.php' ? 'quests' : '';
         document.querySelectorAll('.mobile-app-tabbar .mobile-app-tab').forEach((tab) => {
             if (!(tab instanceof HTMLAnchorElement)) return;
             const fileName = currentFile(tab.href);
-            const tabName = fileName === 'portal.php' ? 'map' : fileName === 'events.php' ? 'events' : fileName === 'feed.php' ? 'feed' : '';
+            const tabName = fileName === 'portal.php' ? 'map' : fileName === 'events.php' ? 'events' : fileName === 'feed.php' ? 'feed' : fileName === 'quests.php' ? 'quests' : '';
             tab.classList.toggle('is-active', Boolean(active) && tabName === active);
         });
         window.CraftCrawlCloseMobileActionsMenu?.();

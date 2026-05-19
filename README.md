@@ -129,10 +129,12 @@ Run the leveling migration before using check-ins, XP, levels, and badges:
 mysql -u craft_crawl -p craft_crawl < migrations/2026_05_10_leveling_system.sql
 mysql -u craft_crawl -p craft_crawl < migrations/2026_05_12_progressive_level_state.sql
 mysql -u craft_crawl -p craft_crawl < migrations/2026_05_14_user_profile_photos.sql
+mysql -u craft_crawl -p craft_crawl < migrations/2026_05_19_questing_system.sql
 ```
 
 Check-ins use browser GPS and server-side distance checks. Review XP is only
-awarded after a user has checked in at that location.
+awarded after a user has checked in at that location. Daily and weekly quests
+award XP through the same leveling system.
 
 ## Admin accounts
 

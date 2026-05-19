@@ -91,6 +91,7 @@ function add_recurring_event_occurrences(&$events, $event, $start_date, $end_dat
 require_once 'config.php';
 require_once 'lib/cloudinary_upload.php';
 require_once 'lib/leveling.php';
+require_once 'lib/quests.php';
 require_once 'lib/location_hours.php';
 
 if (!$business_id) {
@@ -235,6 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 $badges = craftcrawl_award_eligible_badges($conn, $user_id);
+                craftcrawl_award_eligible_quest_rewards($conn, $user_id);
                 $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Review');
                 $progress = $reward_payload['progress'] ?? craftcrawl_user_level_progress($conn, $user_id);
                 $conn->commit();

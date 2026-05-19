@@ -191,6 +191,15 @@ function craftcrawl_mapbox_split_bbox(array $bbox) {
     ];
 }
 
+function craftcrawl_mapbox_search_terms($value) {
+    $parts = preg_split('/[^a-z0-9]+/i', strtolower((string) $value), -1, PREG_SPLIT_NO_EMPTY);
+    $stop_words = ['a', 'an', 'and', 'bar', 'club', 'co', 'company', 'llc', 'of', 'pa', 'the'];
+
+    return array_values(array_unique(array_filter($parts, function ($part) use ($stop_words) {
+        return strlen($part) >= 3 && !in_array($part, $stop_words, true);
+    })));
+}
+
 function craftcrawl_mapbox_import_candidates($access_token, $location_type, $area, $limit = 10, $scope = 'area', $name_query = '') {
     $area_result = craftcrawl_mapbox_resolve_area($access_token, $area);
     if (!$area_result || empty($area_result['bbox'])) {
@@ -198,12 +207,12 @@ function craftcrawl_mapbox_import_candidates($access_token, $location_type, $are
     }
 
     $search_boxes = [$area_result['bbox']];
-    if ($scope === 'broadened') {
+    $trimmed_name_query = trim($name_query);
+    if ($scope === 'broadened' || $trimmed_name_query !== '') {
         $search_boxes = craftcrawl_mapbox_split_bbox(craftcrawl_mapbox_expand_bbox($area_result['bbox']));
     }
 
     $unique_results = [];
-    $trimmed_name_query = trim($name_query);
     $query_by_type = [
         'social_club' => 'social club',
     ];
@@ -214,6 +223,10 @@ function craftcrawl_mapbox_import_candidates($access_token, $location_type, $are
         if ($compact_name_query !== '' && strcasecmp($compact_name_query, $trimmed_name_query) !== 0) {
             $search_queries[] = $compact_name_query;
         }
+        foreach (craftcrawl_mapbox_search_terms($trimmed_name_query) as $term) {
+            $search_queries[] = $term;
+        }
+        $search_queries = array_values(array_unique($search_queries));
     }
     $filter_by_location_type = trim($name_query) === '' && $location_type !== 'any';
 
