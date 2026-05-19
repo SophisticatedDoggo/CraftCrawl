@@ -158,6 +158,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <fieldset class="business-hours-editor">
                 <legend>Business Hours</legend>
                 <p class="form-help">Required for visit XP eligibility. Mark closed days or enter opening and closing times.</p>
+                <div class="business-hours-bulk" data-business-hours-bulk>
+                    <div class="business-hours-bulk-times">
+                        <label>
+                            Opens
+                            <input type="time" data-hours-template-open>
+                        </label>
+                        <label>
+                            Closes
+                            <input type="time" data-hours-template-close>
+                        </label>
+                        <label class="business-hours-bulk-closed">
+                            <input type="checkbox" data-hours-template-closed>
+                            Closed
+                        </label>
+                    </div>
+                    <div class="business-hours-bulk-days" aria-label="Days to update">
+                        <?php foreach ($business_hours as $day => $hour) : ?>
+                            <label>
+                                <input type="checkbox" value="<?php echo escape_output($day); ?>" data-hours-target-day>
+                                <?php echo escape_output(substr($hour['day_label'], 0, 3)); ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="business-hours-bulk-actions">
+                        <button type="button" data-hours-select="weekdays">Weekdays</button>
+                        <button type="button" data-hours-select="weekend">Weekend</button>
+                        <button type="button" data-hours-select="all">All Days</button>
+                        <button type="button" data-hours-select="clear">Clear</button>
+                        <button type="button" data-hours-apply>Apply to Selected</button>
+                    </div>
+                </div>
                 <?php foreach ($business_hours as $day => $hour) : ?>
                     <div class="business-hours-row" data-hours-row="<?php echo escape_output($day); ?>">
                         <span><?php echo escape_output($hour['day_label']); ?></span>
