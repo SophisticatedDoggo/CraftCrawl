@@ -54,7 +54,6 @@ function craftcrawl_allowed_hosts() {
     if (empty($hosts)) {
         $hosts = [
             'app.craftcrawl.site',
-            'staging.craftcrawl.site',
             'localhost',
             '127.0.0.1'
         ];

@@ -1,33 +1,18 @@
-# CraftCrawl Environments
+# CraftCrawl Environment
 
-CraftCrawl uses two long-lived branches and two Cloudways apps:
+CraftCrawl deploys production from `main` to the Cloudways app at:
 
-- `develop` deploys to the `staging` Cloudways app at `https://staging.craftcrawl.site`.
-- `main` deploys to the `prod` Cloudways app at `https://app.craftcrawl.site`.
-
-Use staging for web QA and Android emulator/device testing. Use prod for the
-live website, iOS simulator builds, TestFlight, and store builds.
+- `https://app.craftcrawl.site`
 
 ## GitHub Secrets
 
-Add the deploy values as repository secrets:
+Add deploy values as repository secrets:
 
 GitHub repo -> Settings -> Secrets and variables -> Actions -> Repository secrets.
 
 ## Web Deploy Secrets
 
-The `Deploy Web` workflow deploys `develop` to staging and `main` to prod with
-`rsync` over SSH. Add these repository secrets:
-
-Staging:
-
-- `STAGING_SSH_HOST`
-- `STAGING_SSH_USER`
-- `STAGING_SSH_PORT`
-- `STAGING_SSH_PRIVATE_KEY`
-- `STAGING_DEPLOY_PATH`
-
-Prod:
+The `Deploy Web` workflow deploys `main` to prod with `rsync` over SSH. Add these repository secrets:
 
 - `PROD_SSH_HOST`
 - `PROD_SSH_USER`
@@ -35,47 +20,33 @@ Prod:
 - `PROD_SSH_PRIVATE_KEY`
 - `PROD_DEPLOY_PATH`
 
-Cloudways usually provides SSH/SFTP credentials and an application path. Use a
-dedicated SSH key when possible. The deploy excludes local secrets, GitHub
-workflow files, Node dependencies, generated native projects, and local upload
-folders.
+Cloudways usually provides SSH/SFTP credentials and an application path. Use a dedicated SSH key when possible. The deploy excludes local secrets, GitHub workflow files, Node dependencies, generated native projects, and local upload folders.
 
-## Mobile URLs
+## Mobile URL
 
 The Capacitor app reads `CRAFTCRAWL_MOBILE_URL` when syncing native projects:
 
-- Staging builds use `https://staging.craftcrawl.site`.
 - Prod builds use `https://app.craftcrawl.site`.
 
-The Android workflow sets this automatically from the branch or manual workflow
-target. The iOS workflow always builds prod from `main`.
+The Android and iOS workflows build from `main` and point at prod.
 
 ## OneSignal Push
 
-Browser push is wired through `lib/onesignal.php`, `user/onesignal_config.php`,
-and `js/onesignal_push.js`. Set these environment values per Cloudways app:
+Browser push is wired through `lib/onesignal.php`, `user/onesignal_config.php`, and `js/onesignal_push.js`. Set these environment values on the Cloudways app:
 
 - `ONESIGNAL_APP_ID`
 - `ONESIGNAL_API_KEY`
-- `CRAFTCRAWL_APP_URL`, such as `https://staging.craftcrawl.site` or `https://app.craftcrawl.site`
+- `CRAFTCRAWL_APP_URL=https://app.craftcrawl.site`
 
-The OneSignal service worker files must remain web-accessible at
-`/OneSignalSDKWorker.js` and `/OneSignalSDKUpdaterWorker.js`.
+The OneSignal service worker files must remain web-accessible at `/OneSignalSDKWorker.js` and `/OneSignalSDKUpdaterWorker.js`.
 
 ## Mobile Test Builds
 
-Android staging builds are installable beside prod builds:
-
-- Staging package id: `com.craftcrawl.app.staging`.
-- Prod package id: `com.craftcrawl.app`.
+Android debug builds use package id `com.craftcrawl.app` and app label `CraftCrawl`.
 
 Download the debug APK artifact from the `Capacitor Android Build` workflow.
-Use `develop`/`staging` for test devices and `main`/`prod` for release
-candidate checks.
 
-iOS simulator builds are produced by the `Capacitor iOS Build` workflow. Real
-iPhone testing or TestFlight requires an Apple Developer account and signing in
-Xcode.
+iOS simulator builds are produced by the `Capacitor iOS Build` workflow. Real iPhone testing or TestFlight requires an Apple Developer account and signing in Xcode.
 
 ## iOS Production Setup
 
@@ -87,18 +58,11 @@ npm run cap:sync:prod:ios
 npm run cap:open:ios
 ```
 
-In Xcode, select an iPhone simulator and run the `App` scheme. For physical
-device testing or TestFlight, enroll in the Apple Developer Program, set the
-team/signing settings in Xcode, and archive a build pointed at prod.
+In Xcode, select an iPhone simulator and run the `App` scheme. For physical device testing or TestFlight, enroll in the Apple Developer Program, set the team/signing settings in Xcode, and archive a build pointed at prod.
 
 ## Production Readiness Checklist
 
-Before merging `develop` into `main`:
-
-- Staging web login, account creation, check-ins, events, friends, feed, admin,
-  and business portal flows have been tested.
-- Android debug build works against staging.
-- iOS simulator or TestFlight build works against prod.
-- Prod host has its own database, `.env` values, Cloudinary, hCaptcha,
-  Mailgun, and OneSignal configuration.
+- Prod host has its own database, `.env` values, Cloudinary, hCaptcha, Mailgun, and OneSignal configuration.
 - `app.craftcrawl.site` has HTTPS and OneSignal configured for that origin.
+- Android debug build works against prod.
+- iOS simulator or TestFlight build works against prod.

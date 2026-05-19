@@ -3,14 +3,6 @@ name: Android Website Release
 on:
   workflow_dispatch:
     inputs:
-      target:
-        description: Website target for the APK download page
-        required: true
-        type: choice
-        options:
-          - prod
-          - staging
-        default: prod
       version_name:
         description: Android version name, for example 1.0.0
         required: true
@@ -37,18 +29,18 @@ on:
         default: trail
 
 concurrency:
-  group: android-website-release-${{ inputs.target }}
+  group: android-website-release-prod
   cancel-in-progress: false
 
 jobs:
   build-and-publish:
-    name: Build signed ${{ inputs.target }} APK
+    name: Build signed prod APK
     runs-on: ubuntu-latest
 
     env:
-      DEPLOY_TARGET: ${{ inputs.target }}
-      CRAFTCRAWL_APP_ENV: ${{ inputs.target }}
-      CRAFTCRAWL_MOBILE_URL: ${{ inputs.target == 'prod' && 'https://app.craftcrawl.site' || 'https://staging.craftcrawl.site' }}
+      DEPLOY_TARGET: prod
+      CRAFTCRAWL_APP_ENV: prod
+      CRAFTCRAWL_MOBILE_URL: https://app.craftcrawl.site
       CRAFTCRAWL_APP_ICON: ${{ inputs.app_icon }}
       CRAFTCRAWL_VERSION_NAME: ${{ inputs.version_name }}
       CRAFTCRAWL_VERSION_CODE: ${{ inputs.version_code }}
@@ -59,13 +51,8 @@ jobs:
     steps:
       - name: Validate branch target
         run: |
-          if [ "$DEPLOY_TARGET" = "prod" ] && [ "${GITHUB_REF_NAME}" != "main" ]; then
+          if [ "${GITHUB_REF_NAME}" != "main" ]; then
             echo "Production website Android releases must run from main."
-            exit 1
-          fi
-
-          if [ "$DEPLOY_TARGET" = "staging" ] && [ "${GITHUB_REF_NAME}" != "develop" ]; then
-            echo "Staging website Android releases must run from develop."
             exit 1
           fi
 
@@ -74,27 +61,15 @@ jobs:
 
       - name: Set deployment variables
         run: |
-          if [ "$DEPLOY_TARGET" = "prod" ]; then
-            {
-              echo "SSH_HOST=${{ secrets.PROD_SSH_HOST }}"
-              echo "SSH_USER=${{ secrets.PROD_SSH_USER }}"
-              echo "SSH_PORT=${{ secrets.PROD_SSH_PORT }}"
-              echo "DEPLOY_PATH=${{ secrets.PROD_DEPLOY_PATH }}"
-              echo "SSH_KEY<<EOF"
-              echo "${{ secrets.PROD_SSH_PRIVATE_KEY }}"
-              echo "EOF"
-            } >> "$GITHUB_ENV"
-          else
-            {
-              echo "SSH_HOST=${{ secrets.STAGING_SSH_HOST }}"
-              echo "SSH_USER=${{ secrets.STAGING_SSH_USER }}"
-              echo "SSH_PORT=${{ secrets.STAGING_SSH_PORT }}"
-              echo "DEPLOY_PATH=${{ secrets.STAGING_DEPLOY_PATH }}"
-              echo "SSH_KEY<<EOF"
-              echo "${{ secrets.STAGING_SSH_PRIVATE_KEY }}"
-              echo "EOF"
-            } >> "$GITHUB_ENV"
-          fi
+          {
+            echo "SSH_HOST=${{ secrets.PROD_SSH_HOST }}"
+            echo "SSH_USER=${{ secrets.PROD_SSH_USER }}"
+            echo "SSH_PORT=${{ secrets.PROD_SSH_PORT }}"
+            echo "DEPLOY_PATH=${{ secrets.PROD_DEPLOY_PATH }}"
+            echo "SSH_KEY<<EOF"
+            echo "${{ secrets.PROD_SSH_PRIVATE_KEY }}"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
 
       - name: Validate deployment variables
         run: |
@@ -161,12 +136,7 @@ jobs:
         run: npx cap sync android
 
       - name: Build signed release APK
-        run: |
-          if [ "$DEPLOY_TARGET" = "prod" ]; then
-            cd android && ./gradlew assembleProdRelease
-          else
-            cd android && ./gradlew assembleStagingRelease
-          fi
+        run: cd android && ./gradlew assembleProdRelease
 
       - name: Prepare release file
         run: |
@@ -176,7 +146,7 @@ jobs:
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
         with:
-          name: craftcrawl-${{ inputs.target }}-release-apk
+          name: craftcrawl-prod-release-apk
           path: release/craftcrawl-prod.apk
 
       - name: Configure SSH

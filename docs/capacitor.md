@@ -34,15 +34,7 @@ npm run cap:add:android
 npm run cap:add:ios
 ```
 
-For staging Android testing, use:
-
-```sh
-npm run cap:sync:staging:android
-npm run android:debug:staging
-npm run cap:open:android
-```
-
-For production Android testing before a store build, use:
+For Android testing before a store build, use:
 
 ```sh
 npm run cap:sync:prod:android
@@ -61,14 +53,10 @@ npm run cap:open:ios
 
 `Capacitor Android Build` creates a debug APK artifact:
 
-- Push to `develop`: staging APK pointed at `https://staging.craftcrawl.site`.
 - Push to `main`: prod APK pointed at `https://app.craftcrawl.site`.
-- Manual run: choose `staging` from `develop` or `prod` from `main`.
+- Manual run: run from `main`.
 
-Android uses build flavors:
-
-- `staging`: package id `com.craftcrawl.app.staging`, app label `CraftCrawl Staging`.
-- `prod`: package id `com.craftcrawl.app`, app label `CraftCrawl`.
+Android uses package id `com.craftcrawl.app` and app label `CraftCrawl`.
 
 Download the artifact from the workflow run and install it on an emulator or
 Android test device.

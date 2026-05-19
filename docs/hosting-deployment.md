@@ -13,20 +13,9 @@ CraftCrawl needs a host that supports:
 
 CraftCrawl uses:
 
-- `develop` for staging at `https://staging.craftcrawl.site`.
 - `main` for prod at `https://app.craftcrawl.site`.
 
-The web deploy workflow follows this branch model automatically. See
-`docs/environments.md` for the required GitHub Environment and secret setup.
-
-## Recommended Staging Path
-
-1. Keep day-to-day work on `develop`.
-2. Deploy `develop` to `https://staging.craftcrawl.site`.
-3. Point staging `CRAFTCRAWL_APP_URL` and `CRAFTCRAWL_MOBILE_URL` at staging.
-4. Test login, email verification, hCaptcha, check-ins, events, friends, feed comments, reactions, and business analytics on real devices.
-5. Merge `develop` into `main` only when staging is ready.
-6. Deploy `main` to `https://app.craftcrawl.site`.
+The web deploy workflow deploys from `main`. See `docs/environments.md` for the required secret setup.
 
 ## Hosting Options
 
@@ -43,7 +32,7 @@ Good fit when:
 Tradeoffs:
 
 - GitHub auto-deploy support varies by host.
-- Background jobs, logs, and staging environments are usually more limited.
+- Background jobs and logs are usually more limited.
 
 ### Best Long-Term Control
 
@@ -79,9 +68,9 @@ Tradeoffs:
 The repository includes these workflows:
 
 - `PHP CI`: lints PHP files on push and pull request.
-- `Deploy Web`: deploys `develop` to staging and `main` to prod with `rsync` over SSH.
-- `Capacitor Android Build`: builds a branch-targeted debug APK.
-- `Capacitor iOS Build`: builds a branch-targeted iOS simulator app on macOS.
+- `Deploy Web`: deploys `main` to prod with `rsync` over SSH.
+- `Capacitor Android Build`: builds a prod debug APK.
+- `Capacitor iOS Build`: builds a prod iOS simulator app on macOS.
 
 Do not store passwords, API keys, database credentials, hCaptcha secrets, Cloudinary secrets, or signing keys in the repo. Put them in GitHub Actions secrets and host environment variables.
 

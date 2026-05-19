@@ -8,7 +8,6 @@
   },
   "scripts": {
     "cap:sync": "cap sync",
-    "cap:sync:staging:android": "CRAFTCRAWL_APP_ENV=staging CRAFTCRAWL_MOBILE_URL=https://staging.craftcrawl.site cap sync android",
     "cap:sync:prod:android": "CRAFTCRAWL_APP_ENV=prod CRAFTCRAWL_MOBILE_URL=https://app.craftcrawl.site cap sync android",
     "cap:sync:prod:ios": "CRAFTCRAWL_APP_ENV=prod CRAFTCRAWL_MOBILE_URL=https://app.craftcrawl.site cap sync ios",
     "cap:open:android": "cap open android",
@@ -19,7 +18,6 @@
     "assets:splash": "tools/generate-splash-assets.sh",
     "assets:native": "npm run assets:icons && npm run assets:splash",
     "android:debug": "cd android && ./gradlew assembleDebug",
-    "android:debug:staging": "cd android && ./gradlew assembleStagingDebug",
     "android:debug:prod": "cd android && ./gradlew assembleProdDebug",
     "mobile:doctor": "cap doctor"
   },

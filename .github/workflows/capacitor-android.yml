@@ -3,7 +3,6 @@ name: Capacitor Android Build
 on:
   push:
     branches:
-      - develop
       - main
     paths:
       - 'android/**'
@@ -22,14 +21,6 @@ on:
       - '.github/workflows/capacitor-android.yml'
   workflow_dispatch:
     inputs:
-      target:
-        description: Build target
-        required: true
-        type: choice
-        options:
-          - staging
-          - prod
-        default: staging
       app_icon:
         description: Initial app icon style; users can change it later in app settings
         required: true
@@ -52,24 +43,18 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      CRAFTCRAWL_APP_ENV: ${{ (github.event_name == 'workflow_dispatch' && inputs.target) || (github.ref_name == 'main' && 'prod' || 'staging') }}
-      CRAFTCRAWL_MOBILE_URL: ${{ (github.event_name == 'workflow_dispatch' && inputs.target == 'prod') || github.ref_name == 'main' && 'https://app.craftcrawl.site' || 'https://staging.craftcrawl.site' }}
+      CRAFTCRAWL_APP_ENV: prod
+      CRAFTCRAWL_MOBILE_URL: https://app.craftcrawl.site
       CRAFTCRAWL_APP_ICON: ${{ github.event.inputs.app_icon || 'trail' }}
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Validate manual branch target
-        if: github.event_name == 'workflow_dispatch'
+      - name: Validate branch target
         run: |
-          if [ "${{ inputs.target }}" = "prod" ] && [ "${GITHUB_REF_NAME}" != "main" ]; then
+          if [ "${GITHUB_REF_NAME}" != "main" ]; then
             echo "Prod mobile builds must run from main."
-            exit 1
-          fi
-
-          if [ "${{ inputs.target }}" = "staging" ] && [ "${GITHUB_REF_NAME}" != "develop" ]; then
-            echo "Staging mobile builds must run from develop."
             exit 1
           fi
 
@@ -102,15 +87,10 @@ jobs:
         run: npx cap sync android
 
       - name: Build debug APK
-        run: |
-          if [ "$CRAFTCRAWL_APP_ENV" = "prod" ]; then
-            cd android && ./gradlew assembleProdDebug
-          else
-            cd android && ./gradlew assembleStagingDebug
-          fi
+        run: cd android && ./gradlew assembleProdDebug
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: craftcrawl-${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref_name == 'main' && 'prod' || 'staging') }}-debug-apk
+          name: craftcrawl-prod-debug-apk
           path: android/app/build/outputs/apk/**/debug/*.apk

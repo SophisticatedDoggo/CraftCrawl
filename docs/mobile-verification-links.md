@@ -84,13 +84,3 @@ Use this shape, replacing `ANDROID_RELEASE_SHA256_FINGERPRINT` with the signing 
 ```
 
 If Google Play App Signing is enabled, use the fingerprint reported by Play Console for production releases, not only the local upload key.
-
-## Staging
-
-Android staging is configured for:
-
-```text
-https://staging.craftcrawl.site/verify_email.php
-```
-
-If you also want staging Universal Links on iOS, add a staging associated domain entitlement and host a matching AASA file for the staging bundle identifier.

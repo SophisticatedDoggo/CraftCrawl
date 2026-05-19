@@ -77,12 +77,6 @@ android {
     }
     flavorDimensions "environment"
     productFlavors {
-        staging {
-            dimension "environment"
-            applicationIdSuffix ".staging"
-            versionNameSuffix "-staging"
-            manifestPlaceholders = craftcrawlManifestPlaceholders("CraftCrawl Staging", "staging.craftcrawl.site")
-        }
         prod {
             dimension "environment"
             manifestPlaceholders = craftcrawlManifestPlaceholders("CraftCrawl", "app.craftcrawl.site")

@@ -13,14 +13,12 @@ the hosted PHP site. Read the setup notes before generating native projects:
 
 ## Environments
 
-CraftCrawl uses `develop` for staging and `main` for prod:
+CraftCrawl deploys production from `main`:
 
-- Staging web/mobile target: `https://staging.craftcrawl.site`
 - Production web/mobile target: `https://app.craftcrawl.site`
 
-GitHub Actions can lint PHP, deploy web files over SSH/rsync, and build
-branch-targeted Android/iOS Capacitor shells. See `docs/environments.md` for
-the required GitHub Environment and secret setup.
+GitHub Actions can lint PHP, deploy web files over SSH/rsync, and build Android/iOS
+Capacitor shells. See `docs/environments.md` for the required secret setup.
 
 ## Cloudinary photos
 
@@ -95,9 +93,8 @@ environment variables on the host:
 - `ONESIGNAL_API_KEY`
 - `CRAFTCRAWL_APP_URL`
 
-The OneSignal web app must be configured for the same origin as the site, such
-as `https://staging.craftcrawl.site`, and `OneSignalSDKWorker.js` must remain
-publicly accessible from the site root.
+The OneSignal web app must be configured for `https://app.craftcrawl.site`, and
+`OneSignalSDKWorker.js` must remain publicly accessible from the site root.
 
 Native push requires the OneSignal Capacitor plugin to be synced into the iOS
 and Android projects. iOS uses the `com.craftcrawl.app` bundle ID with APNs, and
