@@ -1,6 +1,7 @@
 <?php
 require '../login_check.php';
 include '../db.php';
+include '../config.php';
 require_once '../lib/leveling.php';
 require_once '../lib/quests.php';
 
@@ -27,37 +28,9 @@ try {
 }
 
 $user_progress = craftcrawl_user_level_progress($conn, $user_id);
-$quest_rows = craftcrawl_user_quest_rows($conn, $user_id);
-$daily_quests = array_values(array_filter($quest_rows, fn($quest) => $quest['period_type'] === 'daily'));
-$weekly_quests = array_values(array_filter($quest_rows, fn($quest) => $quest['period_type'] === 'weekly'));
-$daily_claimed = count(array_filter($daily_quests, fn($quest) => $quest['claimed']));
-$weekly_claimed = count(array_filter($weekly_quests, fn($quest) => $quest['claimed']));
 $craftcrawl_portal_active = 'quests';
-$craftcrawl_portal_show_search = false;
+$craftcrawl_portal_show_search = true;
 $craftcrawl_portal_shell = true;
-
-function craftcrawl_render_quest_card($quest) {
-    $status = $quest['claimed'] ? 'Claimed' : ($quest['complete'] ? 'Complete' : 'In Progress');
-    ?>
-    <article class="quest-card<?php echo $quest['claimed'] ? ' is-claimed' : ''; ?><?php echo (!$quest['claimed'] && $quest['complete']) ? ' is-complete' : ''; ?>">
-        <div class="quest-card-main">
-            <div class="quest-title-row">
-                <strong><?php echo escape_output($quest['name']); ?></strong>
-                <span><?php echo escape_output($status); ?></span>
-            </div>
-            <p><?php echo escape_output($quest['description']); ?></p>
-            <div class="quest-progress" aria-hidden="true">
-                <span style="width: <?php echo escape_output($quest['progress_percent']); ?>%;"></span>
-            </div>
-            <small>
-                <?php echo escape_output($quest['current']); ?> / <?php echo escape_output($quest['target']); ?> ·
-                <?php echo escape_output(craftcrawl_quest_period_label($quest)); ?> ·
-                +<?php echo escape_output($quest['xp']); ?> XP
-            </small>
-        </div>
-    </article>
-    <?php
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -67,69 +40,40 @@ function craftcrawl_render_quest_card($quest) {
     <title>CraftCrawl | Quests</title>
     <script src="../js/theme_init.js?v=<?php echo filemtime(__DIR__ . '/../js/theme_init.js'); ?>"></script>
     <link rel="stylesheet" href="../css/style.css?v=<?php echo filemtime(__DIR__ . '/../css/style.css'); ?>">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.21.0/mapbox-gl.css" rel="stylesheet">
 </head>
 <body class="portal-body portal-body-compact">
     <div data-user-page-content>
         <?php include __DIR__ . '/portal_header.php'; ?>
-        <main class="portal-main">
-            <section class="portal-panel quests-panel">
-                <div class="quests-header">
-                    <div>
-                        <h2>Quests</h2>
-                        <p>Daily and weekly goals for check-ins, reviews, plans, and events.</p>
-                    </div>
-                    <?php if (!empty($awarded_quests)) : ?>
-                        <p class="quest-award-message">
-                            Claimed <?php echo escape_output(count($awarded_quests)); ?> quest reward<?php echo count($awarded_quests) === 1 ? '' : 's'; ?>.
-                        </p>
-                    <?php endif; ?>
-                </div>
-
-                <div class="quest-summary-grid">
-                    <article>
-                        <strong><?php echo escape_output($daily_claimed); ?> / <?php echo escape_output(count($daily_quests)); ?></strong>
-                        <span>Daily claimed</span>
-                    </article>
-                    <article>
-                        <strong><?php echo escape_output($weekly_claimed); ?> / <?php echo escape_output(count($weekly_quests)); ?></strong>
-                        <span>Weekly claimed</span>
-                    </article>
-                </div>
-
-                <section class="quest-group">
-                    <div class="quest-group-heading">
-                        <h3>Daily</h3>
-                        <span>Resets tomorrow</span>
-                    </div>
-                    <div class="quest-list">
-                        <?php foreach ($daily_quests as $quest) : ?>
-                            <?php craftcrawl_render_quest_card($quest); ?>
-                        <?php endforeach; ?>
-                    </div>
-                </section>
-
-                <section class="quest-group">
-                    <div class="quest-group-heading">
-                        <h3>Weekly</h3>
-                        <span>Resets Monday</span>
-                    </div>
-                    <div class="quest-list">
-                        <?php foreach ($weekly_quests as $quest) : ?>
-                            <?php craftcrawl_render_quest_card($quest); ?>
-                        <?php endforeach; ?>
-                    </div>
-                </section>
-            </section>
-        </main>
+        <?php include __DIR__ . '/tab_panels.php'; ?>
     </div>
     <?php include __DIR__ . '/app_nav.php'; ?>
+<script>
+    window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
+    window.CRAFTCRAWL_CSRF_TOKEN = "<?php echo escape_output(craftcrawl_csrf_token()); ?>";
+    window.CRAFTCRAWL_XP_REWARD_POPUP = <?php echo json_encode($xp_reward_popup, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
+</script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.21.0/mapbox-gl.js"></script>
+<script src="../js/location.js?v=<?php echo filemtime(__DIR__ . '/../js/location.js'); ?>"></script>
+<script src="../js/map.js?v=<?php echo filemtime(__DIR__ . '/../js/map.js'); ?>"></script>
+<script src="../js/directions_links.js?v=<?php echo filemtime(__DIR__ . '/../js/directions_links.js'); ?>"></script>
+<script src="../js/portal_events.js?v=<?php echo filemtime(__DIR__ . '/../js/portal_events.js'); ?>"></script>
 <script src="../js/level_celebration.js?v=<?php echo filemtime(__DIR__ . '/../js/level_celebration.js'); ?>"></script>
+<script src="../js/dashboard_check_in.js?v=<?php echo filemtime(__DIR__ . '/../js/dashboard_check_in.js'); ?>"></script>
+<script src="../js/friends.js?v=<?php echo filemtime(__DIR__ . '/../js/friends.js'); ?>"></script>
+<script src="../js/pull_to_refresh.js?v=<?php echo filemtime(__DIR__ . '/../js/pull_to_refresh.js'); ?>"></script>
 <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
+<script src="../js/user_tab_shell.js?v=<?php echo filemtime(__DIR__ . '/../js/user_tab_shell.js'); ?>"></script>
+<script src="../js/palette_switcher.js?v=<?php echo filemtime(__DIR__ . '/../js/palette_switcher.js'); ?>"></script>
+<script src="../js/app_icon_switcher.js?v=<?php echo filemtime(__DIR__ . '/../js/app_icon_switcher.js'); ?>"></script>
+<script src="../js/profile_photo_crop.js?v=<?php echo filemtime(__DIR__ . '/../js/profile_photo_crop.js'); ?>"></script>
+<script src="../js/badge_showcase.js?v=<?php echo filemtime(__DIR__ . '/../js/badge_showcase.js'); ?>"></script>
+<script src="../js/feed_thread.js?v=<?php echo filemtime(__DIR__ . '/../js/feed_thread.js'); ?>"></script>
 <script src="../js/user_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/user_shell_navigation.js'); ?>"></script>
 <script src="../js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/../js/depth_animations.js'); ?>"></script>
+<script src="../js/onesignal_push.js?v=<?php echo filemtime(__DIR__ . '/../js/onesignal_push.js'); ?>"></script>
 <script>
-    window.CRAFTCRAWL_XP_REWARD_POPUP = <?php echo json_encode($xp_reward_popup, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
     if (window.CRAFTCRAWL_XP_REWARD_POPUP && window.craftcrawlShowXpReward) {
         window.craftcrawlShowXpReward(window.CRAFTCRAWL_XP_REWARD_POPUP);
     }

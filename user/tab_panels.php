@@ -1,5 +1,38 @@
 <?php
+require_once __DIR__ . '/../lib/quests.php';
+
 $craftcrawl_portal_active = $craftcrawl_portal_active ?? 'map';
+$quest_rows = isset($conn, $user_id) ? craftcrawl_user_quest_rows($conn, (int) $user_id) : [];
+$daily_quests = array_values(array_filter($quest_rows, fn($quest) => $quest['period_type'] === 'daily'));
+$weekly_quests = array_values(array_filter($quest_rows, fn($quest) => $quest['period_type'] === 'weekly'));
+$daily_claimed = count(array_filter($daily_quests, fn($quest) => $quest['claimed']));
+$weekly_claimed = count(array_filter($weekly_quests, fn($quest) => $quest['claimed']));
+$awarded_quests = $awarded_quests ?? [];
+
+if (!function_exists('craftcrawl_render_portal_quest_card')) {
+    function craftcrawl_render_portal_quest_card($quest) {
+        $status = $quest['claimed'] ? 'Claimed' : ($quest['complete'] ? 'Complete' : 'In Progress');
+        ?>
+        <article class="quest-card<?php echo $quest['claimed'] ? ' is-claimed' : ''; ?><?php echo (!$quest['claimed'] && $quest['complete']) ? ' is-complete' : ''; ?>">
+            <div class="quest-card-main">
+                <div class="quest-title-row">
+                    <strong><?php echo escape_output($quest['name']); ?></strong>
+                    <span><?php echo escape_output($status); ?></span>
+                </div>
+                <p><?php echo escape_output($quest['description']); ?></p>
+                <div class="quest-progress" aria-hidden="true">
+                    <span style="width: <?php echo escape_output($quest['progress_percent']); ?>%;"></span>
+                </div>
+                <small>
+                    <?php echo escape_output($quest['current']); ?> / <?php echo escape_output($quest['target']); ?> ·
+                    <?php echo escape_output(craftcrawl_quest_period_label($quest)); ?> ·
+                    +<?php echo escape_output($quest['xp']); ?> XP
+                </small>
+            </div>
+        </article>
+        <?php
+    }
+}
 ?>
 <main class="portal-main" data-user-tab-shell data-active-user-tab="<?php echo escape_output($craftcrawl_portal_active); ?>">
     <div data-user-tab-panel="map" <?php echo $craftcrawl_portal_active !== 'map' ? 'hidden' : ''; ?>>
@@ -84,6 +117,57 @@ $craftcrawl_portal_active = $craftcrawl_portal_active ?? 'map';
             <div class="friends-feed" data-friends-feed>
                 <div data-feed-sentinel hidden></div>
             </div>
+        </section>
+    </div>
+
+    <div data-user-tab-panel="quests" <?php echo $craftcrawl_portal_active !== 'quests' ? 'hidden' : ''; ?>>
+        <section class="portal-panel quests-panel">
+            <div class="quests-header">
+                <div>
+                    <h2>Quests</h2>
+                    <p>Daily and weekly goals for check-ins, reviews, plans, and events.</p>
+                </div>
+                <?php if (!empty($awarded_quests)) : ?>
+                    <p class="quest-award-message">
+                        Claimed <?php echo escape_output(count($awarded_quests)); ?> quest reward<?php echo count($awarded_quests) === 1 ? '' : 's'; ?>.
+                    </p>
+                <?php endif; ?>
+            </div>
+
+            <div class="quest-summary-grid">
+                <article>
+                    <strong><?php echo escape_output($daily_claimed); ?> / <?php echo escape_output(count($daily_quests)); ?></strong>
+                    <span>Daily claimed</span>
+                </article>
+                <article>
+                    <strong><?php echo escape_output($weekly_claimed); ?> / <?php echo escape_output(count($weekly_quests)); ?></strong>
+                    <span>Weekly claimed</span>
+                </article>
+            </div>
+
+            <section class="quest-group">
+                <div class="quest-group-heading">
+                    <h3>Daily</h3>
+                    <span><?php echo escape_output(craftcrawl_quest_reset_label('daily')); ?></span>
+                </div>
+                <div class="quest-list">
+                    <?php foreach ($daily_quests as $quest) : ?>
+                        <?php craftcrawl_render_portal_quest_card($quest); ?>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+
+            <section class="quest-group">
+                <div class="quest-group-heading">
+                    <h3>Weekly</h3>
+                    <span><?php echo escape_output(craftcrawl_quest_reset_label('weekly')); ?></span>
+                </div>
+                <div class="quest-list">
+                    <?php foreach ($weekly_quests as $quest) : ?>
+                        <?php craftcrawl_render_portal_quest_card($quest); ?>
+                    <?php endforeach; ?>
+                </div>
+            </section>
         </section>
     </div>
 </main>

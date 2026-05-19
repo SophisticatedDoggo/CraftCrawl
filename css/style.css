@@ -7365,24 +7365,30 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .mobile-app-tab-icon-quests {
-        border: 2px solid currentColor;
-        border-radius: 5px;
+        background:
+            linear-gradient(currentColor, currentColor) center 17px / 12px 2px no-repeat,
+            linear-gradient(currentColor, currentColor) center 13px / 2px 5px no-repeat;
     }
 
     .mobile-app-tab-icon-quests::before {
-        top: 4px;
-        left: 4px;
-        width: 4px;
-        height: 4px;
-        box-shadow: 0 7px 0 currentColor;
+        top: 3px;
+        left: 5px;
+        width: 14px;
+        height: 11px;
+        border: 2px solid currentColor;
+        border-top-width: 3px;
+        border-radius: 3px 3px 8px 8px;
+        background: transparent;
     }
 
     .mobile-app-tab-icon-quests::after {
-        top: 5px;
-        right: 4px;
-        left: 11px;
-        height: 2px;
-        box-shadow: 0 7px 0 currentColor;
+        top: 15px;
+        left: 8px;
+        width: 8px;
+        height: 5px;
+        border-bottom: 2px solid currentColor;
+        border-radius: 0 0 8px 8px;
+        background: transparent;
     }
 
     .mobile-app-tab-icon-checkin {

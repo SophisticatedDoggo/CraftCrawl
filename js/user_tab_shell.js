@@ -7,12 +7,13 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
     }
     shell.dataset.userTabShellReady = 'true';
 
-    const routeByTab = { map: 'portal.php', events: 'events.php', feed: 'feed.php' };
-    const titleByTab = { map: 'CraftCrawl | Home', events: 'CraftCrawl | Events', feed: 'CraftCrawl | Feed' };
+    const routeByTab = { map: 'portal.php', events: 'events.php', feed: 'feed.php', quests: 'quests.php' };
+    const titleByTab = { map: 'CraftCrawl | Home', events: 'CraftCrawl | Events', feed: 'CraftCrawl | Feed', quests: 'CraftCrawl | Quests' };
     const tabFromPath = (pathname) => {
         if (pathname.endsWith('/portal.php') || pathname.endsWith('/user/')) return 'map';
         if (pathname.endsWith('/events.php')) return 'events';
         if (pathname.endsWith('/feed.php')) return 'feed';
+        if (pathname.endsWith('/quests.php')) return 'quests';
         return null;
     };
 

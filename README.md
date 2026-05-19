@@ -134,7 +134,9 @@ mysql -u craft_crawl -p craft_crawl < migrations/2026_05_19_questing_system.sql
 
 Check-ins use browser GPS and server-side distance checks. Review XP is only
 awarded after a user has checked in at that location. Daily and weekly quests
-award XP through the same leveling system.
+award XP through the same leveling system. Daily quest objectives rotate at
+3:00 AM server time, and weekly quest objectives rotate every Tuesday at
+3:00 AM server time.
 
 ## Admin accounts
 
