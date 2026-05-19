@@ -14,7 +14,13 @@ public class CraftCrawlAppIconPlugin: CAPPlugin, CAPBridgedPlugin {
         "trail": "AppIcon-Trail",
         "trail-dark": "AppIcon-TrailDark",
         "ember": "AppIcon-Ember",
-        "ember-dark": "AppIcon-EmberDark"
+        "ember-dark": "AppIcon-EmberDark",
+        "riverstone": "AppIcon-Riverstone",
+        "riverstone-dark": "AppIcon-RiverstoneDark",
+        "blackberry": "AppIcon-Blackberry",
+        "blackberry-dark": "AppIcon-BlackberryDark",
+        "barnwood": "AppIcon-Barnwood",
+        "barnwood-dark": "AppIcon-BarnwoodDark"
     ]
 
     @objc public func getCurrentIcon(_ call: CAPPluginCall) {

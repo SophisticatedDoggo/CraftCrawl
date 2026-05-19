@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/lib/security.php';
+require_once __DIR__ . '/lib/appearance.php';
 require_once __DIR__ . '/lib/remember_auth.php';
 require_once __DIR__ . '/lib/business_context.php';
 craftcrawl_secure_session_start();
@@ -62,7 +63,7 @@ if (isset($_SESSION['admin_id'])) {
 </head>
 <body class="auth-body landing-body">
     <main class="auth-card landing-card">
-        <img class="site-logo auth-logo" src="images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
+        <img class="site-logo auth-logo" src="<?php echo craftcrawl_theme_logo_src('images/'); ?>" alt="CraftCrawl logo">
         <h1>Choose Account Type</h1>
         <div class="landing-primary-actions">
             <a class="button-link" href="user_login.php">User Account</a>

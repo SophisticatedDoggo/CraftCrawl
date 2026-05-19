@@ -352,7 +352,7 @@ if ($feed_item) {
     <main class="settings-page feed-thread-page" data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
         <header class="settings-header">
             <div>
-                <img class="site-logo" src="../images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
+                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
                 <div>
                     <h1>Feed Conversation</h1>
                     <p>Reply to a CraftCrawl milestone.</p>

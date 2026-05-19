@@ -11,7 +11,19 @@ $selected_location = craftcrawl_require_selected_business_location($conn);
 
 $business_account_id = (int) $_SESSION['business_account_id'];
 $message = $_GET['message'] ?? null;
-$allowed_display_palettes = ['trail-map', 'trail-dark', 'ember', 'ember-dark'];
+$display_palette_options = [
+    'trail-map' => 'Trail',
+    'trail-dark' => 'Trail Dark',
+    'ember' => 'Ember',
+    'ember-dark' => 'Ember Dark',
+    'riverstone' => 'Riverstone',
+    'riverstone-dark' => 'Riverstone Dark',
+    'blackberry' => 'Blackberry',
+    'blackberry-dark' => 'Blackberry Dark',
+    'barnwood' => 'Barnwood',
+    'barnwood-dark' => 'Barnwood Dark',
+];
+$allowed_display_palettes = array_keys($display_palette_options);
 
 function escape_output($value) {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
@@ -147,7 +159,7 @@ $display_palette = in_array($business['display_palette'] ?? '', $allowed_display
     <main class="business-portal settings-page">
         <header class="business-portal-header">
             <div>
-                <img class="site-logo" src="../images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
+                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
                 <div>
                     <h1>Settings</h1>
                     <p><?php echo escape_output($business['bName'] ?? 'Business'); ?></p>
@@ -194,10 +206,9 @@ $display_palette = in_array($business['display_palette'] ?? '', $allowed_display
                 <?php echo craftcrawl_csrf_input(); ?>
                 <input type="hidden" name="form_action" value="display_theme">
                 <div class="palette-switcher palette-switcher-settings" aria-label="Design palette">
-                    <button type="submit" name="display_palette" value="trail-map" data-palette-option="trail-map" <?php echo $display_palette === 'trail-map' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?>>Trail</button>
-                    <button type="submit" name="display_palette" value="trail-dark" data-palette-option="trail-dark" <?php echo $display_palette === 'trail-dark' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?>>Trail Dark</button>
-                    <button type="submit" name="display_palette" value="ember" data-palette-option="ember" <?php echo $display_palette === 'ember' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?>>Ember</button>
-                    <button type="submit" name="display_palette" value="ember-dark" data-palette-option="ember-dark" <?php echo $display_palette === 'ember-dark' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?>>Ember Dark</button>
+                    <?php foreach ($display_palette_options as $palette_key => $palette_label) : ?>
+                        <button type="submit" name="display_palette" value="<?php echo escape_output($palette_key); ?>" data-palette-option="<?php echo escape_output($palette_key); ?>" <?php echo $display_palette === $palette_key ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?>><?php echo escape_output($palette_label); ?></button>
+                    <?php endforeach; ?>
                 </div>
             </form>
             <p class="form-help">This setting is saved to your account.</p>

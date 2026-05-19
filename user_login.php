@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/lib/security.php';
+require_once __DIR__ . '/lib/appearance.php';
 require_once __DIR__ . '/lib/remember_auth.php';
 craftcrawl_secure_session_start();
 include 'db.php';
@@ -131,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="auth-card">
         <a class="auth-back-link text-link" href="index.php">Back</a>
         <div class="auth-top-section">
-            <img class="site-logo auth-logo" src="images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
+            <img class="site-logo auth-logo" src="<?php echo craftcrawl_theme_logo_src('images/'); ?>" alt="CraftCrawl logo">
             <h1>Login</h1>
             <?php if ($social_auth_enabled) : ?>
                 <div class="social-auth-options" data-social-auth-options aria-label="Social sign-in options">

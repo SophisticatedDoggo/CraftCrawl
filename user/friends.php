@@ -164,7 +164,7 @@ $leaderboard = $leaderboard_stmt->get_result();
         </div>
         <header class="settings-header">
             <div>
-                <img class="site-logo" src="../images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
+                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
                 <div>
                     <h1>Friends</h1>
                     <p>Search for accounts, approve invites, and view friends' CraftCrawl progress.</p>

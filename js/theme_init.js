@@ -22,19 +22,50 @@ const craftCrawlPaletteLogos = {
     'trail-map': 'craft-crawl-logo-trail.png',
     'trail-dark': 'craft-crawl-logo-trail-dark.png',
     ember: 'craft-crawl-logo-ember.png',
-    'ember-dark': 'craft-crawl-logo-ember-dark.png'
+    'ember-dark': 'craft-crawl-logo-ember-dark.png',
+    riverstone: 'craft-crawl-logo-riverstone.png',
+    'riverstone-dark': 'craft-crawl-logo-riverstone-dark.png',
+    blackberry: 'craft-crawl-logo-blackberry.png',
+    'blackberry-dark': 'craft-crawl-logo-blackberry-dark.png',
+    barnwood: 'craft-crawl-logo-barnwood.png',
+    'barnwood-dark': 'craft-crawl-logo-barnwood-dark.png'
 };
+const craftCrawlFaviconFile = 'craft-crawl-logo-trail_favicon.png';
 const craftCrawlPaletteAppIcons = {
     'trail-map': 'trail',
     'trail-dark': 'trail-dark',
     ember: 'ember',
-    'ember-dark': 'ember-dark'
+    'ember-dark': 'ember-dark',
+    riverstone: 'riverstone',
+    'riverstone-dark': 'riverstone-dark',
+    blackberry: 'blackberry',
+    'blackberry-dark': 'blackberry-dark',
+    barnwood: 'barnwood',
+    'barnwood-dark': 'barnwood-dark'
+};
+const craftCrawlAppIconSplashFiles = {
+    trail: 'craft-crawl-logo-trail_splash.png',
+    'trail-dark': 'craft-crawl-logo-trail-dark_splash.png',
+    ember: 'craft-crawl-logo-ember_splash.png',
+    'ember-dark': 'craft-crawl-logo-ember-dark_splash.png',
+    riverstone: 'craft-crawl-logo-riverstone_splash.png',
+    'riverstone-dark': 'craft-crawl-logo-riverstone-dark_splash.png',
+    blackberry: 'craft-crawl-logo-blackberry_splash.png',
+    'blackberry-dark': 'craft-crawl-logo-blackberry-dark_splash.png',
+    barnwood: 'craft-crawl-logo-barnwood_splash.png',
+    'barnwood-dark': 'craft-crawl-logo-barnwood-dark_splash.png'
 };
 const craftCrawlPaletteBackgrounds = {
     'trail-map': '#f4f1ea',
     'trail-dark': '#15171a',
     ember: '#f7f3ed',
-    'ember-dark': '#15171a'
+    'ember-dark': '#15171a',
+    riverstone: '#f4f1ea',
+    'riverstone-dark': '#15171a',
+    blackberry: '#f4f1ea',
+    'blackberry-dark': '#15171a',
+    barnwood: '#f7f3ed',
+    'barnwood-dark': '#15171a'
 };
 
 document.documentElement.dataset.palette = craftCrawlPalette;
@@ -220,13 +251,13 @@ function syncCraftCrawlLogos() {
         }
     });
 
-    syncCraftCrawlFavicon(logoFile);
+    syncCraftCrawlFavicon();
 }
 
 window.syncCraftCrawlLogos = syncCraftCrawlLogos;
 
-function syncCraftCrawlFavicon(logoFile) {
-    const faviconUrl = craftCrawlLogoUrlFromExisting('', logoFile);
+function syncCraftCrawlFavicon() {
+    const faviconUrl = craftCrawlLogoUrlFromExisting('', craftCrawlFaviconFile);
     let icon = document.querySelector('link[rel="icon"]');
 
     if (!icon) {
@@ -250,11 +281,25 @@ function syncCraftCrawlNativeAppIcon(palette) {
     appIcon.setIcon({ name: iconName })
         .then(() => {
             localStorage.setItem('craftcrawl_native_app_icon', iconName);
+            syncCraftCrawlNativeSplashPreference(iconName);
         })
         .catch(() => {});
 }
 
 window.syncCraftCrawlNativeAppIcon = syncCraftCrawlNativeAppIcon;
+
+function syncCraftCrawlNativeSplashPreference(iconName) {
+    const normalizedIconName = craftCrawlAppIconSplashFiles[iconName] ? iconName : 'trail';
+    const splashFile = craftCrawlAppIconSplashFiles[normalizedIconName];
+    const splashUrl = craftCrawlLogoUrlFromExisting('', splashFile);
+
+    localStorage.setItem('craftcrawl_native_splash_icon', normalizedIconName);
+    localStorage.setItem('craftcrawl_native_splash_image', splashUrl);
+    document.documentElement.dataset.nativeSplashIcon = normalizedIconName;
+    document.documentElement.style.setProperty('--craftcrawl-native-splash-image', `url("${splashUrl}")`);
+}
+
+window.syncCraftCrawlNativeSplashPreference = syncCraftCrawlNativeSplashPreference;
 
 function getCraftCrawlNativePlugin(name) {
     const capacitor = window.Capacitor;
@@ -309,7 +354,7 @@ function syncCraftCrawlNativeStatusBar() {
         return;
     }
 
-    const isDarkPalette = ['trail-dark', 'ember-dark'].includes(document.documentElement.dataset.palette);
+    const isDarkPalette = (document.documentElement.dataset.palette || '').endsWith('-dark');
 
     if (typeof statusBar.setOverlaysWebView === 'function') {
         statusBar.setOverlaysWebView({ overlay: false }).catch(() => {});

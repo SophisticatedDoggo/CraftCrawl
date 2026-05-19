@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/security.php';
+require_once __DIR__ . '/appearance.php';
 require_once __DIR__ . '/remember_auth.php';
 
 function craftcrawl_require_admin() {

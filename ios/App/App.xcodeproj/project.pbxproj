@@ -316,6 +316,12 @@
 					"AppIcon-TrailDark",
 					"AppIcon-Ember",
 					"AppIcon-EmberDark",
+					"AppIcon-Riverstone",
+					"AppIcon-RiverstoneDark",
+					"AppIcon-Blackberry",
+					"AppIcon-BlackberryDark",
+					"AppIcon-Barnwood",
+					"AppIcon-BarnwoodDark",
 				);
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				APS_ENVIRONMENT = development;
@@ -348,6 +354,12 @@
 					"AppIcon-TrailDark",
 					"AppIcon-Ember",
 					"AppIcon-EmberDark",
+					"AppIcon-Riverstone",
+					"AppIcon-RiverstoneDark",
+					"AppIcon-Blackberry",
+					"AppIcon-BlackberryDark",
+					"AppIcon-Barnwood",
+					"AppIcon-BarnwoodDark",
 				);
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				APS_ENVIRONMENT = production;

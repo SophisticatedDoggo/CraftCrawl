@@ -46,6 +46,30 @@ $allowed_app_icons = craftcrawl_unlocked_app_icons((int) ($user_settings['level'
 $display_palette = in_array($user_settings['display_palette'] ?? '', $allowed_display_palettes, true)
     ? $user_settings['display_palette']
     : 'trail-map';
+$display_palette_options = [
+    'trail-map' => ['label' => 'Trail', 'level' => 1],
+    'trail-dark' => ['label' => 'Trail Dark', 'level' => 2],
+    'ember' => ['label' => 'Ember', 'level' => 14],
+    'ember-dark' => ['label' => 'Ember Dark', 'level' => 38],
+    'riverstone' => ['label' => 'Riverstone', 'level' => 44],
+    'riverstone-dark' => ['label' => 'Riverstone Dark', 'level' => 78],
+    'blackberry' => ['label' => 'Blackberry', 'level' => 52],
+    'blackberry-dark' => ['label' => 'Blackberry Dark', 'level' => 90],
+    'barnwood' => ['label' => 'Barnwood', 'level' => 72],
+    'barnwood-dark' => ['label' => 'Barnwood Dark', 'level' => 96],
+];
+$app_icon_options = [
+    'trail' => ['label' => 'Trail', 'level' => 1, 'image' => 'craft-crawl-logo-trail.png'],
+    'trail-dark' => ['label' => 'Trail Dark', 'level' => 2, 'image' => 'craft-crawl-logo-trail-dark.png'],
+    'ember' => ['label' => 'Ember', 'level' => 14, 'image' => 'craft-crawl-logo-ember.png'],
+    'ember-dark' => ['label' => 'Ember Dark', 'level' => 38, 'image' => 'craft-crawl-logo-ember-dark.png'],
+    'riverstone' => ['label' => 'Riverstone', 'level' => 44, 'image' => 'craft-crawl-logo-riverstone.png'],
+    'blackberry' => ['label' => 'Blackberry', 'level' => 52, 'image' => 'craft-crawl-logo-blackberry.png'],
+    'barnwood' => ['label' => 'Barnwood', 'level' => 72, 'image' => 'craft-crawl-logo-barnwood.png'],
+    'riverstone-dark' => ['label' => 'Riverstone Dark', 'level' => 78, 'image' => 'craft-crawl-logo-riverstone-dark.png'],
+    'blackberry-dark' => ['label' => 'Blackberry Dark', 'level' => 90, 'image' => 'craft-crawl-logo-blackberry-dark.png'],
+    'barnwood-dark' => ['label' => 'Barnwood Dark', 'level' => 96, 'image' => 'craft-crawl-logo-barnwood-dark.png'],
+];
 $auto_accept_friend_invites  = !empty($user_settings['auto_accept_friend_invites']);
 $show_feed_activity          = !isset($user_settings['show_feed_activity'])         || !empty($user_settings['show_feed_activity']);
 $show_liked_businesses       = !isset($user_settings['show_liked_businesses'])      || !empty($user_settings['show_liked_businesses']);
@@ -246,7 +270,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="settings-page">
         <header class="settings-header">
             <div>
-                <img class="site-logo" src="../images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
+                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
                 <div>
                     <h1>Settings</h1>
                     <p>Manage account preferences and privacy.</p>
@@ -295,22 +319,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php echo craftcrawl_csrf_input(); ?>
                 <input type="hidden" name="form_action" value="display_theme">
                 <div class="palette-switcher palette-switcher-settings" aria-label="Design palette">
-                    <button type="submit" name="display_palette" value="trail-map" data-palette-option="trail-map" <?php echo $display_palette === 'trail-map' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?>>
-                        <span class="settings-option-label">Trail</span>
-                        <span class="settings-option-status">Unlocked</span>
-                    </button>
-                    <button type="submit" name="display_palette" value="trail-dark" data-palette-option="trail-dark" <?php echo $display_palette === 'trail-dark' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?> <?php echo in_array('trail-dark', $allowed_display_palettes, true) ? '' : 'disabled title="Unlocks at Level 2"'; ?>>
-                        <span class="settings-option-label">Trail Dark</span>
-                        <span class="settings-option-status"><?php echo in_array('trail-dark', $allowed_display_palettes, true) ? 'Unlocked' : 'Locked'; ?></span>
-                    </button>
-                    <button type="submit" name="display_palette" value="ember" data-palette-option="ember" <?php echo $display_palette === 'ember' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?> <?php echo in_array('ember', $allowed_display_palettes, true) ? '' : 'disabled title="Unlocks at Level 14"'; ?>>
-                        <span class="settings-option-label">Ember</span>
-                        <span class="settings-option-status"><?php echo in_array('ember', $allowed_display_palettes, true) ? 'Unlocked' : 'Locked'; ?></span>
-                    </button>
-                    <button type="submit" name="display_palette" value="ember-dark" data-palette-option="ember-dark" <?php echo $display_palette === 'ember-dark' ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?> <?php echo in_array('ember-dark', $allowed_display_palettes, true) ? '' : 'disabled title="Unlocks at Level 38"'; ?>>
-                        <span class="settings-option-label">Ember Dark</span>
-                        <span class="settings-option-status"><?php echo in_array('ember-dark', $allowed_display_palettes, true) ? 'Unlocked' : 'Locked'; ?></span>
-                    </button>
+                    <?php foreach ($display_palette_options as $palette_key => $palette_option) : ?>
+                        <?php $palette_unlocked = in_array($palette_key, $allowed_display_palettes, true); ?>
+                        <button type="submit" name="display_palette" value="<?php echo escape_output($palette_key); ?>" data-palette-option="<?php echo escape_output($palette_key); ?>" <?php echo $display_palette === $palette_key ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?> <?php echo $palette_unlocked ? '' : 'disabled title="Unlocks at Level ' . escape_output($palette_option['level']) . '"'; ?>>
+                            <span class="settings-option-label"><?php echo escape_output($palette_option['label']); ?></span>
+                            <span class="settings-option-status"><?php echo $palette_unlocked ? 'Unlocked' : 'Locked'; ?></span>
+                        </button>
+                    <?php endforeach; ?>
                 </div>
             </form>
             <p class="form-message" data-palette-status hidden></p>
@@ -320,26 +335,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <section class="settings-panel app-icon-settings" data-native-app-icon-settings hidden>
             <h2>App Icon</h2>
             <div class="app-icon-switcher" aria-label="App icon">
-                <button type="button" data-app-icon-option="trail" aria-pressed="false">
-                    <img src="../images/craft-crawl-logo-trail.png" alt="" aria-hidden="true">
-                    <span class="settings-option-label">Trail</span>
-                    <span class="settings-option-status">Unlocked</span>
-                </button>
-                <button type="button" data-app-icon-option="trail-dark" aria-pressed="false" <?php echo in_array('trail-dark', $allowed_app_icons, true) ? '' : 'disabled data-app-icon-locked="true" title="Unlocks at Level 48"'; ?>>
-                    <img src="../images/craft-crawl-logo-trail-dark.png" alt="" aria-hidden="true">
-                    <span class="settings-option-label">Trail Dark</span>
-                    <span class="settings-option-status"><?php echo in_array('trail-dark', $allowed_app_icons, true) ? 'Unlocked' : 'Locked'; ?></span>
-                </button>
-                <button type="button" data-app-icon-option="ember" aria-pressed="false" <?php echo in_array('ember', $allowed_app_icons, true) ? '' : 'disabled data-app-icon-locked="true" title="Unlocks at Level 22"'; ?>>
-                    <img src="../images/craft-crawl-logo-ember.png" alt="" aria-hidden="true">
-                    <span class="settings-option-label">Ember</span>
-                    <span class="settings-option-status"><?php echo in_array('ember', $allowed_app_icons, true) ? 'Unlocked' : 'Locked'; ?></span>
-                </button>
-                <button type="button" data-app-icon-option="ember-dark" aria-pressed="false" <?php echo in_array('ember-dark', $allowed_app_icons, true) ? '' : 'disabled data-app-icon-locked="true" title="Unlocks at Level 63"'; ?>>
-                    <img src="../images/craft-crawl-logo-ember-dark.png" alt="" aria-hidden="true">
-                    <span class="settings-option-label">Ember Dark</span>
-                    <span class="settings-option-status"><?php echo in_array('ember-dark', $allowed_app_icons, true) ? 'Unlocked' : 'Locked'; ?></span>
-                </button>
+                <?php foreach ($app_icon_options as $icon_key => $icon_option) : ?>
+                    <?php $icon_unlocked = in_array($icon_key, $allowed_app_icons, true); ?>
+                    <button type="button" data-app-icon-option="<?php echo escape_output($icon_key); ?>" aria-pressed="false" <?php echo $icon_unlocked ? '' : 'disabled data-app-icon-locked="true" title="Unlocks at Level ' . escape_output($icon_option['level']) . '"'; ?>>
+                        <img src="../images/<?php echo escape_output($icon_option['image']); ?>" alt="" aria-hidden="true">
+                        <span class="settings-option-label"><?php echo escape_output($icon_option['label']); ?></span>
+                        <span class="settings-option-status"><?php echo $icon_unlocked ? 'Unlocked' : 'Locked'; ?></span>
+                    </button>
+                <?php endforeach; ?>
             </div>
             <p class="form-message" data-app-icon-status hidden></p>
             <p class="form-help">This changes the icon shown on this device.</p>
@@ -375,7 +378,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="checkbox" name="show_profile_rewards" value="1" <?php echo $show_profile_rewards ? 'checked' : ''; ?>>
                     <span>
                         <strong>Profile Rewards</strong>
-                        <small>Allow friends to see your profile frame color, frame shape, and badge showcase.</small>
+                        <small>Allow friends to see your profile frame and badge showcase.</small>
                     </span>
                 </label>
                 <label class="settings-toggle">

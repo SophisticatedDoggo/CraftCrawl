@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="business-portal">
         <header class="business-portal-header">
             <div>
-                <img class="site-logo" src="../images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
+                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
                 <div>
                     <h1>Your Locations</h1>
                     <p>Choose the location you want to manage.</p>

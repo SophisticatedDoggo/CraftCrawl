@@ -34,6 +34,7 @@
             android:icon="@mipmap/ic_launcher"
             android:label="${appLabel}"
             android:roundIcon="@mipmap/ic_launcher_round"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -48,6 +49,7 @@
             android:icon="@mipmap/ic_launcher_trail_dark"
             android:label="${appLabel}"
             android:roundIcon="@mipmap/ic_launcher_trail_dark_round"
+            android:theme="@style/AppTheme.NoActionBarLaunch.TrailDark"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -62,6 +64,7 @@
             android:icon="@mipmap/ic_launcher_ember"
             android:label="${appLabel}"
             android:roundIcon="@mipmap/ic_launcher_ember_round"
+            android:theme="@style/AppTheme.NoActionBarLaunch.Ember"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -76,6 +79,97 @@
             android:icon="@mipmap/ic_launcher_ember_dark"
             android:label="${appLabel}"
             android:roundIcon="@mipmap/ic_launcher_ember_dark_round"
+            android:theme="@style/AppTheme.NoActionBarLaunch.EmberDark"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityRiverstone"
+            android:enabled="${appIconRiverstoneEnabled}"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_riverstone"
+            android:label="${appLabel}"
+            android:roundIcon="@mipmap/ic_launcher_riverstone_round"
+            android:theme="@style/AppTheme.NoActionBarLaunch.Riverstone"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityRiverstoneDark"
+            android:enabled="${appIconRiverstoneDarkEnabled}"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_riverstone_dark"
+            android:label="${appLabel}"
+            android:roundIcon="@mipmap/ic_launcher_riverstone_dark_round"
+            android:theme="@style/AppTheme.NoActionBarLaunch.RiverstoneDark"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityBlackberry"
+            android:enabled="${appIconBlackberryEnabled}"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_blackberry"
+            android:label="${appLabel}"
+            android:roundIcon="@mipmap/ic_launcher_blackberry_round"
+            android:theme="@style/AppTheme.NoActionBarLaunch.Blackberry"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityBlackberryDark"
+            android:enabled="${appIconBlackberryDarkEnabled}"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_blackberry_dark"
+            android:label="${appLabel}"
+            android:roundIcon="@mipmap/ic_launcher_blackberry_dark_round"
+            android:theme="@style/AppTheme.NoActionBarLaunch.BlackberryDark"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityBarnwood"
+            android:enabled="${appIconBarnwoodEnabled}"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_barnwood"
+            android:label="${appLabel}"
+            android:roundIcon="@mipmap/ic_launcher_barnwood_round"
+            android:theme="@style/AppTheme.NoActionBarLaunch.Barnwood"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityBarnwoodDark"
+            android:enabled="${appIconBarnwoodDarkEnabled}"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_barnwood_dark"
+            android:label="${appLabel}"
+            android:roundIcon="@mipmap/ic_launcher_barnwood_dark_round"
+            android:theme="@style/AppTheme.NoActionBarLaunch.BarnwoodDark"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

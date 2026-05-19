@@ -19,4 +19,40 @@
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
     </style>
+
+    <style name="AppTheme.NoActionBarLaunch.TrailDark" parent="Theme.SplashScreen">
+        <item name="android:background">@drawable/splash_trail_dark</item>
+    </style>
+
+    <style name="AppTheme.NoActionBarLaunch.Ember" parent="Theme.SplashScreen">
+        <item name="android:background">@drawable/splash_ember</item>
+    </style>
+
+    <style name="AppTheme.NoActionBarLaunch.EmberDark" parent="Theme.SplashScreen">
+        <item name="android:background">@drawable/splash_ember_dark</item>
+    </style>
+
+    <style name="AppTheme.NoActionBarLaunch.Riverstone" parent="Theme.SplashScreen">
+        <item name="android:background">@drawable/splash_riverstone</item>
+    </style>
+
+    <style name="AppTheme.NoActionBarLaunch.RiverstoneDark" parent="Theme.SplashScreen">
+        <item name="android:background">@drawable/splash_riverstone_dark</item>
+    </style>
+
+    <style name="AppTheme.NoActionBarLaunch.Blackberry" parent="Theme.SplashScreen">
+        <item name="android:background">@drawable/splash_blackberry</item>
+    </style>
+
+    <style name="AppTheme.NoActionBarLaunch.BlackberryDark" parent="Theme.SplashScreen">
+        <item name="android:background">@drawable/splash_blackberry_dark</item>
+    </style>
+
+    <style name="AppTheme.NoActionBarLaunch.Barnwood" parent="Theme.SplashScreen">
+        <item name="android:background">@drawable/splash_barnwood</item>
+    </style>
+
+    <style name="AppTheme.NoActionBarLaunch.BarnwoodDark" parent="Theme.SplashScreen">
+        <item name="android:background">@drawable/splash_barnwood_dark</item>
+    </style>
 </resources>

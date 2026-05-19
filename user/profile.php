@@ -98,14 +98,11 @@ if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form_ac
         $new_title_index = null;
     }
 
-    $new_frame = $_POST['selected_profile_frame'] ?? '';
+    $new_frame = craftcrawl_normalize_profile_frame_key($_POST['selected_profile_frame'] ?? '');
     if ($new_frame === '' || !in_array($new_frame, $allowed_frames_for_edit, true)) {
         $new_frame = null;
     }
-    $new_frame_style = $_POST['selected_profile_frame_style'] ?? 'solid';
-    if ($new_frame === null || !in_array($new_frame_style, $allowed_frame_styles_for_edit, true)) {
-        $new_frame_style = 'solid';
-    }
+    $new_frame_style = 'solid';
 
     try {
         if ($message === 'profile_name_error') {
@@ -155,7 +152,7 @@ if (!$profile) {
     $can_view_profile_rewards = $is_own_profile || !empty($profile['show_profile_rewards']);
     $profile_level = (int) ($profile['level'] ?? 1);
     $selected_title_index = $profile['selected_title_index'] !== null ? (int) $profile['selected_title_index'] : null;
-    $selected_profile_frame = $profile['selected_profile_frame'] ?? null;
+    $selected_profile_frame = craftcrawl_normalize_profile_frame_key($profile['selected_profile_frame'] ?? null);
     $selected_profile_frame_style = $profile['selected_profile_frame_style'] ?? 'solid';
     $visible_profile = $profile;
     if (!$can_view_profile_rewards) {
@@ -180,6 +177,8 @@ if (!$profile) {
     $showcase_rewards = array_values(array_filter($level_rewards, fn($reward) => ($reward['type'] ?? '') === 'Showcase'));
     $appearance_rewards = array_values(array_filter($level_rewards, fn($reward) => in_array(($reward['type'] ?? ''), ['Display Theme', 'App Icon'], true)));
     $badge_progress_rows = $is_own_profile ? craftcrawl_user_badge_progress($conn, $profile_id) : [];
+    $reward_preview_avatar_url = craftcrawl_user_avatar_url($profile, 96);
+    $reward_preview_initials = craftcrawl_user_initials($profile);
 
     $showcase_stmt = $conn->prepare("
         SELECT ubs.slot_order, ubs.badge_key, ub.badge_name, ub.badge_description, ub.badge_tier
@@ -288,7 +287,7 @@ if (!$profile) {
     <main class="settings-page profile-page">
         <header class="settings-header">
             <div>
-                <img class="site-logo" src="../images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
+                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
                 <div>
                     <h1><?php echo escape_output($page_title); ?></h1>
                     <p><?php echo $profile ? 'XP, badges, and CraftCrawl milestones.' : 'This profile is not available.'; ?></p>
@@ -339,7 +338,7 @@ if (!$profile) {
                                     <div class="profile-edit-photo-field">
                                         <label for="profile_photo">Profile Picture</label>
                                         <input type="file" id="profile_photo" name="profile_photo" accept="image/jpeg,image/png,image/webp" data-profile-photo-input>
-                                        <small class="form-help">Choose a photo, then drag and zoom it into the circular preview.</small>
+                                        <small class="form-help">Choose a photo, then drag and zoom it into the rounded-square preview.</small>
                                         <?php if (!empty($profile['profile_photo_url']) || !empty($profile['profile_photo_object_key'])) : ?>
                                             <button type="button" class="button-link-secondary" data-profile-photo-remove>Remove Photo</button>
                                         <?php endif; ?>
@@ -371,7 +370,8 @@ if (!$profile) {
 
                             <?php if (!empty($allowed_frames_map)) : ?>
                                 <div class="profile-edit-frame-options">
-                                    <span class="settings-field-label">Profile Frame Color</span>
+                                    <span class="settings-field-label">Profile Frame</span>
+                                    <input type="hidden" name="selected_profile_frame_style" value="solid">
                                     <div class="profile-frame-choice-grid">
                                         <label class="profile-frame-choice">
                                             <input type="radio" name="selected_profile_frame" value="" <?php echo $selected_profile_frame === null || $selected_profile_frame === '' ? 'checked' : ''; ?>>
@@ -383,17 +383,6 @@ if (!$profile) {
                                                 <input type="radio" name="selected_profile_frame" value="<?php echo escape_output($frame_key); ?>" <?php echo $selected_profile_frame === $frame_key ? 'checked' : ''; ?>>
                                                 <span class="profile-frame-swatch has-frame-<?php echo escape_output($frame_key); ?>" aria-hidden="true"></span>
                                                 <span><?php echo escape_output($frame['label']); ?></span>
-                                            </label>
-                                        <?php endforeach; ?>
-                                    </div>
-
-                                    <span class="settings-field-label">Profile Frame Shape</span>
-                                    <div class="profile-frame-style-grid">
-                                        <?php foreach ($allowed_frame_styles_map as $style_key => $style) : ?>
-                                            <label class="profile-frame-style-choice">
-                                                <input type="radio" name="selected_profile_frame_style" value="<?php echo escape_output($style_key); ?>" <?php echo $selected_profile_frame_style === $style_key ? 'checked' : ''; ?>>
-                                                <span class="profile-frame-shape-swatch has-frame-bronze has-frame-style-<?php echo escape_output($style_key); ?>" aria-hidden="true"></span>
-                                                <span><?php echo escape_output($style['label']); ?></span>
                                             </label>
                                         <?php endforeach; ?>
                                     </div>
@@ -516,11 +505,17 @@ if (!$profile) {
                             <span>Frames</span>
                             <small><?php echo escape_output(count(array_filter($frame_rewards, fn($reward) => $reward['unlocked']))); ?> / <?php echo escape_output(count($frame_rewards)); ?> unlocked</small>
                         </summary>
-                        <p class="reward-disclosure-help">Change unlocked frame colors and shapes from Edit Profile above.</p>
+                        <p class="reward-disclosure-help">Change unlocked profile frames from Edit Profile above.</p>
                         <div class="reward-list">
                             <?php foreach ($frame_rewards as $reward) : ?>
                                 <article class="reward-goal-card<?php echo $reward['unlocked'] ? ' is-unlocked' : ' is-locked'; ?>">
-                                    <span class="frame-reward-preview<?php echo ($reward['type'] ?? '') === 'Color' ? ' is-color-reward' : ''; ?> has-frame-<?php echo escape_output($reward['frame_color'] ?? 'bronze'); ?><?php echo ($reward['type'] ?? '') === 'Color' ? '' : ' has-frame-style-' . escape_output($reward['frame_style'] ?? 'solid'); ?>" aria-hidden="true"></span>
+                                    <span class="frame-reward-preview has-frame-<?php echo escape_output($reward['frame_color'] ?? 'frame_1'); ?> has-frame-style-<?php echo escape_output($reward['frame_style'] ?? 'solid'); ?>" aria-hidden="true">
+                                        <?php if ($reward_preview_avatar_url !== null) : ?>
+                                            <img class="frame-reward-avatar-preview" src="<?php echo escape_output($reward_preview_avatar_url); ?>" alt="" loading="lazy">
+                                        <?php else : ?>
+                                            <span class="frame-reward-avatar-preview"><?php echo escape_output($reward_preview_initials); ?></span>
+                                        <?php endif; ?>
+                                    </span>
                                     <div>
                                         <div class="reward-goal-title-row">
                                             <strong><?php echo escape_output($reward['name']); ?></strong>
@@ -528,12 +523,8 @@ if (!$profile) {
                                         </div>
                                         <p><?php echo escape_output($reward['description']); ?></p>
                                         <small>
-                                            <?php if ($reward['level'] !== null) : ?>
-                                                Level <?php echo escape_output($reward['level']); ?> · <?php echo escape_output($reward['type']); ?> ·
-                                                <?php echo $reward['unlocked'] ? 'Unlocked' : escape_output($reward['levels_remaining']) . ' level' . ((int) $reward['levels_remaining'] === 1 ? '' : 's') . ' to go'; ?>
-                                            <?php else : ?>
-                                                <?php echo escape_output($reward['progress'] ?? 0); ?> / <?php echo escape_output($reward['target'] ?? 1); ?> · <?php echo escape_output($reward['type']); ?> · <?php echo $reward['unlocked'] ? 'Unlocked' : 'Locked'; ?>
-                                            <?php endif; ?>
+                                            Level <?php echo escape_output($reward['level']); ?> · <?php echo escape_output($reward['type']); ?> ·
+                                            <?php echo $reward['unlocked'] ? 'Unlocked' : escape_output($reward['levels_remaining']) . ' level' . ((int) $reward['levels_remaining'] === 1 ? '' : 's') . ' to go'; ?>
                                         </small>
                                     </div>
                                 </article>

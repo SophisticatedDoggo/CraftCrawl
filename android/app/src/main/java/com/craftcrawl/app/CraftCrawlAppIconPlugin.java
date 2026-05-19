@@ -26,6 +26,12 @@ public class CraftCrawlAppIconPlugin extends Plugin {
         aliases.put("trail-dark", ".MainActivityTrailDark");
         aliases.put("ember", ".MainActivityEmber");
         aliases.put("ember-dark", ".MainActivityEmberDark");
+        aliases.put("riverstone", ".MainActivityRiverstone");
+        aliases.put("riverstone-dark", ".MainActivityRiverstoneDark");
+        aliases.put("blackberry", ".MainActivityBlackberry");
+        aliases.put("blackberry-dark", ".MainActivityBlackberryDark");
+        aliases.put("barnwood", ".MainActivityBarnwood");
+        aliases.put("barnwood-dark", ".MainActivityBarnwoodDark");
     }
 
     @PluginMethod

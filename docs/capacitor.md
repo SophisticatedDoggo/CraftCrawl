@@ -129,6 +129,12 @@ CraftCrawl includes app icon options for each display theme:
 - Trail Dark: `AppIcon-TrailDark` on iOS, `trail-dark` on Android.
 - Ember: `AppIcon-Ember` on iOS, `ember` on Android.
 - Ember Dark: `AppIcon-EmberDark` on iOS, `ember-dark` on Android.
+- Riverstone: `AppIcon-Riverstone` on iOS, `riverstone` on Android.
+- Riverstone Dark: `AppIcon-RiverstoneDark` on iOS, `riverstone-dark` on Android.
+- Blackberry: `AppIcon-Blackberry` on iOS, `blackberry` on Android.
+- Blackberry Dark: `AppIcon-BlackberryDark` on iOS, `blackberry-dark` on Android.
+- Barnwood: `AppIcon-Barnwood` on iOS, `barnwood` on Android.
+- Barnwood Dark: `AppIcon-BarnwoodDark` on iOS, `barnwood-dark` on Android.
 
 To edit the app icons, replace the same-named source PNGs in `images/`:
 
@@ -136,6 +142,12 @@ To edit the app icons, replace the same-named source PNGs in `images/`:
 - `images/craft-crawl-logo-trail-dark.png`
 - `images/craft-crawl-logo-ember.png`
 - `images/craft-crawl-logo-ember-dark.png`
+- `images/craft-crawl-logo-riverstone.png`
+- `images/craft-crawl-logo-riverstone-dark.png`
+- `images/craft-crawl-logo-blackberry.png`
+- `images/craft-crawl-logo-blackberry-dark.png`
+- `images/craft-crawl-logo-barnwood.png`
+- `images/craft-crawl-logo-barnwood-dark.png`
 
 Then regenerate the native icon assets:
 
@@ -145,15 +157,35 @@ npm run assets:icons
 
 That command refreshes the iOS asset catalogs and all Android density-specific launcher images. It also refreshes the default `AppIcon` / `ic_launcher` assets from the Trail source.
 
-To edit the native splash screen, replace:
+To edit the native splash screen, replace the matching source PNGs in `images/`.
+The source images should be `2732x2732` and use the same theme key with a
+`_splash` suffix, for example:
 
-- `images/craft-crawl-splash.png`
+- `images/craft-crawl-logo-trail_splash.png`
+- `images/craft-crawl-logo-trail-dark_splash.png`
+- `images/craft-crawl-logo-ember_splash.png`
+- `images/craft-crawl-logo-ember-dark_splash.png`
+- `images/craft-crawl-logo-riverstone_splash.png`
+- `images/craft-crawl-logo-riverstone-dark_splash.png`
+- `images/craft-crawl-logo-blackberry_splash.png`
+- `images/craft-crawl-logo-blackberry-dark_splash.png`
+- `images/craft-crawl-logo-barnwood_splash.png`
+- `images/craft-crawl-logo-barnwood-dark_splash.png`
 
-The source image should be `2732x2732`. Then regenerate the native splash
-assets:
+Then regenerate the native splash assets:
 
 ```sh
 npm run assets:splash
+```
+
+The splash generator defaults the primary iOS/Android launch splash to `trail`.
+It also packages every themed Android splash resource so Android launcher aliases
+can show the splash that matches the user's selected icon. To generate another
+themed initial iOS/default Android splash, set `CRAFTCRAWL_SPLASH_STYLE` or reuse
+the app icon choice through `CRAFTCRAWL_APP_ICON`, for example:
+
+```sh
+CRAFTCRAWL_SPLASH_STYLE=ember-dark npm run assets:splash
 ```
 
 To regenerate both app icons and splash assets together, run:
@@ -171,7 +203,7 @@ icon locally with `xcodebuild`, pass a build setting such as:
 xcodebuild -project ios/App/App.xcodeproj -scheme App CRAFTCRAWL_APP_ICON_NAME=AppIcon-Ember build
 ```
 
-In Xcode, set `CRAFTCRAWL_APP_ICON_NAME` to one of `AppIcon`, `AppIcon-Trail`, `AppIcon-TrailDark`, `AppIcon-Ember`, or `AppIcon-EmberDark`. The iOS GitHub Actions workflows also expose this as an `app_icon` manual-run input. For TestFlight, choose `AppIcon` unless you intentionally want the first-installed icon to be a themed variant.
+In Xcode, set `CRAFTCRAWL_APP_ICON_NAME` to one of the app icon asset names above. The iOS GitHub Actions workflows also expose this as an `app_icon` manual-run input. For TestFlight, choose `AppIcon` unless you intentionally want the first-installed icon to be a themed variant.
 
 Android defaults to `trail`. Use `trail` for normal release builds; users can
 switch icons from mobile app settings after install. To build another initial

@@ -24,12 +24,22 @@ window.CraftCrawlInitAppIconSwitcher = function (root = document) {
     const setDisabled = (disabled) => buttons.forEach((button) => {
         button.disabled = disabled || button.dataset.appIconLocked === 'true';
     });
-    appIcon.getCurrentIcon().then((data) => { settings.hidden = false; setActive(data.name || 'trail'); }).catch(() => {});
+    appIcon.getCurrentIcon().then((data) => {
+        const iconName = data.name || 'trail';
+        settings.hidden = false;
+        setActive(iconName);
+        window.syncCraftCrawlNativeSplashPreference?.(iconName);
+    }).catch(() => {});
     buttons.forEach((button) => button.addEventListener('click', () => {
         const iconName = button.dataset.appIconOption || 'trail';
         setDisabled(true); showStatus('Updating app icon...', false);
         appIcon.setIcon({ name: iconName })
-            .then((data) => { setActive(data.name || iconName); showStatus('App icon updated.', false); })
+            .then((data) => {
+                const updatedIconName = data.name || iconName;
+                setActive(updatedIconName);
+                window.syncCraftCrawlNativeSplashPreference?.(updatedIconName);
+                showStatus('App icon and splash updated.', false);
+            })
             .catch((error) => showStatus(error?.message || 'App icon could not be updated.', true))
             .finally(() => setDisabled(false));
     }));

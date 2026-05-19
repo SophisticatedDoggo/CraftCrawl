@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/lib/security.php';
+require_once __DIR__ . '/lib/appearance.php';
 require_once __DIR__ . '/lib/email_verification.php';
 craftcrawl_secure_session_start();
 include 'db.php';
@@ -64,7 +65,7 @@ $is_success = !empty($result['success']) || (($result['reason'] ?? '') === 'alre
 <body class="auth-body">
     <main class="auth-card">
         <a class="auth-back-link text-link" href="<?php echo escape_output($login_path); ?>" data-back-link>Back</a>
-        <img class="site-logo auth-logo" src="images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
+        <img class="site-logo auth-logo" src="<?php echo craftcrawl_theme_logo_src('images/'); ?>" alt="CraftCrawl logo">
         <h1>Resend Verification</h1>
 
         <?php if ($result !== null) : ?>

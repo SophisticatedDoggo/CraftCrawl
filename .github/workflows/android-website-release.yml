@@ -28,6 +28,12 @@ on:
           - trail-dark
           - ember
           - ember-dark
+          - riverstone
+          - riverstone-dark
+          - blackberry
+          - blackberry-dark
+          - barnwood
+          - barnwood-dark
         default: trail
 
 concurrency:
@@ -122,6 +128,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Generate selected splash assets
+        run: CRAFTCRAWL_SPLASH_STYLE="$CRAFTCRAWL_APP_ICON" npm run assets:splash
 
       - name: Decode Android signing key
         run: |

@@ -13,6 +13,12 @@ variants=(
   "trail-dark:craft-crawl-logo-trail-dark:AppIcon-TrailDark:_trail_dark"
   "ember:craft-crawl-logo-ember:AppIcon-Ember:_ember"
   "ember-dark:craft-crawl-logo-ember-dark:AppIcon-EmberDark:_ember_dark"
+  "riverstone:craft-crawl-logo-riverstone:AppIcon-Riverstone:_riverstone"
+  "riverstone-dark:craft-crawl-logo-riverstone-dark:AppIcon-RiverstoneDark:_riverstone_dark"
+  "blackberry:craft-crawl-logo-blackberry:AppIcon-Blackberry:_blackberry"
+  "blackberry-dark:craft-crawl-logo-blackberry-dark:AppIcon-BlackberryDark:_blackberry_dark"
+  "barnwood:craft-crawl-logo-barnwood:AppIcon-Barnwood:_barnwood"
+  "barnwood-dark:craft-crawl-logo-barnwood-dark:AppIcon-BarnwoodDark:_barnwood_dark"
 )
 
 densities=(

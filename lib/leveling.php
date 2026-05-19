@@ -1032,21 +1032,9 @@ function craftcrawl_level_rewards_unlocked_between($from_level, $to_level) {
         if ($level > $from_level && $level <= $to_level) {
             $rewards[] = [
                 'level' => $level,
-                'name' => $frame['label'] . ' Color',
-                'description' => 'Profile frame color',
-                'type' => 'Color',
-            ];
-        }
-    }
-
-    foreach (craftcrawl_profile_frame_styles() as $shape) {
-        $level = (int) $shape['level'];
-        if ($level > $from_level && $level <= $to_level) {
-            $rewards[] = [
-                'level' => $level,
-                'name' => $shape['label'] . ' Shape',
-                'description' => 'Profile frame shape',
-                'type' => 'Shape',
+                'name' => $frame['label'],
+                'description' => 'Profile frame',
+                'type' => 'Frame',
             ];
         }
     }
@@ -1094,54 +1082,102 @@ function craftcrawl_unlocked_profile_frame($level) {
 
 function craftcrawl_profile_frame_colors() {
     return [
-        'bronze' => ['label' => 'Bronze Pour', 'level' => 5],
-        'amber' => ['label' => 'Amber Ale', 'level' => 7],
-        'copper' => ['label' => 'Copper Kettle', 'level' => 10],
-        'foam' => ['label' => 'Foam White', 'level' => 12],
-        'slate' => ['label' => 'Slate Cellar', 'level' => 15],
-        'berry' => ['label' => 'Berry Sour', 'level' => 18],
-        'silver' => ['label' => 'Silver Tap', 'level' => 20],
-        'teal' => ['label' => 'Teal Tonic', 'level' => 24],
-        'crimson' => ['label' => 'Crimson Cask', 'level' => 27],
-        'emerald' => ['label' => 'Emerald Trail', 'level' => 30],
-        'lime' => ['label' => 'Lime Twist', 'level' => 34],
-        'sapphire' => ['label' => 'Sapphire Stream', 'level' => 40],
-        'indigo' => ['label' => 'Indigo Nightcap', 'level' => 45],
-        'amethyst' => ['label' => 'Amethyst Flight', 'level' => 50],
-        'coral' => ['label' => 'Coral Spritz', 'level' => 55],
-        'gold' => ['label' => 'Gold Barrel', 'level' => 60],
-        'pearl' => ['label' => 'Pearl Pilsner', 'level' => 65],
-        'rose' => ['label' => 'Rose Cellar', 'level' => 70],
-        'mint' => ['label' => 'Mint Julep', 'level' => 76],
-        'obsidian' => ['label' => 'Obsidian Night', 'level' => 85],
-        'ember' => ['label' => 'Ember Stout', 'level' => 92],
-        'legend' => ['label' => 'Craft Crawl Legend', 'level' => 100],
+        'frame_1' => ['label' => 'Frame 1', 'level' => 5],
+        'frame_2' => ['label' => 'Frame 2', 'level' => 7],
+        'frame_3' => ['label' => 'Frame 3', 'level' => 10],
+        'frame_4' => ['label' => 'Frame 4', 'level' => 12],
+        'frame_5' => ['label' => 'Frame 5', 'level' => 15],
+        'frame_5_1' => ['label' => 'Frame 5.1', 'level' => 18],
+        'frame_6' => ['label' => 'Frame 6', 'level' => 20],
+        'frame_7' => ['label' => 'Frame 7', 'level' => 24],
+        'frame_8' => ['label' => 'Frame 8', 'level' => 27],
+        'frame_9' => ['label' => 'Frame 9', 'level' => 30],
+        'frame_10' => ['label' => 'Frame 10', 'level' => 34],
+        'frame_11' => ['label' => 'Frame 11', 'level' => 40],
+        'frame_12' => ['label' => 'Frame 12', 'level' => 45],
+        'frame_13' => ['label' => 'Frame 13', 'level' => 50],
+        'frame_14' => ['label' => 'Frame 14', 'level' => 55],
+        'frame_15' => ['label' => 'Frame 15', 'level' => 60],
+        'frame_16' => ['label' => 'Frame 16', 'level' => 65],
+        'frame_17' => ['label' => 'Frame 17', 'level' => 70],
+        'frame_18' => ['label' => 'Frame 18', 'level' => 76],
+        'frame_19' => ['label' => 'Frame 19', 'level' => 82],
+        'frame_20' => ['label' => 'Frame 20', 'level' => 88],
+        'frame_21' => ['label' => 'Frame 21', 'level' => 94],
+        'frame_22' => ['label' => 'Frame 22', 'level' => 98],
+        'frame_23' => ['label' => 'Frame 23', 'level' => 100],
     ];
 }
 
 function craftcrawl_profile_frame_styles() {
     return [
-        'solid' => ['label' => 'Circle', 'level' => 5],
-        'double' => ['label' => 'Double Circle', 'level' => 8],
-        'circle_inset' => ['label' => 'Inset Circle', 'level' => 12],
-        'rounded' => ['label' => 'Rounded Square', 'level' => 16],
-        'rounded_double' => ['label' => 'Double Rounded Square', 'level' => 20],
-        'square' => ['label' => 'Square', 'level' => 24],
-        'square_double' => ['label' => 'Double Square', 'level' => 28],
-        'notched' => ['label' => 'Notched', 'level' => 32],
-        'notched_double' => ['label' => 'Double Notched', 'level' => 36],
-        'diamond' => ['label' => 'Diamond', 'level' => 40],
-        'diamond_double' => ['label' => 'Double Diamond', 'level' => 45],
-        'diamond_inset' => ['label' => 'Inset Diamond', 'level' => 50],
-        'hex' => ['label' => 'Hexagon', 'level' => 55],
-        'hex_double' => ['label' => 'Double Hexagon', 'level' => 60],
-        'hex_inset' => ['label' => 'Inset Hexagon', 'level' => 65],
-        'circle_dashed' => ['label' => 'Dashed Circle', 'level' => 70],
-        'rounded_dashed' => ['label' => 'Dashed Rounded Square', 'level' => 78],
-        'diamond_dashed' => ['label' => 'Dashed Diamond', 'level' => 86],
-        'hex_dashed' => ['label' => 'Dashed Hexagon', 'level' => 94],
-        'prism' => ['label' => 'Legend Prism', 'level' => 100],
+        'solid' => ['label' => 'Fantasy', 'level' => 1],
     ];
+}
+
+function craftcrawl_profile_frame_legacy_aliases() {
+    return [
+        'bronze' => 'frame_1',
+        'amber' => 'frame_2',
+        'copper' => 'frame_3',
+        'foam' => 'frame_4',
+        'slate' => 'frame_5',
+        'berry' => 'frame_5_1',
+        'silver' => 'frame_6',
+        'teal' => 'frame_7',
+        'crimson' => 'frame_8',
+        'emerald' => 'frame_9',
+        'lime' => 'frame_10',
+        'sapphire' => 'frame_11',
+        'indigo' => 'frame_12',
+        'amethyst' => 'frame_13',
+        'coral' => 'frame_14',
+        'gold' => 'frame_15',
+        'pearl' => 'frame_16',
+        'rose' => 'frame_17',
+        'mint' => 'frame_18',
+        'obsidian' => 'frame_19',
+        'ember' => 'frame_20',
+        'legend' => 'frame_23',
+        'metal1' => 'frame_7',
+        'nature1' => 'frame_1',
+        'hot1' => 'frame_15',
+        'ice1' => 'frame_14',
+        'metal2' => 'frame_8',
+        'nature2' => 'frame_2',
+        'hot2' => 'frame_17',
+        'ice2' => 'frame_16',
+        'metal3' => 'frame_9',
+        'nature3' => 'frame_3',
+        'hot3' => 'frame_19',
+        'ice3' => 'frame_20',
+        'metal4' => 'frame_13',
+        'nature4' => 'frame_4',
+        'hot4' => 'frame_22',
+        'ice4' => 'frame_21',
+        'metal5' => 'frame_10',
+        'nature5' => 'frame_5_1',
+        'hot5' => 'frame_23',
+        'metal6' => 'frame_12',
+        'nature6' => 'frame_5',
+        'metal7' => 'frame_18',
+        'metal8' => 'frame_13',
+        'skull1' => 'frame_23',
+    ];
+}
+
+function craftcrawl_normalize_profile_frame_key($frame_key) {
+    $frame_key = preg_replace('/[^a-z0-9_-]/i', '', (string) $frame_key);
+    if ($frame_key === '') {
+        return null;
+    }
+
+    if (array_key_exists($frame_key, craftcrawl_profile_frame_colors())) {
+        return $frame_key;
+    }
+
+    $aliases = craftcrawl_profile_frame_legacy_aliases();
+    return $aliases[$frame_key] ?? null;
 }
 
 function craftcrawl_unlocked_profile_frame_colors($level) {
@@ -1257,139 +1293,20 @@ function craftcrawl_user_frame_activity_stats($conn, $user_id) {
 
 function craftcrawl_user_profile_frame_reward_catalog($conn, $user_id, $current_level) {
     $current_level = max(1, min(CRAFTCRAWL_MAX_LEVEL, (int) $current_level));
-    $stats = craftcrawl_user_frame_activity_stats($conn, $user_id);
     $rewards = [];
 
     foreach (craftcrawl_profile_frame_colors() as $key => $frame) {
         $level = (int) $frame['level'];
         $rewards[] = [
             'level' => $level,
-            'name' => $frame['label'] . ' Color',
-            'description' => 'Unlock this profile frame color.',
-            'type' => 'Color',
+            'name' => $frame['label'],
+            'description' => 'Unlock this profile frame.',
+            'type' => 'Frame',
             'frame_color' => $key,
             'frame_style' => 'solid',
             'unlocked' => $current_level >= $level,
             'levels_remaining' => max(0, $level - $current_level),
         ];
-    }
-
-    foreach (craftcrawl_profile_frame_styles() as $key => $shape) {
-        $level = (int) $shape['level'];
-        $rewards[] = [
-            'level' => $level,
-            'name' => $shape['label'] . ' Shape',
-            'description' => 'Unlock this profile frame shape.',
-            'type' => 'Shape',
-            'frame_color' => 'bronze',
-            'frame_style' => $key,
-            'unlocked' => $current_level >= $level,
-            'levels_remaining' => max(0, $level - $current_level),
-        ];
-    }
-
-    $activity_rewards = [
-        [
-            'name' => 'Event Rose Color',
-            'description' => 'Check in during 3 events.',
-            'type' => 'Color',
-            'frame_color' => 'rose',
-            'frame_style' => 'solid',
-            'current' => $stats['event_attendances'],
-            'target' => 3,
-        ],
-        [
-            'name' => 'Venue Circuit Shape',
-            'description' => 'Check in during events at 3 different locations.',
-            'type' => 'Shape',
-            'frame_color' => 'sapphire',
-            'frame_style' => 'notched',
-            'current' => $stats['event_venues'],
-            'target' => 3,
-        ],
-        [
-            'name' => 'Event Ember Color',
-            'description' => 'Check in during 10 events.',
-            'type' => 'Color',
-            'frame_color' => 'ember',
-            'frame_style' => 'solid',
-            'current' => $stats['event_attendances'],
-            'target' => 10,
-        ],
-        [
-            'name' => 'Event Inset Circle Shape',
-            'description' => 'Check in during events at 5 different locations.',
-            'type' => 'Shape',
-            'frame_color' => 'amber',
-            'frame_style' => 'circle_inset',
-            'current' => $stats['event_venues'],
-            'target' => 5,
-        ],
-        [
-            'name' => 'Trail Double Diamond Shape',
-            'description' => 'Visit 10 unique locations.',
-            'type' => 'Shape',
-            'frame_color' => 'emerald',
-            'frame_style' => 'diamond',
-            'current' => $stats['unique_locations'],
-            'target' => 10,
-        ],
-        [
-            'name' => 'Trail Diamond Shape',
-            'description' => 'Visit 25 unique locations.',
-            'type' => 'Shape',
-            'frame_color' => 'emerald',
-            'frame_style' => 'diamond_double',
-            'current' => $stats['unique_locations'],
-            'target' => 25,
-        ],
-        [
-            'name' => 'Full Flight Hex Shape',
-            'description' => 'Visit 4 different location types.',
-            'type' => 'Shape',
-            'frame_color' => 'amethyst',
-            'frame_style' => 'hex',
-            'current' => $stats['location_types'],
-            'target' => 4,
-        ],
-        [
-            'name' => 'House Favorite Double Circle Shape',
-            'description' => 'Visit the same location 10 times.',
-            'type' => 'Shape',
-            'frame_color' => 'copper',
-            'frame_style' => 'double',
-            'current' => $stats['max_location_visits'],
-            'target' => 10,
-        ],
-        [
-            'name' => 'Obsidian Anchor Color',
-            'description' => 'Complete 50 total visits.',
-            'type' => 'Color',
-            'frame_color' => 'obsidian',
-            'frame_style' => 'solid',
-            'current' => $stats['total_visits'],
-            'target' => 50,
-        ],
-        [
-            'name' => 'Century Mint Color',
-            'description' => 'Complete 100 total visits.',
-            'type' => 'Color',
-            'frame_color' => 'mint',
-            'frame_style' => 'solid',
-            'current' => $stats['total_visits'],
-            'target' => 100,
-        ],
-    ];
-
-    foreach ($activity_rewards as $reward) {
-        $target = max(1, (int) $reward['target']);
-        $current = min($target, max(0, (int) $reward['current']));
-        $reward['level'] = null;
-        $reward['unlocked'] = $current >= $target;
-        $reward['levels_remaining'] = null;
-        $reward['progress'] = $current;
-        $reward['target'] = $target;
-        $rewards[] = $reward;
     }
 
     usort($rewards, function ($a, $b) {
@@ -1407,7 +1324,7 @@ function craftcrawl_user_profile_frame_reward_catalog($conn, $user_id, $current_
 function craftcrawl_unlocked_profile_frame_colors_for_user($conn, $user_id, $level) {
     $colors = craftcrawl_unlocked_profile_frame_colors($level);
     foreach (craftcrawl_user_profile_frame_reward_catalog($conn, $user_id, $level) as $reward) {
-        if (!empty($reward['unlocked']) && in_array($reward['type'], ['Color', 'Legend'], true) && !empty($reward['frame_color'])) {
+        if (!empty($reward['unlocked']) && in_array($reward['type'], ['Color', 'Frame', 'Legend'], true) && !empty($reward['frame_color'])) {
             $all_colors = craftcrawl_profile_frame_colors();
             $colors[$reward['frame_color']] = $all_colors[$reward['frame_color']] ?? ['label' => ucwords(str_replace('_', ' ', $reward['frame_color'])), 'level' => 1];
         }
@@ -1430,14 +1347,26 @@ function craftcrawl_level_reward_catalog($current_level) {
     $current_level = max(1, min(CRAFTCRAWL_MAX_LEVEL, (int) $current_level));
     $rewards = [
         ['level' => 2, 'name' => 'Trail Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'trail-dark'],
+        ['level' => 2, 'name' => 'Trail Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'trail-dark'],
         ['level' => 8, 'name' => '1st Badge Showcase Slot', 'description' => 'Feature 1 earned badge on your profile.', 'type' => 'Showcase'],
         ['level' => 14, 'name' => 'Ember Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'ember'],
+        ['level' => 14, 'name' => 'Ember App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'ember'],
         ['level' => 16, 'name' => '2nd Badge Showcase Slot', 'description' => 'Feature 2 earned badges on your profile.', 'type' => 'Showcase'],
-        ['level' => 22, 'name' => 'Ember App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'ember'],
         ['level' => 24, 'name' => '3rd Badge Showcase Slot', 'description' => 'Feature 3 earned badges on your profile.', 'type' => 'Showcase'],
         ['level' => 38, 'name' => 'Ember Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'ember-dark'],
-        ['level' => 48, 'name' => 'Trail Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'trail-dark'],
-        ['level' => 63, 'name' => 'Ember Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'ember-dark'],
+        ['level' => 38, 'name' => 'Ember Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'ember-dark'],
+        ['level' => 44, 'name' => 'Riverstone Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'riverstone'],
+        ['level' => 44, 'name' => 'Riverstone App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'riverstone'],
+        ['level' => 52, 'name' => 'Blackberry Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'blackberry'],
+        ['level' => 52, 'name' => 'Blackberry App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'blackberry'],
+        ['level' => 72, 'name' => 'Barnwood Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'barnwood'],
+        ['level' => 72, 'name' => 'Barnwood App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'barnwood'],
+        ['level' => 78, 'name' => 'Riverstone Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'riverstone-dark'],
+        ['level' => 78, 'name' => 'Riverstone Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'riverstone-dark'],
+        ['level' => 90, 'name' => 'Blackberry Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'blackberry-dark'],
+        ['level' => 90, 'name' => 'Blackberry Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'blackberry-dark'],
+        ['level' => 96, 'name' => 'Barnwood Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'barnwood-dark'],
+        ['level' => 96, 'name' => 'Barnwood Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'barnwood-dark'],
     ];
 
     $titles = [
@@ -1529,34 +1458,39 @@ function craftcrawl_next_reward_preview($level) {
     $level = max(1, min(CRAFTCRAWL_MAX_LEVEL, (int) $level));
     $milestones = [
         2   => 'Trail Dark Display Theme',
-        5   => 'Bronze Pour Frame Color',
+        5   => 'Frame 1',
         6   => 'First Sipper Title',
+        7   => 'Frame 2',
         8   => '1st badge showcase slot',
-        10  => 'Copper Kettle Frame Color',
-        12  => 'Square Frame Shape',
+        10  => 'Frame 3',
+        12  => 'Frame 4',
         14  => 'Ember Display Theme',
-        15  => 'Slate Cellar Frame Color',
+        15  => 'Frame 5',
         16  => '2nd badge showcase slot',
-        18  => 'Double Ring Frame Shape',
-        20  => 'Silver Tap Frame Color',
+        18  => 'Frame 5.1',
+        20  => 'Frame 6',
         22  => 'Ember App Icon',
-        24  => '3rd badge showcase slot',
+        24  => 'Frame 7 + 3rd badge showcase slot',
         25  => 'Taproom Regular Title',
-        30  => 'Emerald Trail Frame Color',
-        32  => 'Trail Marks Frame Shape',
+        27  => 'Frame 8',
+        30  => 'Frame 9',
+        34  => 'Frame 10',
         38  => 'Ember Dark Display Theme',
-        40  => 'Sapphire Stream Frame Color',
-        45  => 'Diamond Frame Shape',
+        40  => 'Frame 11',
+        45  => 'Frame 12',
         48  => 'Trail Dark App Icon',
-        50  => 'Amethyst Flight Frame Color',
-        58  => 'Hex Frame Shape',
-        60  => 'Gold Barrel Frame Color',
+        50  => 'Frame 13',
+        55  => 'Frame 14',
+        60  => 'Frame 15',
         63  => 'Ember Dark App Icon',
-        70  => 'Rose Cellar Frame Color',
-        72  => 'Inset Pour Frame Shape',
-        85  => 'Obsidian Night Frame Color',
-        88  => 'Glow Frame Shape',
-        100 => 'Craft Crawl Legend Frame + Legend Prism Shape',
+        65  => 'Frame 16',
+        70  => 'Frame 17',
+        76  => 'Frame 18',
+        82  => 'Frame 19',
+        88  => 'Frame 20',
+        94  => 'Frame 21',
+        98  => 'Frame 22',
+        100 => 'Frame 23',
     ];
 
     foreach ($milestones as $milestone_level => $description) {

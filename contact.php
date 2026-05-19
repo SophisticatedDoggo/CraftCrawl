@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/lib/appearance.php';
 
 $support_email = craftcrawl_env('CRAFTCRAWL_SUPPORT_EMAIL', 'support@craftcrawl.site');
 ?>
@@ -16,7 +17,7 @@ $support_email = craftcrawl_env('CRAFTCRAWL_SUPPORT_EMAIL', 'support@craftcrawl.
     <main class="settings-page legal-page">
         <header class="settings-header legal-header">
             <div>
-                <img class="site-logo" src="images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
+                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('images/'); ?>" alt="CraftCrawl logo">
                 <div>
                     <h1>Contact CraftCrawl</h1>
                     <p>Support, business questions, account help, and safety reports.</p>

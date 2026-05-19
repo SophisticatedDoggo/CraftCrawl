@@ -26,7 +26,8 @@ window.CraftCrawlCloseMobileActionsMenu = function () {
 };
 
 function toggleMobileActionsMenu() {
-    const menu = document.querySelector('[data-mobile-actions-menu]');
+    const menu = document.querySelector('.user-app-actions-menu[data-mobile-actions-menu]')
+        || document.querySelector('[data-mobile-actions-menu]');
     const isOpen = menu ? !menu.classList.contains('is-open') : true;
 
     setMobileActionsMenuOpen(isOpen);
@@ -73,7 +74,7 @@ function setupMobileActionsMenu() {
 }
 
 function ensureViewportAnchoredMobileUi() {
-    const persistentUi = document.querySelectorAll('.mobile-app-tabbar, [data-mobile-actions-menu]');
+    const persistentUi = document.querySelectorAll('.user-app-tabbar, .user-app-actions-menu');
 
     persistentUi.forEach((element) => {
         if (element.parentElement !== document.body) {

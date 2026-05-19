@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/lib/security.php';
+require_once __DIR__ . '/lib/appearance.php';
 require_once __DIR__ . '/lib/remember_auth.php';
 require_once __DIR__ . '/lib/business_context.php';
 craftcrawl_secure_session_start();
@@ -23,6 +24,7 @@ if (isset($_SESSION['user_id'])) {
     }
 
     if (!empty($account['display_palette'])) {
+        $_COOKIE['craftcrawl_account_palette'] = $account['display_palette'];
         setcookie('craftcrawl_account_palette', $account['display_palette'], [
             'expires' => time() + 60 * 60 * 24 * 365,
             'path' => '/',
@@ -47,6 +49,7 @@ if (isset($_SESSION['business_account_id'])) {
     }
 
     if (!empty($account['display_palette'])) {
+        $_COOKIE['craftcrawl_account_palette'] = $account['display_palette'];
         setcookie('craftcrawl_account_palette', $account['display_palette'], [
             'expires' => time() + 60 * 60 * 24 * 365,
             'path' => '/',

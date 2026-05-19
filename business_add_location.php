@@ -114,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="auth-body">
     <main class="auth-card auth-card-wide">
         <a class="auth-back-link text-link" href="business/locations.php">Back</a>
-        <img class="site-logo auth-logo" src="images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
+        <img class="site-logo auth-logo" src="<?php echo craftcrawl_theme_logo_src('images/'); ?>" alt="CraftCrawl logo">
         <h1>Add a Location</h1>
         <p class="form-help">Search Mapbox first so the location starts with clean place data. If it is already listed on CraftCrawl, go back and claim it instead.</p>
         <?php if ($message) : ?><p class="form-message form-message-error"><?php echo escape_output($message); ?></p><?php endif; ?>

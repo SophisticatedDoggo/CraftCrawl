@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/lib/security.php';
+require_once __DIR__ . '/lib/appearance.php';
 craftcrawl_secure_session_start();
 include 'db.php';
 
@@ -72,7 +73,7 @@ if ($has_search) {
 <body class="auth-body">
     <main class="auth-card auth-card-wide">
         <a class="auth-back-link text-link" href="business_login.php">Back</a>
-        <img class="site-logo auth-logo" src="images/craft-crawl-logo-trail.png" alt="CraftCrawl logo">
+        <img class="site-logo auth-logo" src="<?php echo craftcrawl_theme_logo_src('images/'); ?>" alt="CraftCrawl logo">
         <h1>Find your location first</h1>
         <p class="form-help">Search CraftCrawl before creating a new listing. If your location already exists, claim it instead of making a duplicate.</p>
         <form method="GET" class="admin-search-form business-location-claim-search">

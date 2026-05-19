@@ -6,11 +6,17 @@ def craftcrawlIconSuffixes = [
     "trail-map": "",
     "trail-dark": "_trail_dark",
     "ember": "_ember",
-    "ember-dark": "_ember_dark"
+    "ember-dark": "_ember_dark",
+    "riverstone": "_riverstone",
+    "riverstone-dark": "_riverstone_dark",
+    "blackberry": "_blackberry",
+    "blackberry-dark": "_blackberry_dark",
+    "barnwood": "_barnwood",
+    "barnwood-dark": "_barnwood_dark"
 ]
 
 if (!craftcrawlIconSuffixes.containsKey(craftcrawlIconStyle)) {
-    throw new GradleException("Unsupported CraftCrawl app icon '${craftcrawlIconStyle}'. Use trail, trail-map, trail-dark, ember, or ember-dark.")
+    throw new GradleException("Unsupported CraftCrawl app icon '${craftcrawlIconStyle}'. Use trail, trail-map, trail-dark, ember, ember-dark, riverstone, riverstone-dark, blackberry, blackberry-dark, barnwood, or barnwood-dark.")
 }
 
 def craftcrawlIconBase = "ic_launcher${craftcrawlIconSuffixes[craftcrawlIconStyle]}"
@@ -31,7 +37,13 @@ def craftcrawlManifestPlaceholders = { label, appLinkHost ->
         appIconTrailEnabled: craftcrawlRuntimeIconName == "trail" ? "true" : "false",
         appIconTrailDarkEnabled: craftcrawlRuntimeIconName == "trail-dark" ? "true" : "false",
         appIconEmberEnabled: craftcrawlRuntimeIconName == "ember" ? "true" : "false",
-        appIconEmberDarkEnabled: craftcrawlRuntimeIconName == "ember-dark" ? "true" : "false"
+        appIconEmberDarkEnabled: craftcrawlRuntimeIconName == "ember-dark" ? "true" : "false",
+        appIconRiverstoneEnabled: craftcrawlRuntimeIconName == "riverstone" ? "true" : "false",
+        appIconRiverstoneDarkEnabled: craftcrawlRuntimeIconName == "riverstone-dark" ? "true" : "false",
+        appIconBlackberryEnabled: craftcrawlRuntimeIconName == "blackberry" ? "true" : "false",
+        appIconBlackberryDarkEnabled: craftcrawlRuntimeIconName == "blackberry-dark" ? "true" : "false",
+        appIconBarnwoodEnabled: craftcrawlRuntimeIconName == "barnwood" ? "true" : "false",
+        appIconBarnwoodDarkEnabled: craftcrawlRuntimeIconName == "barnwood-dark" ? "true" : "false"
     ]
 }
 

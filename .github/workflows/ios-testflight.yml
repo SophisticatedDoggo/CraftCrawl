@@ -21,6 +21,12 @@ on:
           - AppIcon-TrailDark
           - AppIcon-Ember
           - AppIcon-EmberDark
+          - AppIcon-Riverstone
+          - AppIcon-RiverstoneDark
+          - AppIcon-Blackberry
+          - AppIcon-BlackberryDark
+          - AppIcon-Barnwood
+          - AppIcon-BarnwoodDark
         default: AppIcon
 
 jobs:
@@ -61,6 +67,24 @@ jobs:
 
       - name: Install Node dependencies
         run: npm ci
+
+      - name: Generate selected splash assets
+        run: |
+          case "$CRAFTCRAWL_APP_ICON_NAME" in
+            AppIcon|AppIcon-Trail) splash_style="trail" ;;
+            AppIcon-TrailDark) splash_style="trail-dark" ;;
+            AppIcon-Ember) splash_style="ember" ;;
+            AppIcon-EmberDark) splash_style="ember-dark" ;;
+            AppIcon-Riverstone) splash_style="riverstone" ;;
+            AppIcon-RiverstoneDark) splash_style="riverstone-dark" ;;
+            AppIcon-Blackberry) splash_style="blackberry" ;;
+            AppIcon-BlackberryDark) splash_style="blackberry-dark" ;;
+            AppIcon-Barnwood) splash_style="barnwood" ;;
+            AppIcon-BarnwoodDark) splash_style="barnwood-dark" ;;
+            *) echo "::error::Unsupported app icon $CRAFTCRAWL_APP_ICON_NAME"; exit 1 ;;
+          esac
+
+          CRAFTCRAWL_SPLASH_STYLE="$splash_style" npm run assets:splash
 
       - name: Sync Capacitor iOS project
         run: npm run cap:sync:prod:ios
