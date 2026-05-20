@@ -47,6 +47,7 @@ jobs:
       CRAFTCRAWL_APP_ENV: prod
       CRAFTCRAWL_MOBILE_URL: https://app.craftcrawl.site
       CRAFTCRAWL_APP_ICON_NAME: ${{ github.event.inputs.app_icon || 'AppIcon' }}
+      GOOGLE_REVERSED_CLIENT_ID: ${{ secrets.GOOGLE_REVERSED_CLIENT_ID }}
 
     steps:
       - name: Check out repository
@@ -107,6 +108,7 @@ jobs:
             -derivedDataPath ios/build \
             CODE_SIGNING_ALLOWED=NO \
             CRAFTCRAWL_APP_ICON_NAME="$CRAFTCRAWL_APP_ICON_NAME" \
+            GOOGLE_REVERSED_CLIENT_ID="$GOOGLE_REVERSED_CLIENT_ID" \
             build
 
       - name: Upload iOS simulator app
