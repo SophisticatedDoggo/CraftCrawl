@@ -66,6 +66,11 @@
         feedback.hidden = false;
     }
 
+    function getSocialButtonWidth(target) {
+        const width = target.getBoundingClientRect().width || target.clientWidth || 360;
+        return Math.min(400, Math.floor(width));
+    }
+
     function submitCredential(provider, credential, extraFields) {
         if (socialAuthBusy && provider !== 'apple') {
             return Promise.resolve();
@@ -130,7 +135,7 @@
             text: 'signin_with',
             shape: 'rectangular',
             logo_alignment: 'left',
-            width: Math.min(400, target.clientWidth || 360)
+            width: getSocialButtonWidth(target)
         });
 
         target.addEventListener('pointerdown', () => {
