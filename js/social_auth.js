@@ -91,6 +91,43 @@
         return new URL(config.authUrl || 'social_login.php', window.location.href).toString();
     }
 
+    function getAbsoluteLoginUrl() {
+        return new URL(window.location.pathname + window.location.search, window.location.href).toString();
+    }
+
+    function showNativeGoogleFallback(target) {
+        if (!target || target.querySelector('[data-google-native-fallback]')) {
+            return;
+        }
+
+        target.classList.add('is-fallback');
+        target.textContent = '';
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'social-auth-native-fallback';
+        button.dataset.googleNativeFallback = 'true';
+        button.textContent = 'Sign in with Google';
+        target.appendChild(button);
+
+        button.addEventListener('click', () => {
+            const capacitor = window.Capacitor;
+            const Browser = capacitor?.Plugins?.Browser
+                || (typeof capacitor?.registerPlugin === 'function' ? capacitor.registerPlugin('Browser') : null);
+
+            showMessage('Google sign-in opens in a secure browser on iOS.');
+
+            if (Browser && typeof Browser.open === 'function') {
+                Browser.open({ url: getAbsoluteLoginUrl() }).catch(() => {
+                    window.location.href = getAbsoluteLoginUrl();
+                });
+                return;
+            }
+
+            window.location.href = getAbsoluteLoginUrl();
+        });
+    }
+
     function submitCredential(provider, credential, extraFields) {
         if (socialAuthBusy && provider !== 'apple') {
             return Promise.resolve();
@@ -136,7 +173,15 @@
         }
 
         const target = document.querySelector('[data-google-signin]');
-        if (!target || !config.googleClientId || !window.google || !google.accounts || !google.accounts.id) {
+        if (!target || !config.googleClientId) {
+            return false;
+        }
+
+        if ((!window.google || !google.accounts || !google.accounts.id) && isNativeApp()) {
+            showNativeGoogleFallback(target);
+        }
+
+        if (!window.google || !google.accounts || !google.accounts.id) {
             return false;
         }
 
@@ -169,6 +214,14 @@
             logo_alignment: 'left',
             width: getSocialButtonWidth(target)
         });
+
+        if (isNativeApp()) {
+            window.setTimeout(() => {
+                if (!target.querySelector('iframe')) {
+                    showNativeGoogleFallback(target);
+                }
+            }, 800);
+        }
 
         target.addEventListener('pointerdown', () => {
             previewSocialAuthMessage('Opening Google sign-in...');

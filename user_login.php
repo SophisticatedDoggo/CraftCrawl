@@ -198,9 +198,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <p class="auth-switch"><a href="user_account_creation.php">Create An Account</a></p>
         <?php if ($verification_error || $signup_success) : ?>
             <p class="auth-switch">
-                <a href="verify_email.php?account_type=user<?php echo $email !== '' ? '&email=' . escape_output(rawurlencode($email)) : ''; ?>">Enter verification code</a>
+                <a class="text-link" href="verify_email.php?account_type=user<?php echo $email !== '' ? '&email=' . escape_output(rawurlencode($email)) : ''; ?>">Enter verification code</a>
                 <?php if ($email !== '') : ?>
-                    | <a href="resend_verification.php?account_type=user&email=<?php echo escape_output(rawurlencode($email)); ?>">Resend verification email</a>
+                    | <a class="text-link" href="resend_verification.php?account_type=user&email=<?php echo escape_output(rawurlencode($email)); ?>">Resend verification email</a>
                 <?php endif; ?>
             </p>
         <?php endif; ?>

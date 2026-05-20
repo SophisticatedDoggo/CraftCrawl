@@ -992,6 +992,36 @@ a.mobile-context-back {
     color: var(--color-danger);
 }
 
+.social-auth-native-fallback {
+    display: none;
+    width: 100%;
+    min-height: 40px;
+    border-color: #dadce0;
+    border-radius: 4px;
+    color: #3c4043;
+    background: #ffffff;
+    box-shadow: none;
+    font-weight: 600;
+}
+
+.social-auth-native-fallback::before {
+    content: "G";
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    margin-right: 12px;
+    border-radius: 50%;
+    color: #4285f4;
+    background: #ffffff;
+    font-family: Arial, sans-serif;
+    font-weight: 800;
+}
+
+.social-auth-provider.is-fallback .social-auth-native-fallback {
+    display: inline-flex;
+}
+
 @media (min-width: 761px) {
     .auth-top-section {
         text-align: center;
@@ -10082,8 +10112,15 @@ a.event-calendar-event:focus .event-calendar-event-name {
 }
 
 @media (max-width: 760px) {
+    .auth-body {
+        display: block;
+        padding: max(16px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom));
+    }
+
+    .auth-card,
     .verification-card {
-        width: min(100%, 500px);
+        width: min(100%, 430px);
+        margin: 0 auto;
         padding: 22px;
         border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
         border-radius: var(--radius-lg);
@@ -10095,8 +10132,49 @@ a.event-calendar-event:focus .event-calendar-event-name {
         -webkit-backdrop-filter: blur(16px) saturate(1.12);
     }
 
+    .auth-card::before,
     .verification-card::before {
         display: none;
+    }
+
+    .auth-card h1 {
+        margin-bottom: 18px;
+        font-size: clamp(2rem, 10vw, 2.75rem);
+        line-height: 1;
+        text-align: center;
+    }
+
+    .auth-back-link {
+        display: table;
+        margin: 0 auto 16px;
+    }
+
+    .auth-top-section {
+        text-align: center;
+    }
+
+    .social-auth-options {
+        width: 100%;
+        max-width: 400px;
+        margin-inline: auto;
+    }
+
+    .social-auth-provider,
+    .social-auth-provider iframe,
+    .social-auth-provider > div,
+    .social-auth-provider-apple > div {
+        width: 100% !important;
+        max-width: 400px !important;
+    }
+
+    .auth-card form {
+        gap: 12px;
+    }
+
+    .auth-card input[type="submit"],
+    .auth-card form > button {
+        width: 100%;
+        min-height: 48px;
     }
 
     .verification-code-slots {

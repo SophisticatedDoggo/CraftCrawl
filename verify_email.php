@@ -126,12 +126,12 @@ function verification_message($result, $verification_attempted, $account_created
         <?php endif; ?>
         <?php if (!$success && ($result['reason'] ?? '') === 'expired' && $resend_email !== '') : ?>
             <p class="auth-switch">
-                <a href="resend_verification.php?account_type=<?php echo escape_output($account_type); ?>&email=<?php echo escape_output(rawurlencode($resend_email)); ?>">Request a new verification email</a>
+                <a class="text-link" href="resend_verification.php?account_type=<?php echo escape_output($account_type); ?>&email=<?php echo escape_output(rawurlencode($resend_email)); ?>">Resend</a>
             </p>
         <?php endif; ?>
         <?php if (!$success && $email !== '') : ?>
             <p class="auth-switch verification-resend-link">
-                Didn't get a code? <a href="<?php echo escape_output($resend_path); ?>">Resend code</a>
+                Didn't get a code? <a class="text-link" href="<?php echo escape_output($resend_path); ?>">Resend</a>
             </p>
         <?php endif; ?>
         <?php if ($success) : ?>
