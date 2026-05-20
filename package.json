@@ -9,7 +9,7 @@
   "scripts": {
     "cap:sync": "cap sync",
     "cap:sync:prod:android": "CRAFTCRAWL_APP_ENV=prod CRAFTCRAWL_MOBILE_URL=https://app.craftcrawl.site cap sync android",
-    "cap:sync:prod:ios": "CRAFTCRAWL_APP_ENV=prod CRAFTCRAWL_MOBILE_URL=https://app.craftcrawl.site cap sync ios",
+    "cap:sync:prod:ios": "CRAFTCRAWL_APP_ENV=prod CRAFTCRAWL_MOBILE_URL=https://app.craftcrawl.site cap sync ios && tools/ensure-ios-google-signin-spm.sh",
     "cap:open:android": "cap open android",
     "cap:open:ios": "cap open ios",
     "cap:add:android": "cap add android",

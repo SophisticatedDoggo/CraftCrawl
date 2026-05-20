@@ -124,7 +124,10 @@
 
             setSocialAuthBusy(true, 'Opening Google sign-in...');
 
-            googleAuth.signIn({ clientId })
+            googleAuth.signIn({
+                clientId,
+                serverClientId: config.googleClientId || ''
+            })
                 .then((result) => {
                     const idToken = result && result.idToken;
                     if (!idToken) {

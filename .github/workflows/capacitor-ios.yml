@@ -95,7 +95,7 @@ jobs:
         run: test -d ios || npx cap add ios
 
       - name: Sync Capacitor iOS project
-        run: npx cap sync ios
+        run: npx cap sync ios && tools/ensure-ios-google-signin-spm.sh
 
       - name: Build iOS simulator app
         run: |
