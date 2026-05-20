@@ -40,6 +40,14 @@ Browser push is wired through `lib/onesignal.php`, `user/onesignal_config.php`, 
 
 The OneSignal service worker files must remain web-accessible at `/OneSignalSDKWorker.js` and `/OneSignalSDKUpdaterWorker.js`.
 
+## Google Analytics
+
+CraftCrawl uses the hosted web app for browser, Android, and iOS traffic, so production analytics should use a GA4 Web data stream, not separate Firebase app SDK streams. Set this environment value on the Cloudways app:
+
+- `GOOGLE_ANALYTICS_MEASUREMENT_ID=G-XXXXXXXXXX`
+
+When this value is empty or invalid, the Google tag is not rendered.
+
 ## Mobile Test Builds
 
 Android debug builds use package id `com.craftcrawl.app` and app label `CraftCrawl`.

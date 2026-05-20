@@ -29,6 +29,7 @@
     }
 
     function copyInlineScript(script) {
+        if (script.matches('[data-craftcrawl-google-analytics]')) return;
         const clone = document.createElement('script');
         clone.textContent = script.textContent;
         document.body.appendChild(clone);
@@ -106,7 +107,10 @@
                 });
                 liveBaseContent.hidden = false;
                 document.body.className = 'portal-body';
-                window.CraftCrawlSwitchUserTab?.(url, { userInitiated: Boolean(options.userInitiated) });
+                window.CraftCrawlSwitchUserTab?.(url, {
+                    userInitiated: Boolean(options.userInitiated),
+                    trackPageView: false
+                });
             } else {
                 const doc = await fetchDocument(url, { noStore: Boolean(options.noStore) });
                 const nextContent = doc.querySelector('[data-user-page-content]');
@@ -132,6 +136,7 @@
             setActiveTab(url);
             window.scrollTo(0, 0);
             document.dispatchEvent(new CustomEvent('craftcrawl:user-shell-navigated', { detail: { url } }));
+            window.CraftCrawlTrackPageView?.(url, document.title);
             return true;
         } catch (_) {
             window.location.href = url;

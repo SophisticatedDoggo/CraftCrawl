@@ -69,6 +69,7 @@ function reset_password_token_message($token_result) {
     <?php if ($success) : ?>
         <meta http-equiv="refresh" content="3;url=<?php echo escape_output($login_path); ?>">
     <?php endif; ?>
+    <?php require_once __DIR__ . '/lib/google_analytics.php'; echo craftcrawl_google_analytics_tag(); ?>
 </head>
 <body class="auth-body">
     <main class="auth-card">

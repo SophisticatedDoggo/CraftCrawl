@@ -64,6 +64,7 @@
             if (!options.replace) history.pushState({ craftcrawlAreaShell: config.area }, '', url);
             syncNav(url);
             window.scrollTo(0, 0);
+            window.CraftCrawlTrackPageView?.(url, document.title);
             return true;
         } catch (_) {
             window.location.href = url;

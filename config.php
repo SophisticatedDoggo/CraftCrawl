@@ -12,6 +12,7 @@ $HCAPTCHA_SECRET_KEY = craftcrawl_env('HCAPTCHA_SECRET_KEY');
 
 $GOOGLE_SIGN_IN_CLIENT_ID = craftcrawl_env('GOOGLE_SIGN_IN_CLIENT_ID');
 $APPLE_SIGN_IN_CLIENT_ID = craftcrawl_env('APPLE_SIGN_IN_CLIENT_ID');
+$GOOGLE_ANALYTICS_MEASUREMENT_ID = craftcrawl_env('GOOGLE_ANALYTICS_MEASUREMENT_ID');
 
 if (!function_exists('escape_output')) {
     function escape_output($value) {

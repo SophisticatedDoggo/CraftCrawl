@@ -35,6 +35,9 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
         window.CraftCrawlCloseMobileActionsMenu?.();
         document.title = titleByTab[tab];
         if (options.updateHistory) history.pushState({ craftcrawlUserTab: tab }, '', `${routeByTab[tab]}${options.hash || ''}`);
+        if (options.updateHistory && options.trackPageView !== false) {
+            window.CraftCrawlTrackPageView?.(window.location.href, document.title);
+        }
         window.dispatchEvent(new CustomEvent('craftcrawl:user-tab-changed', {
             detail: {
                 tab,

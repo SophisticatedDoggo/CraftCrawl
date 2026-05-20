@@ -12,6 +12,7 @@ $contact_email = craftcrawl_env('CRAFTCRAWL_SUPPORT_EMAIL', 'support@craftcrawl.
     <title>CraftCrawl | Privacy Policy</title>
     <script src="js/theme_init.js?v=<?php echo filemtime(__DIR__ . '/js/theme_init.js'); ?>"></script>
     <link rel="stylesheet" href="css/style.css?v=<?php echo filemtime(__DIR__ . '/css/style.css'); ?>">
+    <?php require_once __DIR__ . '/lib/google_analytics.php'; echo craftcrawl_google_analytics_tag(); ?>
 </head>
 <body>
     <main class="settings-page legal-page">
@@ -44,7 +45,7 @@ $contact_email = craftcrawl_env('CRAFTCRAWL_SUPPORT_EMAIL', 'support@craftcrawl.
             <p>We use email for account verification, password reset, and important account messages. We may use OneSignal for browser push notifications, including friend invites, accepted invites, comments, replies, and reactions. You can manage social notification preferences in user settings and can disable browser notifications through your browser.</p>
 
             <h2>Service Providers</h2>
-            <p>CraftCrawl uses third-party providers to operate the service, including hosting, database services, Cloudflare DNS/security, Mailgun email, OneSignal notifications, Cloudinary photos, Mapbox maps, and hCaptcha bot protection. These providers process data as needed to provide their services.</p>
+            <p>CraftCrawl uses third-party providers to operate the service, including hosting, database services, Cloudflare DNS/security, Mailgun email, OneSignal notifications, Cloudinary photos, Mapbox maps, Google Analytics usage measurement, and hCaptcha bot protection. These providers process data as needed to provide their services.</p>
 
             <h2>Business Analytics</h2>
             <p>Business accounts may see analytics related to check-ins at their business, including first-time visits, daily activity, and related aggregate engagement. These analytics are intended to help businesses understand CraftCrawl activity at their location.</p>

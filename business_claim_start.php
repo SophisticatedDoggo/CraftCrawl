@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>CraftCrawl | Claim Location</title><link rel="stylesheet" href="css/style.css?v=<?php echo filemtime(__DIR__ . '/css/style.css'); ?>"></head>
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>CraftCrawl | Claim Location</title><link rel="stylesheet" href="css/style.css?v=<?php echo filemtime(__DIR__ . '/css/style.css'); ?>"><?php require_once __DIR__ . '/lib/google_analytics.php'; echo craftcrawl_google_analytics_tag(); ?></head>
 <body class="auth-body"><main class="auth-card auth-card-wide"><a class="auth-back-link text-link" href="business/locations.php">Back</a><h1>Claim <?php echo escape_output($location['name']); ?></h1><p><?php echo escape_output($location['city'] . ', ' . $location['state']); ?></p><?php if ($message): ?><p class="form-message form-message-error"><?php echo escape_output($message); ?></p><?php endif; ?>
 <form method="POST"><?php echo craftcrawl_csrf_input(); ?><input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
 <label>Contact name</label><input name="contact_name" required>

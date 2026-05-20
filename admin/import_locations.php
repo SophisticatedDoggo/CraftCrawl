@@ -60,6 +60,7 @@ function import_render_duplicate_summary(array $summary) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CraftCrawl | Import Locations</title>
     <link rel="stylesheet" href="../css/style.css?v=<?php echo filemtime(__DIR__ . '/../css/style.css'); ?>">
+    <?php require_once dirname(__DIR__) . '/lib/google_analytics.php'; echo craftcrawl_google_analytics_tag(); ?>
 </head>
 <body>
     <div data-area-page-content>
