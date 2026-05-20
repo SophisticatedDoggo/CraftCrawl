@@ -91,11 +91,7 @@
         return new URL(config.authUrl || 'social_login.php', window.location.href).toString();
     }
 
-    function getAbsoluteLoginUrl() {
-        return new URL(window.location.pathname + window.location.search, window.location.href).toString();
-    }
-
-    function showNativeGoogleFallback(target) {
+    function showNativeGoogleSignIn(target) {
         if (!target || target.querySelector('[data-google-native-fallback]')) {
             return;
         }
@@ -112,19 +108,34 @@
 
         button.addEventListener('click', () => {
             const capacitor = window.Capacitor;
-            const Browser = capacitor?.Plugins?.Browser
-                || (typeof capacitor?.registerPlugin === 'function' ? capacitor.registerPlugin('Browser') : null);
+            const googleAuth = capacitor?.Plugins?.CraftCrawlGoogleAuth
+                || (typeof capacitor?.registerPlugin === 'function' ? capacitor.registerPlugin('CraftCrawlGoogleAuth') : null);
+            const clientId = config.googleIosClientId || '';
 
-            showMessage('Google sign-in opens in a secure browser on iOS.');
-
-            if (Browser && typeof Browser.open === 'function') {
-                Browser.open({ url: getAbsoluteLoginUrl() }).catch(() => {
-                    window.location.href = getAbsoluteLoginUrl();
-                });
+            if (!clientId) {
+                showMessage('Google sign-in is missing the iOS client ID.');
                 return;
             }
 
-            window.location.href = getAbsoluteLoginUrl();
+            if (!googleAuth || typeof googleAuth.signIn !== 'function') {
+                showMessage('Please update the CraftCrawl app to use Google sign-in.');
+                return;
+            }
+
+            setSocialAuthBusy(true, 'Opening Google sign-in...');
+
+            googleAuth.signIn({ clientId })
+                .then((result) => {
+                    const idToken = result && result.idToken;
+                    if (!idToken) {
+                        throw new Error('Google sign-in did not return account credentials.');
+                    }
+
+                    return submitCredential('google', idToken);
+                })
+                .catch((error) => {
+                    showMessage(error && error.message ? error.message : 'Google sign-in was canceled or could not be completed.');
+                });
         });
     }
 
@@ -173,15 +184,17 @@
         }
 
         const target = document.querySelector('[data-google-signin]');
-        if (!target || !config.googleClientId) {
+        if (!target || (!config.googleClientId && !config.googleIosClientId)) {
             return false;
         }
 
-        if ((!window.google || !google.accounts || !google.accounts.id) && isNativeApp()) {
-            showNativeGoogleFallback(target);
+        if (isNativeApp()) {
+            showNativeGoogleSignIn(target);
+            googleInitialized = true;
+            return true;
         }
 
-        if (!window.google || !google.accounts || !google.accounts.id) {
+        if (!config.googleClientId || !window.google || !google.accounts || !google.accounts.id) {
             return false;
         }
 
@@ -214,14 +227,6 @@
             logo_alignment: 'left',
             width: getSocialButtonWidth(target)
         });
-
-        if (isNativeApp()) {
-            window.setTimeout(() => {
-                if (!target.querySelector('iframe')) {
-                    showNativeGoogleFallback(target);
-                }
-            }, 800);
-        }
 
         target.addEventListener('pointerdown', () => {
             previewSocialAuthMessage('Opening Google sign-in...');

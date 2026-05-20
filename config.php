@@ -19,6 +19,7 @@ if (!function_exists('craftcrawl_first_env_list_value')) {
 }
 
 $GOOGLE_SIGN_IN_CLIENT_ID = craftcrawl_env('GOOGLE_SIGN_IN_CLIENT_ID') ?: craftcrawl_first_env_list_value('CRAFTCRAWL_GOOGLE_CLIENT_IDS');
+$GOOGLE_IOS_CLIENT_ID = craftcrawl_env('GOOGLE_IOS_CLIENT_ID') ?: craftcrawl_env('CRAFTCRAWL_GOOGLE_IOS_CLIENT_ID');
 $APPLE_SIGN_IN_CLIENT_ID = craftcrawl_env('APPLE_SIGN_IN_CLIENT_ID') ?: craftcrawl_first_env_list_value('CRAFTCRAWL_APPLE_CLIENT_IDS');
 $GOOGLE_ANALYTICS_MEASUREMENT_ID = craftcrawl_env('GOOGLE_ANALYTICS_MEASUREMENT_ID');
 

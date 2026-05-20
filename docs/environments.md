@@ -30,6 +30,24 @@ The Capacitor app reads `CRAFTCRAWL_MOBILE_URL` when syncing native projects:
 
 The Android and iOS workflows build from `main` and point at prod.
 
+## Social Sign-In
+
+Set these values on the hosted app:
+
+- `GOOGLE_SIGN_IN_CLIENT_ID`
+- `GOOGLE_IOS_CLIENT_ID`
+- `APPLE_SIGN_IN_CLIENT_ID`
+- `CRAFTCRAWL_GOOGLE_CLIENT_IDS`
+- `CRAFTCRAWL_APPLE_CLIENT_IDS`
+
+`CRAFTCRAWL_GOOGLE_CLIENT_IDS` must include both the web client ID and the iOS
+client ID so the PHP verifier accepts tokens from Safari/browser and the native
+iOS auth bridge.
+
+For iOS builds, set the Xcode build setting `GOOGLE_REVERSED_CLIENT_ID` to the
+reversed iOS client ID from Google Cloud, for example
+`com.googleusercontent.apps.1234567890-abc`.
+
 ## OneSignal Push
 
 Browser push is wired through `lib/onesignal.php`, `user/onesignal_config.php`, and `js/onesignal_push.js`. Set these environment values on the Cloudways app:

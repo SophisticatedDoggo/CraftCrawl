@@ -99,23 +99,33 @@ function verification_message($result, $verification_attempted, $account_created
                 <?php echo craftcrawl_csrf_input(); ?>
                 <input type="hidden" name="account_type" value="<?php echo escape_output($account_type); ?>">
                 <input type="hidden" name="email" value="<?php echo escape_output($email); ?>">
-                <label class="visually-hidden" for="code">Verification Code</label>
-                <input
-                    class="verification-native-code-input"
-                    type="text"
-                    id="code"
-                    name="code"
-                    inputmode="numeric"
-                    pattern="[0-9]*"
-                    autocomplete="one-time-code"
-                    maxlength="<?php echo CRAFTCRAWL_EMAIL_VERIFICATION_CODE_DIGITS; ?>"
-                    required
-                    value="<?php echo escape_output(craftcrawl_normalize_email_verification_code($code)); ?>"
-                    data-verification-native-input
-                >
-                <div class="verification-code-slots" aria-hidden="true" data-verification-code-slots>
-                    <?php for ($slot = 0; $slot < CRAFTCRAWL_EMAIL_VERIFICATION_CODE_DIGITS; $slot++) : ?>
-                        <button type="button" class="verification-code-slot" data-verification-code-slot tabindex="-1"></button>
+                <input type="hidden" id="code" name="code" value="<?php echo escape_output(craftcrawl_normalize_email_verification_code($code)); ?>" data-verification-native-input>
+                <label class="visually-hidden" for="code_digit_1">Verification Code</label>
+                <div class="verification-code-slots" data-verification-code-slots>
+                    <input
+                        class="verification-code-slot"
+                        type="text"
+                        id="code_digit_1"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        autocomplete="one-time-code"
+                        maxlength="<?php echo CRAFTCRAWL_EMAIL_VERIFICATION_CODE_DIGITS; ?>"
+                        required
+                        value="<?php echo escape_output(craftcrawl_normalize_email_verification_code($code)); ?>"
+                        data-verification-code-input
+                    >
+                    <?php for ($slot = 1; $slot < CRAFTCRAWL_EMAIL_VERIFICATION_CODE_DIGITS; $slot++) : ?>
+                        <label class="visually-hidden" for="code_digit_<?php echo $slot + 1; ?>">Verification Code Digit <?php echo $slot + 1; ?></label>
+                        <input
+                            class="verification-code-slot"
+                            type="text"
+                            id="code_digit_<?php echo $slot + 1; ?>"
+                            inputmode="numeric"
+                            pattern="[0-9]*"
+                            autocomplete="off"
+                            maxlength="1"
+                            data-verification-code-input
+                        >
                     <?php endfor; ?>
                 </div>
                 <?php if ($email !== '') : ?>

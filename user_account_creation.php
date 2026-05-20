@@ -9,7 +9,7 @@ require_once 'lib/email_verification.php';
 
 $message = null;
 $success = null;
-$social_auth_enabled = !empty($GOOGLE_SIGN_IN_CLIENT_ID) || !empty($APPLE_SIGN_IN_CLIENT_ID);
+$social_auth_enabled = !empty($GOOGLE_SIGN_IN_CLIENT_ID) || !empty($GOOGLE_IOS_CLIENT_ID) || !empty($APPLE_SIGN_IN_CLIENT_ID);
 
 $email = "";
 $first_name = "";
@@ -113,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h1>Create An Account</h1>
             <?php if ($social_auth_enabled) : ?>
                 <div class="social-auth-options" data-social-auth-options aria-label="Social sign-in options">
-                    <?php if (!empty($GOOGLE_SIGN_IN_CLIENT_ID)) : ?>
+                    <?php if (!empty($GOOGLE_SIGN_IN_CLIENT_ID) || !empty($GOOGLE_IOS_CLIENT_ID)) : ?>
                         <div class="social-auth-provider" data-google-signin></div>
                     <?php endif; ?>
                     <?php if (!empty($APPLE_SIGN_IN_CLIENT_ID)) : ?>
@@ -182,6 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 csrfToken: "<?php echo escape_output(craftcrawl_csrf_token()); ?>",
                 authUrl: "social_login.php",
                 googleClientId: "<?php echo escape_output($GOOGLE_SIGN_IN_CLIENT_ID); ?>",
+                googleIosClientId: "<?php echo escape_output($GOOGLE_IOS_CLIENT_ID); ?>",
                 appleClientId: "<?php echo escape_output($APPLE_SIGN_IN_CLIENT_ID); ?>",
                 appleRedirectUri: "<?php echo escape_output((craftcrawl_is_https() ? 'https://' : 'http://') . craftcrawl_trusted_request_host() . craftcrawl_app_base_path() . '/user_account_creation.php'); ?>"
             };

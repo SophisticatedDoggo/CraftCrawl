@@ -857,15 +857,6 @@ a.mobile-context-back {
     justify-items: center;
 }
 
-.verification-native-code-input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    border: 0;
-    opacity: 0.01;
-}
-
 .verification-code-slots {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -890,11 +881,22 @@ a.mobile-context-back {
     font-size: clamp(1.25rem, 5vw, 1.65rem);
     font-weight: 800;
     line-height: 1;
+    text-align: center;
+    caret-color: transparent;
+    -webkit-text-fill-color: var(--color-text);
 }
 
 .verification-code-slot.is-active {
-    border-color: #ffb14f;
-    box-shadow: 0 0 0 3px rgba(255, 177, 79, 0.22), inset 0 1px 2px rgba(15, 23, 42, 0.08);
+    border-color: var(--color-primary);
+    color: var(--color-text);
+    background: var(--color-surface);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent), inset 0 1px 2px rgba(15, 23, 42, 0.08);
+    -webkit-text-fill-color: var(--color-text);
+}
+
+.verification-code-slot::selection {
+    color: var(--color-text);
+    background: transparent;
 }
 
 .verification-code-slot.is-filled {

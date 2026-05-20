@@ -49,14 +49,19 @@ website and in the Capacitor Android/iOS shells. Configure these values on the
 host:
 
 - `GOOGLE_SIGN_IN_CLIENT_ID`
+- `GOOGLE_IOS_CLIENT_ID`
 - `APPLE_SIGN_IN_CLIENT_ID`
 - `CRAFTCRAWL_GOOGLE_CLIENT_IDS`
 - `CRAFTCRAWL_APPLE_CLIENT_IDS`
 
 `GOOGLE_SIGN_IN_CLIENT_ID` and `APPLE_SIGN_IN_CLIENT_ID` control which buttons
-render on the page. The `CRAFTCRAWL_*_CLIENT_IDS` values are comma-separated
-allowlists accepted by the server when verifying identity tokens, which lets you
-include web, Android, and iOS client IDs.
+render on the page. `GOOGLE_IOS_CLIENT_ID` is the iOS OAuth client used by the
+native Capacitor Google sign-in bridge. The `CRAFTCRAWL_*_CLIENT_IDS` values are
+comma-separated allowlists accepted by the server when verifying identity tokens,
+which lets you include web, Android, and iOS client IDs.
+
+For iOS builds, set the Xcode build setting `GOOGLE_REVERSED_CLIENT_ID` to the
+reversed iOS client ID, for example `com.googleusercontent.apps.1234567890-abc`.
 
 Run the social sign-in migration for existing databases:
 
