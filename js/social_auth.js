@@ -134,7 +134,7 @@
                         throw new Error('Google sign-in did not return account credentials.');
                     }
 
-                    return submitCredential('google', idToken);
+                    return submitCredential('google', idToken, null, { force: true });
                 })
                 .catch((error) => {
                     showMessage(error && error.message ? error.message : 'Google sign-in was canceled or could not be completed.');
@@ -142,8 +142,10 @@
         });
     }
 
-    function submitCredential(provider, credential, extraFields) {
-        if (socialAuthBusy && provider !== 'apple') {
+    function submitCredential(provider, credential, extraFields, options) {
+        const submitOptions = options || {};
+
+        if (socialAuthBusy && provider !== 'apple' && !submitOptions.force) {
             return Promise.resolve();
         }
 
