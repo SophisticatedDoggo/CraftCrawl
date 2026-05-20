@@ -63,6 +63,12 @@ which lets you include web, Android, and iOS client IDs.
 For iOS builds, set the Xcode build setting `GOOGLE_REVERSED_CLIENT_ID` to the
 reversed iOS client ID, for example `com.googleusercontent.apps.1234567890-abc`.
 
+For Android builds, create an Android OAuth client in Google Cloud with package
+name `com.craftcrawl.app` and the SHA-1 fingerprints for the debug/release
+signing keys. The native Android bridge requests an ID token for
+`GOOGLE_SIGN_IN_CLIENT_ID`, so that web client ID must remain in
+`CRAFTCRAWL_GOOGLE_CLIENT_IDS`.
+
 Run the social sign-in migration for existing databases:
 
 ```sh

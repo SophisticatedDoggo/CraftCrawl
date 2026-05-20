@@ -48,6 +48,16 @@ For iOS builds, set the Xcode build setting `GOOGLE_REVERSED_CLIENT_ID` to the
 reversed iOS client ID from Google Cloud, for example
 `com.googleusercontent.apps.1234567890-abc`.
 
+For Android builds, create an Android OAuth client in Google Cloud with:
+
+- Package name: `com.craftcrawl.app`
+- SHA-1 certificate fingerprint for each signing key used by debug, direct APK,
+  and Play/App Store distribution builds.
+
+The Android native bridge requests a backend ID token for
+`GOOGLE_SIGN_IN_CLIENT_ID`, so keep that web client ID in
+`CRAFTCRAWL_GOOGLE_CLIENT_IDS`.
+
 ## OneSignal Push
 
 Browser push is wired through `lib/onesignal.php`, `user/onesignal_config.php`, and `js/onesignal_push.js`. Set these environment values on the Cloudways app:

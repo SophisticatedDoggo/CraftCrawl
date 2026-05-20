@@ -483,6 +483,8 @@ function format_event_time_range($event) {
             <p class="form-message form-message-success">Location added to your want-to-go list.</p>
         <?php elseif ($message === 'want_removed') : ?>
             <p class="form-message form-message-success">Location removed from your want-to-go list.</p>
+        <?php elseif ($message === 'want_error') : ?>
+            <p class="form-message form-message-error">Location could not be added to your want-to-go list.</p>
         <?php elseif ($message === 'recommended') : ?>
             <p class="form-message form-message-success">Recommendation sent.</p>
         <?php elseif ($message === 'recommend_checkin_required') : ?>

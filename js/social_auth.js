@@ -84,7 +84,11 @@
 
     function isNativeApp() {
         const capacitor = window.Capacitor;
-        return Boolean(capacitor && capacitor.isNativePlatform?.() && capacitor.getPlatform?.() === 'ios');
+        return Boolean(capacitor && capacitor.isNativePlatform?.());
+    }
+
+    function nativePlatform() {
+        return window.Capacitor?.getPlatform?.() || '';
     }
 
     function getAbsoluteAuthUrl() {
@@ -110,10 +114,17 @@
             const capacitor = window.Capacitor;
             const googleAuth = capacitor?.Plugins?.CraftCrawlGoogleAuth
                 || (typeof capacitor?.registerPlugin === 'function' ? capacitor.registerPlugin('CraftCrawlGoogleAuth') : null);
-            const clientId = config.googleIosClientId || '';
+            const platform = nativePlatform();
+            const clientId = platform === 'ios' ? (config.googleIosClientId || '') : (config.googleClientId || '');
+            const serverClientId = config.googleClientId || '';
 
-            if (!clientId) {
+            if (platform === 'ios' && !clientId) {
                 showMessage('Google sign-in is missing the iOS client ID.');
+                return;
+            }
+
+            if (!serverClientId) {
+                showMessage('Google sign-in is missing the web client ID.');
                 return;
             }
 
@@ -126,7 +137,7 @@
 
             googleAuth.signIn({
                 clientId,
-                serverClientId: config.googleClientId || ''
+                serverClientId
             })
                 .then((result) => {
                     const idToken = result && result.idToken;
@@ -253,6 +264,12 @@
         }
 
         const target = document.querySelector('[data-apple-signin]');
+        if (target && isNativeApp() && nativePlatform() === 'android') {
+            target.hidden = true;
+            appleInitialized = true;
+            return true;
+        }
+
         if (!target || !config.appleClientId || !window.AppleID || !AppleID.auth) {
             return false;
         }

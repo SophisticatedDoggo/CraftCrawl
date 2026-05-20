@@ -15,13 +15,28 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 craftcrawl_verify_csrf();
 
 $user_id = (int) $_SESSION['user_id'];
-$business_id = filter_var($_POST['business_id'] ?? null, FILTER_VALIDATE_INT);
 $location_id = filter_var($_POST['location_id'] ?? null, FILTER_VALIDATE_INT);
 $is_saved = (int) ($_POST['is_saved'] ?? 0);
 
 if (!$location_id) {
     craftcrawl_redirect('portal.php');
 }
+
+$location_stmt = $conn->prepare("
+    SELECT legacy_business_id
+    FROM locations
+    WHERE id=? AND visibility_status IN ('public_unclaimed', 'public_claimed')
+    LIMIT 1
+");
+$location_stmt->bind_param("i", $location_id);
+$location_stmt->execute();
+$location = $location_stmt->get_result()->fetch_assoc();
+
+if (!$location) {
+    craftcrawl_redirect('portal.php');
+}
+
+$business_id = !empty($location['legacy_business_id']) ? (int) $location['legacy_business_id'] : null;
 
 if ($is_saved) {
     $stmt = $conn->prepare("DELETE FROM want_to_go_locations WHERE user_id=? AND location_id=?");
@@ -36,13 +51,20 @@ $pref_stmt->execute();
 $pref = $pref_stmt->get_result()->fetch_assoc();
 $visibility = (!isset($pref['show_want_to_go']) || !empty($pref['show_want_to_go'])) ? 'friends_only' : 'private';
 
-$stmt = $conn->prepare("INSERT IGNORE INTO want_to_go_locations (user_id, business_id, location_id, visibility, createdAt) VALUES (?, ?, ?, ?, NOW())");
-$stmt->bind_param("iiis", $user_id, $business_id, $location_id, $visibility);
 $xp_reward_popup = null;
 
 try {
     $conn->begin_transaction();
     $progress_before = craftcrawl_user_level_progress($conn, $user_id);
+
+    if ($business_id) {
+        $stmt = $conn->prepare("INSERT IGNORE INTO want_to_go_locations (user_id, business_id, location_id, visibility, createdAt) VALUES (?, ?, ?, ?, NOW())");
+        $stmt->bind_param("iiis", $user_id, $business_id, $location_id, $visibility);
+    } else {
+        $stmt = $conn->prepare("INSERT IGNORE INTO want_to_go_locations (user_id, business_id, location_id, visibility, createdAt) VALUES (?, NULL, ?, ?, NOW())");
+        $stmt->bind_param("iis", $user_id, $location_id, $visibility);
+    }
+
     $stmt->execute();
 
     if ($stmt->affected_rows > 0) {
@@ -62,7 +84,8 @@ try {
     $conn->commit();
 } catch (Throwable $error) {
     $conn->rollback();
-    error_log('Want to Go quest reward failed: ' . $error->getMessage());
+    error_log('Want to Go toggle failed: ' . $error->getMessage());
+    craftcrawl_redirect('business_details.php?id=' . $location_id . '&message=want_error');
 }
 
 if ($xp_reward_popup) {
