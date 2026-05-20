@@ -72,11 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $user_id = $stmt->insert_id;
                     $email_sent = craftcrawl_issue_email_verification($conn, 'user', $user_id, $email);
                     if ($email_sent) {
-                        $_SESSION['user_login_feedback'] = [
-                            'signup_success' => true,
-                            'email' => $email
-                        ];
-                        header('Location: user_login.php');
+                        header('Location: verify_email.php?account_type=user&created=1&email=' . rawurlencode($email));
                         exit();
                     }
 
@@ -128,6 +124,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             data-color="black"
                             data-border="true"
                             data-type="sign-up"
+                            data-width="400"
+                            data-height="40"
                         ></div>
                     <?php endif; ?>
                     <p class="form-message social-auth-feedback" data-social-auth-feedback hidden></p>

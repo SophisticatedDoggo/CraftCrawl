@@ -182,21 +182,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <p class="form-message form-message-error">Incorrect Email or Password</p>
                 <?php endif; ?>
                 <?php if ($verification_error) : ?>
-                    <p class="form-message form-message-error">Please verify your email before logging in.</p>
+                    <p class="form-message form-message-error">Please enter the verification code from your email before logging in.</p>
                 <?php endif; ?>
                 <?php if ($disabled_error) : ?>
                     <p class="form-message form-message-error">This account has been disabled.</p>
                 <?php endif; ?>
                 <?php if ($signup_success) : ?>
-                    <p class="form-message form-message-success">Account created. Please check your email to verify your address before logging in.</p>
+                    <p class="form-message form-message-success">Account created. Please check your email for your verification code.</p>
                 <?php endif; ?>
             </div>
         </form>
         <p class="auth-switch"><a class="text-link" href="forgot_password.php?account_type=business">Forgot password?</a></p>
         <p class="auth-switch"><a href="business_find_or_create.php">Create An Account</a></p>
-        <?php if ($verification_error) : ?>
+        <?php if ($verification_error || $signup_success) : ?>
             <p class="auth-switch">
-                <a href="resend_verification.php?account_type=business&email=<?php echo escape_output(rawurlencode($email)); ?>">Resend verification email</a>
+                <a href="verify_email.php?account_type=business<?php echo $email !== '' ? '&email=' . escape_output(rawurlencode($email)) : ''; ?>">Enter verification code</a>
+                <?php if ($email !== '') : ?>
+                    | <a href="resend_verification.php?account_type=business&email=<?php echo escape_output(rawurlencode($email)); ?>">Resend verification email</a>
+                <?php endif; ?>
             </p>
         <?php endif; ?>
         <?php include __DIR__ . '/legal_nav.php'; ?>

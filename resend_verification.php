@@ -25,18 +25,18 @@ function resend_verification_message($result) {
     }
 
     if (!empty($result['success'])) {
-        return 'A new verification email has been sent. Please check your inbox.';
+        return 'A new verification code has been sent. Please check your inbox.';
     }
 
     $reason = $result['reason'] ?? 'error';
 
     if ($reason === 'cooldown') {
         $retry_after = max(1, (int) ($result['retry_after'] ?? 60));
-        return 'Please wait ' . $retry_after . ' seconds before requesting another verification email.';
+        return 'Please wait ' . $retry_after . ' seconds before requesting another verification code.';
     }
 
     if ($reason === 'hourly_limit') {
-        return 'Too many verification emails have been requested. Please try again in about an hour.';
+        return 'Too many verification codes have been requested. Please try again in about an hour.';
     }
 
     if ($reason === 'already_verified') {
@@ -44,7 +44,7 @@ function resend_verification_message($result) {
     }
 
     if ($reason === 'send_failed') {
-        return 'A verification email could not be sent. Please try again later.';
+        return 'A verification code could not be sent. Please try again later.';
     }
 
     return 'No unverified account was found for that email address.';
@@ -52,6 +52,7 @@ function resend_verification_message($result) {
 
 $login_path = $account_type === 'business' ? 'business_login.php' : 'user_login.php';
 $is_success = !empty($result['success']) || (($result['reason'] ?? '') === 'already_verified');
+$verify_path = 'verify_email.php?account_type=' . rawurlencode($account_type) . '&email=' . rawurlencode($email);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -75,6 +76,12 @@ $is_success = !empty($result['success']) || (($result['reason'] ?? '') === 'alre
             </p>
         <?php endif; ?>
 
+        <?php if (!empty($result['success'])) : ?>
+            <p class="auth-switch">
+                <a href="<?php echo escape_output($verify_path); ?>">Enter verification code</a>
+            </p>
+        <?php endif; ?>
+
         <form method="POST" action="">
             <?php echo craftcrawl_csrf_input(); ?>
             <label for="account_type">Account Type</label>
@@ -86,7 +93,7 @@ $is_success = !empty($result['success']) || (($result['reason'] ?? '') === 'alre
             <label for="email">Email</label>
             <input type="email" id="email" name="email" required value="<?php echo escape_output($email); ?>">
 
-            <button type="submit">Resend Verification Email</button>
+            <button type="submit">Resend Verification Code</button>
         </form>
 
     </main>

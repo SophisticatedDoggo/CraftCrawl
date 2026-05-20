@@ -6,6 +6,8 @@
     let appleInitialized = false;
     let socialAuthBusy = false;
     let socialAuthBusyTimer = null;
+    let initTimer = null;
+    let initAttempts = 0;
 
     function setSocialAuthBusy(isBusy, message) {
         socialAuthBusy = isBusy;
@@ -67,7 +69,8 @@
     }
 
     function getSocialButtonWidth(target) {
-        const width = target.getBoundingClientRect().width || target.clientWidth || 360;
+        const container = target.closest('[data-social-auth-options]');
+        const width = target.getBoundingClientRect().width || target.clientWidth || (container && container.getBoundingClientRect().width) || 400;
         return Math.min(400, Math.floor(width));
     }
 
@@ -118,6 +121,7 @@
 
         google.accounts.id.initialize({
             client_id: config.googleClientId,
+            itp_support: true,
             callback: (response) => {
                 if (response && response.credential) {
                     setSocialAuthBusy(false);
@@ -207,16 +211,36 @@
         return true;
     }
 
-    window.addEventListener('load', () => {
-        let attempts = 0;
-        const timer = window.setInterval(() => {
-            attempts += 1;
-            const googleReady = !config.googleClientId || initGoogle();
-            const appleReady = !config.appleClientId || initApple();
+    function initializeSocialAuth() {
+        initAttempts += 1;
 
-            if ((googleReady && appleReady) || attempts >= 20) {
-                window.clearInterval(timer);
-            }
-        }, 150);
-    });
+        const googleReady = !config.googleClientId || initGoogle();
+        const appleReady = !config.appleClientId || initApple();
+
+        if ((googleReady && appleReady) || initAttempts >= 80) {
+            window.clearInterval(initTimer);
+            initTimer = null;
+            return true;
+        }
+
+        return false;
+    }
+
+    function startSocialAuthInit() {
+        if (initTimer || (googleInitialized && appleInitialized)) {
+            return;
+        }
+
+        if (!initializeSocialAuth()) {
+            initTimer = window.setInterval(initializeSocialAuth, 150);
+        }
+    }
+
+    if (document.readyState === 'complete') {
+        startSocialAuthInit();
+    } else {
+        window.addEventListener('load', startSocialAuthInit);
+    }
+
+    window.addEventListener('pageshow', startSocialAuthInit);
 })();

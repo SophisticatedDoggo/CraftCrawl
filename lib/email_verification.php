@@ -5,6 +5,7 @@ require_once __DIR__ . '/env.php';
 const CRAFTCRAWL_EMAIL_VERIFICATION_HOURS = 24;
 const CRAFTCRAWL_EMAIL_VERIFICATION_RESEND_SECONDS = 60;
 const CRAFTCRAWL_EMAIL_VERIFICATION_HOURLY_LIMIT = 5;
+const CRAFTCRAWL_EMAIL_VERIFICATION_CODE_DIGITS = 6;
 
 function craftcrawl_public_base_url() {
     $configured_url = craftcrawl_env('CRAFTCRAWL_APP_URL', '');
@@ -76,13 +77,50 @@ function craftcrawl_send_mailgun_email($to, $subject, $text_body, $html_body = '
     return true;
 }
 
+function craftcrawl_generate_email_verification_code() {
+    $minimum = 10 ** (CRAFTCRAWL_EMAIL_VERIFICATION_CODE_DIGITS - 1);
+    $maximum = (10 ** CRAFTCRAWL_EMAIL_VERIFICATION_CODE_DIGITS) - 1;
+
+    return (string) random_int($minimum, $maximum);
+}
+
+function craftcrawl_normalize_email_verification_code($code) {
+    $code = preg_replace('/\D+/', '', (string) $code);
+
+    if (strlen($code) !== CRAFTCRAWL_EMAIL_VERIFICATION_CODE_DIGITS) {
+        return '';
+    }
+
+    return $code;
+}
+
 function craftcrawl_issue_email_verification($conn, $account_type, $account_id, $email) {
     if (!in_array($account_type, ['user', 'business'], true)) {
         return false;
     }
 
-    $token = bin2hex(random_bytes(32));
-    $token_hash = hash('sha256', $token);
+    $code = '';
+    $token_hash = '';
+
+    for ($attempt = 0; $attempt < 5; $attempt++) {
+        $candidate_code = craftcrawl_generate_email_verification_code();
+        $candidate_hash = hash('sha256', $candidate_code);
+        $existing_stmt = $conn->prepare("SELECT id FROM email_verification_tokens WHERE token_hash=? LIMIT 1");
+        $existing_stmt->bind_param("s", $candidate_hash);
+        $existing_stmt->execute();
+
+        if (!$existing_stmt->get_result()->fetch_assoc()) {
+            $code = $candidate_code;
+            $token_hash = $candidate_hash;
+            break;
+        }
+    }
+
+    if ($code === '') {
+        error_log('Email verification failed: could not generate a unique verification code.');
+        return false;
+    }
+
     $expires_at = date('Y-m-d H:i:s', time() + (CRAFTCRAWL_EMAIL_VERIFICATION_HOURS * 3600));
 
     $supersede_stmt = $conn->prepare("UPDATE email_verification_tokens SET usedAt=NOW() WHERE account_type=? AND account_id=? AND usedAt IS NULL");
@@ -97,31 +135,29 @@ function craftcrawl_issue_email_verification($conn, $account_type, $account_id, 
     $stmt->execute();
     $verification_id = $stmt->insert_id;
 
-    $verify_url = craftcrawl_public_base_url() . '/verify_email.php?token=' . urlencode($token);
+    $verify_url = craftcrawl_public_base_url()
+        . '/verify_email.php?account_type=' . rawurlencode($account_type)
+        . '&email=' . rawurlencode($email);
 
-    $subject = 'Verify your CraftCrawl email';
+    $subject = $code . ' is your CraftCrawl verification code';
 
     $text_body = "Welcome to CraftCrawl.\n\n"
-        . "Please verify your email address by opening this link:\n\n"
-        . $verify_url . "\n\n"
-        . "This link expires in " . CRAFTCRAWL_EMAIL_VERIFICATION_HOURS . " hours.\n\n"
+        . "Your CraftCrawl verification code is: " . $code . "\n\n"
+        . "Enter this code in the app to verify your email address.\n\n"
+        . "This code expires in " . CRAFTCRAWL_EMAIL_VERIFICATION_HOURS . " hours.\n\n"
         . "If you did not create this account, you can ignore this email.";
 
     $safe_verify_url = htmlspecialchars($verify_url, ENT_QUOTES, 'UTF-8');
+    $safe_code = htmlspecialchars($code, ENT_QUOTES, 'UTF-8');
 
     $html_body = '
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #222;">
             <h2>Welcome to CraftCrawl</h2>
-            <p>Please verify your email address by clicking the button below.</p>
-            <p>
-                <a href="' . $safe_verify_url . '" 
-                   style="display: inline-block; padding: 12px 18px; background: #111827; color: #ffffff; text-decoration: none; border-radius: 6px;">
-                    Verify Email
-                </a>
-            </p>
-            <p>Or copy and paste this link into your browser:</p>
-            <p><a href="' . $safe_verify_url . '">' . $safe_verify_url . '</a></p>
-            <p>This link expires in ' . CRAFTCRAWL_EMAIL_VERIFICATION_HOURS . ' hours.</p>
+            <p>Your CraftCrawl verification code is:</p>
+            <p style="font-size: 28px; font-weight: 700; letter-spacing: 4px; margin: 18px 0;">' . $safe_code . '</p>
+            <p>Enter this code in the app to verify your email address.</p>
+            <p><a href="' . $safe_verify_url . '">Open the verification screen</a></p>
+            <p>This code expires in ' . CRAFTCRAWL_EMAIL_VERIFICATION_HOURS . ' hours.</p>
             <p>If you did not create this account, you can ignore this email.</p>
         </div>
     ';
@@ -226,18 +262,7 @@ function craftcrawl_resend_email_verification($conn, $account_type, $email) {
     return ['success' => true];
 }
 
-function craftcrawl_mark_email_verified($conn, $token) {
-    $token_hash = hash('sha256', $token);
-    $stmt = $conn->prepare("
-        SELECT id, account_type, account_id, expiresAt, usedAt
-        FROM email_verification_tokens
-        WHERE token_hash=?
-        LIMIT 1
-    ");
-    $stmt->bind_param("s", $token_hash);
-    $stmt->execute();
-    $verification = $stmt->get_result()->fetch_assoc();
-
+function craftcrawl_complete_email_verification_record($conn, $verification) {
     if (!$verification) {
         return ['success' => false, 'reason' => 'invalid'];
     }
@@ -246,7 +271,7 @@ function craftcrawl_mark_email_verified($conn, $token) {
         if ($verification['account_type'] === 'user') {
             $account_stmt = $conn->prepare("SELECT emailVerifiedAt FROM users WHERE id=? LIMIT 1");
         } elseif ($verification['account_type'] === 'business') {
-            $account_stmt = $conn->prepare("SELECT emailVerifiedAt FROM businesses WHERE id=? LIMIT 1");
+            $account_stmt = $conn->prepare("SELECT emailVerifiedAt FROM business_accounts WHERE id=? LIMIT 1");
         } else {
             return ['success' => false, 'reason' => 'invalid'];
         }
@@ -307,6 +332,64 @@ function craftcrawl_mark_email_verified($conn, $token) {
         error_log('Email verification failed: ' . $error->getMessage());
         return ['success' => false, 'reason' => 'error'];
     }
+}
+
+function craftcrawl_mark_email_verified($conn, $token) {
+    $token = trim((string) $token);
+
+    if ($token === '') {
+        return ['success' => false, 'reason' => 'invalid'];
+    }
+
+    $token_hash = hash('sha256', $token);
+    $stmt = $conn->prepare("
+        SELECT id, account_type, account_id, expiresAt, usedAt
+        FROM email_verification_tokens
+        WHERE token_hash=?
+        LIMIT 1
+    ");
+    $stmt->bind_param("s", $token_hash);
+    $stmt->execute();
+
+    return craftcrawl_complete_email_verification_record($conn, $stmt->get_result()->fetch_assoc());
+}
+
+function craftcrawl_mark_email_verified_for_account($conn, $account_type, $email, $code) {
+    $email = strtolower(trim($email));
+    $code = craftcrawl_normalize_email_verification_code($code);
+
+    if ($code === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || !in_array($account_type, ['user', 'business'], true)) {
+        return ['success' => false, 'reason' => 'invalid'];
+    }
+
+    $account = craftcrawl_email_verification_account_by_email($conn, $account_type, $email);
+
+    if (!$account) {
+        return ['success' => false, 'reason' => 'invalid'];
+    }
+
+    if (!empty($account['emailVerifiedAt'])) {
+        return [
+            'success' => true,
+            'reason' => 'already_verified',
+            'account_type' => $account_type
+        ];
+    }
+
+    $account_id = (int) $account['id'];
+    $token_hash = hash('sha256', $code);
+    $stmt = $conn->prepare("
+        SELECT id, account_type, account_id, expiresAt, usedAt
+        FROM email_verification_tokens
+        WHERE account_type=?
+        AND account_id=?
+        AND token_hash=?
+        LIMIT 1
+    ");
+    $stmt->bind_param("sis", $account_type, $account_id, $token_hash);
+    $stmt->execute();
+
+    return craftcrawl_complete_email_verification_record($conn, $stmt->get_result()->fetch_assoc());
 }
 
 ?>

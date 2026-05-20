@@ -63,10 +63,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $insert->bind_param('sssis', $email, $hash, $contact_name, $location_id, $created_at);
             $insert->execute();
             $sent = craftcrawl_issue_email_verification($conn, 'business', $insert->insert_id, $email);
+            if ($sent) {
+                header('Location: verify_email.php?account_type=business&created=1&email=' . rawurlencode($email));
+                exit();
+            }
+
             $success = true;
-            $message = $sent
-                ? 'Account created. Verify your email, then log in to continue your claim.'
-                : 'Account created, but the verification email could not be sent. Please contact support.';
+            $message = 'Account created, but the verification email could not be sent. Please contact support.';
         }
     }
 }

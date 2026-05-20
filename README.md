@@ -73,7 +73,9 @@ mysql -u craft_crawl -p craft_crawl < migrations/2026_05_15_user_password_auth_s
 ## Email verification
 
 New user and business accounts must verify their email address before login.
-Verification and password reset emails are sent through Mailgun. Configure
+Verification emails contain a six-digit code that can be entered on
+`verify_email.php`; the code field uses `autocomplete="one-time-code"` for
+iOS autofill. Verification and password reset emails are sent through Mailgun. Configure
 these environment variables on the host:
 
 - `CRAFTCRAWL_APP_URL`

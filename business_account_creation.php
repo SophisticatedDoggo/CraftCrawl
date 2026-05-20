@@ -66,9 +66,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute();
                 $business_account_id = $stmt->insert_id;
                 $email_sent = craftcrawl_issue_email_verification($conn, 'business', $business_account_id, $email);
-                $message = $email_sent
-                    ? 'Account created. Please check your email to verify your address before logging in. Once verified, you can claim or add locations from your Locations page.'
-                    : 'Account created, but the verification email could not be sent. Please contact support.';
+                if ($email_sent) {
+                    header('Location: verify_email.php?account_type=business&created=1&email=' . rawurlencode($email));
+                    exit();
+                }
+
+                $message = 'Account created, but the verification email could not be sent. Please contact support.';
                 $success = true;
             } catch (Throwable $error) {
                 error_log('Business account creation failed: ' . $error->getMessage());
