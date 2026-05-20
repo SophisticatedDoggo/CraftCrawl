@@ -29,6 +29,7 @@ if ($token !== '') {
 $success = !empty($result['success']);
 $account_type = $result['account_type'] ?? $account_type;
 $login_path = $account_type === 'business' ? 'business_login.php' : 'user_login.php';
+$resend_path = 'resend_verification.php?account_type=' . rawurlencode($account_type) . '&email=' . rawurlencode($email);
 $resend_email = '';
 
 if (($result['reason'] ?? '') === 'expired' && !empty($result['account_id'])) {
@@ -126,6 +127,11 @@ function verification_message($result, $verification_attempted, $account_created
         <?php if (!$success && ($result['reason'] ?? '') === 'expired' && $resend_email !== '') : ?>
             <p class="auth-switch">
                 <a href="resend_verification.php?account_type=<?php echo escape_output($account_type); ?>&email=<?php echo escape_output(rawurlencode($resend_email)); ?>">Request a new verification email</a>
+            </p>
+        <?php endif; ?>
+        <?php if (!$success && $email !== '') : ?>
+            <p class="auth-switch verification-resend-link">
+                Didn't get a code? <a href="<?php echo escape_output($resend_path); ?>">Resend code</a>
             </p>
         <?php endif; ?>
         <?php if ($success) : ?>

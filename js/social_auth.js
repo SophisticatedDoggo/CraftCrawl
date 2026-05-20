@@ -74,6 +74,23 @@
         return Math.min(400, Math.floor(width));
     }
 
+    function isAppleDevice() {
+        const platform = navigator.platform || '';
+        const userAgent = navigator.userAgent || '';
+        const hasTouch = navigator.maxTouchPoints && navigator.maxTouchPoints > 1;
+
+        return /iPad|iPhone|iPod/.test(userAgent) || (platform === 'MacIntel' && hasTouch);
+    }
+
+    function isNativeApp() {
+        const capacitor = window.Capacitor;
+        return Boolean(capacitor && capacitor.isNativePlatform?.() && capacitor.getPlatform?.() === 'ios');
+    }
+
+    function getAbsoluteAuthUrl() {
+        return new URL(config.authUrl || 'social_login.php', window.location.href).toString();
+    }
+
     function submitCredential(provider, credential, extraFields) {
         if (socialAuthBusy && provider !== 'apple') {
             return Promise.resolve();
@@ -95,7 +112,11 @@
         return fetch(config.authUrl || 'social_login.php', {
             method: 'POST',
             body: formData,
-            credentials: 'same-origin'
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         })
             .then((response) => response.json().catch(() => null).then((body) => {
                 if (!response.ok || !body || !body.success) {
@@ -119,7 +140,7 @@
             return false;
         }
 
-        google.accounts.id.initialize({
+        const initOptions = {
             client_id: config.googleClientId,
             itp_support: true,
             callback: (response) => {
@@ -130,7 +151,14 @@
                     showMessage('Google sign-in did not return account credentials.');
                 }
             }
-        });
+        };
+
+        if (isAppleDevice() || isNativeApp()) {
+            initOptions.ux_mode = 'redirect';
+            initOptions.login_uri = getAbsoluteAuthUrl();
+        }
+
+        google.accounts.id.initialize(initOptions);
 
         google.accounts.id.renderButton(target, {
             type: 'standard',

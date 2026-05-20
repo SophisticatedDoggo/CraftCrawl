@@ -10,8 +10,16 @@ $CLOUDINARY_API_SECRET = craftcrawl_env('CLOUDINARY_API_SECRET');
 $HCAPTCHA_SITE_KEY = craftcrawl_env('HCAPTCHA_SITE_KEY');
 $HCAPTCHA_SECRET_KEY = craftcrawl_env('HCAPTCHA_SECRET_KEY');
 
-$GOOGLE_SIGN_IN_CLIENT_ID = craftcrawl_env('GOOGLE_SIGN_IN_CLIENT_ID');
-$APPLE_SIGN_IN_CLIENT_ID = craftcrawl_env('APPLE_SIGN_IN_CLIENT_ID');
+if (!function_exists('craftcrawl_first_env_list_value')) {
+    function craftcrawl_first_env_list_value($key) {
+        $value = craftcrawl_env($key);
+        $values = array_values(array_filter(array_map('trim', explode(',', $value))));
+        return $values[0] ?? '';
+    }
+}
+
+$GOOGLE_SIGN_IN_CLIENT_ID = craftcrawl_env('GOOGLE_SIGN_IN_CLIENT_ID') ?: craftcrawl_first_env_list_value('CRAFTCRAWL_GOOGLE_CLIENT_IDS');
+$APPLE_SIGN_IN_CLIENT_ID = craftcrawl_env('APPLE_SIGN_IN_CLIENT_ID') ?: craftcrawl_first_env_list_value('CRAFTCRAWL_APPLE_CLIENT_IDS');
 $GOOGLE_ANALYTICS_MEASUREMENT_ID = craftcrawl_env('GOOGLE_ANALYTICS_MEASUREMENT_ID');
 
 if (!function_exists('escape_output')) {
