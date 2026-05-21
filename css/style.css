@@ -3045,9 +3045,7 @@ a.text-link:focus {
 .friends-feed-item.is-opening-thread {
     position: relative;
     z-index: 3;
-    transform: translateY(var(--feed-thread-open-shift, 0));
-    background: var(--color-surface);
-    box-shadow: 0 10px 28px color-mix(in srgb, var(--color-shadow) 18%, transparent);
+    background: color-mix(in srgb, var(--color-primary) 6%, transparent);
 }
 
 .friends-feed-item.has-thread-return-highlight {
@@ -3909,6 +3907,7 @@ body.feed-thread-overlay-open {
     background: var(--color-bg);
     box-shadow: -18px 0 36px color-mix(in srgb, var(--color-text) 12%, transparent);
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     will-change: transform, opacity;
 }
 

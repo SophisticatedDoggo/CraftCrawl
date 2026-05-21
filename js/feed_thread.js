@@ -135,22 +135,25 @@ window.CraftCrawlInitFeedThread = function (root = document) {
 
             const deltaX = event.clientX - swipe.startX;
             const deltaY = event.clientY - swipe.startY;
+            swipe.lastX = event.clientX;
 
             if (!swipe.dragging) {
-                if (Math.abs(deltaY) > 18 && Math.abs(deltaY) > Math.abs(deltaX)) {
+                if (Math.abs(deltaY) > 30 && Math.abs(deltaY) > Math.abs(deltaX) * 1.45) {
                     swipe.active = false;
                     return;
                 }
-                if (deltaX < 6 || Math.abs(deltaX) < Math.abs(deltaY) * 1.05) {
+                if (deltaX < 6 || Math.abs(deltaX) < Math.abs(deltaY) * 0.85) {
                     return;
                 }
                 swipe.dragging = true;
                 threadPage.classList.add('is-swipe-dragging');
             }
 
+            if (event.cancelable) {
+                event.preventDefault();
+            }
             const dragX = Math.max(0, deltaX);
             const dragTarget = overlayContent || threadPage;
-            swipe.lastX = event.clientX;
             overlay?.classList.add('is-swipe-dragging');
             dragTarget.style.transform = `translateX(${dragX}px) scale(${Math.max(0.96, 1 - dragX / 2600)})`;
             dragTarget.style.opacity = String(Math.max(0.35, 1 - dragX / 520));
@@ -159,7 +162,8 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         function finishSwipe(event) {
             if (!swipe.active || event.pointerId !== swipe.pointerId) return;
 
-            const deltaX = event.clientX - swipe.startX;
+            const finishX = typeof event.clientX === 'number' && event.clientX !== 0 ? event.clientX : swipe.lastX;
+            const deltaX = finishX - swipe.startX;
             const shouldDismiss = swipe.dragging && deltaX > Math.min(82, window.innerWidth * 0.16);
             swipe.active = false;
             threadPage.classList.remove('is-swipe-dragging');

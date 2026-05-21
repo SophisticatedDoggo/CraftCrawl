@@ -1279,9 +1279,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
         const feedItem = feed?.querySelector(`[data-feed-item-key="${CSS.escape(itemKey)}"]`);
         const targetUrl = normalizeFeedThreadUrl(feedThreadUrl(itemKey));
         if (feedItem) {
-            const topOffset = Math.max(12, window.visualViewport?.offsetTop || 0);
-            const shiftY = Math.min(0, topOffset - feedItem.getBoundingClientRect().top);
-            feedItem.style.setProperty('--feed-thread-open-shift', `${shiftY}px`);
             feedItem.classList.add('is-opening-thread');
         }
 
