@@ -1161,8 +1161,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
             <div class="feed-reaction-list" id="${escapeHtml(panelId)}" data-reaction-disclosure-panel data-item-key="${escapeHtml(itemKey)}"${isExpanded ? '' : ' hidden'}>
                 ${entries.length ? entries.map((entry) => `
                     <div class="feed-reaction-list-item">
+                        <span class="feed-reaction-list-symbol">${escapeHtml(reactionLabels[entry.type] || '')}</span>
                         <strong>${escapeHtml(entry.name || 'Someone')}</strong>
-                        <span>${escapeHtml(reactionTextLabels[entry.type] || entry.type || 'Reaction')}</span>
                         ${entry.created_at ? `<time>${escapeHtml(formatDate(entry.created_at))}</time>` : ''}
                     </div>
                 `).join('') : '<p>No reactions yet.</p>'}

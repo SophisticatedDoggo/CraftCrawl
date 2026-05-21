@@ -64,7 +64,7 @@ if (!$can_view_profile) {
     $profile = null;
 } else {
     $profile_stmt = $conn->prepare("
-        SELECT u.id, u.fName, u.lName, u.createdAt, u.show_liked_businesses, u.show_profile_rewards, u.level, u.selected_title_index, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
+        SELECT u.id, u.fName, u.lName, u.createdAt, u.show_liked_businesses, u.show_profile_rewards, " . craftcrawl_level_sql('u.total_xp') . " AS level, u.selected_title_index, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
         FROM users u
         LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
         WHERE u.id=? AND u.disabledAt IS NULL
@@ -427,23 +427,23 @@ if (!$profile) {
                     <?php echo craftcrawl_render_user_avatar($visible_profile, 'large', 'profile-page-avatar'); ?>
                     <div>
                         <h2><?php echo escape_output(trim($profile['fName'] . ' ' . $profile['lName'])); ?></h2>
-                        <p><?php echo escape_output($user_progress['title']); ?></p>
+                        <p <?php echo $is_own_profile ? 'data-user-level-title' : ''; ?>><?php echo escape_output($user_progress['title']); ?></p>
                     </div>
                 </div>
-                <div class="level-summary-card">
+                <div class="level-summary-card" <?php echo $is_own_profile ? 'data-user-progress-summary' : ''; ?>>
                     <div>
-                        <strong>Level <?php echo escape_output($user_progress['level']); ?> - <?php echo escape_output($user_progress['title']); ?></strong>
+                        <strong <?php echo $is_own_profile ? 'data-user-progress-level="heading"' : ''; ?>>Level <?php echo escape_output($user_progress['level']); ?> - <?php echo escape_output($user_progress['title']); ?></strong>
                         <?php if ($user_progress['max_level']) : ?>
-                            <span>Max Level Reached</span>
+                            <span <?php echo $is_own_profile ? 'data-user-progress-xp="next-level"' : ''; ?>>Max Level Reached</span>
                         <?php else : ?>
-                            <span><?php echo escape_output($user_progress['level_xp']); ?> / <?php echo escape_output($user_progress['next_level_xp']); ?> XP toward Level <?php echo escape_output($user_progress['level'] + 1); ?></span>
+                            <span <?php echo $is_own_profile ? 'data-user-progress-xp="next-level"' : ''; ?>><?php echo escape_output($user_progress['level_xp']); ?> / <?php echo escape_output($user_progress['next_level_xp']); ?> XP toward Level <?php echo escape_output($user_progress['level'] + 1); ?></span>
                         <?php endif; ?>
                     </div>
                     <div class="level-progress-bar" aria-hidden="true">
-                        <span style="width: <?php echo escape_output($user_progress['progress_percent']); ?>%;"></span>
+                        <span <?php echo $is_own_profile ? 'data-user-progress-fill' : ''; ?> style="width: <?php echo escape_output($user_progress['progress_percent']); ?>%;"></span>
                     </div>
                     <?php if ($next_reward) : ?>
-                        <p class="next-reward-preview">Next unlock at Level <?php echo escape_output($next_reward['level']); ?>: <?php echo escape_output($next_reward['description']); ?></p>
+                        <p class="next-reward-preview" <?php echo $is_own_profile ? 'data-user-next-reward-preview' : ''; ?>>Next unlock at Level <?php echo escape_output($next_reward['level']); ?>: <?php echo escape_output($next_reward['description']); ?></p>
                     <?php endif; ?>
                 </div>
 

@@ -25,7 +25,7 @@ $settings_stmt = $conn->prepare("
         u.show_want_to_go,
         u.notify_social_activity,
         u.allow_post_interactions,
-        u.level,
+        " . craftcrawl_level_sql('u.total_xp') . " AS level,
         u.selected_title_index,
         u.selected_profile_frame, u.selected_profile_frame_style,
         u.display_palette,

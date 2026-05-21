@@ -72,7 +72,7 @@ if ($craftcrawl_portal_show_level_summary && isset($conn, $user_id)) {
             <p data-user-progress-xp><?php echo escape_output($user_progress['level_xp']); ?> / <?php echo escape_output($user_progress['next_level_xp']); ?> XP</p>
             <?php $portal_next_reward = craftcrawl_next_reward_preview($user_progress['level']); ?>
             <?php if ($portal_next_reward) : ?>
-                <p class="next-reward-preview">Level <?php echo escape_output($portal_next_reward['level']); ?>: <?php echo escape_output($portal_next_reward['description']); ?></p>
+                <p class="next-reward-preview" data-user-next-reward-preview>Next unlock at Level <?php echo escape_output($portal_next_reward['level']); ?>: <?php echo escape_output($portal_next_reward['description']); ?></p>
             <?php endif; ?>
         <?php endif; ?>
     </section>

@@ -3204,7 +3204,7 @@ a.text-link:focus {
 
 .feed-action-row {
     display: grid;
-    grid-template-columns: minmax(40px, 1fr) auto minmax(0, 1fr);
+    grid-template-columns: minmax(40px, 1fr) minmax(78px, auto) minmax(max-content, 1fr);
     align-items: center;
     gap: 8px;
     margin-top: 16px;
@@ -3225,7 +3225,7 @@ a.text-link:focus {
 
 .feed-reactions {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 6px;
     justify-content: flex-end;
     justify-self: end;
@@ -3234,6 +3234,7 @@ a.text-link:focus {
 }
 
 .feed-reactions button {
+    flex: 0 0 auto;
     min-height: 28px;
     padding: 4px 8px;
     color: var(--color-heading);
@@ -3307,7 +3308,7 @@ a.text-link:focus {
     justify-content: center;
     gap: 6px;
     width: auto;
-    min-width: 104px;
+    min-width: 86px;
     min-height: 34px;
     padding: 7px 10px;
     border: 0;
@@ -3364,19 +3365,22 @@ a.text-link:focus {
 
 .feed-reaction-list-item {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 3px 10px;
-    align-items: baseline;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
     font-size: 13px;
 }
 
-.feed-reaction-list-item strong,
-.feed-reaction-list-item span {
+.feed-reaction-list-symbol {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.feed-reaction-list-item strong {
     min-width: 0;
 }
 
 .feed-reaction-list-item time {
-    grid-row: span 2;
     color: var(--color-muted);
     font-size: 12px;
     white-space: nowrap;

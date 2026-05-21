@@ -73,6 +73,16 @@
             return;
         }
 
+        const levelText = `Level ${progress.level}`;
+        const titleText = progress.title || '';
+        const headingText = titleText ? `${levelText} - ${titleText}` : levelText;
+        const xpText = progress.max_level
+            ? 'Max Level Reached'
+            : `${progress.level_xp} / ${progress.next_level_xp} XP`;
+        const nextLevelXpText = progress.max_level
+            ? 'Max Level Reached'
+            : `${progress.level_xp} / ${progress.next_level_xp} XP toward Level ${Number(progress.level || 1) + 1}`;
+
         document.querySelectorAll('[data-user-progress-summary]').forEach((summary) => {
             const level = summary.querySelector('[data-user-progress-level]');
             const title = summary.querySelector('[data-user-progress-title]');
@@ -80,19 +90,41 @@
             const xp = summary.querySelector('[data-user-progress-xp]');
 
             if (level) {
-                level.textContent = `Level ${progress.level}`;
+                level.textContent = level.dataset.userProgressLevel === 'heading'
+                    ? headingText
+                    : levelText;
             }
             if (title) {
-                title.textContent = progress.title || '';
+                title.textContent = titleText;
             }
             if (fill) {
                 fill.style.width = `${progressPercent(progress)}%`;
             }
             if (xp) {
-                xp.textContent = progress.max_level
-                    ? 'Max Level Reached'
-                    : `${progress.level_xp} / ${progress.next_level_xp} XP`;
+                xp.textContent = xp.dataset.userProgressXp === 'next-level'
+                    ? nextLevelXpText
+                    : xpText;
             }
+        });
+
+        document.querySelectorAll('[data-user-level-text]').forEach((element) => {
+            element.textContent = levelText;
+        });
+        document.querySelectorAll('[data-user-level-heading]').forEach((element) => {
+            element.textContent = headingText;
+        });
+        document.querySelectorAll('[data-user-level-title]').forEach((element) => {
+            element.textContent = titleText;
+        });
+
+        document.querySelectorAll('[data-user-next-reward-preview]').forEach((element) => {
+            if (!progress.next_reward) {
+                element.hidden = true;
+                return;
+            }
+
+            element.hidden = false;
+            element.textContent = `Next unlock at Level ${progress.next_reward.level}: ${progress.next_reward.description}`;
         });
     }
 
@@ -204,6 +236,10 @@
     function showXpReward(reward) {
         if (!reward || !reward.progress || !reward.progress_before) {
             return;
+        }
+
+        if (reward.next_reward !== undefined) {
+            reward.progress.next_reward = reward.next_reward;
         }
 
         syncPersistentUserProgress(reward.progress);

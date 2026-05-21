@@ -51,7 +51,7 @@ $sent_stmt = $conn->prepare("
         u.fName,
         u.lName,
         u.email,
-        u.level,
+        " . craftcrawl_level_sql('u.total_xp') . " AS level,
         u.selected_title_index,
         u.selected_profile_frame,
         u.selected_profile_frame_style,

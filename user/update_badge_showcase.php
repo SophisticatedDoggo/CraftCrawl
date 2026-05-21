@@ -29,7 +29,7 @@ if (!in_array($action, ['add', 'remove'], true) || $badge_key === '') {
     exit();
 }
 
-$level_stmt = $conn->prepare("SELECT level FROM users WHERE id=?");
+$level_stmt = $conn->prepare("SELECT total_xp FROM users WHERE id=?");
 $level_stmt->bind_param("i", $user_id);
 $level_stmt->execute();
 $level_row = $level_stmt->get_result()->fetch_assoc();
@@ -40,7 +40,7 @@ if (!$level_row) {
     exit();
 }
 
-$user_level = (int) $level_row['level'];
+$user_level = craftcrawl_level_from_xp((int) ($level_row['total_xp'] ?? 0), $conn);
 $slot_count = craftcrawl_badge_showcase_slot_count($user_level);
 
 if ($action === 'remove') {

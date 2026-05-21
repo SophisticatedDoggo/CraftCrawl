@@ -35,42 +35,42 @@ $leaderboard_modes = [
     'level' => [
         'label' => 'Highest Level',
         'description' => 'Ranked by current level.',
-        'order' => 'u.level DESC, u.level_xp DESC, stats.unique_locations DESC, stats.total_checkins DESC',
+        'order' => 'u.total_xp DESC, stats.unique_locations DESC, stats.total_checkins DESC',
         'metric_key' => '',
         'metric_label' => ''
     ],
     'unique_locations' => [
         'label' => 'Unique Locations',
         'description' => 'Ranked by distinct CraftCrawl places visited.',
-        'order' => 'stats.unique_locations DESC, u.level DESC, u.level_xp DESC, stats.total_checkins DESC',
+        'order' => 'stats.unique_locations DESC, u.total_xp DESC, stats.total_checkins DESC',
         'metric_key' => 'unique_locations',
         'metric_label' => 'unique locations'
     ],
     'total_checkins' => [
         'label' => 'Total Check-ins',
         'description' => 'Ranked by all check-ins, including return visits.',
-        'order' => 'stats.total_checkins DESC, stats.unique_locations DESC, u.level DESC, u.level_xp DESC',
+        'order' => 'stats.total_checkins DESC, stats.unique_locations DESC, u.total_xp DESC',
         'metric_key' => 'total_checkins',
         'metric_label' => 'check-ins'
     ],
     'recent_checkins' => [
         'label' => 'Last 30 Days',
         'description' => 'Ranked by check-ins from the past 30 days.',
-        'order' => 'stats.recent_checkins DESC, stats.total_checkins DESC, u.level DESC, u.level_xp DESC',
+        'order' => 'stats.recent_checkins DESC, stats.total_checkins DESC, u.total_xp DESC',
         'metric_key' => 'recent_checkins',
         'metric_label' => 'recent check-ins'
     ],
     'reviews' => [
         'label' => 'Reviews',
         'description' => 'Ranked by review count.',
-        'order' => 'review_stats.review_count DESC, u.level DESC, u.level_xp DESC, stats.unique_locations DESC',
+        'order' => 'review_stats.review_count DESC, u.total_xp DESC, stats.unique_locations DESC',
         'metric_key' => 'review_count',
         'metric_label' => 'reviews'
     ],
     'badges' => [
         'label' => 'Badges',
         'description' => 'Ranked by earned badges.',
-        'order' => 'badge_stats.badge_count DESC, u.level DESC, u.level_xp DESC, stats.unique_locations DESC',
+        'order' => 'badge_stats.badge_count DESC, u.total_xp DESC, stats.unique_locations DESC',
         'metric_key' => 'badge_count',
         'metric_label' => 'badges'
     ],
@@ -103,8 +103,8 @@ $leaderboard_stmt = $conn->prepare("
         u.fName,
         u.lName,
         u.total_xp,
-        u.level,
-        u.level_xp,
+        " . craftcrawl_level_sql('u.total_xp') . " AS level,
+        " . craftcrawl_level_xp_sql('u.total_xp') . " AS level_xp,
         u.selected_title_index,
         u.selected_profile_frame, u.selected_profile_frame_style,
         u.profile_photo_url,
@@ -207,17 +207,17 @@ $leaderboard = $leaderboard_stmt->get_result();
                         $metric_key = $active_leaderboard['metric_key'];
                         $metric_text = $leaderboard_mode === 'level' ? '' : (int) ($leader[$metric_key] ?? 0) . ' ' . $active_leaderboard['metric_label'];
                     ?>
-                    <article>
+                    <article <?php echo (int) $leader['id'] === $user_id ? 'data-user-progress-summary' : ''; ?>>
                         <strong><?php echo escape_output(ordinal_rank($rank)); ?></strong>
                         <?php echo craftcrawl_render_user_avatar($leader, 'medium', 'leaderboard-avatar'); ?>
                         <div>
                             <div class="leaderboard-row-top">
-                                <h3><?php echo escape_output($leader_name); ?> <span>Level <?php echo escape_output($level); ?></span></h3>
+                                <h3><?php echo escape_output($leader_name); ?> <span <?php echo (int) $leader['id'] === $user_id ? 'data-user-progress-level' : ''; ?>>Level <?php echo escape_output($level); ?></span></h3>
                                 <?php if ($metric_text !== '') : ?>
                                     <strong><?php echo escape_output($metric_text); ?></strong>
                                 <?php endif; ?>
                             </div>
-                            <span><?php echo escape_output($level_title); ?></span>
+                            <span <?php echo (int) $leader['id'] === $user_id ? 'data-user-progress-title' : ''; ?>><?php echo escape_output($level_title); ?></span>
                             <a class="leaderboard-profile-link" href="profile.php?id=<?php echo escape_output($leader['id']); ?>">View Profile</a>
                         </div>
                     </article>
