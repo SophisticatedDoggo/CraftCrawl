@@ -15,6 +15,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.gms.tasks.Task;
 
 @CapacitorPlugin(name = "CraftCrawlGoogleAuth")
@@ -63,7 +64,20 @@ public class CraftCrawlGoogleAuthPlugin extends Plugin {
             response.put("lastName", account.getFamilyName() != null ? account.getFamilyName() : "");
             call.resolve(response);
         } catch (ApiException error) {
-            call.reject("Google sign-in failed: " + error.getStatusCode());
+            call.reject(buildGoogleSignInErrorMessage(error));
         }
+    }
+
+    private String buildGoogleSignInErrorMessage(ApiException error) {
+        if (error.getStatusCode() == CommonStatusCodes.DEVELOPER_ERROR) {
+            return "Google sign-in is not configured for this Android build. Check the Google OAuth Android client package name and signing SHA-1 fingerprint.";
+        }
+
+        String statusMessage = CommonStatusCodes.getStatusCodeString(error.getStatusCode());
+        if (statusMessage == null || statusMessage.isEmpty()) {
+            statusMessage = String.valueOf(error.getStatusCode());
+        }
+
+        return "Google sign-in failed: " + statusMessage;
     }
 }

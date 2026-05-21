@@ -96,6 +96,10 @@ if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST
     craftcrawl_redirect('user/profile.php');
 }
 
+if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && craftcrawl_request_exceeds_post_max_size()) {
+    craftcrawl_redirect('user/profile.php?message=profile_photo_size_error');
+}
+
 if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form_action'] ?? '') === 'profile') {
     craftcrawl_verify_csrf();
 
@@ -376,7 +380,7 @@ if (!$profile) {
                                 <div class="profile-edit-primary-fields">
                                     <div class="profile-edit-photo-field">
                                         <label for="profile_photo">Profile Picture</label>
-                                        <input type="file" id="profile_photo" name="profile_photo" accept="image/jpeg,image/png,image/webp" data-profile-photo-input>
+                                        <input type="file" id="profile_photo" accept="image/jpeg,image/png,image/webp" data-profile-photo-input>
                                         <small class="form-help">Choose a photo, then drag and zoom it into the rounded-square preview.</small>
                                         <?php if (!empty($profile['profile_photo_url']) || !empty($profile['profile_photo_object_key'])) : ?>
                                             <button type="button" class="button-link-secondary" data-profile-photo-remove>Remove Photo</button>

@@ -42,6 +42,23 @@ Add these GitHub repository secrets:
 - `ANDROID_KEY_ALIAS`: `craftcrawl-release`.
 - `ANDROID_KEY_PASSWORD`: key password.
 
+Get the release signing SHA-1 fingerprint and add it to the Android OAuth
+client for package `com.craftcrawl.app` in Google Cloud/Firebase:
+
+```sh
+keytool -list \
+  -v \
+  -keystore ~/.ssh/craftcrawl-android-release.keystore \
+  -alias craftcrawl-release
+```
+
+Google Sign-In returns `DEVELOPER_ERROR` / status `10` when this OAuth client is
+missing or the SHA-1 does not match the APK signing key. After adding or changing
+the SHA-1, download a fresh `google-services.json` for the Android app and place
+it at `android/app/google-services.json` before syncing/building locally. For
+GitHub release builds, the workflow prints the release SHA-1 in the job log so it
+can be copied into Google Cloud.
+
 The release workflow also reuses the existing prod deploy secrets:
 
 - `PROD_SSH_HOST`

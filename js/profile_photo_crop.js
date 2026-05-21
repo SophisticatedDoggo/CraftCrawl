@@ -21,7 +21,6 @@ window.CraftCrawlInitProfilePhotoCrop = function (root = document) {
     let offsetY = 0;
     let dragging = false;
     let dragStart = null;
-    const cropCornerRadiusRatio = 0.16;
 
     document.querySelectorAll('.profile-photo-cropper').forEach((existingModal) => existingModal.remove());
 
@@ -115,26 +114,17 @@ window.CraftCrawlInitProfilePhotoCrop = function (root = document) {
         const drawX = (outputSize - drawWidth) / 2 + offsetX * (outputSize / stageRect.width);
         const drawY = (outputSize - drawHeight) / 2 + offsetY * (outputSize / stageRect.height);
 
-        const cornerRadius = outputSize * cropCornerRadiusRatio;
-        ctx.clearRect(0, 0, outputSize, outputSize);
-        ctx.beginPath();
-        ctx.moveTo(cornerRadius, 0);
-        ctx.lineTo(outputSize - cornerRadius, 0);
-        ctx.quadraticCurveTo(outputSize, 0, outputSize, cornerRadius);
-        ctx.lineTo(outputSize, outputSize - cornerRadius);
-        ctx.quadraticCurveTo(outputSize, outputSize, outputSize - cornerRadius, outputSize);
-        ctx.lineTo(cornerRadius, outputSize);
-        ctx.quadraticCurveTo(0, outputSize, 0, outputSize - cornerRadius);
-        ctx.lineTo(0, cornerRadius);
-        ctx.quadraticCurveTo(0, 0, cornerRadius, 0);
-        ctx.closePath();
-        ctx.clip();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, outputSize, outputSize);
         ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
 
-        const dataUrl = canvas.toDataURL('image/png');
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.86);
         dataInput.value = dataUrl;
         if (removeInput) {
             removeInput.value = '';
+        }
+        if (input) {
+            input.value = '';
         }
         if (preview) {
             preview.innerHTML = `<img src="${dataUrl}" alt="Profile photo preview">`;

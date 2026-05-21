@@ -120,6 +120,16 @@ jobs:
           echo "${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/craftcrawl-release.keystore"
           echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/craftcrawl-release.keystore" >> "$GITHUB_ENV"
 
+      - name: Print Android release signing SHA-1
+        run: |
+          keytool -list \
+            -v \
+            -keystore "$ANDROID_KEYSTORE_PATH" \
+            -alias "$ANDROID_KEY_ALIAS" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -keypass "$ANDROID_KEY_PASSWORD" \
+            | grep 'SHA1:'
+
       - name: Validate release version
         run: |
           if [ -z "$CRAFTCRAWL_VERSION_NAME" ]; then

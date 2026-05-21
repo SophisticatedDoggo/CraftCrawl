@@ -58,6 +58,13 @@ The Android native bridge requests a backend ID token for
 `GOOGLE_SIGN_IN_CLIENT_ID`, so keep that web client ID in
 `CRAFTCRAWL_GOOGLE_CLIENT_IDS`.
 
+If Android Google Sign-In shows status `10`, the installed APK is signed with a
+certificate that is not registered on the Android OAuth client. Add the SHA-1 for
+that signing key in Google Cloud/Firebase, then download the refreshed
+`google-services.json`. The file should list OAuth clients for
+`com.craftcrawl.app`; an empty `oauth_client` array means Google has not attached
+the Android OAuth configuration yet.
+
 ## OneSignal Push
 
 Browser push is wired through `lib/onesignal.php`, `user/onesignal_config.php`, and `js/onesignal_push.js`. Set these environment values on the Cloudways app:
