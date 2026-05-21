@@ -54,7 +54,7 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
         const tab = tabFromPath(url.pathname);
         if (!routeByTab[tab]) return false;
         const previousTab = shell.dataset.activeUserTab;
-        if (previousTab && routeByTab[previousTab]) {
+        if (!options.skipSaveScroll && previousTab && routeByTab[previousTab]) {
             tabScrollPositions[previousTab] = window.scrollY || document.documentElement.scrollTop || 0;
             window.CraftCrawlSaveUserShellBaseScroll?.();
         }
@@ -65,6 +65,9 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
             url: url.href,
             userInitiated: Boolean(options.userInitiated)
         });
+        if (options.preserveScroll) {
+            return true;
+        }
         if (tab === 'map' && url.hash === '#checkin-panel') {
             document.getElementById('checkin-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else if (previousTab !== tab && typeof tabScrollPositions[tab] === 'number') {

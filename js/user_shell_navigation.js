@@ -3,6 +3,9 @@
     const shellFiles = new Set([...baseFiles, 'friends.php', 'rewards.php', 'profile.php', 'settings.php', 'feed_post.php', 'business_details.php']);
     let navigating = false;
     const baseScrollPositions = new Map();
+    if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+    }
 
     function absoluteUrl(value, base = window.location.href) { return new URL(value, base).href; }
     function currentFile(url = window.location.href) { return new URL(url, window.location.href).pathname.split('/').pop() || 'portal.php'; }
@@ -113,6 +116,7 @@
             const destinationIsBase = isBaseUrl(url);
             const liveBaseContent = baseContent();
             const visibleContent = activeContent();
+            const returningToBase = destinationIsBase && liveBaseContent && visibleContent !== liveBaseContent;
 
             if (destinationIsBase && liveBaseContent) {
                 document.querySelectorAll('[data-user-page-content]').forEach((content) => {
@@ -122,16 +126,20 @@
                 document.body.className = 'portal-body';
                 window.CraftCrawlSwitchUserTab?.(url, {
                     userInitiated: Boolean(options.userInitiated),
-                    trackPageView: false
+                    trackPageView: false,
+                    skipSaveScroll: returningToBase,
+                    preserveScroll: true
                 });
                 restoreBaseScroll(url);
             } else {
+                if (!destinationIsBase && liveBaseContent && visibleContent === liveBaseContent) {
+                    saveBaseScroll();
+                }
                 const doc = await fetchDocument(url, { noStore: Boolean(options.noStore) });
                 const nextContent = doc.querySelector('[data-user-page-content]');
                 if (!nextContent || !visibleContent) throw new Error('Missing shell content.');
 
                 if (!destinationIsBase && liveBaseContent && visibleContent === liveBaseContent) {
-                    saveBaseScroll();
                     document.querySelectorAll('[data-user-page-content]').forEach((content) => {
                         if (content !== liveBaseContent) content.remove();
                     });
