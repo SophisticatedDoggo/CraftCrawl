@@ -556,7 +556,7 @@ if (!$profile) {
                                                 <button
                                                     type="button"
                                                     class="badge-showcase-earned-badge<?php echo in_array($badge['badge_key'], $showcased_keys, true) ? ' is-showcased' : ''; ?>"
-                                                    draggable="true"
+                                                    draggable="false"
                                                     data-earned-badge
                                                     data-badge-key="<?php echo escape_output($badge['badge_key']); ?>"
                                                     data-badge-name="<?php echo escape_output($badge['badge_name']); ?>"

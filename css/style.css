@@ -9842,10 +9842,17 @@ a.event-calendar-event:focus .event-calendar-event-name {
 }
 
 body.has-modal-open {
+    position: fixed;
+    right: 0;
+    left: 0;
+    width: 100%;
     overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
 }
 
 .badge-showcase-modal {
+    touch-action: none;
     position: fixed;
     inset: 0;
     z-index: 80;
@@ -9870,6 +9877,8 @@ body.has-modal-open {
     width: min(920px, 100%);
     max-height: min(780px, calc(100vh - 36px));
     overflow: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
     padding: 18px;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -9921,6 +9930,7 @@ body.has-modal-open {
     display: grid;
     grid-template-columns: minmax(260px, 0.8fr) minmax(280px, 1.2fr);
     gap: 16px;
+    min-height: 0;
 }
 
 .badge-showcase-editor-layout h4 {
@@ -9932,6 +9942,10 @@ body.has-modal-open {
 .badge-showcase-earned-list {
     display: grid;
     gap: 10px;
+}
+
+.badge-showcase-editor-layout > section {
+    min-height: 0;
 }
 
 .badge-showcase-editor-slot {
@@ -9998,6 +10012,12 @@ body.has-modal-open {
 
 .badge-showcase-earned-list {
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    align-content: start;
+    max-height: min(430px, 48vh);
+    overflow-y: auto;
+    padding-right: 4px;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .badge-showcase-earned-badge {
@@ -10011,10 +10031,25 @@ body.has-modal-open {
     box-shadow: none;
     text-align: left;
     cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .badge-showcase-earned-badge:active {
     cursor: grabbing;
+}
+
+.badge-showcase-earned-badge.is-drag-source {
+    opacity: 0.54;
+}
+
+.badge-showcase-earned-badge.is-pointer-dragging {
+    border-color: var(--color-primary);
+    background: var(--color-surface);
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.24);
+    opacity: 0.96;
+    transform-origin: top left;
 }
 
 .badge-showcase-earned-badge.is-showcased {
@@ -10107,6 +10142,10 @@ body.has-modal-open {
 
     .badge-showcase-editor-layout {
         grid-template-columns: 1fr;
+    }
+
+    .badge-showcase-earned-list {
+        max-height: min(360px, 42vh);
     }
 
     .leaderboard-table th:nth-child(5),

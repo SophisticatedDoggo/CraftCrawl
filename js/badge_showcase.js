@@ -12,7 +12,11 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
     const status = section.querySelector('[data-showcase-editor-status]');
     const slotsWrap = section.querySelector('[data-showcase-editor-slots]');
     const earnedList = section.querySelector('[data-showcase-earned-list]');
+    const modalPanel = section.querySelector('.badge-showcase-modal-panel');
     let selectedBadgeKey = '';
+    let dragState = null;
+    let suppressNextClick = false;
+    let lockedScrollY = 0;
 
     function postForm(url, values) {
         const formData = new FormData();
@@ -135,10 +139,122 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
         setStatus('');
     }
 
+    function clearDragOver() {
+        section.querySelectorAll('[data-editor-slot].is-drag-over').forEach((slot) => {
+            slot.classList.remove('is-drag-over');
+        });
+    }
+
+    function slotFromPoint(x, y) {
+        const previousDisplay = dragState?.clone?.style.display || '';
+        if (dragState?.clone) {
+            dragState.clone.style.display = 'none';
+        }
+        const target = document.elementFromPoint(x, y);
+        if (dragState?.clone) {
+            dragState.clone.style.display = previousDisplay;
+        }
+        return target instanceof Element ? target.closest('[data-editor-slot]') : null;
+    }
+
+    function buildDragClone(source) {
+        const clone = source.cloneNode(true);
+        const rect = source.getBoundingClientRect();
+        clone.classList.add('is-pointer-dragging');
+        clone.style.position = 'fixed';
+        clone.style.left = '0';
+        clone.style.top = '0';
+        clone.style.width = `${Math.min(rect.width, 280)}px`;
+        clone.style.zIndex = '120';
+        clone.style.pointerEvents = 'none';
+        document.body.appendChild(clone);
+        return clone;
+    }
+
+    function moveDragClone(x, y) {
+        if (!dragState?.clone) return;
+        dragState.clone.style.transform = `translate3d(${x + 12}px, ${y + 12}px, 0)`;
+    }
+
+    function maybeAutoScroll(y) {
+        if (!modalPanel) return;
+        const rect = modalPanel.getBoundingClientRect();
+        const edgeSize = 80;
+
+        if (y < rect.top + edgeSize) {
+            modalPanel.scrollTop -= Math.max(4, Math.round((rect.top + edgeSize - y) / 5));
+        } else if (y > rect.bottom - edgeSize) {
+            modalPanel.scrollTop += Math.max(4, Math.round((y - (rect.bottom - edgeSize)) / 5));
+        }
+    }
+
+    function beginPointerDrag(event, badge) {
+        if (!badge || event.button > 0) return;
+
+        dragState = {
+            pointerId: event.pointerId,
+            badgeKey: badge.dataset.badgeKey || '',
+            startX: event.clientX,
+            startY: event.clientY,
+            isDragging: false,
+            source: badge,
+            clone: null
+        };
+        badge.setPointerCapture?.(event.pointerId);
+    }
+
+    function handlePointerMove(event) {
+        if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+        const distance = Math.hypot(event.clientX - dragState.startX, event.clientY - dragState.startY);
+        if (!dragState.isDragging && distance < 5) {
+            return;
+        }
+
+        event.preventDefault();
+        if (!dragState.isDragging) {
+            dragState.isDragging = true;
+            suppressNextClick = true;
+            selectedBadgeKey = '';
+            dragState.source.classList.add('is-drag-source');
+            dragState.clone = buildDragClone(dragState.source);
+            setStatus('Drop the badge into a showcase slot.');
+        }
+
+        moveDragClone(event.clientX, event.clientY);
+        maybeAutoScroll(event.clientY);
+        clearDragOver();
+        slotFromPoint(event.clientX, event.clientY)?.classList.add('is-drag-over');
+    }
+
+    function finishPointerDrag(event) {
+        if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+        const finishedDrag = dragState.isDragging;
+        const slot = finishedDrag ? slotFromPoint(event.clientX, event.clientY) : null;
+        const badgeKey = dragState.badgeKey;
+        dragState.source.classList.remove('is-drag-source');
+        dragState.clone?.remove();
+        dragState = null;
+        clearDragOver();
+
+        if (finishedDrag) {
+            event.preventDefault();
+            if (slot) {
+                placeBadge(slot, badgeKey);
+            } else {
+                setStatus('Drop on an unlocked showcase slot.', true);
+            }
+            window.setTimeout(() => { suppressNextClick = false; }, 0);
+        }
+    }
+
     function openEditor() {
         if (!editor) return;
+        lockedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
         editor.hidden = false;
         document.body.classList.add('has-modal-open');
+        document.body.style.top = `-${lockedScrollY}px`;
         section.querySelector('[data-showcase-editor-save]')?.focus();
         syncEarnedState();
     }
@@ -147,6 +263,8 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
         if (!editor) return;
         editor.hidden = true;
         document.body.classList.remove('has-modal-open');
+        document.body.style.top = '';
+        window.scrollTo(0, lockedScrollY);
         selectedBadgeKey = '';
         syncEarnedState();
     }
@@ -187,13 +305,25 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
     });
 
     earnedList?.addEventListener('dragstart', (event) => {
-        const badge = event.target instanceof Element ? event.target.closest('[data-earned-badge]') : null;
-        if (!badge) return;
-        event.dataTransfer.effectAllowed = 'copyMove';
-        event.dataTransfer.setData('text/plain', badge.dataset.badgeKey || '');
+        event.preventDefault();
     });
 
+    earnedList?.addEventListener('pointerdown', (event) => {
+        const badge = event.target instanceof Element ? event.target.closest('[data-earned-badge]') : null;
+        beginPointerDrag(event, badge);
+    });
+
+    earnedList?.addEventListener('pointermove', handlePointerMove, { passive: false });
+    earnedList?.addEventListener('pointerup', finishPointerDrag);
+    earnedList?.addEventListener('pointercancel', finishPointerDrag);
+
     earnedList?.addEventListener('click', (event) => {
+        if (suppressNextClick) {
+            event.preventDefault();
+            event.stopPropagation();
+            suppressNextClick = false;
+            return;
+        }
         const badge = event.target instanceof Element ? event.target.closest('[data-earned-badge]') : null;
         if (!badge) return;
         selectedBadgeKey = selectedBadgeKey === badge.dataset.badgeKey ? '' : (badge.dataset.badgeKey || '');
