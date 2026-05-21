@@ -23,7 +23,7 @@ $user_id = (int) $_SESSION['user_id'];
 $action = $_POST['action'] ?? '';
 $badge_key = (string) ($_POST['badge_key'] ?? '');
 
-if (!in_array($action, ['add', 'remove'], true) || $badge_key === '') {
+if (!in_array($action, ['add', 'remove', 'save'], true) || ($action !== 'save' && $badge_key === '')) {
     http_response_code(400);
     echo json_encode(['ok' => false, 'message' => 'Invalid request.']);
     exit();
@@ -43,7 +43,102 @@ if (!$level_row) {
 $user_level = craftcrawl_level_from_xp((int) ($level_row['total_xp'] ?? 0), $conn);
 $slot_count = craftcrawl_badge_showcase_slot_count($user_level);
 
-if ($action === 'remove') {
+if ($action === 'save') {
+    $raw_showcase = $_POST['showcase'] ?? '[]';
+    $requested_showcase = json_decode((string) $raw_showcase, true);
+
+    if (!is_array($requested_showcase)) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'message' => 'Invalid showcase layout.']);
+        exit();
+    }
+
+    if ($slot_count < 1 && count($requested_showcase) > 0) {
+        echo json_encode(['ok' => false, 'message' => 'Your first showcase slot unlocks at Level 8.']);
+        exit();
+    }
+
+    $next_showcase = [];
+    $seen_slots = [];
+    $seen_badges = [];
+    foreach ($requested_showcase as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+
+        $slot_order = filter_var($item['slot_order'] ?? null, FILTER_VALIDATE_INT);
+        $requested_badge_key = trim((string) ($item['badge_key'] ?? ''));
+
+        if (!$slot_order || $slot_order < 1 || $slot_order > $slot_count || $requested_badge_key === '') {
+            continue;
+        }
+
+        if (isset($seen_slots[$slot_order]) || isset($seen_badges[$requested_badge_key])) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'message' => 'Each badge can only fill one showcase slot.']);
+            exit();
+        }
+
+        $seen_slots[$slot_order] = true;
+        $seen_badges[$requested_badge_key] = true;
+        $next_showcase[] = [
+            'slot_order' => $slot_order,
+            'badge_key' => $requested_badge_key,
+        ];
+    }
+
+    if (count($next_showcase) > $slot_count) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'message' => "You have used more than $slot_count showcase slots."]);
+        exit();
+    }
+
+    if (!empty($next_showcase)) {
+        $badge_keys = array_column($next_showcase, 'badge_key');
+        $owns_stmt = $conn->prepare("SELECT badge_key FROM user_badges WHERE user_id=?");
+        $owns_stmt->bind_param("i", $user_id);
+        $owns_stmt->execute();
+        $owned_keys = array_column($owns_stmt->get_result()->fetch_all(MYSQLI_ASSOC), 'badge_key');
+        $owned_key_map = array_fill_keys($owned_keys, true);
+
+        foreach ($badge_keys as $key) {
+            if (!isset($owned_key_map[$key])) {
+                http_response_code(400);
+                echo json_encode(['ok' => false, 'message' => 'Only earned badges can be showcased.']);
+                exit();
+            }
+        }
+
+        if (count($badge_keys) !== count(array_unique($badge_keys))) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'message' => 'Each badge can only fill one showcase slot.']);
+            exit();
+        }
+    }
+
+    $conn->begin_transaction();
+    try {
+        $clear_stmt = $conn->prepare("DELETE FROM user_badge_showcase WHERE user_id=?");
+        $clear_stmt->bind_param("i", $user_id);
+        $clear_stmt->execute();
+
+        if (!empty($next_showcase)) {
+            $insert_stmt = $conn->prepare("INSERT INTO user_badge_showcase (user_id, slot_order, badge_key) VALUES (?, ?, ?)");
+            foreach ($next_showcase as $item) {
+                $insert_stmt->bind_param("iis", $user_id, $item['slot_order'], $item['badge_key']);
+                $insert_stmt->execute();
+            }
+        }
+
+        $conn->commit();
+    } catch (Throwable $error) {
+        $conn->rollback();
+        error_log('Badge showcase save failed: ' . $error->getMessage());
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'message' => 'Could not save badge showcase.']);
+        exit();
+    }
+} elseif ($action === 'remove') {
     $del_stmt = $conn->prepare("DELETE FROM user_badge_showcase WHERE user_id=? AND badge_key=?");
     $del_stmt->bind_param("is", $user_id, $badge_key);
     $del_stmt->execute();

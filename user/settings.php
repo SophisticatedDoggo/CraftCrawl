@@ -49,26 +49,26 @@ $display_palette = in_array($user_settings['display_palette'] ?? '', $allowed_di
 $display_palette_options = [
     'trail-map' => ['label' => 'Trail', 'level' => 1],
     'trail-dark' => ['label' => 'Trail Dark', 'level' => 2],
-    'ember' => ['label' => 'Ember', 'level' => 14],
-    'ember-dark' => ['label' => 'Ember Dark', 'level' => 38],
-    'riverstone' => ['label' => 'Riverstone', 'level' => 44],
-    'riverstone-dark' => ['label' => 'Riverstone Dark', 'level' => 78],
-    'blackberry' => ['label' => 'Blackberry', 'level' => 52],
-    'blackberry-dark' => ['label' => 'Blackberry Dark', 'level' => 90],
-    'barnwood' => ['label' => 'Barnwood', 'level' => 72],
-    'barnwood-dark' => ['label' => 'Barnwood Dark', 'level' => 96],
+    'ember' => ['label' => 'Ember', 'level' => 7],
+    'ember-dark' => ['label' => 'Ember Dark', 'level' => 12],
+    'blackberry' => ['label' => 'Blackberry', 'level' => 17],
+    'blackberry-dark' => ['label' => 'Blackberry Dark', 'level' => 22],
+    'riverstone' => ['label' => 'Riverstone', 'level' => 27],
+    'riverstone-dark' => ['label' => 'Riverstone Dark', 'level' => 32],
+    'barnwood' => ['label' => 'Barnwood', 'level' => 37],
+    'barnwood-dark' => ['label' => 'Barnwood Dark', 'level' => 42],
 ];
 $app_icon_options = [
     'trail' => ['label' => 'Trail', 'level' => 1, 'image' => 'craft-crawl-logo-trail.png'],
     'trail-dark' => ['label' => 'Trail Dark', 'level' => 2, 'image' => 'craft-crawl-logo-trail-dark.png'],
-    'ember' => ['label' => 'Ember', 'level' => 14, 'image' => 'craft-crawl-logo-ember.png'],
-    'ember-dark' => ['label' => 'Ember Dark', 'level' => 38, 'image' => 'craft-crawl-logo-ember-dark.png'],
-    'riverstone' => ['label' => 'Riverstone', 'level' => 44, 'image' => 'craft-crawl-logo-riverstone.png'],
-    'blackberry' => ['label' => 'Blackberry', 'level' => 52, 'image' => 'craft-crawl-logo-blackberry.png'],
-    'barnwood' => ['label' => 'Barnwood', 'level' => 72, 'image' => 'craft-crawl-logo-barnwood.png'],
-    'riverstone-dark' => ['label' => 'Riverstone Dark', 'level' => 78, 'image' => 'craft-crawl-logo-riverstone-dark.png'],
-    'blackberry-dark' => ['label' => 'Blackberry Dark', 'level' => 90, 'image' => 'craft-crawl-logo-blackberry-dark.png'],
-    'barnwood-dark' => ['label' => 'Barnwood Dark', 'level' => 96, 'image' => 'craft-crawl-logo-barnwood-dark.png'],
+    'ember' => ['label' => 'Ember', 'level' => 7, 'image' => 'craft-crawl-logo-ember.png'],
+    'ember-dark' => ['label' => 'Ember Dark', 'level' => 12, 'image' => 'craft-crawl-logo-ember-dark.png'],
+    'blackberry' => ['label' => 'Blackberry', 'level' => 17, 'image' => 'craft-crawl-logo-blackberry.png'],
+    'blackberry-dark' => ['label' => 'Blackberry Dark', 'level' => 22, 'image' => 'craft-crawl-logo-blackberry-dark.png'],
+    'riverstone' => ['label' => 'Riverstone', 'level' => 27, 'image' => 'craft-crawl-logo-riverstone.png'],
+    'riverstone-dark' => ['label' => 'Riverstone Dark', 'level' => 32, 'image' => 'craft-crawl-logo-riverstone-dark.png'],
+    'barnwood' => ['label' => 'Barnwood', 'level' => 37, 'image' => 'craft-crawl-logo-barnwood.png'],
+    'barnwood-dark' => ['label' => 'Barnwood Dark', 'level' => 42, 'image' => 'craft-crawl-logo-barnwood-dark.png'],
 ];
 $auto_accept_friend_invites  = !empty($user_settings['auto_accept_friend_invites']);
 $show_feed_activity          = !isset($user_settings['show_feed_activity'])         || !empty($user_settings['show_feed_activity']);
@@ -325,6 +325,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <button type="submit" name="display_palette" value="<?php echo escape_output($palette_key); ?>" data-palette-option="<?php echo escape_output($palette_key); ?>" <?php echo $display_palette === $palette_key ? 'aria-pressed="true" class="is-active"' : 'aria-pressed="false"'; ?> <?php echo $palette_unlocked ? '' : 'disabled title="Unlocks at Level ' . escape_output($palette_option['level']) . '"'; ?>>
                             <span class="settings-option-label"><?php echo escape_output($palette_option['label']); ?></span>
                             <span class="settings-option-status"><?php echo $palette_unlocked ? 'Unlocked' : 'Locked'; ?></span>
+                            <?php if (!$palette_unlocked) : ?>
+                                <span class="settings-option-required">Level <?php echo escape_output($palette_option['level']); ?></span>
+                            <?php endif; ?>
                         </button>
                     <?php endforeach; ?>
                 </div>
@@ -342,6 +345,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <img src="../images/<?php echo escape_output($icon_option['image']); ?>" alt="" aria-hidden="true">
                         <span class="settings-option-label"><?php echo escape_output($icon_option['label']); ?></span>
                         <span class="settings-option-status"><?php echo $icon_unlocked ? 'Unlocked' : 'Locked'; ?></span>
+                        <?php if (!$icon_unlocked) : ?>
+                            <span class="settings-option-required">Level <?php echo escape_output($icon_option['level']); ?></span>
+                        <?php endif; ?>
                     </button>
                 <?php endforeach; ?>
             </div>

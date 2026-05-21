@@ -195,14 +195,6 @@ if (!$profile) {
     $profile_frame = $profile['selected_profile_frame'] ?? null;
     $slot_count = craftcrawl_badge_showcase_slot_count($profile_level);
     $next_reward = $is_own_profile ? craftcrawl_next_reward_preview($profile_level) : null;
-    $level_rewards = $is_own_profile ? craftcrawl_level_reward_catalog($profile_level) : [];
-    $title_rewards = array_values(array_filter($level_rewards, fn($reward) => ($reward['type'] ?? '') === 'Title'));
-    $frame_rewards = $is_own_profile ? craftcrawl_user_profile_frame_reward_catalog($conn, $profile_id, $profile_level) : [];
-    $showcase_rewards = array_values(array_filter($level_rewards, fn($reward) => ($reward['type'] ?? '') === 'Showcase'));
-    $appearance_rewards = array_values(array_filter($level_rewards, fn($reward) => in_array(($reward['type'] ?? ''), ['Display Theme', 'App Icon'], true)));
-    $badge_progress_rows = $is_own_profile ? craftcrawl_user_badge_progress($conn, $profile_id) : [];
-    $reward_preview_avatar_url = craftcrawl_user_avatar_url($profile, 96);
-    $reward_preview_initials = craftcrawl_user_initials($profile);
 
     $showcase_stmt = $conn->prepare("
         SELECT ubs.slot_order, ubs.badge_key, ub.badge_name, ub.badge_description, ub.badge_tier
@@ -215,6 +207,19 @@ if (!$profile) {
     $showcase_stmt->execute();
     $showcase_rows = $showcase_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $showcased_keys = array_column($showcase_rows, 'badge_key');
+
+    $earned_badges = [];
+    if ($is_own_profile) {
+        $earned_badges_stmt = $conn->prepare("
+            SELECT badge_key, badge_name, badge_description, badge_category, badge_tier
+            FROM user_badges
+            WHERE user_id=?
+            ORDER BY earnedAt DESC, id DESC
+        ");
+        $earned_badges_stmt->bind_param("i", $profile_id);
+        $earned_badges_stmt->execute();
+        $earned_badges = $earned_badges_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
 
     $stats_stmt = $conn->prepare("
         SELECT
@@ -471,8 +476,15 @@ if (!$profile) {
 
             <?php if ($can_view_profile_rewards) : ?>
                 <section class="settings-panel" id="badge-showcase-section" data-badge-showcase data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>" data-slot-count="<?php echo escape_output($slot_count); ?>">
-                    <h2>Badge Showcase</h2>
-                    <p class="form-help"><?php echo escape_output($slot_count); ?> of 3 slot<?php echo $slot_count !== 1 ? 's' : ''; ?> unlocked<?php if ($slot_count < 3) : ?> · Showcase slots unlock at Levels 8, 16, and 24<?php endif; ?></p>
+                    <div class="badge-showcase-header">
+                        <div>
+                            <h2>Badge Showcase</h2>
+                            <p class="form-help"><?php echo escape_output($slot_count); ?> of 3 slot<?php echo $slot_count !== 1 ? 's' : ''; ?> unlocked<?php if ($slot_count < 3) : ?> · Showcase slots unlock at Levels 8, 16, and 24<?php endif; ?></p>
+                        </div>
+                        <?php if ($is_own_profile) : ?>
+                            <button type="button" class="button-link-secondary badge-showcase-edit-toggle" data-showcase-editor-open>Edit Badge Showcase</button>
+                        <?php endif; ?>
+                    </div>
                     <div class="badge-showcase-grid" data-showcase-grid>
                         <?php
                         $showcased_by_slot = [];
@@ -488,176 +500,80 @@ if (!$profile) {
                                     <strong><?php echo escape_output($slot_badge['badge_name']); ?></strong>
                                     <span><?php echo escape_output($slot_badge['badge_description']); ?></span>
                                     <small><?php echo escape_output(ucfirst($slot_badge['badge_tier'])); ?></small>
-                                    <?php if ($is_own_profile) : ?>
-                                        <button type="button" class="badge-showcase-remove" data-showcase-action="remove" data-badge-key="<?php echo escape_output($slot_badge['badge_key']); ?>">Remove</button>
-                                    <?php endif; ?>
                                 <?php else : ?>
                                     <span class="badge-showcase-empty">Empty slot</span>
                                 <?php endif; ?>
                             </article>
                         <?php endfor; ?>
                     </div>
-                </section>
-            <?php endif; ?>
-
-            <?php if ($is_own_profile) : ?>
-                <section class="settings-panel reward-discovery-panel">
-                    <h2>Attainable Rewards</h2>
-                    <p class="form-help">Track what is unlocked now and what to work toward next. Earned badge goals can be featured in your showcase.</p>
-
-                    <details class="reward-disclosure">
-                        <summary>
-                            <span>Titles</span>
-                            <small><?php echo escape_output(count(array_filter($title_rewards, fn($reward) => $reward['unlocked']))); ?> / <?php echo escape_output(count($title_rewards)); ?> unlocked</small>
-                        </summary>
-                        <div class="reward-list">
-                            <?php foreach ($title_rewards as $reward) : ?>
-                                <article class="reward-goal-card<?php echo $reward['unlocked'] ? ' is-unlocked' : ' is-locked'; ?>">
+                    <?php if ($is_own_profile) : ?>
+                        <div class="badge-showcase-modal" data-showcase-editor hidden>
+                            <div class="badge-showcase-modal-backdrop" data-showcase-editor-close></div>
+                            <section class="badge-showcase-modal-panel" role="dialog" aria-modal="true" aria-labelledby="badge-showcase-editor-title">
+                                <header class="badge-showcase-modal-header">
                                     <div>
-                                        <div class="reward-goal-title-row">
-                                            <strong><?php echo escape_output($reward['name']); ?></strong>
-                                            <span><?php echo $reward['unlocked'] ? 'Unlocked' : 'Locked'; ?></span>
-                                        </div>
-                                        <p><?php echo escape_output($reward['description']); ?></p>
-                                        <small>
-                                            Level <?php echo escape_output($reward['level']); ?> ·
-                                            <?php echo $reward['unlocked'] ? 'Unlocked' : escape_output($reward['levels_remaining']) . ' level' . ((int) $reward['levels_remaining'] === 1 ? '' : 's') . ' to go'; ?>
-                                        </small>
+                                        <h3 id="badge-showcase-editor-title">Edit Badge Showcase</h3>
+                                        <p class="form-help">Drag earned badges into your unlocked showcase slots.</p>
                                     </div>
-                                </article>
-                            <?php endforeach; ?>
-                        </div>
-                    </details>
-
-                    <details class="reward-disclosure">
-                        <summary>
-                            <span>Frames</span>
-                            <small><?php echo escape_output(count(array_filter($frame_rewards, fn($reward) => $reward['unlocked']))); ?> / <?php echo escape_output(count($frame_rewards)); ?> unlocked</small>
-                        </summary>
-                        <p class="reward-disclosure-help">Change unlocked profile frames from Edit Profile above.</p>
-                        <div class="reward-list">
-                            <?php foreach ($frame_rewards as $reward) : ?>
-                                <article class="reward-goal-card<?php echo $reward['unlocked'] ? ' is-unlocked' : ' is-locked'; ?>">
-                                    <span class="frame-reward-preview has-frame-<?php echo escape_output($reward['frame_color'] ?? 'frame_1'); ?> has-frame-style-<?php echo escape_output($reward['frame_style'] ?? 'solid'); ?>" aria-hidden="true">
-                                        <?php if ($reward_preview_avatar_url !== null) : ?>
-                                            <img class="frame-reward-avatar-preview" src="<?php echo escape_output($reward_preview_avatar_url); ?>" alt="" loading="lazy">
-                                        <?php else : ?>
-                                            <span class="frame-reward-avatar-preview"><?php echo escape_output($reward_preview_initials); ?></span>
-                                        <?php endif; ?>
-                                    </span>
-                                    <div>
-                                        <div class="reward-goal-title-row">
-                                            <strong><?php echo escape_output($reward['name']); ?></strong>
-                                            <span><?php echo $reward['unlocked'] ? 'Unlocked' : 'Locked'; ?></span>
+                                    <button type="button" class="badge-showcase-modal-close" data-showcase-editor-close aria-label="Close badge showcase editor">&times;</button>
+                                </header>
+                                <div class="badge-showcase-editor-status" data-showcase-editor-status hidden></div>
+                                <div class="badge-showcase-editor-layout">
+                                    <section>
+                                        <h4>Showcased Badges</h4>
+                                        <div class="badge-showcase-editor-slots" data-showcase-editor-slots>
+                                            <?php for ($s = 1; $s <= $slot_count; $s++) :
+                                                $slot_badge = $showcased_by_slot[$s] ?? null;
+                                            ?>
+                                                <div class="badge-showcase-editor-slot" data-editor-slot="<?php echo $s; ?>" data-badge-key="<?php echo escape_output($slot_badge['badge_key'] ?? ''); ?>">
+                                                    <span class="badge-showcase-editor-slot-label">Slot <?php echo $s; ?></span>
+                                                    <div class="badge-showcase-editor-slot-content" data-editor-slot-content>
+                                                        <?php if ($slot_badge) : ?>
+                                                            <img class="badge-icon" src="../images/badges/<?php echo escape_output($slot_badge['badge_key']); ?>.svg" alt="" loading="lazy" width="52" height="52">
+                                                            <strong><?php echo escape_output($slot_badge['badge_name']); ?></strong>
+                                                            <button type="button" class="badge-showcase-editor-remove" data-editor-remove>Remove</button>
+                                                        <?php else : ?>
+                                                            <span class="badge-showcase-empty">Drop badge here</span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
+                                            <?php endfor; ?>
                                         </div>
-                                        <p><?php echo escape_output($reward['description']); ?></p>
-                                        <small>
-                                            Level <?php echo escape_output($reward['level']); ?> · <?php echo escape_output($reward['type']); ?> ·
-                                            <?php echo $reward['unlocked'] ? 'Unlocked' : escape_output($reward['levels_remaining']) . ' level' . ((int) $reward['levels_remaining'] === 1 ? '' : 's') . ' to go'; ?>
-                                        </small>
-                                    </div>
-                                </article>
-                            <?php endforeach; ?>
-                        </div>
-                    </details>
-
-                    <details class="reward-disclosure">
-                        <summary>
-                            <span>Badge Showcase Slots</span>
-                            <small><?php echo escape_output(count(array_filter($showcase_rewards, fn($reward) => $reward['unlocked']))); ?> / <?php echo escape_output(count($showcase_rewards)); ?> unlocked</small>
-                        </summary>
-                        <div class="reward-list">
-                            <?php foreach ($showcase_rewards as $reward) : ?>
-                                <article class="reward-goal-card<?php echo $reward['unlocked'] ? ' is-unlocked' : ' is-locked'; ?>">
-                                    <div>
-                                        <div class="reward-goal-title-row">
-                                            <strong><?php echo escape_output($reward['name']); ?></strong>
-                                            <span><?php echo $reward['unlocked'] ? 'Unlocked' : 'Locked'; ?></span>
+                                    </section>
+                                    <section>
+                                        <h4>Earned Badges</h4>
+                                        <div class="badge-showcase-earned-list" data-showcase-earned-list>
+                                            <?php if (empty($earned_badges)) : ?>
+                                                <p class="form-help">Earn a badge to start building your showcase.</p>
+                                            <?php endif; ?>
+                                            <?php foreach ($earned_badges as $badge) : ?>
+                                                <button
+                                                    type="button"
+                                                    class="badge-showcase-earned-badge<?php echo in_array($badge['badge_key'], $showcased_keys, true) ? ' is-showcased' : ''; ?>"
+                                                    draggable="true"
+                                                    data-earned-badge
+                                                    data-badge-key="<?php echo escape_output($badge['badge_key']); ?>"
+                                                    data-badge-name="<?php echo escape_output($badge['badge_name']); ?>"
+                                                    data-badge-description="<?php echo escape_output($badge['badge_description']); ?>"
+                                                    data-badge-tier="<?php echo escape_output($badge['badge_tier']); ?>"
+                                                >
+                                                    <img class="badge-icon" src="../images/badges/<?php echo escape_output($badge['badge_key']); ?>.svg" alt="" loading="lazy" width="46" height="46">
+                                                    <span>
+                                                        <strong><?php echo escape_output($badge['badge_name']); ?></strong>
+                                                        <small><?php echo escape_output(ucfirst($badge['badge_tier'])); ?></small>
+                                                    </span>
+                                                </button>
+                                            <?php endforeach; ?>
                                         </div>
-                                        <p><?php echo escape_output($reward['description']); ?></p>
-                                        <small>
-                                            Level <?php echo escape_output($reward['level']); ?> ·
-                                            <?php echo $reward['unlocked'] ? 'Unlocked' : escape_output($reward['levels_remaining']) . ' level' . ((int) $reward['levels_remaining'] === 1 ? '' : 's') . ' to go'; ?>
-                                        </small>
-                                    </div>
-                                </article>
-                            <?php endforeach; ?>
+                                    </section>
+                                </div>
+                                <footer class="badge-showcase-modal-actions">
+                                    <button type="button" class="button-link-secondary" data-showcase-editor-close>Cancel</button>
+                                    <button type="button" data-showcase-editor-save>Save Showcase</button>
+                                </footer>
+                            </section>
                         </div>
-                    </details>
-
-                    <details class="reward-disclosure">
-                        <summary>
-                            <span>Display Themes &amp; App Icons</span>
-                            <small><?php echo escape_output(count(array_filter($appearance_rewards, fn($reward) => $reward['unlocked']))); ?> / <?php echo escape_output(count($appearance_rewards)); ?> unlocked</small>
-                        </summary>
-                        <p class="reward-disclosure-help">Change unlocked display themes and app icons from Settings.</p>
-                        <div class="reward-list">
-                            <?php foreach ($appearance_rewards as $reward) : ?>
-                                <article class="reward-goal-card<?php echo $reward['unlocked'] ? ' is-unlocked' : ' is-locked'; ?>">
-                                    <?php if (($reward['type'] ?? '') === 'Display Theme') : ?>
-                                        <span class="appearance-theme-preview is-<?php echo escape_output($reward['reward_key'] ?? 'trail-map'); ?>" aria-hidden="true"></span>
-                                    <?php else : ?>
-                                        <img
-                                            class="appearance-reward-preview"
-                                            src="../images/craft-crawl-logo-<?php echo escape_output($reward['reward_key'] ?? 'trail'); ?>.png"
-                                            alt=""
-                                            aria-hidden="true"
-                                            loading="lazy"
-                                            width="58"
-                                            height="58"
-                                        >
-                                    <?php endif; ?>
-                                    <div>
-                                        <div class="reward-goal-title-row">
-                                            <strong><?php echo escape_output($reward['name']); ?></strong>
-                                            <span><?php echo $reward['unlocked'] ? 'Unlocked' : 'Locked'; ?></span>
-                                        </div>
-                                        <p><?php echo escape_output($reward['description']); ?></p>
-                                        <small>
-                                            Level <?php echo escape_output($reward['level']); ?> · <?php echo escape_output($reward['type']); ?> ·
-                                            <?php echo $reward['unlocked'] ? 'Unlocked' : escape_output($reward['levels_remaining']) . ' level' . ((int) $reward['levels_remaining'] === 1 ? '' : 's') . ' to go'; ?>
-                                        </small>
-                                    </div>
-                                </article>
-                            <?php endforeach; ?>
-                        </div>
-                    </details>
-
-                    <details class="reward-disclosure">
-                        <summary>
-                            <span>Badge Goals</span>
-                            <small><?php echo escape_output($profile_stats['badge_count'] ?? 0); ?> / <?php echo escape_output(count($badge_progress_rows)); ?> earned</small>
-                        </summary>
-                        <div class="badge-goal-grid">
-                            <?php foreach ($badge_progress_rows as $badge_goal) : ?>
-                                <article
-                                    class="badge-goal-card<?php echo $badge_goal['earned'] ? ' is-unlocked' : ' is-locked'; ?><?php echo in_array($badge_goal['key'], $showcased_keys, true) ? ' is-showcased' : ''; ?>"
-                                    <?php if ($badge_goal['earned']) : ?>
-                                        data-earned-badge-card
-                                        data-badge-key="<?php echo escape_output($badge_goal['key']); ?>"
-                                    <?php endif; ?>
-                                >
-                                    <img class="badge-icon" src="../images/badges/<?php echo escape_output($badge_goal['key']); ?>.svg" alt="" loading="lazy" width="64" height="64">
-                                    <div>
-                                        <div class="badge-goal-title-row">
-                                            <strong><?php echo escape_output($badge_goal['name']); ?></strong>
-                                            <span><?php echo $badge_goal['earned'] ? 'Unlocked' : 'Locked'; ?></span>
-                                        </div>
-                                        <p><?php echo escape_output($badge_goal['requirement']); ?></p>
-                                        <div class="badge-goal-progress" aria-hidden="true">
-                                            <span style="width: <?php echo escape_output($badge_goal['progress_percent']); ?>%;"></span>
-                                        </div>
-                                        <small>
-                                            <?php echo escape_output($badge_goal['current']); ?> / <?php echo escape_output($badge_goal['target']); ?> ·
-                                            <?php echo escape_output(craftcrawl_profile_badge_category_label($badge_goal['category'])); ?> ·
-                                            <?php echo escape_output(ucfirst($badge_goal['tier'])); ?> ·
-                                            +<?php echo escape_output($badge_goal['xp']); ?> XP
-                                        </small>
-                                    </div>
-                                </article>
-                            <?php endforeach; ?>
-                        </div>
-                    </details>
+                    <?php endif; ?>
                 </section>
             <?php endif; ?>
 

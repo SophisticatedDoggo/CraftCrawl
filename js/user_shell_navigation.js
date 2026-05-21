@@ -1,6 +1,6 @@
 (function () {
     const baseFiles = new Set(['portal.php', 'events.php', 'feed.php', 'quests.php']);
-    const shellFiles = new Set([...baseFiles, 'friends.php', 'profile.php', 'settings.php', 'feed_post.php', 'business_details.php']);
+    const shellFiles = new Set([...baseFiles, 'friends.php', 'rewards.php', 'profile.php', 'settings.php', 'feed_post.php', 'business_details.php']);
     let navigating = false;
 
     function absoluteUrl(value, base = window.location.href) { return new URL(value, base).href; }

@@ -46,6 +46,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         want_to_go: 'Want to Go',
         trophy: 'Trophy'
     };
+    const reactionPageSize = 10;
     const reactionTypesByItemType = {
         first_visit: ['cheers', 'nice_find'],
         level_up: ['cheers', 'nice_find', 'trophy'],
@@ -175,6 +176,28 @@ window.CraftCrawlInitFriends = function (scope = document) {
         return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
     }
 
+    function formatBusinessType(value) {
+        const raw = String(value || '').trim();
+        const labels = {
+            bar: 'Bar',
+            brewery: 'Brewery',
+            cidery: 'Cidery',
+            distillery: 'Distillery',
+            distilery: 'Distillery',
+            meadery: 'Meadery',
+            social_club: 'Social Club',
+            winery: 'Winery'
+        };
+
+        const key = raw.toLowerCase();
+
+        if (!raw) {
+            return 'Business';
+        }
+
+        return labels[key] || key.split('_').filter(Boolean).map(capitalize).join(' ');
+    }
+
     function focusNotificationTarget(element) {
         if (!element) {
             return;
@@ -278,11 +301,12 @@ window.CraftCrawlInitFriends = function (scope = document) {
         return `data-feed-item-key="${escapeHtml(item.item_key || '')}" data-feed-item-type="${escapeHtml(item.type || '')}" data-feed-is-self="${item.is_self ? 'true' : 'false'}"`;
     }
 
-    function renderFeedMeta(label, date) {
+    function renderFeedMeta(label, date, extraHtml = '') {
         return `
             <p class="feed-item-meta">
                 <span>${escapeHtml(label)}</span>
                 ${date ? `<span aria-hidden="true">·</span><time>${escapeHtml(date)}</time>` : ''}
+                ${extraHtml ? `<span aria-hidden="true">·</span>${extraHtml}` : ''}
             </p>
         `;
     }
@@ -837,6 +861,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                         ${renderFeedMeta(actorName, date)}
                         <strong class="feed-item-title">${escapeHtml(item.is_self ? 'Want' : 'Wants')} to go to ${escapeHtml(item.event_name)}</strong>
                         <p class="feed-item-detail">${escapeHtml(item.business_name)} · ${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
+                        ${renderFeedDetailLinkRow(item)}
                         ${actions}
                     </div>
                 </article>
@@ -850,7 +875,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
                         <strong class="feed-item-title">${escapeHtml(item.is_self ? 'Want' : 'Wants')} to visit ${escapeHtml(item.business_name)}</strong>
-                        <p class="feed-item-detail">${escapeHtml(item.business_type)} · ${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
+                        <p class="feed-item-detail">${escapeHtml(formatBusinessType(item.business_type))} · ${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
+                        ${renderFeedDetailLinkRow(item)}
                         ${actions}
                     </div>
                 </article>
@@ -881,6 +907,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                         <strong class="feed-item-title">${escapeHtml(item.title)}</strong>
                         ${item.body ? `<p class="feed-item-detail feed-business-post-body">${escapeHtml(item.body)}</p>` : ''}
                         ${pollSection}
+                        ${renderFeedDetailLinkRow(item)}
                         ${actions}
                     </div>
                 </article>
@@ -894,6 +921,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     ${renderFeedMeta(actorName, date)}
                     <strong class="feed-item-title">Visited ${escapeHtml(item.business_name)} for the first time</strong>
                     <p class="feed-item-detail">${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
+                    ${renderFeedDetailLinkRow(item)}
                     ${actions}
                 </div>
             </article>
@@ -942,6 +970,73 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
     // Delegated poll vote handler for feed items
     if (feed) {
+        const reactionSwipe = {
+            active: false,
+            pointerId: null,
+            startX: 0,
+            lastX: 0,
+            panel: null,
+            track: null,
+            page: 0,
+            pageWidth: 0
+        };
+
+        feed.addEventListener('pointerdown', function (event) {
+            const swipe = event.target.closest('[data-reaction-swipe]');
+            const panel = swipe?.closest('[data-reaction-disclosure-panel]');
+            const track = panel?.querySelector('[data-reaction-track]');
+
+            if (!swipe || !panel || !track || track.children.length < 2) {
+                return;
+            }
+
+            reactionSwipe.active = true;
+            reactionSwipe.pointerId = event.pointerId;
+            reactionSwipe.startX = event.clientX;
+            reactionSwipe.lastX = event.clientX;
+            reactionSwipe.panel = panel;
+            reactionSwipe.track = track;
+            reactionSwipe.page = Number(panel.dataset.reactionPage || 0);
+            reactionSwipe.pageWidth = swipe.clientWidth || panel.clientWidth || 1;
+            track.style.transition = 'none';
+            swipe.setPointerCapture?.(event.pointerId);
+        });
+
+        feed.addEventListener('pointermove', function (event) {
+            if (!reactionSwipe.active || event.pointerId !== reactionSwipe.pointerId || !reactionSwipe.track) {
+                return;
+            }
+
+            const deltaX = event.clientX - reactionSwipe.startX;
+            reactionSwipe.lastX = event.clientX;
+            reactionSwipe.track.style.transform = `translateX(${(-reactionSwipe.page * reactionSwipe.pageWidth) + deltaX}px)`;
+        });
+
+        function finishReactionSwipe(event) {
+            if (!reactionSwipe.active || event.pointerId !== reactionSwipe.pointerId || !reactionSwipe.panel || !reactionSwipe.track) {
+                return;
+            }
+
+            const deltaX = event.clientX - reactionSwipe.startX;
+            const threshold = Math.min(90, reactionSwipe.pageWidth * 0.22);
+            let nextPage = reactionSwipe.page;
+
+            if (deltaX <= -threshold) {
+                nextPage += 1;
+            } else if (deltaX >= threshold) {
+                nextPage -= 1;
+            }
+
+            setReactionPage(reactionSwipe.panel, nextPage);
+            reactionSwipe.active = false;
+            reactionSwipe.pointerId = null;
+            reactionSwipe.panel = null;
+            reactionSwipe.track = null;
+        }
+
+        feed.addEventListener('pointerup', finishReactionSwipe);
+        feed.addEventListener('pointercancel', finishReactionSwipe);
+
         feed.addEventListener('click', function (event) {
             const reactionToggle = event.target.closest('[data-reaction-disclosure-toggle]');
             if (reactionToggle) {
@@ -956,6 +1051,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 const isExpanded = reactionToggle.getAttribute('aria-expanded') === 'true';
                 reactionToggle.setAttribute('aria-expanded', String(!isExpanded));
                 panel.hidden = isExpanded;
+                if (!isExpanded) {
+                    setReactionPage(panel, Number(panel.dataset.reactionPage || 0), false);
+                }
 
                 if (!isExpanded && Number(disclosure.dataset.unreadCount || 0) > 0) {
                     postForm(userEndpoint('feed_notification_seen.php'), {
@@ -1096,7 +1194,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
             <div class="feed-action-row">
                 <div class="feed-primary-actions">
                     ${renderCommentsLink(item)}
-                    ${renderFeedDetailLink(item)}
                 </div>
                 ${renderReactionDisclosure(item)}
                 <div class="feed-reactions">
@@ -1156,18 +1253,54 @@ window.CraftCrawlInitFriends = function (scope = document) {
         const itemKey = item.item_key || '';
         const entries = Array.isArray(item.reaction_entries) ? item.reaction_entries : [];
         const panelId = `feed-reaction-list-${String(itemKey).replace(/[^a-z0-9_-]/gi, '-')}`;
+        const pages = [];
+
+        for (let index = 0; index < entries.length; index += reactionPageSize) {
+            pages.push(entries.slice(index, index + reactionPageSize));
+        }
 
         return `
-            <div class="feed-reaction-list" id="${escapeHtml(panelId)}" data-reaction-disclosure-panel data-item-key="${escapeHtml(itemKey)}"${isExpanded ? '' : ' hidden'}>
-                ${entries.length ? entries.map((entry) => `
-                    <div class="feed-reaction-list-item">
-                        <span class="feed-reaction-list-symbol">${escapeHtml(reactionLabels[entry.type] || '')}</span>
-                        <strong>${escapeHtml(entry.name || 'Someone')}</strong>
-                        ${entry.created_at ? `<time>${escapeHtml(formatDate(entry.created_at))}</time>` : ''}
+            <div class="feed-reaction-list" id="${escapeHtml(panelId)}" data-reaction-disclosure-panel data-item-key="${escapeHtml(itemKey)}" data-reaction-page="0"${isExpanded ? '' : ' hidden'}>
+                ${entries.length ? `
+                    <div class="feed-reaction-swipe" data-reaction-swipe>
+                        <div class="feed-reaction-track" data-reaction-track style="transform: translateX(0px);">
+                            ${pages.map((page) => `
+                                <div class="feed-reaction-page">
+                                    ${page.map((entry) => `
+                                        <div class="feed-reaction-list-item">
+                                            <span class="feed-reaction-list-symbol">${escapeHtml(reactionLabels[entry.type] || '')}</span>
+                                            <strong>${escapeHtml(entry.name || 'Someone')}</strong>
+                                            ${entry.created_at ? `<time>${escapeHtml(formatDate(entry.created_at))}</time>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
-                `).join('') : '<p>No reactions yet.</p>'}
+                    ${pages.length > 1 ? `<div class="feed-reaction-page-count" data-reaction-page-count>1 / ${pages.length}</div>` : ''}
+                ` : '<p>No reactions yet.</p>'}
             </div>
         `;
+    }
+
+    function setReactionPage(panel, nextPage, animate = true) {
+        const swipe = panel?.querySelector('[data-reaction-swipe]');
+        const track = panel?.querySelector('[data-reaction-track]');
+        const pageCount = track ? track.children.length : 0;
+
+        if (!panel || !track || pageCount < 1) {
+            return;
+        }
+
+        const page = Math.max(0, Math.min(pageCount - 1, nextPage));
+        panel.dataset.reactionPage = String(page);
+        track.style.transition = animate ? '' : 'none';
+        track.style.transform = `translateX(${-page * (swipe?.clientWidth || panel.clientWidth || 1)}px)`;
+
+        const count = panel.querySelector('[data-reaction-page-count]');
+        if (count) {
+            count.textContent = `${page + 1} / ${pageCount}`;
+        }
     }
 
     function renderFeedDetailLink(item) {
@@ -1180,6 +1313,12 @@ window.CraftCrawlInitFriends = function (scope = document) {
         }
 
         return '';
+    }
+
+    function renderFeedDetailLinkRow(item) {
+        const link = renderFeedDetailLink(item);
+
+        return link ? `<div class="feed-detail-link-row">${link}</div>` : '';
     }
 
     function loadFeed() {

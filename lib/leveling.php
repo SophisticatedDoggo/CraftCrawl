@@ -1416,25 +1416,25 @@ function craftcrawl_level_reward_catalog($current_level) {
     $rewards = [
         ['level' => 2, 'name' => 'Trail Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'trail-dark'],
         ['level' => 2, 'name' => 'Trail Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'trail-dark'],
+        ['level' => 7, 'name' => 'Ember Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'ember'],
+        ['level' => 7, 'name' => 'Ember App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'ember'],
         ['level' => 8, 'name' => '1st Badge Showcase Slot', 'description' => 'Feature 1 earned badge on your profile.', 'type' => 'Showcase'],
-        ['level' => 14, 'name' => 'Ember Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'ember'],
-        ['level' => 14, 'name' => 'Ember App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'ember'],
+        ['level' => 12, 'name' => 'Ember Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'ember-dark'],
+        ['level' => 12, 'name' => 'Ember Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'ember-dark'],
         ['level' => 16, 'name' => '2nd Badge Showcase Slot', 'description' => 'Feature 2 earned badges on your profile.', 'type' => 'Showcase'],
+        ['level' => 17, 'name' => 'Blackberry Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'blackberry'],
+        ['level' => 17, 'name' => 'Blackberry App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'blackberry'],
+        ['level' => 22, 'name' => 'Blackberry Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'blackberry-dark'],
+        ['level' => 22, 'name' => 'Blackberry Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'blackberry-dark'],
         ['level' => 24, 'name' => '3rd Badge Showcase Slot', 'description' => 'Feature 3 earned badges on your profile.', 'type' => 'Showcase'],
-        ['level' => 38, 'name' => 'Ember Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'ember-dark'],
-        ['level' => 38, 'name' => 'Ember Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'ember-dark'],
-        ['level' => 44, 'name' => 'Riverstone Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'riverstone'],
-        ['level' => 44, 'name' => 'Riverstone App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'riverstone'],
-        ['level' => 52, 'name' => 'Blackberry Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'blackberry'],
-        ['level' => 52, 'name' => 'Blackberry App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'blackberry'],
-        ['level' => 72, 'name' => 'Barnwood Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'barnwood'],
-        ['level' => 72, 'name' => 'Barnwood App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'barnwood'],
-        ['level' => 78, 'name' => 'Riverstone Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'riverstone-dark'],
-        ['level' => 78, 'name' => 'Riverstone Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'riverstone-dark'],
-        ['level' => 90, 'name' => 'Blackberry Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'blackberry-dark'],
-        ['level' => 90, 'name' => 'Blackberry Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'blackberry-dark'],
-        ['level' => 96, 'name' => 'Barnwood Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'barnwood-dark'],
-        ['level' => 96, 'name' => 'Barnwood Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'barnwood-dark'],
+        ['level' => 27, 'name' => 'Riverstone Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'riverstone'],
+        ['level' => 27, 'name' => 'Riverstone App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'riverstone'],
+        ['level' => 32, 'name' => 'Riverstone Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'riverstone-dark'],
+        ['level' => 32, 'name' => 'Riverstone Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'riverstone-dark'],
+        ['level' => 37, 'name' => 'Barnwood Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'barnwood'],
+        ['level' => 37, 'name' => 'Barnwood App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'barnwood'],
+        ['level' => 42, 'name' => 'Barnwood Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'barnwood-dark'],
+        ['level' => 42, 'name' => 'Barnwood Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'barnwood-dark'],
     ];
 
     $titles = [
@@ -1524,50 +1524,39 @@ function craftcrawl_user_effective_title($level, $selected_title_index) {
 
 function craftcrawl_next_reward_preview($level) {
     $level = max(1, min(CRAFTCRAWL_MAX_LEVEL, (int) $level));
-    $milestones = [
-        2   => 'Trail Dark Display Theme',
-        5   => 'Frame 1',
-        6   => 'First Sipper Title',
-        7   => 'Frame 2',
-        8   => '1st badge showcase slot',
-        10  => 'Frame 3',
-        12  => 'Frame 4',
-        14  => 'Ember Display Theme',
-        15  => 'Frame 5',
-        16  => '2nd badge showcase slot',
-        18  => 'Frame 5.1',
-        20  => 'Frame 6',
-        22  => 'Ember App Icon',
-        24  => 'Frame 7 + 3rd badge showcase slot',
-        25  => 'Taproom Regular Title',
-        27  => 'Frame 8',
-        30  => 'Frame 9',
-        34  => 'Frame 10',
-        38  => 'Ember Dark Display Theme',
-        40  => 'Frame 11',
-        45  => 'Frame 12',
-        48  => 'Trail Dark App Icon',
-        50  => 'Frame 13',
-        55  => 'Frame 14',
-        60  => 'Frame 15',
-        63  => 'Ember Dark App Icon',
-        65  => 'Frame 16',
-        70  => 'Frame 17',
-        76  => 'Frame 18',
-        82  => 'Frame 19',
-        88  => 'Frame 20',
-        94  => 'Frame 21',
-        98  => 'Frame 22',
-        100 => 'Frame 23',
-    ];
 
-    foreach ($milestones as $milestone_level => $description) {
-        if ($level < $milestone_level) {
-            return ['level' => $milestone_level, 'description' => $description];
+    $rewards_by_level = [];
+    foreach (craftcrawl_level_reward_catalog(CRAFTCRAWL_MAX_LEVEL) as $reward) {
+        $reward_level = (int) ($reward['level'] ?? 0);
+        if ($reward_level <= $level) {
+            continue;
         }
+
+        $rewards_by_level[$reward_level][] = $reward['name'];
     }
 
-    return null;
+    foreach (craftcrawl_profile_frame_colors() as $frame) {
+        $reward_level = (int) ($frame['level'] ?? 0);
+        if ($reward_level <= $level) {
+            continue;
+        }
+
+        $rewards_by_level[$reward_level][] = $frame['label'];
+    }
+
+    if (!$rewards_by_level) {
+        return null;
+    }
+
+    ksort($rewards_by_level, SORT_NUMERIC);
+    $next_level = (int) array_key_first($rewards_by_level);
+    $reward_names = array_values(array_unique($rewards_by_level[$next_level]));
+
+    return [
+        'level' => $next_level,
+        'description' => implode(', ', $reward_names),
+        'rewards' => $reward_names,
+    ];
 }
 
 ?>

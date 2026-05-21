@@ -12,6 +12,7 @@ $craftcrawl_portal_active = $craftcrawl_portal_active ?? '';
             Friends
             <span class="notification-badge" data-friends-menu-badge hidden></span>
         </a>
+        <a href="rewards.php">Rewards</a>
         <a href="profile.php">Profile</a>
         <a class="settings-icon-link" href="settings.php" aria-label="Settings">
             <span aria-hidden="true">⚙</span>

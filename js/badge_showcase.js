@@ -1,17 +1,18 @@
 window.CraftCrawlInitBadgeShowcase = function (root = document) {
     const section = root.querySelector('[data-badge-showcase]');
 
-    if (!section) {
-        return;
-    }
-
-    if (section.dataset.shellReady === 'true') {
+    if (!section || section.dataset.shellReady === 'true') {
         return;
     }
     section.dataset.shellReady = 'true';
 
     const csrfToken = section.dataset.csrfToken || '';
     const slotCount = parseInt(section.dataset.slotCount || '1', 10);
+    const editor = section.querySelector('[data-showcase-editor]');
+    const status = section.querySelector('[data-showcase-editor-status]');
+    const slotsWrap = section.querySelector('[data-showcase-editor-slots]');
+    const earnedList = section.querySelector('[data-showcase-earned-list]');
+    let selectedBadgeKey = '';
 
     function postForm(url, values) {
         const formData = new FormData();
@@ -33,7 +34,29 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
         return `../images/badges/${encodeURIComponent(String(badgeKey || ''))}.svg`;
     }
 
-    function renderShowcase(showcase) {
+    function badgeData(badgeKey) {
+        const badge = Array.from(section.querySelectorAll('[data-earned-badge]'))
+            .find((item) => (item.dataset.badgeKey || '') === badgeKey);
+        if (!badge) return null;
+
+        return {
+            badge_key: badge.dataset.badgeKey || '',
+            badge_name: badge.dataset.badgeName || '',
+            badge_description: badge.dataset.badgeDescription || '',
+            badge_tier: badge.dataset.badgeTier || ''
+        };
+    }
+
+    function currentShowcase() {
+        return Array.from(section.querySelectorAll('[data-editor-slot]'))
+            .map((slot) => ({
+                slot_order: Number(slot.dataset.editorSlot || 0),
+                badge_key: slot.dataset.badgeKey || ''
+            }))
+            .filter((item) => item.slot_order > 0 && item.badge_key !== '');
+    }
+
+    function renderReadOnlyShowcase(showcase) {
         const grid = section.querySelector('[data-showcase-grid]');
         if (!grid) return;
 
@@ -50,7 +73,6 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
                         <strong>${escapeHtml(badge.badge_name)}</strong>
                         <span>${escapeHtml(badge.badge_description)}</span>
                         <small>${escapeHtml(String(badge.badge_tier || '').replace(/^./, (first) => first.toUpperCase()))}</small>
-                        <button type="button" class="badge-showcase-remove" data-showcase-action="remove" data-badge-key="${escapeHtml(badge.badge_key)}">Remove</button>
                     </article>
                 `;
             } else {
@@ -62,107 +84,164 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
             }
         }
         grid.innerHTML = html;
-        wireShowcaseButtons(grid);
     }
 
-    function updateFeatureButtons(showcase) {
-        const showcasedKeys = new Set(showcase.map((s) => s.badge_key));
-        const isFull = showcase.length >= slotCount;
+    function renderSlot(slot, badge) {
+        const content = slot.querySelector('[data-editor-slot-content]');
+        if (!content) return;
 
-        root.querySelectorAll('[data-earned-badge-card]').forEach((card) => {
-            const badgeKey = card.dataset.badgeKey;
-
-            if (!badgeKey) return;
-
-            const isShowcased = showcasedKeys.has(badgeKey);
-            const canFeature = !isShowcased && !isFull;
-            const status = card.querySelector('.badge-goal-title-row span');
-
-            card.classList.toggle('is-showcased', isShowcased);
-            card.classList.toggle('can-feature', canFeature);
-            card.setAttribute('aria-disabled', String(!canFeature));
-            card.tabIndex = canFeature ? 0 : -1;
-            if (status) {
-                status.textContent = isShowcased ? 'Featured' : 'Unlocked';
-            }
-
-            if (canFeature) {
-                const badgeName = card.querySelector('strong')?.textContent || 'badge';
-                card.setAttribute('role', 'button');
-                card.setAttribute('aria-label', `Feature ${badgeName}`);
-            } else {
-                card.removeAttribute('role');
-                card.removeAttribute('aria-label');
-            }
-        });
-    }
-
-    function updateBadgeShowcase(target, action, badgeKey) {
-        if (!action || !badgeKey) return;
-
-        if (target instanceof HTMLButtonElement) {
-            target.disabled = true;
-        }
-        target.classList.add('is-loading');
-
-        postForm('update_badge_showcase.php', {
-            csrf_token: csrfToken,
-            action,
-            badge_key: badgeKey
-        })
-            .then((data) => {
-                if (!data.ok) {
-                    alert(data.message || 'Could not update badge showcase.');
-                    return;
-                }
-                renderShowcase(data.showcase);
-                updateFeatureButtons(data.showcase);
-            })
-            .catch(() => alert('Could not update badge showcase. Please try again.'))
-            .finally(() => {
-                if (target instanceof HTMLButtonElement) {
-                    target.disabled = false;
-                }
-                target.classList.remove('is-loading');
-            });
-    }
-
-    function handleShowcaseAction(button) {
-        updateBadgeShowcase(button, button.dataset.showcaseAction, button.dataset.badgeKey);
-    }
-
-    function handleEarnedBadgeFeature(card) {
-        if (!card.classList.contains('can-feature') || card.classList.contains('is-loading')) {
+        if (!badge) {
+            slot.dataset.badgeKey = '';
+            content.innerHTML = '<span class="badge-showcase-empty">Drop badge here</span>';
             return;
         }
 
-        updateBadgeShowcase(card, 'add', card.dataset.badgeKey);
+        slot.dataset.badgeKey = badge.badge_key;
+        content.innerHTML = `
+            <img class="badge-icon" src="${badgeIconPath(badge.badge_key)}" alt="" loading="lazy" width="52" height="52">
+            <strong>${escapeHtml(badge.badge_name)}</strong>
+            <button type="button" class="badge-showcase-editor-remove" data-editor-remove>Remove</button>
+        `;
     }
 
-    function wireShowcaseButtons(root) {
-        root.querySelectorAll('[data-showcase-action]').forEach((btn) => {
-            btn.addEventListener('click', () => handleShowcaseAction(btn));
+    function syncEarnedState() {
+        const showcasedKeys = new Set(currentShowcase().map((item) => item.badge_key));
+        section.querySelectorAll('[data-earned-badge]').forEach((badge) => {
+            const isShowcased = showcasedKeys.has(badge.dataset.badgeKey || '');
+            badge.classList.toggle('is-showcased', isShowcased);
+            badge.setAttribute('aria-pressed', String((badge.dataset.badgeKey || '') === selectedBadgeKey));
         });
     }
 
-    wireShowcaseButtons(section);
+    function setStatus(message, isError = false) {
+        if (!status) return;
+        status.hidden = !message;
+        status.textContent = message || '';
+        status.classList.toggle('is-error', isError);
+    }
 
-    root.querySelectorAll('[data-earned-badge-card]').forEach((card) => {
-        card.addEventListener('click', () => handleEarnedBadgeFeature(card));
-        card.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                handleEarnedBadgeFeature(card);
+    function placeBadge(slot, badgeKey) {
+        const badge = badgeData(badgeKey);
+        if (!slot || !badge) return;
+
+        section.querySelectorAll('[data-editor-slot]').forEach((otherSlot) => {
+            if (otherSlot !== slot && otherSlot.dataset.badgeKey === badge.badge_key) {
+                renderSlot(otherSlot, null);
             }
         });
+        renderSlot(slot, badge);
+        syncEarnedState();
+        setStatus('');
+    }
+
+    function openEditor() {
+        if (!editor) return;
+        editor.hidden = false;
+        document.body.classList.add('has-modal-open');
+        section.querySelector('[data-showcase-editor-save]')?.focus();
+        syncEarnedState();
+    }
+
+    function closeEditor() {
+        if (!editor) return;
+        editor.hidden = true;
+        document.body.classList.remove('has-modal-open');
+        selectedBadgeKey = '';
+        syncEarnedState();
+    }
+
+    function saveShowcase(button) {
+        if (button instanceof HTMLButtonElement) {
+            button.disabled = true;
+        }
+        setStatus('Saving...');
+
+        postForm('update_badge_showcase.php', {
+            csrf_token: csrfToken,
+            action: 'save',
+            showcase: JSON.stringify(currentShowcase())
+        })
+            .then((data) => {
+                if (!data.ok) {
+                    setStatus(data.message || 'Could not save badge showcase.', true);
+                    return;
+                }
+                renderReadOnlyShowcase(data.showcase || []);
+                closeEditor();
+            })
+            .catch(() => setStatus('Could not save badge showcase. Please try again.', true))
+            .finally(() => {
+                if (button instanceof HTMLButtonElement) {
+                    button.disabled = false;
+                }
+            });
+    }
+
+    section.querySelector('[data-showcase-editor-open]')?.addEventListener('click', openEditor);
+    section.querySelectorAll('[data-showcase-editor-close]').forEach((button) => {
+        button.addEventListener('click', closeEditor);
+    });
+    section.querySelector('[data-showcase-editor-save]')?.addEventListener('click', (event) => {
+        saveShowcase(event.currentTarget);
     });
 
-    updateFeatureButtons(Array.from(section.querySelectorAll('.badge-showcase-slot.is-filled')).map((slot) => {
-        const button = slot.querySelector('[data-showcase-action="remove"]');
-        return {
-            slot_order: Number(slot.dataset.showcaseSlot || 0),
-            badge_key: button?.dataset.badgeKey || ''
-        };
-    }).filter((badge) => badge.badge_key));
+    earnedList?.addEventListener('dragstart', (event) => {
+        const badge = event.target instanceof Element ? event.target.closest('[data-earned-badge]') : null;
+        if (!badge) return;
+        event.dataTransfer.effectAllowed = 'copyMove';
+        event.dataTransfer.setData('text/plain', badge.dataset.badgeKey || '');
+    });
+
+    earnedList?.addEventListener('click', (event) => {
+        const badge = event.target instanceof Element ? event.target.closest('[data-earned-badge]') : null;
+        if (!badge) return;
+        selectedBadgeKey = selectedBadgeKey === badge.dataset.badgeKey ? '' : (badge.dataset.badgeKey || '');
+        syncEarnedState();
+        setStatus(selectedBadgeKey ? 'Choose a showcase slot for this badge.' : '');
+    });
+
+    slotsWrap?.addEventListener('dragover', (event) => {
+        const slot = event.target instanceof Element ? event.target.closest('[data-editor-slot]') : null;
+        if (!slot) return;
+        event.preventDefault();
+        slot.classList.add('is-drag-over');
+    });
+
+    slotsWrap?.addEventListener('dragleave', (event) => {
+        const slot = event.target instanceof Element ? event.target.closest('[data-editor-slot]') : null;
+        if (slot) slot.classList.remove('is-drag-over');
+    });
+
+    slotsWrap?.addEventListener('drop', (event) => {
+        const slot = event.target instanceof Element ? event.target.closest('[data-editor-slot]') : null;
+        if (!slot) return;
+        event.preventDefault();
+        slot.classList.remove('is-drag-over');
+        placeBadge(slot, event.dataTransfer.getData('text/plain'));
+    });
+
+    slotsWrap?.addEventListener('click', (event) => {
+        const remove = event.target instanceof Element ? event.target.closest('[data-editor-remove]') : null;
+        if (remove) {
+            renderSlot(remove.closest('[data-editor-slot]'), null);
+            syncEarnedState();
+            return;
+        }
+
+        const slot = event.target instanceof Element ? event.target.closest('[data-editor-slot]') : null;
+        if (slot && selectedBadgeKey) {
+            placeBadge(slot, selectedBadgeKey);
+            selectedBadgeKey = '';
+            syncEarnedState();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && editor && !editor.hidden) {
+            closeEditor();
+        }
+    });
+
+    syncEarnedState();
 };
 window.CraftCrawlInitBadgeShowcase();
