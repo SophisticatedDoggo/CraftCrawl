@@ -261,6 +261,14 @@ window.CraftCrawlInitFriends = function (scope = document) {
         }
     }
 
+    function highlightUnreadReactionEntries(panel) {
+        panel?.querySelectorAll('[data-reaction-list-item].is-unread').forEach((entry) => {
+            entry.classList.remove('notification-focus-target');
+            void entry.offsetWidth;
+            entry.classList.add('notification-focus-target');
+        });
+    }
+
     function focusFeedItemIfRequested() {
         if (!feed || hasFocusedFeedItem || !requestedFocusItemKey) {
             return;
@@ -279,10 +287,16 @@ window.CraftCrawlInitFriends = function (scope = document) {
             if (toggle && toggle.getAttribute('aria-expanded') !== 'true') {
                 window.setTimeout(() => {
                     toggle.click();
-                    window.setTimeout(() => focusReactionEntryIfRequested(item), 120);
+                    window.setTimeout(() => {
+                        highlightUnreadReactionEntries(item.querySelector('[data-reaction-disclosure-panel]'));
+                        focusReactionEntryIfRequested(item);
+                    }, 120);
                 }, 350);
             } else {
-                window.setTimeout(() => focusReactionEntryIfRequested(item), 120);
+                window.setTimeout(() => {
+                    highlightUnreadReactionEntries(item.querySelector('[data-reaction-disclosure-panel]'));
+                    focusReactionEntryIfRequested(item);
+                }, 120);
             }
         }
     }
@@ -405,6 +419,22 @@ window.CraftCrawlInitFriends = function (scope = document) {
         syncNativeAppBadge(badgeCount);
     }
 
+    function clearLocalSocialNotificationCount(value) {
+        const clearedCount = Math.max(0, Number(value || 0));
+        if (clearedCount < 1) {
+            return;
+        }
+
+        applyStatusCounts({
+            pending_invites: currentStatus.pendingInvites,
+            pending_recommendations: currentStatus.pendingRecommendations,
+            social_notifications: Math.max(0, currentStatus.socialNotifications - clearedCount),
+            new_friends: currentStatus.newFriends,
+            new_feed_items: currentStatus.newFeedItems,
+            badge_count: Math.max(0, currentStatus.badgeCount - clearedCount)
+        });
+    }
+
     function loadStatus() {
         return fetch(userEndpoint('friend_status.php'), { credentials: 'same-origin' })
             .then((response) => response.json())
@@ -435,7 +465,13 @@ window.CraftCrawlInitFriends = function (scope = document) {
             return Promise.resolve();
         }
 
+        const visibleBadgeText = disclosure.querySelector('.feed-action-unread-badge')?.textContent || '';
+        const visibleBadgeCount = visibleBadgeText.trim() === '9+' ? 9 : Number(visibleBadgeText.trim() || 0);
+        const unreadCount = Math.max(Number(disclosure.dataset.unreadCount || 0), visibleBadgeCount);
         disclosure.dataset.markingSeen = 'true';
+        disclosure.dataset.unreadCount = '0';
+        disclosure.querySelectorAll('.feed-action-unread-badge').forEach((badge) => badge.remove());
+        clearLocalSocialNotificationCount(unreadCount);
 
         return postForm(userEndpoint('feed_notification_seen.php'), {
             csrf_token: csrfToken,
@@ -446,8 +482,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 if (!data.ok) {
                     return;
                 }
-                disclosure.dataset.unreadCount = '0';
-                disclosure.querySelectorAll('.feed-action-unread-badge').forEach((badge) => badge.remove());
                 applyStatusCounts(data);
             })
             .catch(() => {})
@@ -1142,9 +1176,10 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 panel.hidden = isExpanded;
                 if (!isExpanded) {
                     setReactionPage(panel, Number(panel.dataset.reactionPage || 0), false);
+                    highlightUnreadReactionEntries(panel);
                 }
 
-                if (!isExpanded && Number(disclosure.dataset.unreadCount || 0) > 0) {
+                if (!isExpanded && (Number(disclosure.dataset.unreadCount || 0) > 0 || disclosure.querySelector('.feed-action-unread-badge'))) {
                     markReactionNotificationsSeen(disclosure);
                 }
                 return;
@@ -1343,7 +1378,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                             ${pages.map((page) => `
                                 <div class="feed-reaction-page">
                                     ${page.map((entry) => `
-                                        <div class="feed-reaction-list-item" data-reaction-list-item data-reaction-type="${escapeHtml(entry.type || '')}" data-reactor-id="${escapeHtml(entry.user_id || '')}">
+                                        <div class="feed-reaction-list-item${entry.is_unread ? ' is-unread' : ''}" data-reaction-list-item data-reaction-type="${escapeHtml(entry.type || '')}" data-reactor-id="${escapeHtml(entry.user_id || '')}" data-reaction-unread="${entry.is_unread ? 'true' : 'false'}">
                                             <span class="feed-reaction-list-symbol">${escapeHtml(reactionLabels[entry.type] || '')}</span>
                                             <strong>${escapeHtml(entry.name || 'Someone')}</strong>
                                             ${entry.created_at ? `<time>${escapeHtml(formatDate(entry.created_at))}</time>` : ''}

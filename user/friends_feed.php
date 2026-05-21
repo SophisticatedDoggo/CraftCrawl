@@ -545,11 +545,35 @@ foreach ($feed as $feed_item) {
 }
 $reactions_by_item = [];
 $reaction_entries_by_item = [];
+$reaction_seen_at_by_item = [];
 $comment_counts_by_item = [];
 
 if (!empty($feed_item_keys)) {
     $reaction_placeholders = implode(',', array_fill(0, count($feed_item_keys), '?'));
     $reaction_types = str_repeat('s', count($feed_item_keys));
+
+    $reaction_seen_sql = "
+        SELECT feed_item_key, seenAt
+        FROM feed_notification_reads
+        WHERE user_id=?
+            AND notification_type='reaction'
+            AND feed_item_key IN ($reaction_placeholders)
+    ";
+    $reaction_seen_stmt = $conn->prepare($reaction_seen_sql);
+    $reaction_seen_params = ['i' . $reaction_types, &$user_id];
+
+    foreach ($feed_item_keys as $index => $feed_item_key) {
+        $reaction_seen_params[] = &$feed_item_keys[$index];
+    }
+
+    call_user_func_array([$reaction_seen_stmt, 'bind_param'], $reaction_seen_params);
+    $reaction_seen_stmt->execute();
+    $reaction_seen_result = $reaction_seen_stmt->get_result();
+
+    while ($reaction_seen = $reaction_seen_result->fetch_assoc()) {
+        $reaction_seen_at_by_item[$reaction_seen['feed_item_key']] = $reaction_seen['seenAt'];
+    }
+
     $reaction_sql = "
         SELECT fr.feed_item_key, fr.reaction_type, fr.user_id, fr.createdAt, u.fName, u.lName
         FROM feed_reactions fr
@@ -593,12 +617,17 @@ if (!empty($feed_item_keys)) {
         if (!isset($reaction_entries_by_item[$key])) {
             $reaction_entries_by_item[$key] = [];
         }
+        $reaction_seen_at = $reaction_seen_at_by_item[$key] ?? $social_seen_at;
+        $is_unread = ($feed_owner_by_key[$key] ?? 0) === $user_id
+            && $reactor_id !== $user_id
+            && strtotime($reaction['createdAt']) > strtotime($reaction_seen_at);
         $reaction_entries_by_item[$key][] = [
             'type' => $type,
             'user_id' => $reactor_id,
             'name' => $reactor_id === $user_id ? 'You' : $reactor_name,
             'is_you' => $reactor_id === $user_id,
-            'created_at' => $reaction['createdAt']
+            'created_at' => $reaction['createdAt'],
+            'is_unread' => $is_unread
         ];
         $reactions_by_item[$key][$type]['count']++;
         $reactions_by_item[$key][$type]['reacted'] = $reactions_by_item[$key][$type]['reacted'] || $reactor_id === $user_id;

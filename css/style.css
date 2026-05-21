@@ -3416,6 +3416,11 @@ a.text-link:focus {
     font-size: 13px;
 }
 
+.feed-reaction-list-item.is-unread {
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
 .feed-reaction-list-symbol {
     font-size: 16px;
     line-height: 1;
