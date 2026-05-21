@@ -13,6 +13,7 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
     const slotsWrap = section.querySelector('[data-showcase-editor-slots]');
     const earnedList = section.querySelector('[data-showcase-earned-list]');
     const modalPanel = section.querySelector('.badge-showcase-modal-panel');
+    const dragStartThreshold = 16;
     let selectedBadgeKey = '';
     let dragState = null;
     let suppressNextClick = false;
@@ -168,12 +169,16 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
         clone.style.zIndex = '120';
         clone.style.pointerEvents = 'none';
         document.body.appendChild(clone);
+        dragState.cloneWidth = clone.offsetWidth || Math.min(rect.width, 280);
+        dragState.cloneHeight = clone.offsetHeight || rect.height;
         return clone;
     }
 
     function moveDragClone(x, y) {
         if (!dragState?.clone) return;
-        dragState.clone.style.transform = `translate3d(${x + 12}px, ${y + 12}px, 0)`;
+        const offsetX = (dragState.cloneWidth || dragState.clone.offsetWidth || 0) / 2;
+        const offsetY = (dragState.cloneHeight || dragState.clone.offsetHeight || 0) / 2;
+        dragState.clone.style.transform = `translate3d(${x - offsetX}px, ${y - offsetY}px, 0)`;
     }
 
     function maybeAutoScroll(y) {
@@ -198,7 +203,9 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
             startY: event.clientY,
             isDragging: false,
             source: badge,
-            clone: null
+            clone: null,
+            cloneWidth: 0,
+            cloneHeight: 0
         };
         badge.setPointerCapture?.(event.pointerId);
     }
@@ -207,7 +214,7 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
         if (!dragState || dragState.pointerId !== event.pointerId) return;
 
         const distance = Math.hypot(event.clientX - dragState.startX, event.clientY - dragState.startY);
-        if (!dragState.isDragging && distance < 5) {
+        if (!dragState.isDragging && distance < dragStartThreshold) {
             return;
         }
 
