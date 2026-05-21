@@ -9977,6 +9977,16 @@ body.has-modal-open {
     color: var(--color-heading);
 }
 
+.badge-showcase-earned-badge em {
+    display: block;
+    margin-top: 2px;
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
 .badge-showcase-editor-remove {
     grid-column: 2;
     justify-self: start;

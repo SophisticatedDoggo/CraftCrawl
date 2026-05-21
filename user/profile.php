@@ -209,7 +209,12 @@ if (!$profile) {
     $showcased_keys = array_column($showcase_rows, 'badge_key');
 
     $earned_badges = [];
+    $badge_requirement_by_key = [];
     if ($is_own_profile) {
+        foreach (craftcrawl_user_badge_progress($conn, $profile_id) as $badge_progress) {
+            $badge_requirement_by_key[$badge_progress['key']] = $badge_progress['requirement'];
+        }
+
         $earned_badges_stmt = $conn->prepare("
             SELECT badge_key, badge_name, badge_description, badge_category, badge_tier
             FROM user_badges
@@ -547,6 +552,7 @@ if (!$profile) {
                                                 <p class="form-help">Earn a badge to start building your showcase.</p>
                                             <?php endif; ?>
                                             <?php foreach ($earned_badges as $badge) : ?>
+                                                <?php $badge_requirement = $badge_requirement_by_key[$badge['badge_key']] ?? $badge['badge_description']; ?>
                                                 <button
                                                     type="button"
                                                     class="badge-showcase-earned-badge<?php echo in_array($badge['badge_key'], $showcased_keys, true) ? ' is-showcased' : ''; ?>"
@@ -555,11 +561,13 @@ if (!$profile) {
                                                     data-badge-key="<?php echo escape_output($badge['badge_key']); ?>"
                                                     data-badge-name="<?php echo escape_output($badge['badge_name']); ?>"
                                                     data-badge-description="<?php echo escape_output($badge['badge_description']); ?>"
+                                                    data-badge-requirement="<?php echo escape_output($badge_requirement); ?>"
                                                     data-badge-tier="<?php echo escape_output($badge['badge_tier']); ?>"
                                                 >
                                                     <img class="badge-icon" src="../images/badges/<?php echo escape_output($badge['badge_key']); ?>.svg" alt="" loading="lazy" width="46" height="46">
                                                     <span>
                                                         <strong><?php echo escape_output($badge['badge_name']); ?></strong>
+                                                        <em><?php echo escape_output($badge_requirement); ?></em>
                                                         <small><?php echo escape_output(ucfirst($badge['badge_tier'])); ?></small>
                                                     </span>
                                                 </button>

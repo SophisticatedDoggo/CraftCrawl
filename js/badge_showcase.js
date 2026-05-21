@@ -43,6 +43,7 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
             badge_key: badge.dataset.badgeKey || '',
             badge_name: badge.dataset.badgeName || '',
             badge_description: badge.dataset.badgeDescription || '',
+            badge_requirement: badge.dataset.badgeRequirement || '',
             badge_tier: badge.dataset.badgeTier || ''
         };
     }
