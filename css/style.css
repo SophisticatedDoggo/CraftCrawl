@@ -3331,7 +3331,6 @@ a.text-link:focus {
     min-height: 34px;
     padding: 7px 10px;
     border: 0;
-    border-bottom: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
     border-radius: 0;
     color: var(--color-muted);
     background: transparent;
@@ -3344,7 +3343,6 @@ a.text-link:focus {
 .feed-reaction-disclosure-toggle:focus {
     color: var(--color-primary);
     background: transparent;
-    border-bottom-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-border));
 }
 
 .feed-reaction-disclosure-toggle[aria-expanded="true"] .feed-reaction-disclosure-arrow {
