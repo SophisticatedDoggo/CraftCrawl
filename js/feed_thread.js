@@ -55,6 +55,108 @@ function focusNotificationTargetWhenVisible(target) {
 }
 
 window.CraftCrawlInitFeedThread = function (root = document) {
+    const threadPage = root.querySelector('.feed-thread-page');
+
+    if (threadPage && threadPage.dataset.swipeDismissReady !== 'true') {
+        threadPage.dataset.swipeDismissReady = 'true';
+
+        const swipe = {
+            active: false,
+            pointerId: null,
+            startX: 0,
+            startY: 0,
+            lastX: 0,
+            dragging: false
+        };
+
+        function isSwipeIgnored(target) {
+            return Boolean(target.closest('a, button, input, textarea, select, label, [role="button"], .feed-reaction-swipe, .feed-comment-form'));
+        }
+
+        function markThreadReturnAnchor() {
+            const itemKey = threadPage.dataset.feedThreadItemKey || '';
+            if (itemKey) {
+                try {
+                    sessionStorage.setItem('craftcrawlFeedThreadReturnItemKey', itemKey);
+                } catch (_) {}
+            }
+        }
+
+        threadPage.querySelectorAll('[data-back-link]').forEach((link) => {
+            if (link.dataset.feedThreadReturnReady === 'true') return;
+            link.dataset.feedThreadReturnReady = 'true';
+            link.addEventListener('click', markThreadReturnAnchor, { capture: true });
+        });
+
+        function dismissThread() {
+            markThreadReturnAnchor();
+            threadPage.classList.add('feed-thread-page-compacting');
+            window.setTimeout(() => {
+                if (window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    window.location.href = 'feed.php';
+                }
+            }, 180);
+        }
+
+        threadPage.addEventListener('pointerdown', (event) => {
+            if (event.pointerType === 'mouse' && event.button !== 0) return;
+            if (isSwipeIgnored(event.target)) return;
+
+            swipe.active = true;
+            swipe.pointerId = event.pointerId;
+            swipe.startX = event.clientX;
+            swipe.startY = event.clientY;
+            swipe.lastX = event.clientX;
+            swipe.dragging = false;
+            threadPage.setPointerCapture?.(event.pointerId);
+        });
+
+        threadPage.addEventListener('pointermove', (event) => {
+            if (!swipe.active || event.pointerId !== swipe.pointerId) return;
+
+            const deltaX = event.clientX - swipe.startX;
+            const deltaY = event.clientY - swipe.startY;
+
+            if (!swipe.dragging) {
+                if (Math.abs(deltaY) > 18 && Math.abs(deltaY) > Math.abs(deltaX)) {
+                    swipe.active = false;
+                    return;
+                }
+                if (deltaX < 12 || Math.abs(deltaX) < Math.abs(deltaY) * 1.15) {
+                    return;
+                }
+                swipe.dragging = true;
+                threadPage.classList.add('is-swipe-dragging');
+            }
+
+            const dragX = Math.max(0, deltaX);
+            swipe.lastX = event.clientX;
+            threadPage.style.transform = `translateX(${dragX}px) scale(${Math.max(0.96, 1 - dragX / 2600)})`;
+            threadPage.style.opacity = String(Math.max(0.35, 1 - dragX / 520));
+        });
+
+        function finishSwipe(event) {
+            if (!swipe.active || event.pointerId !== swipe.pointerId) return;
+
+            const deltaX = event.clientX - swipe.startX;
+            swipe.active = false;
+            threadPage.classList.remove('is-swipe-dragging');
+            threadPage.style.transform = '';
+            threadPage.style.opacity = '';
+
+            if (swipe.dragging && deltaX > Math.min(150, window.innerWidth * 0.28)) {
+                dismissThread();
+            }
+
+            swipe.dragging = false;
+        }
+
+        threadPage.addEventListener('pointerup', finishSwipe);
+        threadPage.addEventListener('pointercancel', finishSwipe);
+    }
+
     root.querySelectorAll('[data-reply-toggle]').forEach((button) => {
         if (button.dataset.replyToggleReady === 'true') return;
         button.dataset.replyToggleReady = 'true';

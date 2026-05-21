@@ -3037,6 +3037,23 @@ a.text-link:focus {
     border-bottom: 1px solid var(--color-border);
     border-radius: 0;
     background: transparent;
+    cursor: pointer;
+    transform-origin: center top;
+    transition: transform 180ms ease, background-color 180ms ease, opacity 180ms ease;
+}
+
+.friends-feed-item:active,
+.friends-feed-item.is-opening-thread {
+    transform: scale(0.985);
+    background: color-mix(in srgb, var(--color-primary) 5%, transparent);
+}
+
+.friends-feed-item.is-thread-return-anchor {
+    animation: feedThreadReturnAnchor 560ms cubic-bezier(.2, .82, .2, 1) both;
+}
+
+.friends-feed-item:has(a:hover, button:hover, input:hover, textarea:hover, select:hover) {
+    cursor: default;
 }
 
 .friend-search-result strong,
@@ -3806,6 +3823,53 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 .feed-thread-page {
     max-width: 760px;
+    touch-action: pan-y;
+    transform-origin: center top;
+    will-change: transform, opacity;
+}
+
+.feed-thread-page .settings-header {
+    justify-content: flex-start;
+    margin-bottom: 10px;
+}
+
+.business-header-actions a.feed-thread-back-link,
+a.mobile-context-back.feed-thread-back-link {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    color: var(--color-primary);
+    background: transparent;
+    box-shadow: none;
+    font-size: 2rem;
+    line-height: 1;
+    font-weight: 900;
+}
+
+.business-header-actions a.feed-thread-back-link:hover,
+.business-header-actions a.feed-thread-back-link:focus,
+a.mobile-context-back.feed-thread-back-link:hover,
+a.mobile-context-back.feed-thread-back-link:focus {
+    color: var(--color-primary-dark);
+    background: transparent;
+    box-shadow: none;
+}
+
+.feed-thread-page-entering {
+    animation: feedThreadExpandIn 360ms cubic-bezier(.2, .82, .2, 1) both;
+}
+
+.feed-thread-page.is-swipe-dragging {
+    touch-action: pan-y;
+    transition: none;
+}
+
+.feed-thread-page-dismissing {
+    animation: feedThreadSwipeAway 190ms ease-in both;
+}
+
+.feed-thread-page-compacting {
+    animation: feedThreadCompactOut 210ms cubic-bezier(.3, 0, .7, 1) both;
 }
 
 .feed-thread-panel {
@@ -3815,6 +3879,72 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 .feed-thread-post {
     margin: 0;
+}
+
+@keyframes feedThreadExpandIn {
+    0% {
+        opacity: 0;
+        transform: translateY(22px) scale(.94);
+    }
+    68% {
+        opacity: 1;
+        transform: translateY(-2px) scale(1.006);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes feedThreadSwipeAway {
+    0% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(100%) scale(.96);
+    }
+}
+
+@keyframes feedThreadCompactOut {
+    0% {
+        opacity: 1;
+        transform: translateX(0) translateY(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(18px) translateY(24px) scale(.86);
+    }
+}
+
+@keyframes feedThreadReturnAnchor {
+    0% {
+        transform: scale(.94);
+        background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 0%, transparent);
+    }
+    58% {
+        transform: scale(1.012);
+        background: color-mix(in srgb, var(--color-primary) 9%, transparent);
+        box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-primary) 11%, transparent);
+    }
+    100% {
+        transform: scale(1);
+        background: transparent;
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 0%, transparent);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .friends-feed-item,
+    .feed-thread-page-entering,
+    .feed-thread-page-dismissing,
+    .feed-thread-page-compacting,
+    .friends-feed-item.is-thread-return-anchor {
+        animation: none;
+        transition: none;
+    }
 }
 
 .feed-comment-list {

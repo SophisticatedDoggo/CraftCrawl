@@ -406,21 +406,14 @@ if ($feed_item) {
 </head>
 <body>
     <div data-user-page-content>
-    <main class="settings-page feed-thread-page" data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
+    <main class="settings-page feed-thread-page" data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>" data-feed-thread-item-key="<?php echo escape_output($item_key); ?>">
         <header class="settings-header">
-            <div>
-                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
-                <div>
-                    <h1>Feed Conversation</h1>
-                    <p>Reply to a CraftCrawl milestone.</p>
-                </div>
-            </div>
             <div class="business-header-actions user-subpage-header-actions">
-                <a href="feed.php" data-back-link>&lt;</a>
+                <a class="feed-thread-back-link" href="feed.php" data-back-link>&lt;</a>
                 <a href="friends.php">Friends</a>
                 <a href="profile.php">Profile</a>
             </div>
-            <a class="mobile-context-back" href="feed.php" data-back-link>&lt;</a>
+            <a class="mobile-context-back feed-thread-back-link" href="feed.php" data-back-link>&lt;</a>
         </header>
 
         <?php if (!$feed_item) : ?>

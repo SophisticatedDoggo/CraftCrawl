@@ -82,17 +82,6 @@ if (!function_exists('craftcrawl_render_portal_quest_card')) {
                 <span aria-hidden="true"></span>
                 <strong data-refresh-label>Pull to refresh</strong>
             </div>
-            <div class="events-feed-header">
-                <div>
-                    <h2>Upcoming Events</h2>
-                    <p>Events from CraftCrawl businesses.</p>
-                </div>
-                <button type="button" class="refresh-page-button" data-refresh-button>Refresh</button>
-                <label class="events-liked-toggle">
-                    <input type="checkbox" id="liked-events-only">
-                    Liked locations only
-                </label>
-            </div>
             <div id="events-feed" class="events-feed"></div>
         </section>
     </div>
@@ -102,13 +91,6 @@ if (!function_exists('craftcrawl_render_portal_quest_card')) {
             <div class="pull-refresh-indicator" data-refresh-indicator aria-live="polite">
                 <span aria-hidden="true"></span>
                 <strong data-refresh-label>Pull to refresh</strong>
-            </div>
-            <div class="friends-panel-header">
-                <div>
-                    <h2>Feed</h2>
-                    <p>Follow your friends' CraftCrawl milestones.</p>
-                </div>
-                <button type="button" class="refresh-page-button" data-refresh-button>Refresh</button>
             </div>
             <div class="friends-feed-header">
                 <h3>Friends Feed</h3>

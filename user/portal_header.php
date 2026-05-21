@@ -4,7 +4,7 @@ require_once __DIR__ . '/../lib/user_avatar.php';
 $craftcrawl_portal_active = $craftcrawl_portal_active ?? 'map';
 $craftcrawl_portal_show_search = $craftcrawl_portal_show_search ?? false;
 $craftcrawl_portal_shell = $craftcrawl_portal_shell ?? false;
-$craftcrawl_portal_show_level_summary = $craftcrawl_portal_shell || !in_array($craftcrawl_portal_active, ['events', 'feed'], true);
+$craftcrawl_portal_show_level_summary = !in_array($craftcrawl_portal_active, ['events', 'feed'], true);
 $craftcrawl_portal_avatar = null;
 
 if ($craftcrawl_portal_show_level_summary && isset($conn, $user_id)) {

@@ -74,6 +74,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let hasFocusedRequest = false;
     let hasFocusedFriend = false;
     let hasFocusedFeedItem = false;
+    const threadReturnStorageKey = 'craftcrawlFeedThreadReturnItemKey';
 
     function installFeedReactionHandler() {
         if (document.documentElement.dataset.feedReactionReady === 'true') {
@@ -1089,7 +1090,56 @@ window.CraftCrawlInitFriends = function (scope = document) {
         if (sentinel) {
             sentinel.hidden = !hasMore;
         }
+
+        animateThreadReturnAnchor();
     }
+
+    function takeThreadReturnItemKey() {
+        try {
+            const itemKey = sessionStorage.getItem(threadReturnStorageKey) || '';
+            if (itemKey) {
+                sessionStorage.removeItem(threadReturnStorageKey);
+            }
+            return itemKey;
+        } catch (_) {
+            return '';
+        }
+    }
+
+    function animateThreadReturnAnchor(attempt = 0, itemKey = '') {
+        const returnItemKey = itemKey || takeThreadReturnItemKey();
+        if (!feed || !returnItemKey) {
+            return;
+        }
+
+        window.requestAnimationFrame(() => {
+            const item = feed.querySelector(`[data-feed-item-key="${CSS.escape(returnItemKey)}"]`);
+            if (!item) {
+                if (attempt < 4) {
+                    window.setTimeout(() => animateThreadReturnAnchor(attempt + 1, returnItemKey), 120);
+                }
+                return;
+            }
+
+            const rect = item.getBoundingClientRect();
+            const outOfView = rect.top < 76 || rect.bottom > window.innerHeight - 86;
+            if (outOfView) {
+                item.scrollIntoView({ block: 'center' });
+            }
+
+            item.classList.remove('is-opening-thread', 'is-thread-return-anchor');
+            void item.offsetWidth;
+            item.classList.add('is-thread-return-anchor');
+            window.setTimeout(() => item.classList.remove('is-thread-return-anchor'), 620);
+        });
+    }
+
+    document.addEventListener('craftcrawl:user-shell-navigated', (event) => {
+        const url = new URL(event.detail?.url || window.location.href, window.location.href);
+        if (url.pathname.endsWith('/feed.php')) {
+            animateThreadReturnAnchor();
+        }
+    });
 
     // Delegated poll vote handler for feed items
     if (feed) {
@@ -1161,6 +1211,30 @@ window.CraftCrawlInitFriends = function (scope = document) {
         feed.addEventListener('pointercancel', finishReactionSwipe);
 
         feed.addEventListener('click', function (event) {
+            const interactiveTarget = event.target.closest('a, button, input, textarea, select, label, [role="button"], [data-reaction-disclosure], [data-feed-poll-section]');
+            const feedItem = event.target.closest('.friends-feed-item[data-feed-item-key]');
+            if (feedItem && !interactiveTarget && feed.contains(feedItem)) {
+                const itemKey = feedItem.dataset.feedItemKey || '';
+                if (!itemKey) {
+                    return;
+                }
+
+                event.preventDefault();
+                feedItem.classList.add('is-opening-thread');
+                document.documentElement.classList.add('feed-thread-open-requested');
+                window.CraftCrawlSaveUserShellBaseScroll?.();
+
+                const targetUrl = `feed_post.php?item=${encodeURIComponent(itemKey)}`;
+                if (typeof window.CraftCrawlNavigateUserShell === 'function') {
+                    window.CraftCrawlNavigateUserShell(targetUrl, { userInitiated: true }).then((handled) => {
+                        if (!handled) window.location.href = targetUrl;
+                    });
+                } else {
+                    window.location.href = targetUrl;
+                }
+                return;
+            }
+
             const reactionToggle = event.target.closest('[data-reaction-disclosure-toggle]');
             if (reactionToggle) {
                 const disclosure = reactionToggle.closest('[data-reaction-disclosure]');

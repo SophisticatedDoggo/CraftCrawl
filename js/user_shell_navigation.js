@@ -117,6 +117,7 @@
             const liveBaseContent = baseContent();
             const visibleContent = activeContent();
             const returningToBase = destinationIsBase && liveBaseContent && visibleContent !== liveBaseContent;
+            const isFeedThreadOpen = document.documentElement.classList.contains('feed-thread-open-requested');
 
             if (destinationIsBase && liveBaseContent) {
                 document.querySelectorAll('[data-user-page-content]').forEach((content) => {
@@ -152,6 +153,11 @@
                 document.body.className = doc.body.className;
                 document.title = doc.title;
                 await hydrateAssets(doc, url);
+                if (isFeedThreadOpen) {
+                    const threadPage = nextContent.querySelector('.feed-thread-page');
+                    threadPage?.classList.add('feed-thread-page-entering');
+                    window.setTimeout(() => threadPage?.classList.remove('feed-thread-page-entering'), 420);
+                }
                 initSwappedContent(nextContent);
             }
 
@@ -166,6 +172,7 @@
             window.location.href = url;
             return true;
         } finally {
+            document.documentElement.classList.remove('feed-thread-open-requested');
             navigating = false;
             document.documentElement.classList.remove('user-shell-is-navigating');
         }
