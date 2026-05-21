@@ -2798,10 +2798,12 @@ a.text-link:focus {
 }
 
 .events-feed {
+    position: relative;
     width: 100%;
     display: grid;
     gap: 14px;
     margin-top: 14px;
+    padding-right: 78px;
 }
 
 .events-feed-header {
@@ -4042,6 +4044,104 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 .event-feed-day-header span {
     flex: 0 0 auto;
+}
+
+.event-feed-date-rail {
+    position: sticky;
+    top: calc(86px + env(safe-area-inset-top, 0px));
+    z-index: 8;
+    grid-column: 1 / -1;
+    justify-self: end;
+    height: 0;
+    margin-right: -66px;
+    pointer-events: none;
+}
+
+.event-feed-date-rail-track {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    min-height: 172px;
+    width: 48px;
+}
+
+.event-feed-date-rail-track::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-primary) 42%, var(--color-border));
+    opacity: 0.55;
+}
+
+.event-feed-date-rail-track span {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    max-width: 42px;
+    min-height: 112px;
+    padding: 10px 6px;
+    border: 1px solid color-mix(in srgb, var(--color-primary) 42%, var(--color-border));
+    border-radius: 999px;
+    color: var(--color-on-primary);
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 96%, #ffffff 4%), var(--color-primary));
+    box-shadow: var(--shadow-md);
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.1;
+    text-align: center;
+    writing-mode: vertical-rl;
+    transform: translateY(0);
+    transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.event-feed-date-rail-track span.is-changing {
+    animation: event-date-rail-slide 260ms ease-out;
+}
+
+@keyframes event-date-rail-slide {
+    0% {
+        opacity: 0.68;
+        transform: translateY(14px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 760px) {
+    .events-feed {
+        padding-right: 0;
+    }
+
+    .event-feed-date-rail {
+        top: calc(76px + env(safe-area-inset-top, 0px));
+        margin-right: 6px;
+    }
+
+    .event-feed-date-rail-track {
+        min-height: 0;
+        width: auto;
+    }
+
+    .event-feed-date-rail-track::before {
+        display: none;
+    }
+
+    .event-feed-date-rail-track span {
+        min-width: 0;
+        max-width: none;
+        min-height: 0;
+        padding: 7px 10px;
+        font-size: 11px;
+        writing-mode: horizontal-tb;
+    }
 }
 
 .event-feed-cover {

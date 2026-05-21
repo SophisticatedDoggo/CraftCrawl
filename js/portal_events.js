@@ -42,8 +42,9 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
 
         let currentDateKey = '';
 
-        feedContainer.innerHTML = events.map((event) => {
+        const eventsMarkup = events.map((event) => {
             const eventDate = new Date(`${event.date}T${event.startTime}`);
+            const dayLabel = formatEventDayHeader(eventDate);
             const endTime = event.endTime ? ` - ${formatEventTime(event.endTime)}` : '';
             const eventUrl = `../event_details.php?id=${encodeURIComponent(event.id)}&date=${encodeURIComponent(event.date)}`;
             const commentsUrl = `feed_post.php?item=${encodeURIComponent(event.itemKey || `event:${event.id}:${event.date}`)}`;
@@ -58,7 +59,7 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
                 ? `<img class="event-feed-cover" src="${event.coverPhotoUrl}" alt="">`
                 : '';
             const dayHeader = event.date !== currentDateKey
-                ? `<div class="event-feed-day-header"><span>${formatEventDayHeader(eventDate)}</span></div>`
+                ? `<div class="event-feed-day-header" data-event-day-header data-date-key="${escapeHtml(event.date)}" data-date-label="${escapeHtml(dayLabel)}"><span>${escapeHtml(dayLabel)}</span></div>`
                 : '';
             currentDateKey = event.date;
 
@@ -90,6 +91,16 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
                 </article>
             `;
         }).join('');
+
+        feedContainer.innerHTML = `
+            <div class="event-feed-date-rail" aria-hidden="true">
+                <div class="event-feed-date-rail-track">
+                    <span data-event-date-rail-label></span>
+                </div>
+            </div>
+            ${eventsMarkup}
+        `;
+        setupEventDateRail(feedContainer);
 
         feedContainer.querySelectorAll('[data-event-want]').forEach((button) => {
             button.addEventListener('click', () => {
@@ -126,6 +137,63 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
                     });
             });
         });
+    }
+
+    function setupEventDateRail(container) {
+        const rail = container.querySelector('[data-event-date-rail-label]');
+        if (!rail) {
+            return;
+        }
+
+        const state = container.eventDateRailState || {
+            activeDate: '',
+            ticking: false
+        };
+        state.rail = rail;
+        state.activeDate = '';
+        container.eventDateRailState = state;
+
+        function updateRail() {
+            state.ticking = false;
+            const headers = Array.from(container.querySelectorAll('[data-event-day-header]'));
+            if (!headers.length || !state.rail) {
+                return;
+            }
+
+            const threshold = Math.min(window.innerHeight * 0.28, 160);
+            let activeHeader = headers[0];
+
+            headers.forEach((header) => {
+                if (header.getBoundingClientRect().top <= threshold) {
+                    activeHeader = header;
+                }
+            });
+
+            const nextDate = activeHeader.dataset.dateKey || '';
+            if (nextDate && nextDate !== state.activeDate) {
+                state.activeDate = nextDate;
+                state.rail.textContent = activeHeader.dataset.dateLabel || '';
+                state.rail.classList.remove('is-changing');
+                window.requestAnimationFrame(() => state.rail?.classList.add('is-changing'));
+            }
+        }
+
+        function requestUpdate() {
+            if (state.ticking) {
+                return;
+            }
+            state.ticking = true;
+            window.requestAnimationFrame(updateRail);
+        }
+
+        if (container.dataset.eventDateRailReady !== 'true') {
+            container.dataset.eventDateRailReady = 'true';
+            window.addEventListener('scroll', requestUpdate, { passive: true });
+            window.addEventListener('resize', requestUpdate);
+        }
+
+        updateRail();
+        window.setTimeout(updateRail, 80);
     }
 
     function formatBusinessType(type) {
