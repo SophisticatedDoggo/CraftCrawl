@@ -2,6 +2,7 @@
 require '../login_check.php';
 require_once '../lib/business_context.php';
 include '../db.php';
+require_once '../lib/business_event_comments.php';
 
 $selected_location = craftcrawl_require_selected_business_location($conn);
 
@@ -76,6 +77,7 @@ $events_stmt->bind_param("issss", $location_id, $month_start, $month_end, $month
 $events_stmt->execute();
 $events_result = $events_stmt->get_result();
 $events_by_date = [];
+$event_item_keys = [];
 
 while ($event = $events_result->fetch_assoc()) {
     add_recurring_event_occurrences($events_by_date, $event, $month_start, $month_end);
@@ -85,8 +87,13 @@ foreach ($events_by_date as $date => $events) {
     usort($events_by_date[$date], function ($a, $b) {
         return strcmp($a['startTime'], $b['startTime']);
     });
+
+    foreach ($events_by_date[$date] as $event) {
+        $event_item_keys[] = craftcrawl_business_event_item_key($event['id'], $date);
+    }
 }
 
+$event_comment_counts = craftcrawl_business_event_comment_counts_for_items($conn, (int) $_SESSION['business_account_id'], $event_item_keys);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -169,9 +176,20 @@ foreach ($events_by_date as $date => $events) {
                                 <span class="event-calendar-mobile-date"><?php echo escape_output(date('D, M j', strtotime($date))); ?></span>
 
                                 <?php foreach ($events_by_date[$date] ?? [] as $event) : ?>
+                                    <?php
+                                        $item_key = craftcrawl_business_event_item_key($event['id'], $date);
+                                        $comment_count = (int) ($event_comment_counts[$item_key]['total'] ?? 0);
+                                        $unread_count = (int) ($event_comment_counts[$item_key]['unread'] ?? 0);
+                                    ?>
                                     <a class="event-calendar-event" href="../event_details.php?id=<?php echo escape_output($event['id']); ?>&date=<?php echo escape_output($date); ?>">
                                         <span class="event-calendar-event-time"><?php echo escape_output(format_event_time_range($event)); ?></span>
                                         <span class="event-calendar-event-name"><?php echo escape_output($event['eName']); ?></span>
+                                    </a>
+                                    <a class="event-calendar-comments-link<?php echo $unread_count > 0 ? ' has-unread' : ''; ?>" href="event_comments.php?item=<?php echo rawurlencode($item_key); ?>">
+                                        <?php echo $comment_count > 0 ? escape_output($comment_count . ' ' . ($comment_count === 1 ? 'comment' : 'comments')) : 'Comments'; ?>
+                                        <?php if ($unread_count > 0) : ?>
+                                            <span><?php echo escape_output($unread_count); ?> new</span>
+                                        <?php endif; ?>
                                     </a>
                                 <?php endforeach; ?>
                             </div>

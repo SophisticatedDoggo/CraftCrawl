@@ -4,8 +4,19 @@ $craftcrawl_business_nav_page = basename($_SERVER['SCRIPT_NAME'] ?? '');
 $craftcrawl_business_nav_is_portal = $craftcrawl_business_nav_page === 'business_portal.php';
 $craftcrawl_business_nav_is_analytics = $craftcrawl_business_nav_page === 'analytics.php';
 $craftcrawl_business_nav_is_posts = $craftcrawl_business_nav_page === 'posts.php';
-$craftcrawl_business_nav_is_events = in_array($craftcrawl_business_nav_page, ['events.php', 'event_edit.php'], true);
+$craftcrawl_business_nav_is_events = in_array($craftcrawl_business_nav_page, ['events.php', 'event_edit.php', 'event_comments.php'], true);
 $craftcrawl_business_nav_is_edit = $craftcrawl_business_nav_page === 'business_edit.php';
+$craftcrawl_business_event_comment_badge = 0;
+
+if (isset($conn, $_SESSION['business_account_id'], $_SESSION['business_location_id'])) {
+    require_once dirname(__DIR__) . '/lib/business_event_comments.php';
+    $craftcrawl_business_event_comment_badge = (int) craftcrawl_business_event_unread_comment_summary(
+        $conn,
+        (int) $_SESSION['business_account_id'],
+        (int) $_SESSION['business_location_id'],
+        1
+    )['total'];
+}
 ?>
 <nav data-area-persistent-ui class="mobile-app-tabbar business-mobile-tabbar" aria-label="Business navigation">
     <a class="mobile-app-tab<?php echo $craftcrawl_business_nav_is_portal ? ' is-active' : ''; ?>" href="business_portal.php">
@@ -23,6 +34,9 @@ $craftcrawl_business_nav_is_edit = $craftcrawl_business_nav_page === 'business_e
     <a class="mobile-app-tab<?php echo $craftcrawl_business_nav_is_events ? ' is-active' : ''; ?>" href="events.php">
         <span class="mobile-app-tab-icon mobile-app-tab-icon-events" aria-hidden="true"></span>
         <span>Events</span>
+        <?php if ($craftcrawl_business_event_comment_badge > 0) : ?>
+            <span class="notification-badge"><?php echo htmlspecialchars((string) min($craftcrawl_business_event_comment_badge, 99), ENT_QUOTES, 'UTF-8'); ?></span>
+        <?php endif; ?>
     </a>
     <a class="mobile-app-tab<?php echo $craftcrawl_business_nav_is_edit ? ' is-active' : ''; ?>" href="business_edit.php">
         <span class="mobile-app-tab-icon mobile-app-tab-icon-edit" aria-hidden="true"></span>

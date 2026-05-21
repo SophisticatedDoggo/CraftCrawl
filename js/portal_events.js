@@ -40,25 +40,31 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
             return;
         }
 
+        let currentDateKey = '';
+
         feedContainer.innerHTML = events.map((event) => {
             const eventDate = new Date(`${event.date}T${event.startTime}`);
             const endTime = event.endTime ? ` - ${formatEventTime(event.endTime)}` : '';
             const eventUrl = `../event_details.php?id=${encodeURIComponent(event.id)}&date=${encodeURIComponent(event.date)}`;
+            const commentsUrl = `feed_post.php?item=${encodeURIComponent(event.itemKey || `event:${event.id}:${event.date}`)}`;
             const eventName = escapeHtml(event.name);
             const businessName = escapeHtml(event.businessName);
             const city = escapeHtml(event.city);
             const state = escapeHtml(event.state);
+            const commentCount = Number(event.commentCount || 0);
+            const commentLabel = commentCount > 0 ? `${commentCount} ${commentCount === 1 ? 'Comment' : 'Comments'}` : 'Comments';
             const description = event.description ? escapeHtml(event.description) : '';
             const coverPhoto = event.coverPhotoUrl
                 ? `<img class="event-feed-cover" src="${event.coverPhotoUrl}" alt="">`
                 : '';
+            const dayHeader = event.date !== currentDateKey
+                ? `<div class="event-feed-day-header"><span>${formatEventDayHeader(eventDate)}</span></div>`
+                : '';
+            currentDateKey = event.date;
 
             return `
+                ${dayHeader}
                 <article class="event-feed-item ${event.coverPhotoUrl ? 'event-feed-item-with-cover' : ''}">
-                    <div class="event-feed-date">
-                        <strong>${eventDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</strong>
-                        <span>${eventDate.toLocaleDateString(undefined, { weekday: 'short' })}</span>
-                    </div>
                     ${coverPhoto}
                     <div class="event-feed-details">
                         <h3>${eventName}</h3>
@@ -69,6 +75,7 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
                     <div class="event-feed-actions">
                         <a href="${eventUrl}">View event</a>
                         <a href="../business_details.php?id=${event.businessId}">View business</a>
+                        <a class="event-comments-link" href="${commentsUrl}">${commentLabel}</a>
                         <button
                             type="button"
                             class="event-want-button ${event.isWantToGo ? 'is-active' : ''}"
@@ -142,6 +149,12 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
             hour: 'numeric',
             minute: '2-digit'
         });
+    }
+
+    function formatEventDayHeader(date) {
+        const monthDay = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        const weekday = date.toLocaleDateString(undefined, { weekday: 'short' });
+        return `${monthDay}, ${weekday}`;
     }
 
     function escapeHtml(value) {

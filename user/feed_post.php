@@ -35,6 +35,7 @@ function feed_thread_reaction_options($item) {
     $options_by_type = [
         'first_visit' => ['cheers', 'nice_find'],
         'level_up' => ['cheers', 'nice_find', 'trophy'],
+        'event' => ['cheers', 'nice_find', 'want_to_go'],
         'event_want' => ['cheers', 'nice_find'],
         'location_want' => ['cheers', 'nice_find', 'want_to_go'],
         'badge_earned' => ['cheers', 'nice_find', 'trophy'],
@@ -158,6 +159,21 @@ function render_feed_thread_post($item, $actions_html = '') {
                 <div>
                     <strong>' . escape_output($want_phrase) . ' to go to ' . escape_output($item['event_name']) . '</strong>
                     <p>' . escape_output($item['business_name']) . ' · ' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
+                    <a href="../event_details.php?id=' . escape_output($item['event_id']) . '&date=' . escape_output($item['event_date']) . '">View event</a>
+                    ' . $actions_html . '
+                </div>
+            </article>
+        ';
+    }
+
+    if (($item['type'] ?? '') === 'event') {
+        return '
+            <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
+                <div class="friends-feed-icon">📅</div>
+                <div>
+                    <strong>' . escape_output($item['event_name']) . '</strong>
+                    <p>' . escape_output($item['business_name']) . ' · ' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
+                    ' . (!empty($item['event_description']) ? '<p>' . nl2br(escape_output($item['event_description'])) . '</p>' : '') . '
                     <a href="../event_details.php?id=' . escape_output($item['event_id']) . '&date=' . escape_output($item['event_date']) . '">View event</a>
                     ' . $actions_html . '
                 </div>

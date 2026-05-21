@@ -3,6 +3,7 @@ require '../login_check.php';
 require_once '../lib/business_context.php';
 include '../db.php';
 require_once '../lib/user_avatar.php';
+require_once '../lib/business_event_comments.php';
 
 $selected_location = craftcrawl_require_selected_business_location($conn);
 
@@ -237,6 +238,7 @@ $photo_stmt = $conn->prepare("
 $photo_stmt->bind_param("i", $location_id);
 $photo_stmt->execute();
 $business_photos = $photo_stmt->get_result();
+$event_comment_summary = craftcrawl_business_event_unread_comment_summary($conn, (int) $_SESSION['business_account_id'], $location_id, 5);
 
 ?>
 <!DOCTYPE html>
@@ -409,6 +411,26 @@ $business_photos = $photo_stmt->get_result();
             </div>
             <p>Create posts, polls, and reply to comments from your followers.</p>
             <a href="posts.php">Go to Posts &rarr;</a>
+        </section>
+
+        <section class="business-reviews-panel">
+            <div class="business-section-header">
+                <h2>Event Comments</h2>
+                <a href="events.php">View Events</a>
+            </div>
+            <?php if ((int) $event_comment_summary['total'] > 0) : ?>
+                <p><?php echo escape_output($event_comment_summary['total']); ?> new <?php echo (int) $event_comment_summary['total'] === 1 ? 'comment needs' : 'comments need'; ?> your attention.</p>
+                <div class="business-event-comment-list">
+                    <?php foreach ($event_comment_summary['recent'] as $event_comment) : ?>
+                        <a class="business-event-comment-link" href="event_comments.php?item=<?php echo rawurlencode($event_comment['feed_item_key']); ?>#comment-<?php echo escape_output($event_comment['id']); ?>">
+                            <strong><?php echo escape_output($event_comment['eName']); ?></strong>
+                            <span><?php echo escape_output(trim(($event_comment['fName'] ?? '') . ' ' . ($event_comment['lName'] ?? ''))); ?> commented <?php echo escape_output(date('M j, g:i A', strtotime($event_comment['createdAt']))); ?></span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            <?php else : ?>
+                <p>No new event comments right now.</p>
+            <?php endif; ?>
         </section>
 
         <section class="business-reviews-panel">

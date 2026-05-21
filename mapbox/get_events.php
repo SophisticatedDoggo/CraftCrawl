@@ -26,6 +26,8 @@ function add_event_occurrence(&$events, $event, $date) {
         'startTime' => $event['startTime'],
         'endTime' => $event['endTime'],
         'coverPhotoUrl' => !empty($event['cover_photo_key']) ? craftcrawl_cloudinary_delivery_url($event['cover_photo_key'], 'f_auto,q_auto,c_fill,w_520,h_300') : null,
+        'itemKey' => 'event:' . $event['id'] . ':' . $date,
+        'commentCount' => 0,
         'wantToGoCount' => 0,
         'isWantToGo' => false,
         'isRecurring' => (bool) $event['isRecurring']
@@ -135,6 +137,36 @@ try {
             $key = $event['id'] . ':' . $event['date'];
             $events[$index]['wantToGoCount'] = $want_counts[$key] ?? 0;
             $events[$index]['isWantToGo'] = !empty($my_wants[$key]);
+        }
+
+        $item_keys = array_values(array_unique(array_column($events, 'itemKey')));
+        if (!empty($item_keys)) {
+            $comment_placeholders = implode(',', array_fill(0, count($item_keys), '?'));
+            $comment_types = str_repeat('s', count($item_keys));
+            $comment_params = [$comment_types];
+
+            foreach ($item_keys as $index => $item_key) {
+                $comment_params[] = &$item_keys[$index];
+            }
+
+            $comment_stmt = $conn->prepare("
+                SELECT feed_item_key, COUNT(*) AS total
+                FROM feed_comments
+                WHERE deletedAt IS NULL AND feed_item_key IN ($comment_placeholders)
+                GROUP BY feed_item_key
+            ");
+            call_user_func_array([$comment_stmt, 'bind_param'], $comment_params);
+            $comment_stmt->execute();
+            $comment_result = $comment_stmt->get_result();
+            $comment_counts = [];
+
+            while ($comment = $comment_result->fetch_assoc()) {
+                $comment_counts[$comment['feed_item_key']] = (int) $comment['total'];
+            }
+
+            foreach ($events as $index => $event) {
+                $events[$index]['commentCount'] = $comment_counts[$event['itemKey']] ?? 0;
+            }
         }
     }
 } catch (Exception $e) {

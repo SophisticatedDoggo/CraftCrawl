@@ -502,7 +502,8 @@ CREATE TABLE IF NOT EXISTS feed_reactions (
 
 CREATE TABLE IF NOT EXISTS feed_comments (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_id INT,
+    business_id INT,
     parent_comment_id INT,
     feed_item_key VARCHAR(100) NOT NULL,
     body TEXT NOT NULL,
@@ -512,8 +513,11 @@ CREATE TABLE IF NOT EXISTS feed_comments (
     KEY idx_feed_comments_item (feed_item_key, createdAt),
     KEY idx_feed_comments_parent (parent_comment_id, createdAt),
     KEY idx_feed_comments_user (user_id),
+    KEY idx_feed_comments_business (business_id),
     CONSTRAINT fk_feed_comments_userId FOREIGN KEY (user_id)
     REFERENCES users(id),
+    CONSTRAINT fk_feed_comments_businessId FOREIGN KEY (business_id)
+    REFERENCES businesses(id),
     CONSTRAINT fk_feed_comments_parentId FOREIGN KEY (parent_comment_id)
     REFERENCES feed_comments(id)
 );
@@ -528,6 +532,18 @@ CREATE TABLE IF NOT EXISTS feed_notification_reads (
     KEY idx_feed_notification_reads_item (feed_item_key, notification_type),
     CONSTRAINT fk_feed_notification_read_userId FOREIGN KEY (user_id)
     REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS business_feed_notification_reads (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    business_account_id INT NOT NULL,
+    feed_item_key VARCHAR(100) NOT NULL,
+    notification_type ENUM('comment') NOT NULL,
+    seenAt DATETIME NOT NULL,
+    UNIQUE KEY unique_business_feed_notification_read (business_account_id, feed_item_key, notification_type),
+    KEY idx_business_feed_notification_reads_item (feed_item_key, notification_type),
+    CONSTRAINT fk_business_feed_notification_read_accountId FOREIGN KEY (business_account_id)
+    REFERENCES business_accounts(id)
 );
 
 CREATE TABLE IF NOT EXISTS location_recommendations (

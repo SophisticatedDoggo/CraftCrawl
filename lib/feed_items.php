@@ -61,6 +61,10 @@ function craftcrawl_feed_item_owner_id($conn, $item_key) {
         return $want ? (int) $want['user_id'] : 0;
     }
 
+    if (preg_match('/^event:\d+:\d{4}-\d{2}-\d{2}$/', $item_key)) {
+        return 0;
+    }
+
     if (preg_match('/^location_want:(\d+)$/', $item_key, $matches)) {
         $want_id = (int) $matches[1];
         $stmt = $conn->prepare("SELECT user_id FROM want_to_go_locations WHERE id=? LIMIT 1");
@@ -111,6 +115,39 @@ function craftcrawl_feed_actor_payload($row) {
         'frame' => $row['selected_profile_frame'] ?? null,
         'frame_style' => $row['selected_profile_frame_style'] ?? null
     ];
+}
+
+function craftcrawl_event_occurrence_is_valid($event, $occurrence_date) {
+    if (($event['eventDate'] ?? '') === $occurrence_date) {
+        return true;
+    }
+
+    if (empty($event['isRecurring']) || empty($event['recurrenceRule']) || empty($event['recurrenceEnd'])) {
+        return false;
+    }
+
+    if ($occurrence_date < $event['eventDate'] || $occurrence_date > $event['recurrenceEnd']) {
+        return false;
+    }
+
+    $occurrence = strtotime($event['eventDate']);
+    $target = strtotime($occurrence_date);
+    $end = strtotime($event['recurrenceEnd']);
+    $interval = $event['recurrenceRule'] === 'monthly' ? '+1 month' : '+1 week';
+
+    while ($occurrence && $occurrence <= $end) {
+        if ($occurrence === $target) {
+            return true;
+        }
+
+        $next = strtotime($interval, $occurrence);
+        if (!$next || $next <= $occurrence) {
+            break;
+        }
+        $occurrence = $next;
+    }
+
+    return false;
 }
 
 function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
@@ -220,6 +257,45 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
             'business_name' => $want['bName'],
             'city' => $want['city'],
             'state' => $want['state']
+        ];
+    }
+
+    if (preg_match('/^event:(\d+):(\d{4}-\d{2}-\d{2})$/', $item_key, $matches)) {
+        $event_id = (int) $matches[1];
+        $occurrence_date = $matches[2];
+        $stmt = $conn->prepare("
+            SELECT e.id, e.eName, e.eDescription, e.startTime, e.endTime, e.createdAt,
+                e.eventDate, e.isRecurring, e.recurrenceRule, e.recurrenceEnd,
+                l.id AS business_id, l.name AS bName, l.location_type AS bType, l.city, l.state
+            FROM events e
+            INNER JOIN locations l ON l.id = e.location_id
+            WHERE e.id=? AND l.visibility_status IN ('public_unclaimed','public_claimed')
+            LIMIT 1
+        ");
+        $stmt->bind_param("i", $event_id);
+        $stmt->execute();
+        $event = $stmt->get_result()->fetch_assoc();
+
+        if (!$event || !craftcrawl_event_occurrence_is_valid($event, $occurrence_date)) {
+            return null;
+        }
+
+        return [
+            'item_key' => $item_key,
+            'type' => 'event',
+            'created_at' => $occurrence_date . ' ' . $event['startTime'],
+            'is_self' => false,
+            'event_id' => (int) $event['id'],
+            'event_name' => $event['eName'],
+            'event_description' => $event['eDescription'],
+            'event_date' => $occurrence_date,
+            'event_start_time' => $event['startTime'],
+            'event_end_time' => $event['endTime'],
+            'business_id' => (int) $event['business_id'],
+            'business_name' => $event['bName'],
+            'business_type' => $event['bType'],
+            'city' => $event['city'],
+            'state' => $event['state']
         ];
     }
 
