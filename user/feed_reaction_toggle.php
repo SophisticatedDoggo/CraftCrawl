@@ -357,7 +357,10 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user
                     $owner_id,
                     'New reaction',
                     $reactor_name . ' reacted ' . ($reaction_labels[$reaction_type] ?? 'to your post') . ' on your CraftCrawl post.',
-                    'user/feed.php?focus_item=' . rawurlencode($item_key) . '&focus_section=reactions'
+                    'user/feed.php?focus_item=' . rawurlencode($item_key)
+                        . '&focus_section=reactions'
+                        . '&focus_reaction_type=' . rawurlencode($reaction_type)
+                        . '&focus_reactor=' . rawurlencode((string) $user_id)
                 );
             } catch (Throwable $push_error) {
                 error_log(

@@ -34,13 +34,14 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
         });
         window.CraftCrawlCloseMobileActionsMenu?.();
         document.title = titleByTab[tab];
-        if (options.updateHistory) history.pushState({ craftcrawlUserTab: tab }, '', `${routeByTab[tab]}${options.hash || ''}`);
+        if (options.updateHistory) history.pushState({ craftcrawlUserTab: tab }, '', `${routeByTab[tab]}${options.search || ''}${options.hash || ''}`);
         if (options.updateHistory && options.trackPageView !== false) {
             window.CraftCrawlTrackPageView?.(window.location.href, document.title);
         }
         window.dispatchEvent(new CustomEvent('craftcrawl:user-tab-changed', {
             detail: {
                 tab,
+                url: options.url || `${routeByTab[tab]}${options.search || ''}${options.hash || ''}`,
                 userInitiated: Boolean(options.userInitiated)
             }
         }));
@@ -52,8 +53,10 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
         const tab = tabFromPath(url.pathname);
         if (!routeByTab[tab]) return false;
         syncTab(tab, {
-            updateHistory: tab !== shell.dataset.activeUserTab || url.hash !== window.location.hash,
+            updateHistory: tab !== shell.dataset.activeUserTab || url.search !== window.location.search || url.hash !== window.location.hash,
+            search: url.search,
             hash: url.hash,
+            url: url.href,
             userInitiated: Boolean(options.userInitiated)
         });
         if (tab === 'map' && url.hash === '#checkin-panel') {
@@ -76,7 +79,13 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
     }
 
     const initialTab = tabFromPath(window.location.pathname);
-    if (initialTab) syncTab(initialTab);
+    if (initialTab) {
+        syncTab(initialTab, {
+            search: window.location.search,
+            hash: window.location.hash,
+            url: window.location.href
+        });
+    }
     return true;
 };
 window.CraftCrawlInitUserTabShell();

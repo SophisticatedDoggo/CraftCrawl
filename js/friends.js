@@ -58,11 +58,19 @@ window.CraftCrawlInitFriends = function (scope = document) {
         business_post: ['cheers', 'want_to_go']
     };
     const isUserPath = /\/user\/?$|\/user\//.test(window.location.pathname);
-    const focusParams = new URLSearchParams(window.location.search);
-    const requestedFocusRequestId = focusParams.get('focus_request');
-    const requestedFocusFriendId = focusParams.get('focus_friend');
-    const requestedFocusItemKey = focusParams.get('focus_item');
-    const requestedFocusSection = focusParams.get('focus_section');
+    let focusParams = new URLSearchParams(window.location.search);
+    let requestedFocusRequestId = focusParams.get('focus_request');
+    let requestedFocusFriendId = focusParams.get('focus_friend');
+    let requestedFocusItemKey = focusParams.get('focus_item');
+    let requestedFocusSection = focusParams.get('focus_section');
+    let requestedFocusReactionType = focusParams.get('focus_reaction_type');
+    let requestedFocusReactorId = focusParams.get('focus_reactor');
+    let requestedFeedFocusSignature = [
+        requestedFocusItemKey,
+        requestedFocusSection,
+        requestedFocusReactionType,
+        requestedFocusReactorId
+    ].join('|');
     let hasFocusedRequest = false;
     let hasFocusedFriend = false;
     let hasFocusedFeedItem = false;
@@ -209,6 +217,50 @@ window.CraftCrawlInitFriends = function (scope = document) {
         });
     }
 
+    function updateFocusRequestFromUrl(value = window.location.href) {
+        const url = new URL(value, window.location.href);
+        const nextParams = new URLSearchParams(url.search);
+        const nextFocusItem = nextParams.get('focus_item');
+        const nextFeedFocusSignature = [
+            nextFocusItem,
+            nextParams.get('focus_section'),
+            nextParams.get('focus_reaction_type'),
+            nextParams.get('focus_reactor')
+        ].join('|');
+
+        if (nextFocusItem && nextFeedFocusSignature !== requestedFeedFocusSignature) {
+            hasFocusedFeedItem = false;
+        }
+
+        focusParams = nextParams;
+        requestedFocusRequestId = focusParams.get('focus_request');
+        requestedFocusFriendId = focusParams.get('focus_friend');
+        requestedFocusItemKey = focusParams.get('focus_item');
+        requestedFocusSection = focusParams.get('focus_section');
+        requestedFocusReactionType = focusParams.get('focus_reaction_type');
+        requestedFocusReactorId = focusParams.get('focus_reactor');
+        requestedFeedFocusSignature = nextFeedFocusSignature;
+    }
+
+    function focusReactionEntryIfRequested(item) {
+        if (!item || requestedFocusSection !== 'reactions') {
+            return;
+        }
+
+        const selectorParts = ['[data-reaction-list-item]'];
+        if (requestedFocusReactionType) {
+            selectorParts.push(`[data-reaction-type="${CSS.escape(requestedFocusReactionType)}"]`);
+        }
+        if (requestedFocusReactorId) {
+            selectorParts.push(`[data-reactor-id="${CSS.escape(requestedFocusReactorId)}"]`);
+        }
+
+        const reactionEntry = item.querySelector(selectorParts.join(''));
+        if (reactionEntry) {
+            focusNotificationTarget(reactionEntry);
+        }
+    }
+
     function focusFeedItemIfRequested() {
         if (!feed || hasFocusedFeedItem || !requestedFocusItemKey) {
             return;
@@ -225,7 +277,12 @@ window.CraftCrawlInitFriends = function (scope = document) {
         if (requestedFocusSection === 'reactions') {
             const toggle = item.querySelector('[data-reaction-disclosure-toggle]');
             if (toggle && toggle.getAttribute('aria-expanded') !== 'true') {
-                window.setTimeout(() => toggle.click(), 350);
+                window.setTimeout(() => {
+                    toggle.click();
+                    window.setTimeout(() => focusReactionEntryIfRequested(item), 120);
+                }, 350);
+            } else {
+                window.setTimeout(() => focusReactionEntryIfRequested(item), 120);
             }
         }
     }
@@ -321,6 +378,33 @@ window.CraftCrawlInitFriends = function (scope = document) {
         return types;
     }
 
+    function applyStatusCounts(data) {
+        const counts = data?.counts || data || {};
+        const pendingInvites = Number(counts.pending_invites || 0);
+        const pendingRecommendations = Number(counts.pending_recommendations || 0);
+        const socialNotifications = Number(counts.social_notifications || 0);
+        const newFriends = Number(counts.new_friends || 0);
+        const newFeedItems = Number(counts.new_feed_items || 0);
+        const friendsBadgeCount = pendingInvites + pendingRecommendations + newFriends;
+        const feedBadgeCount = newFeedItems + socialNotifications;
+        const badgeCount = Number(counts.badge_count || 0);
+
+        currentStatus = {
+            pendingInvites,
+            pendingRecommendations,
+            socialNotifications,
+            newFriends,
+            newFeedItems,
+            friendsBadgeCount,
+            feedBadgeCount,
+            badgeCount
+        };
+        menuBadges.forEach((badge) => setBadge(badge, friendsBadgeCount));
+        menuToggleBadges.forEach((badge) => setBadge(badge, friendsBadgeCount));
+        tabBadges.forEach((badge) => setBadge(badge, feedBadgeCount));
+        syncNativeAppBadge(badgeCount);
+    }
+
     function loadStatus() {
         return fetch(userEndpoint('friend_status.php'), { credentials: 'same-origin' })
             .then((response) => response.json())
@@ -329,28 +413,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     return;
                 }
 
-                const pendingInvites = Number(data.pending_invites || 0);
-                const pendingRecommendations = Number(data.pending_recommendations || 0);
-                const socialNotifications = Number(data.social_notifications || 0);
-                const newFriends = Number(data.new_friends || 0);
-                const newFeedItems = Number(data.new_feed_items || 0);
-                const friendsBadgeCount = pendingInvites + pendingRecommendations + newFriends;
-                const feedBadgeCount = newFeedItems + socialNotifications;
-                const badgeCount = Number(data.badge_count || 0);
-                currentStatus = {
-                    pendingInvites,
-                    pendingRecommendations,
-                    socialNotifications,
-                    newFriends,
-                    newFeedItems,
-                    friendsBadgeCount,
-                    feedBadgeCount,
-                    badgeCount
-                };
-                menuBadges.forEach((badge) => setBadge(badge, friendsBadgeCount));
-                menuToggleBadges.forEach((badge) => setBadge(badge, friendsBadgeCount));
-                tabBadges.forEach((badge) => setBadge(badge, feedBadgeCount));
-                syncNativeAppBadge(badgeCount);
+                applyStatusCounts(data);
             })
             .catch(() => {});
     }
@@ -365,6 +428,32 @@ window.CraftCrawlInitFriends = function (scope = document) {
         })
             .then(() => loadStatus())
             .catch(() => {});
+    }
+
+    function markReactionNotificationsSeen(disclosure) {
+        if (!csrfToken || !disclosure || disclosure.dataset.markingSeen === 'true') {
+            return Promise.resolve();
+        }
+
+        disclosure.dataset.markingSeen = 'true';
+
+        return postForm(userEndpoint('feed_notification_seen.php'), {
+            csrf_token: csrfToken,
+            item_key: disclosure.dataset.itemKey,
+            notification_type: 'reaction'
+        })
+            .then((data) => {
+                if (!data.ok) {
+                    return;
+                }
+                disclosure.dataset.unreadCount = '0';
+                disclosure.querySelectorAll('.feed-action-unread-badge').forEach((badge) => badge.remove());
+                applyStatusCounts(data);
+            })
+            .catch(() => {})
+            .finally(() => {
+                delete disclosure.dataset.markingSeen;
+            });
     }
 
     function setBadge(element, value) {
@@ -1056,20 +1145,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 }
 
                 if (!isExpanded && Number(disclosure.dataset.unreadCount || 0) > 0) {
-                    postForm(userEndpoint('feed_notification_seen.php'), {
-                        csrf_token: csrfToken,
-                        item_key: disclosure.dataset.itemKey,
-                        notification_type: 'reaction'
-                    })
-                        .then((data) => {
-                            if (!data.ok) {
-                                return;
-                            }
-                            disclosure.dataset.unreadCount = '0';
-                            disclosure.querySelectorAll('.feed-action-unread-badge').forEach((badge) => badge.remove());
-                            loadStatus();
-                        })
-                        .catch(() => {});
+                    markReactionNotificationsSeen(disclosure);
                 }
                 return;
             }
@@ -1267,7 +1343,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                             ${pages.map((page) => `
                                 <div class="feed-reaction-page">
                                     ${page.map((entry) => `
-                                        <div class="feed-reaction-list-item">
+                                        <div class="feed-reaction-list-item" data-reaction-list-item data-reaction-type="${escapeHtml(entry.type || '')}" data-reactor-id="${escapeHtml(entry.user_id || '')}">
                                             <span class="feed-reaction-list-symbol">${escapeHtml(reactionLabels[entry.type] || '')}</span>
                                             <strong>${escapeHtml(entry.name || 'Someone')}</strong>
                                             ${entry.created_at ? `<time>${escapeHtml(formatDate(entry.created_at))}</time>` : ''}
@@ -1358,6 +1434,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
     window.addEventListener('craftcrawl:user-tab-changed', (event) => {
         if (event.detail?.tab === 'feed') {
+            updateFocusRequestFromUrl(event.detail?.url || window.location.href);
             refreshVisibleFeed()
                 .then(() => {
                     if (event.detail?.userInitiated) {
