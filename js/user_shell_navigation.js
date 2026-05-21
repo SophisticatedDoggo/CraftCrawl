@@ -193,6 +193,17 @@
             return;
         }
 
+        const linkUrl = new URL(link.href, window.location.href);
+        if (typeof window.CraftCrawlOpenFeedThreadOverlay === 'function'
+            && currentFile(linkUrl.href) === 'feed_post.php'
+            && linkUrl.searchParams.has('item')
+            && link.closest('[data-friends-feed]')) {
+            event.preventDefault();
+            event.stopPropagation();
+            window.CraftCrawlOpenFeedThreadOverlay(linkUrl.searchParams.get('item'));
+            return;
+        }
+
         if (!isShellUrl(link.href)) return;
 
         event.preventDefault();

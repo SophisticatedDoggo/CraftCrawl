@@ -59,6 +59,8 @@ window.CraftCrawlInitFeedThread = function (root = document) {
 
     if (threadPage && threadPage.dataset.swipeDismissReady !== 'true') {
         threadPage.dataset.swipeDismissReady = 'true';
+        const overlay = threadPage.closest('[data-feed-thread-overlay]');
+        const overlayContent = overlay?.querySelector('[data-feed-thread-overlay-content]');
 
         const swipe = {
             active: false,
@@ -85,11 +87,26 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         threadPage.querySelectorAll('[data-back-link]').forEach((link) => {
             if (link.dataset.feedThreadReturnReady === 'true') return;
             link.dataset.feedThreadReturnReady = 'true';
-            link.addEventListener('click', markThreadReturnAnchor, { capture: true });
+            link.addEventListener('click', (event) => {
+                markThreadReturnAnchor();
+                if (overlay && typeof window.CraftCrawlCloseFeedThreadOverlay === 'function') {
+                    event.preventDefault();
+                    window.CraftCrawlCloseFeedThreadOverlay({ useHistory: true });
+                }
+            }, { capture: true });
         });
 
         function dismissThread() {
-            markThreadReturnAnchor();
+            if (overlay && typeof window.CraftCrawlCloseFeedThreadOverlay === 'function') {
+                overlay.classList.add('is-swipe-dismissing');
+                window.setTimeout(() => {
+                    window.CraftCrawlCloseFeedThreadOverlay({
+                        useHistory: true,
+                        returnItemKey: threadPage.dataset.feedThreadItemKey || ''
+                    });
+                }, 70);
+                return;
+            }
             threadPage.classList.add('feed-thread-page-compacting');
             window.setTimeout(() => {
                 if (window.history.length > 1) {
@@ -97,7 +114,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
                 } else {
                     window.location.href = 'feed.php';
                 }
-            }, 180);
+            }, 70);
         }
 
         threadPage.addEventListener('pointerdown', (event) => {
@@ -132,22 +149,28 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             }
 
             const dragX = Math.max(0, deltaX);
+            const dragTarget = overlayContent || threadPage;
             swipe.lastX = event.clientX;
-            threadPage.style.transform = `translateX(${dragX}px) scale(${Math.max(0.96, 1 - dragX / 2600)})`;
-            threadPage.style.opacity = String(Math.max(0.35, 1 - dragX / 520));
+            overlay?.classList.add('is-swipe-dragging');
+            dragTarget.style.transform = `translateX(${dragX}px) scale(${Math.max(0.96, 1 - dragX / 2600)})`;
+            dragTarget.style.opacity = String(Math.max(0.35, 1 - dragX / 520));
         });
 
         function finishSwipe(event) {
             if (!swipe.active || event.pointerId !== swipe.pointerId) return;
 
             const deltaX = event.clientX - swipe.startX;
+            const shouldDismiss = swipe.dragging && deltaX > Math.min(150, window.innerWidth * 0.28);
             swipe.active = false;
             threadPage.classList.remove('is-swipe-dragging');
-            threadPage.style.transform = '';
-            threadPage.style.opacity = '';
+            const dragTarget = overlayContent || threadPage;
+            overlay?.classList.remove('is-swipe-dragging');
 
-            if (swipe.dragging && deltaX > Math.min(150, window.innerWidth * 0.28)) {
+            if (shouldDismiss) {
                 dismissThread();
+            } else {
+                dragTarget.style.transform = '';
+                dragTarget.style.opacity = '';
             }
 
             swipe.dragging = false;
@@ -189,7 +212,8 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         if (form.dataset.shellCommentReady === 'true') return;
         form.dataset.shellCommentReady = 'true';
         form.addEventListener('submit', (event) => {
-            if (typeof window.CraftCrawlNavigateUserShell !== 'function' || form.dataset.shellSubmitting === 'true') {
+            const isOverlay = Boolean(form.closest('[data-feed-thread-overlay]'));
+            if ((!isOverlay && typeof window.CraftCrawlNavigateUserShell !== 'function') || form.dataset.shellSubmitting === 'true') {
                 return;
             }
 
@@ -208,6 +232,9 @@ window.CraftCrawlInitFeedThread = function (root = document) {
                 .then((response) => {
                     if (!response.ok) throw new Error('Comment could not be posted.');
                     const nextUrl = response.url || window.location.href;
+                    if (isOverlay && typeof window.CraftCrawlRefreshFeedThreadOverlay === 'function') {
+                        return window.CraftCrawlRefreshFeedThreadOverlay(nextUrl);
+                    }
                     return window.CraftCrawlNavigateUserShell(nextUrl, {
                         replace: true,
                         noStore: true

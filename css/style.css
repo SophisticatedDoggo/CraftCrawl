@@ -3039,17 +3039,48 @@ a.text-link:focus {
     background: transparent;
     cursor: pointer;
     transform-origin: center top;
-    transition: transform 180ms ease, background-color 180ms ease, opacity 180ms ease;
+    transition: transform 240ms cubic-bezier(.2, .82, .2, 1), background-color 180ms ease, opacity 180ms ease, box-shadow 180ms ease;
 }
 
-.friends-feed-item:active,
 .friends-feed-item.is-opening-thread {
-    transform: scale(0.985);
-    background: color-mix(in srgb, var(--color-primary) 5%, transparent);
+    position: relative;
+    z-index: 3;
+    transform: translateY(var(--feed-thread-open-shift, 0));
+    background: var(--color-surface);
+    box-shadow: 0 10px 28px color-mix(in srgb, var(--color-shadow) 18%, transparent);
 }
 
-.friends-feed-item.is-thread-return-anchor {
-    animation: feedThreadReturnAnchor 560ms cubic-bezier(.2, .82, .2, 1) both;
+.friends-feed-item.has-thread-return-highlight {
+    position: relative;
+}
+
+.feed-return-highlight {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    pointer-events: none;
+    animation: feedThreadReturnRailHighlight 1000ms ease-in-out both;
+}
+
+.feed-return-highlight::before,
+.feed-return-highlight::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    left: 0;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--color-primary);
+}
+
+.feed-return-highlight::before {
+    top: 0;
+}
+
+.feed-return-highlight::after {
+    bottom: 0;
 }
 
 .friends-feed-item:has(a:hover, button:hover, input:hover, textarea:hover, select:hover) {
@@ -3828,6 +3859,73 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     will-change: transform, opacity;
 }
 
+body.feed-thread-overlay-open {
+    overflow: hidden;
+}
+
+.feed-thread-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    background: transparent;
+}
+
+.feed-thread-overlay[hidden] {
+    display: none;
+}
+
+.feed-thread-overlay-scrim {
+    position: absolute;
+    inset: 0;
+    background: var(--color-bg);
+    transition: opacity 160ms ease;
+}
+
+.feed-thread-overlay.is-swipe-dragging .feed-thread-overlay-scrim,
+.feed-thread-overlay.is-swipe-dismissing .feed-thread-overlay-scrim,
+.feed-thread-overlay.is-closing .feed-thread-overlay-scrim {
+    opacity: 0;
+}
+
+.feed-thread-overlay-content {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 760px);
+    height: 100%;
+    margin: 0 auto;
+    overflow-y: auto;
+    padding: max(12px, env(safe-area-inset-top)) 12px max(92px, env(safe-area-inset-bottom));
+    background: var(--color-bg);
+    box-shadow: -18px 0 36px color-mix(in srgb, var(--color-text) 12%, transparent);
+    -webkit-overflow-scrolling: touch;
+    will-change: transform, opacity;
+}
+
+.feed-thread-overlay .feed-thread-page {
+    min-height: 100%;
+    background: var(--color-bg);
+}
+
+body.feed-thread-overlay-open .mobile-app-tabbar {
+    display: none;
+}
+
+.feed-thread-overlay.is-open .feed-thread-overlay-content {
+    animation: feedThreadOverlayIn 220ms cubic-bezier(.2, .82, .2, 1);
+}
+
+.feed-thread-overlay.is-closing .feed-thread-overlay-content {
+    animation: feedThreadOverlayOut 180ms ease-in both;
+}
+
+.feed-thread-overlay.is-swipe-dragging .feed-thread-overlay-content,
+.feed-thread-overlay.is-swipe-dismissing .feed-thread-overlay-content {
+    animation: none;
+    transition: none;
+}
+
 .feed-thread-page .settings-header {
     justify-content: flex-start;
     margin-bottom: 10px;
@@ -3856,7 +3954,11 @@ a.mobile-context-back.feed-thread-back-link:focus {
 }
 
 .feed-thread-page-entering {
-    animation: feedThreadExpandIn 360ms cubic-bezier(.2, .82, .2, 1) both;
+    animation: feedThreadPostSettleIn 220ms cubic-bezier(.2, .82, .2, 1) both;
+}
+
+.feed-thread-page-entering .feed-thread-panel:not(:first-of-type) {
+    animation: feedThreadCommentsExpand 340ms cubic-bezier(.2, .82, .2, 1) both;
 }
 
 .feed-thread-page.is-swipe-dragging {
@@ -3869,7 +3971,7 @@ a.mobile-context-back.feed-thread-back-link:focus {
 }
 
 .feed-thread-page-compacting {
-    animation: feedThreadCompactOut 210ms cubic-bezier(.3, 0, .7, 1) both;
+    animation: feedThreadCompactOut 150ms cubic-bezier(.3, 0, .7, 1) both;
 }
 
 .feed-thread-panel {
@@ -3881,18 +3983,49 @@ a.mobile-context-back.feed-thread-back-link:focus {
     margin: 0;
 }
 
-@keyframes feedThreadExpandIn {
+@keyframes feedThreadPostSettleIn {
     0% {
-        opacity: 0;
-        transform: translateY(22px) scale(.94);
-    }
-    68% {
-        opacity: 1;
-        transform: translateY(-2px) scale(1.006);
+        opacity: .98;
+        transform: translateY(-10px);
     }
     100% {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
+    }
+}
+
+@keyframes feedThreadOverlayIn {
+    0% {
+        opacity: .96;
+        transform: translateY(18px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes feedThreadOverlayOut {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+}
+
+@keyframes feedThreadCommentsExpand {
+    0% {
+        opacity: 0;
+        transform: translateY(-14px) scaleY(.92);
+        transform-origin: top center;
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scaleY(1);
+        transform-origin: top center;
     }
 }
 
@@ -3913,36 +4046,35 @@ a.mobile-context-back.feed-thread-back-link:focus {
         transform: translateX(0) translateY(0) scale(1);
     }
     100% {
-        opacity: 0;
-        transform: translateX(18px) translateY(24px) scale(.86);
+        opacity: .92;
+        transform: translateX(16px) translateY(-8px) scale(.96);
     }
 }
 
-@keyframes feedThreadReturnAnchor {
+@keyframes feedThreadReturnRailHighlight {
     0% {
-        transform: scale(.94);
-        background: color-mix(in srgb, var(--color-primary) 14%, transparent);
-        box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 0%, transparent);
+        opacity: 0;
+        transform: scaleX(.94);
     }
-    58% {
-        transform: scale(1.012);
-        background: color-mix(in srgb, var(--color-primary) 9%, transparent);
-        box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-primary) 11%, transparent);
+    50% {
+        opacity: 1;
+        transform: scaleX(1);
     }
     100% {
-        transform: scale(1);
-        background: transparent;
-        box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 0%, transparent);
+        opacity: 0;
+        transform: scaleX(.94);
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .friends-feed-item,
     .feed-thread-page-entering,
+    .feed-thread-page-entering .feed-thread-panel:not(:first-of-type),
+    .feed-thread-overlay.is-open .feed-thread-overlay-content,
+    .feed-thread-overlay.is-closing .feed-thread-overlay-content,
     .feed-thread-page-dismissing,
     .feed-thread-page-compacting,
-    .friends-feed-item.is-thread-return-anchor {
-        animation: none;
+    .feed-return-highlight {
         transition: none;
     }
 }
@@ -7316,6 +7448,11 @@ a.event-calendar-event:focus .event-calendar-event-name {
 
     .landing-card::before {
         background: var(--color-border);
+    }
+
+    #events-panel::before,
+    #friends-panel::before {
+        background: var(--color-primary);
     }
 
     .auth-card h1,
