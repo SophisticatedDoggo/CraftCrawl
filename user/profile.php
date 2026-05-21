@@ -479,7 +479,7 @@ if (!$profile) {
                     <div class="badge-showcase-header">
                         <div>
                             <h2>Badge Showcase</h2>
-                            <p class="form-help"><?php echo escape_output($slot_count); ?> of 3 slot<?php echo $slot_count !== 1 ? 's' : ''; ?> unlocked<?php if ($slot_count < 3) : ?> · Showcase slots unlock at Levels 8, 16, and 24<?php endif; ?></p>
+                            <p class="form-help"><?php echo escape_output($slot_count); ?> of 4 slot<?php echo $slot_count !== 1 ? 's' : ''; ?> unlocked<?php if ($slot_count < 4) : ?> · Additional showcase slots unlock at Levels 8, 16, and 24<?php endif; ?></p>
                         </div>
                         <?php if ($is_own_profile) : ?>
                             <button type="button" class="button-link-secondary badge-showcase-edit-toggle" data-showcase-editor-open>Edit Badge Showcase</button>
@@ -578,14 +578,20 @@ if (!$profile) {
             <?php endif; ?>
 
             <?php if ($can_view_liked_businesses) : ?>
-                <section class="settings-panel">
-                    <h2><?php echo $is_own_profile ? 'Businesses You Follow' : 'Businesses They Follow'; ?></h2>
-                    <div class="friend-location-grid">
+                <section class="settings-panel" data-profile-filter-list>
+                    <div class="profile-list-header">
+                        <h2><?php echo $is_own_profile ? 'Businesses You Follow' : 'Businesses They Follow'; ?></h2>
+                        <label class="profile-list-search">
+                            <span class="visually-hidden">Search followed businesses</span>
+                            <input type="search" placeholder="Search" autocomplete="off" data-profile-filter-input>
+                        </label>
+                    </div>
+                    <div class="friend-location-grid" data-profile-filter-items>
                         <?php if ($followed_businesses->num_rows === 0) : ?>
                             <p>Not following any businesses yet.</p>
                         <?php endif; ?>
                         <?php while ($business = $followed_businesses->fetch_assoc()) : ?>
-                            <article class="friend-location-card">
+                            <article class="friend-location-card" data-profile-filter-item>
                                 <strong><?php echo escape_output($business['bName']); ?></strong>
                                 <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
                                 <div class="profile-location-actions">
@@ -601,19 +607,26 @@ if (!$profile) {
                                 </div>
                             </article>
                         <?php endwhile; ?>
+                        <p class="profile-list-empty" data-profile-filter-empty hidden>No followed businesses match your search.</p>
                     </div>
                 </section>
             <?php endif; ?>
 
             <?php if ($want_to_go_businesses->num_rows > 0 || $is_own_profile) : ?>
-                <section class="settings-panel">
-                    <h2>Want to Go</h2>
-                    <div class="friend-location-grid">
+                <section class="settings-panel" data-profile-filter-list>
+                    <div class="profile-list-header">
+                        <h2>Want to Go</h2>
+                        <label class="profile-list-search">
+                            <span class="visually-hidden">Search Want to Go locations</span>
+                            <input type="search" placeholder="Search" autocomplete="off" data-profile-filter-input>
+                        </label>
+                    </div>
+                    <div class="friend-location-grid" data-profile-filter-items>
                         <?php if ($want_to_go_businesses->num_rows === 0) : ?>
                             <p>No saved locations yet.</p>
                         <?php endif; ?>
                         <?php while ($business = $want_to_go_businesses->fetch_assoc()) : ?>
-                            <article class="friend-location-card">
+                            <article class="friend-location-card" data-profile-filter-item>
                                 <strong><?php echo escape_output($business['bName']); ?></strong>
                                 <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
                                 <div class="profile-location-actions">
@@ -629,13 +642,20 @@ if (!$profile) {
                                 </div>
                             </article>
                         <?php endwhile; ?>
+                        <p class="profile-list-empty" data-profile-filter-empty hidden>No Want to Go locations match your search.</p>
                     </div>
                 </section>
             <?php endif; ?>
 
-            <section class="settings-panel">
-                <h2>Past Check-ins</h2>
-                <div class="friend-location-grid">
+            <section class="settings-panel" data-profile-filter-list>
+                <div class="profile-list-header">
+                    <h2>Past Check-ins</h2>
+                    <label class="profile-list-search">
+                        <span class="visually-hidden">Search past check-ins</span>
+                        <input type="search" placeholder="Search" autocomplete="off" data-profile-filter-input>
+                    </label>
+                </div>
+                <div class="friend-location-grid" data-profile-filter-items>
                     <?php if ($past_checkins->num_rows === 0) : ?>
                         <p>No check-ins yet.</p>
                     <?php endif; ?>
@@ -645,13 +665,14 @@ if (!$profile) {
                             $checked_in_text = $checked_in_at ? date('M j, Y', $checked_in_at) : '';
                             $visit_type_text = $checkin['visit_type'] === 'first_time' ? 'First-time check-in' : 'Repeat check-in';
                         ?>
-                        <article class="friend-location-card">
+                        <article class="friend-location-card" data-profile-filter-item>
                             <strong><?php echo escape_output($checkin['bName']); ?></strong>
                             <span><?php echo escape_output(craftcrawl_profile_business_type_label($checkin['bType'])); ?> · <?php echo escape_output($checkin['city']); ?>, <?php echo escape_output($checkin['state']); ?></span>
                             <span><?php echo escape_output($visit_type_text); ?><?php echo $checked_in_text !== '' ? ' · ' . escape_output($checked_in_text) : ''; ?><?php echo (int) $checkin['xp_awarded'] > 0 ? ' · +' . escape_output($checkin['xp_awarded']) . ' XP' : ''; ?></span>
                             <a href="../business_details.php?id=<?php echo escape_output($checkin['business_id']); ?>">View Location</a>
                         </article>
                     <?php endwhile; ?>
+                    <p class="profile-list-empty" data-profile-filter-empty hidden>No check-ins match your search.</p>
                 </div>
             </section>
 
@@ -700,6 +721,7 @@ if (!$profile) {
     <script src="../js/palette_switcher.js?v=<?php echo filemtime(__DIR__ . '/../js/palette_switcher.js'); ?>"></script>
     <script src="../js/app_icon_switcher.js?v=<?php echo filemtime(__DIR__ . '/../js/app_icon_switcher.js'); ?>"></script>
     <script src="../js/badge_showcase.js?v=<?php echo filemtime(__DIR__ . '/../js/badge_showcase.js'); ?>"></script>
+    <script src="../js/profile_list_search.js?v=<?php echo filemtime(__DIR__ . '/../js/profile_list_search.js'); ?>"></script>
     <script src="../js/feed_thread.js?v=<?php echo filemtime(__DIR__ . '/../js/feed_thread.js'); ?>"></script>
     <script src="../js/user_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/user_shell_navigation.js'); ?>"></script>
     <script src="../js/onesignal_push.js?v=<?php echo filemtime(__DIR__ . '/../js/onesignal_push.js'); ?>"></script>

@@ -77,6 +77,7 @@
         window.CraftCrawlInitAppIconSwitcher?.(root);
         window.CraftCrawlInitProfilePhotoCrop?.(root);
         window.CraftCrawlInitBadgeShowcase?.(root);
+        window.CraftCrawlInitProfileListSearch?.(root);
         window.CraftCrawlInitFeedThread?.(root);
         window.CraftCrawlInitPullToRefresh?.(root);
         window.CraftCrawlInitMobileActionsMenu?.();

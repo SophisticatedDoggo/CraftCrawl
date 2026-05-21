@@ -1028,10 +1028,10 @@ function craftcrawl_user_badges($conn, $user_id) {
 
 function craftcrawl_badge_showcase_slot_count($level) {
     $level = max(1, min(CRAFTCRAWL_MAX_LEVEL, (int) $level));
-    if ($level >= 24) return 3;
-    if ($level >= 16) return 2;
-    if ($level >= 8) return 1;
-    return 0;
+    if ($level >= 24) return 4;
+    if ($level >= 16) return 3;
+    if ($level >= 8) return 2;
+    return 1;
 }
 
 function craftcrawl_level_rewards_unlocked_between($from_level, $to_level) {
@@ -1418,15 +1418,16 @@ function craftcrawl_level_reward_catalog($current_level) {
         ['level' => 2, 'name' => 'Trail Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'trail-dark'],
         ['level' => 7, 'name' => 'Ember Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'ember'],
         ['level' => 7, 'name' => 'Ember App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'ember'],
-        ['level' => 8, 'name' => '1st Badge Showcase Slot', 'description' => 'Feature 1 earned badge on your profile.', 'type' => 'Showcase'],
+        ['level' => 1, 'name' => 'Starter Badge Showcase Slot', 'description' => 'Feature 1 earned badge on your profile.', 'type' => 'Showcase'],
+        ['level' => 8, 'name' => '2nd Badge Showcase Slot', 'description' => 'Feature 2 earned badges on your profile.', 'type' => 'Showcase'],
         ['level' => 12, 'name' => 'Ember Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'ember-dark'],
         ['level' => 12, 'name' => 'Ember Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'ember-dark'],
-        ['level' => 16, 'name' => '2nd Badge Showcase Slot', 'description' => 'Feature 2 earned badges on your profile.', 'type' => 'Showcase'],
+        ['level' => 16, 'name' => '3rd Badge Showcase Slot', 'description' => 'Feature 3 earned badges on your profile.', 'type' => 'Showcase'],
         ['level' => 17, 'name' => 'Blackberry Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'blackberry'],
         ['level' => 17, 'name' => 'Blackberry App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'blackberry'],
         ['level' => 22, 'name' => 'Blackberry Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'blackberry-dark'],
         ['level' => 22, 'name' => 'Blackberry Dark App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'blackberry-dark'],
-        ['level' => 24, 'name' => '3rd Badge Showcase Slot', 'description' => 'Feature 3 earned badges on your profile.', 'type' => 'Showcase'],
+        ['level' => 24, 'name' => '4th Badge Showcase Slot', 'description' => 'Feature 4 earned badges on your profile.', 'type' => 'Showcase'],
         ['level' => 27, 'name' => 'Riverstone Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'riverstone'],
         ['level' => 27, 'name' => 'Riverstone App Icon', 'description' => 'Unlock this app icon in Settings.', 'type' => 'App Icon', 'reward_key' => 'riverstone'],
         ['level' => 32, 'name' => 'Riverstone Dark Display Theme', 'description' => 'Unlock this display theme in Settings.', 'type' => 'Display Theme', 'reward_key' => 'riverstone-dark'],

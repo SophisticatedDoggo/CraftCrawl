@@ -17,6 +17,9 @@ window.CraftCrawlInitBusinessGallery = function (root = document) {
     const lightboxPreviousButton = root.querySelector('#business-gallery-lightbox-prev');
     const lightboxNextButton = root.querySelector('#business-gallery-lightbox-next');
     const lightboxCloseControls = root.querySelectorAll('[data-gallery-lightbox-close]');
+    let lightboxTrack = null;
+    let lightboxPreviousImage = null;
+    let lightboxNextImage = null;
     let activeIndex = 0;
     let autoplayId = null;
     let lightboxTransitionId = 0;
@@ -57,6 +60,45 @@ window.CraftCrawlInitBusinessGallery = function (root = document) {
             preloadImage(slideImage?.currentSrc || slideImage?.src);
             preloadImage(slideButton?.dataset.galleryPhotoUrl);
         });
+    }
+
+    function getLightboxPhotoUrl(index) {
+        if (!slideButtons.length) {
+            return '';
+        }
+
+        return slideButtons[normalizedIndex(index, slideButtons.length)]?.dataset.galleryPhotoUrl || '';
+    }
+
+    function setupLightboxTrack() {
+        if (!lightbox || !lightboxImage || lightboxTrack) {
+            return;
+        }
+
+        lightboxTrack = document.createElement('div');
+        lightboxTrack.className = 'business-gallery-lightbox-track';
+        lightboxImage.before(lightboxTrack);
+        lightboxTrack.appendChild(lightboxImage);
+
+        lightboxPreviousImage = lightboxImage.cloneNode(false);
+        lightboxNextImage = lightboxImage.cloneNode(false);
+        lightboxPreviousImage.removeAttribute('id');
+        lightboxNextImage.removeAttribute('id');
+        lightboxPreviousImage.setAttribute('aria-hidden', 'true');
+        lightboxNextImage.setAttribute('aria-hidden', 'true');
+        lightboxPreviousImage.classList.add('business-gallery-lightbox-adjacent-image');
+        lightboxNextImage.classList.add('business-gallery-lightbox-adjacent-image');
+        lightboxTrack.prepend(lightboxPreviousImage);
+        lightboxTrack.appendChild(lightboxNextImage);
+    }
+
+    function syncLightboxAdjacentPhotos(index = activeIndex) {
+        if (!lightboxPreviousImage || !lightboxNextImage) {
+            return;
+        }
+
+        lightboxPreviousImage.src = getLightboxPhotoUrl(index - 1);
+        lightboxNextImage.src = getLightboxPhotoUrl(index + 1);
     }
 
     function showSlide(index) {
@@ -118,7 +160,7 @@ window.CraftCrawlInitBusinessGallery = function (root = document) {
         });
     }
 
-    async function showLightboxPhoto(index) {
+    async function showLightboxPhoto(index, animate = true) {
         if (!slideButtons.length || !lightboxImage || !lightboxCount) {
             return;
         }
@@ -144,8 +186,9 @@ window.CraftCrawlInitBusinessGallery = function (root = document) {
         showSlide(activeIndex);
         lightboxImage.classList.remove('is-changing-next', 'is-changing-previous');
         lightboxImage.src = nextUrl;
+        syncLightboxAdjacentPhotos(activeIndex);
 
-        if (direction !== 'none') {
+        if (animate && direction !== 'none') {
             void lightboxImage.offsetWidth;
             lightboxImage.classList.add(`is-changing-${direction}`);
         }
@@ -172,6 +215,8 @@ window.CraftCrawlInitBusinessGallery = function (root = document) {
         lightboxTransitionId++;
         lightbox.hidden = true;
         lightboxImage.removeAttribute('src');
+        lightboxPreviousImage?.removeAttribute('src');
+        lightboxNextImage?.removeAttribute('src');
         lightboxImage.classList.remove('is-changing-next', 'is-changing-previous');
         document.body.classList.remove('lightbox-open');
         startAutoplay();
@@ -324,13 +369,53 @@ window.CraftCrawlInitBusinessGallery = function (root = document) {
 
     addDragFollowCarousel(track);
 
-    function addSwipeNavigation(element, onPrevious, onNext) {
-        if (!element || slides.length < 2) {
+    function addDragFollowLightbox(element) {
+        if (!element || !lightboxTrack || !lightboxImage || slideButtons.length < 2) {
             return;
         }
 
         let startX = null;
         let startY = null;
+        let isDragging = false;
+        let dragAxisLocked = false;
+
+        function positionImages(offsetPx = 0, animate = true) {
+            lightboxTrack.classList.toggle('is-dragging', !animate);
+
+            if (lightboxPreviousImage) {
+                lightboxPreviousImage.style.transform = `translateX(calc(-100vw + ${offsetPx}px))`;
+            }
+
+            lightboxImage.style.transform = `translateX(${offsetPx}px)`;
+
+            if (lightboxNextImage) {
+                lightboxNextImage.style.transform = `translateX(calc(100vw + ${offsetPx}px))`;
+            }
+        }
+
+        function clearImagePositions() {
+            positionImages(0, true);
+        }
+
+        function finishDrag(offsetPx) {
+            const width = element.clientWidth || window.innerWidth || 1;
+            const threshold = Math.min(width * 0.2, 90);
+
+            if (Math.abs(offsetPx) > threshold) {
+                const nextIndex = activeIndex + (offsetPx < 0 ? 1 : -1);
+                positionImages(offsetPx < 0 ? -width : width, true);
+                window.setTimeout(() => {
+                    showLightboxPhoto(nextIndex, false).then(() => {
+                        positionImages(0, false);
+                        window.requestAnimationFrame(clearImagePositions);
+                    });
+                }, 320);
+                return;
+            }
+
+            positionImages(0, true);
+            window.setTimeout(clearImagePositions, 320);
+        }
 
         element.addEventListener('touchstart', (event) => {
             const touch = event.touches[0];
@@ -338,9 +423,41 @@ window.CraftCrawlInitBusinessGallery = function (root = document) {
                 return;
             }
 
+            lightboxImage.classList.remove('is-changing-next', 'is-changing-previous');
+            syncLightboxAdjacentPhotos(activeIndex);
             startX = touch.clientX;
             startY = touch.clientY;
+            isDragging = false;
+            dragAxisLocked = false;
+            positionImages(0, false);
         }, { passive: true });
+
+        element.addEventListener('touchmove', (event) => {
+            const touch = event.touches[0];
+            if (!touch || startX === null || startY === null) {
+                return;
+            }
+
+            const deltaX = touch.clientX - startX;
+            const deltaY = touch.clientY - startY;
+
+            if (!dragAxisLocked) {
+                if (Math.abs(deltaX) < 8 && Math.abs(deltaY) < 8) {
+                    return;
+                }
+
+                dragAxisLocked = true;
+                isDragging = Math.abs(deltaX) > Math.abs(deltaY);
+            }
+
+            event.preventDefault();
+
+            if (!isDragging) {
+                return;
+            }
+
+            positionImages(deltaX, false);
+        }, { passive: false });
 
         element.addEventListener('touchend', (event) => {
             const touch = event.changedTouches[0];
@@ -349,33 +466,33 @@ window.CraftCrawlInitBusinessGallery = function (root = document) {
             }
 
             const deltaX = touch.clientX - startX;
-            const deltaY = touch.clientY - startY;
             startX = null;
             startY = null;
 
-            if (Math.abs(deltaX) < 42 || Math.abs(deltaX) <= Math.abs(deltaY)) {
+            if (!isDragging) {
+                clearImagePositions();
                 return;
             }
 
-            if (deltaX > 0) {
-                onPrevious();
-                return;
-            }
-
-            onNext();
+            finishDrag(deltaX);
+            isDragging = false;
+            dragAxisLocked = false;
         }, { passive: true });
 
         element.addEventListener('touchcancel', () => {
             startX = null;
             startY = null;
+            isDragging = false;
+            dragAxisLocked = false;
+            positionImages(0, true);
+            window.setTimeout(clearImagePositions, 320);
         }, { passive: true });
+
+        positionImages(0, true);
     }
 
-    addSwipeNavigation(
-        lightbox,
-        () => showLightboxPhoto(activeIndex - 1),
-        () => showLightboxPhoto(activeIndex + 1)
-    );
+    setupLightboxTrack();
+    addDragFollowLightbox(lightbox);
 
     if (lightbox) {
         lightbox.addEventListener('touchmove', (event) => {

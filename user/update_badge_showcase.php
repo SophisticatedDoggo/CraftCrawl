@@ -54,7 +54,7 @@ if ($action === 'save') {
     }
 
     if ($slot_count < 1 && count($requested_showcase) > 0) {
-        echo json_encode(['ok' => false, 'message' => 'Your first showcase slot unlocks at Level 8.']);
+        echo json_encode(['ok' => false, 'message' => 'You do not have any unlocked showcase slots yet.']);
         exit();
     }
 
@@ -159,7 +159,7 @@ if ($action === 'save') {
     $current_count = (int) $count_stmt->get_result()->fetch_assoc()['total'];
 
     if ($slot_count < 1) {
-        echo json_encode(['ok' => false, 'message' => 'Your first showcase slot unlocks at Level 8.']);
+        echo json_encode(['ok' => false, 'message' => 'You do not have any unlocked showcase slots yet.']);
         exit();
     }
 
