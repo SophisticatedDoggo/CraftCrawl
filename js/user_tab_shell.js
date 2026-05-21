@@ -30,6 +30,7 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
         });
         document.body.classList.toggle('portal-body-compact', tab !== 'map');
         document.body.classList.toggle('feed-page-body', tab === 'feed');
+        document.body.classList.toggle('events-page-body', tab === 'events');
         shell.closest('[data-user-page-content]')?.querySelectorAll('[data-user-tab-map-only]').forEach((element) => {
             element.hidden = tab !== 'map';
         });

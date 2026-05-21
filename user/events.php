@@ -21,7 +21,7 @@ $craftcrawl_portal_shell = true;
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.21.0/mapbox-gl.css" rel="stylesheet">
     <?php require_once dirname(__DIR__) . '/lib/google_analytics.php'; echo craftcrawl_google_analytics_tag(); ?>
 </head>
-<body class="portal-body portal-body-compact">
+<body class="portal-body portal-body-compact events-page-body">
     <div data-user-page-content>
         <?php include __DIR__ . '/portal_header.php'; ?>
         <?php include __DIR__ . '/tab_panels.php'; ?>

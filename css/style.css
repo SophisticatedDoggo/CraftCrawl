@@ -3912,6 +3912,11 @@ body.feed-thread-overlay-open .mobile-app-tabbar {
     display: none;
 }
 
+body.feed-page-body .portal-level-summary,
+body.events-page-body .portal-level-summary {
+    display: none !important;
+}
+
 .feed-thread-overlay.is-open .feed-thread-overlay-content {
     animation: feedThreadOverlayIn 220ms cubic-bezier(.2, .82, .2, 1);
 }
