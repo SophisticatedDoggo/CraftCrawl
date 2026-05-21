@@ -502,7 +502,7 @@ function format_event_time_range($event) {
         <?php elseif ($message === 'review_photo_count_error') : ?>
             <p class="form-message form-message-error">Please upload no more than 3 photos with a review.</p>
         <?php elseif ($message === 'review_photo_server_limit_error') : ?>
-            <p class="form-message form-message-error">That photo is larger than your current PHP upload limit. Increase upload_max_filesize and post_max_size, or try a smaller image.</p>
+            <p class="form-message form-message-error">That photo is too large to upload from this device. Try choosing fewer photos or a smaller image.</p>
         <?php elseif ($message === 'review_photo_error') : ?>
             <p class="form-message form-message-error">Your review photo could not be uploaded. Please try again with a JPEG, PNG, or WebP photo under 12 MB.</p>
         <?php endif; ?>
@@ -783,7 +783,7 @@ function format_event_time_range($event) {
                     </div>
                 </form>
             <?php else : ?>
-                <form method="POST" action="" enctype="multipart/form-data">
+                <form method="POST" action="" enctype="multipart/form-data" data-review-form>
                     <?php echo craftcrawl_csrf_input(); ?>
                     <input type="hidden" name="form_action" value="review">
                     <label for="rating">Rating</label>
@@ -801,8 +801,9 @@ function format_event_time_range($event) {
                     <p class="form-help">Reviews earn 25 XP once per location after you have checked in.</p>
 
                     <label for="review_photos">Photos</label>
-                    <input type="file" id="review_photos" name="review_photos[]" accept="image/jpeg,image/png,image/webp" multiple>
-                    <p class="form-help">Add up to 3 JPEG, PNG, or WebP photos under 12 MB each.</p>
+                    <input type="file" id="review_photos" name="review_photos[]" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple data-review-photo-input>
+                    <p class="form-help">Add up to 3 photos. Phone photos are resized before upload.</p>
+                    <p class="form-message" data-review-photo-status hidden></p>
 
                     <button type="submit">Post Review</button>
                 </form>

@@ -110,7 +110,7 @@ if ($visit_type === 'repeat') {
     if ($last_visit && strtotime($last_visit['checkedInAt']) > strtotime('-' . CRAFTCRAWL_REPEAT_VISIT_COOLDOWN_DAYS . ' days')) {
         echo json_encode([
             'ok' => false,
-            'message' => 'Repeat visit XP is available once every 7 days for each location.'
+            'message' => 'Repeat visit XP is available once per day for each location.'
         ]);
         exit();
     }

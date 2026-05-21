@@ -35,10 +35,16 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let hasMore = false;
     let loadingMore = false;
     const reactionLabels = {
-        cheers: '🍻 Cheers',
-        nice_find: '🔥 Nice',
-        want_to_go: '📍 Want to Go',
-        trophy: '🏆 Trophy'
+        cheers: '🍻',
+        nice_find: '🔥',
+        want_to_go: '📍',
+        trophy: '🏆'
+    };
+    const reactionTextLabels = {
+        cheers: 'Cheers',
+        nice_find: 'Nice',
+        want_to_go: 'Want to Go',
+        trophy: 'Trophy'
     };
     const reactionTypesByItemType = {
         first_visit: ['cheers', 'nice_find'],
@@ -54,8 +60,11 @@ window.CraftCrawlInitFriends = function (scope = document) {
     const focusParams = new URLSearchParams(window.location.search);
     const requestedFocusRequestId = focusParams.get('focus_request');
     const requestedFocusFriendId = focusParams.get('focus_friend');
+    const requestedFocusItemKey = focusParams.get('focus_item');
+    const requestedFocusSection = focusParams.get('focus_section');
     let hasFocusedRequest = false;
     let hasFocusedFriend = false;
+    let hasFocusedFeedItem = false;
 
     function installFeedReactionHandler() {
         if (document.documentElement.dataset.feedReactionReady === 'true') {
@@ -105,8 +114,25 @@ window.CraftCrawlInitFriends = function (scope = document) {
                         data.reactions.forEach((r) => { reactionMap[r.type] = r; });
                         reactionsDiv.innerHTML = availableReactions.map((type) => {
                             const reaction = reactionMap[type] || { count: 0, reacted: false };
-                            return `<button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(itemKey)}" data-reaction-type="${type}">${reactionLabels[type]}${reaction.count > 0 ? ` ${reaction.count}` : ''}</button>`;
+                            return `<button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(itemKey)}" data-reaction-type="${type}" aria-label="${escapeHtml(reactionTextLabels[type] || type)}">${reactionLabels[type]}${reaction.count > 0 ? ` ${reaction.count}` : ''}</button>`;
                         }).join('');
+                    }
+                    if (article && data.reaction_entries) {
+                        const disclosure = article.querySelector('[data-reaction-disclosure]');
+                        const panel = article.querySelector('[data-reaction-disclosure-panel]');
+                        const isExpanded = panel && !panel.hidden;
+                        if (disclosure) {
+                            disclosure.outerHTML = renderReactionDisclosure({
+                                item_key: button.dataset.itemKey,
+                                unread_reaction_count: Number(disclosure.dataset.unreadCount || 0)
+                            });
+                        }
+                        if (panel) {
+                            panel.outerHTML = renderReactionPanel({
+                                item_key: button.dataset.itemKey,
+                                reaction_entries: data.reaction_entries
+                            }, isExpanded);
+                        }
                     }
                 })
                 .catch((error) => showStatus(error.message || 'Reaction could not be saved.', true))
@@ -158,6 +184,27 @@ window.CraftCrawlInitFriends = function (scope = document) {
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
             element.classList.add('notification-focus-target');
         });
+    }
+
+    function focusFeedItemIfRequested() {
+        if (!feed || hasFocusedFeedItem || !requestedFocusItemKey) {
+            return;
+        }
+
+        const item = feed.querySelector(`[data-feed-item-key="${CSS.escape(requestedFocusItemKey)}"]`);
+        if (!item) {
+            return;
+        }
+
+        hasFocusedFeedItem = true;
+        focusNotificationTarget(item);
+
+        if (requestedFocusSection === 'reactions') {
+            const toggle = item.querySelector('[data-reaction-disclosure-toggle]');
+            if (toggle && toggle.getAttribute('aria-expanded') !== 'true') {
+                window.setTimeout(() => toggle.click(), 350);
+            }
+        }
     }
 
     function showStatus(message, isError) {
@@ -228,7 +275,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     function feedItemAttrs(item) {
-        return `data-feed-item-type="${escapeHtml(item.type || '')}" data-feed-is-self="${item.is_self ? 'true' : 'false'}"`;
+        return `data-feed-item-key="${escapeHtml(item.item_key || '')}" data-feed-item-type="${escapeHtml(item.type || '')}" data-feed-is-self="${item.is_self ? 'true' : 'false'}"`;
     }
 
     function renderFeedMeta(label, date) {
@@ -885,6 +932,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             feed.appendChild(sentinel);
         }
 
+        focusFeedItemIfRequested();
         lastItemDate = items[items.length - 1]?.created_at || null;
         hasMore = data.has_more === true;
         if (sentinel) {
@@ -895,6 +943,39 @@ window.CraftCrawlInitFriends = function (scope = document) {
     // Delegated poll vote handler for feed items
     if (feed) {
         feed.addEventListener('click', function (event) {
+            const reactionToggle = event.target.closest('[data-reaction-disclosure-toggle]');
+            if (reactionToggle) {
+                const disclosure = reactionToggle.closest('[data-reaction-disclosure]');
+                const article = reactionToggle.closest('article');
+                const panel = article?.querySelector(`[data-reaction-disclosure-panel][data-item-key="${CSS.escape(disclosure?.dataset.itemKey || '')}"]`);
+
+                if (!disclosure || !panel) {
+                    return;
+                }
+
+                const isExpanded = reactionToggle.getAttribute('aria-expanded') === 'true';
+                reactionToggle.setAttribute('aria-expanded', String(!isExpanded));
+                panel.hidden = isExpanded;
+
+                if (!isExpanded && Number(disclosure.dataset.unreadCount || 0) > 0) {
+                    postForm(userEndpoint('feed_notification_seen.php'), {
+                        csrf_token: csrfToken,
+                        item_key: disclosure.dataset.itemKey,
+                        notification_type: 'reaction'
+                    })
+                        .then((data) => {
+                            if (!data.ok) {
+                                return;
+                            }
+                            disclosure.dataset.unreadCount = '0';
+                            disclosure.querySelectorAll('.feed-action-unread-badge').forEach((badge) => badge.remove());
+                            loadStatus();
+                        })
+                        .catch(() => {});
+                }
+                return;
+            }
+
             const voteBtn = event.target.closest('[data-feed-poll-vote]');
             if (!voteBtn || voteBtn.disabled) {
                 return;
@@ -972,6 +1053,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     }
                 });
 
+                focusFeedItemIfRequested();
                 lastItemDate = data.feed[data.feed.length - 1].created_at;
                 hasMore = data.has_more === true;
                 if (sentinel) {
@@ -1016,17 +1098,19 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     ${renderCommentsLink(item)}
                     ${renderFeedDetailLink(item)}
                 </div>
+                ${renderReactionDisclosure(item)}
                 <div class="feed-reactions">
                     ${availableReactions.map((type) => {
                         const reaction = reactionMap[type] || { count: 0, reacted: false };
                         return `
-                            <button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(item.item_key)}" data-reaction-type="${type}">
+                            <button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(item.item_key)}" data-reaction-type="${type}" aria-label="${escapeHtml(reactionTextLabels[type] || type)}">
                                 ${reactionLabels[type]}${reaction.count > 0 ? ` ${reaction.count}` : ''}
                             </button>
                         `;
                     }).join('')}
                 </div>
             </div>
+            ${renderReactionPanel(item)}
         `;
     }
 
@@ -1036,7 +1120,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
         }
 
         const commentCount = Number(item.comment_count || 0);
+        const unreadCount = Number(item.unread_comment_count || 0);
         const label = commentCount > 0 ? String(commentCount) : '';
+        const unreadLabel = unreadCount > 9 ? '9+' : String(unreadCount);
 
         return `
             <a class="feed-comments-link" href="feed_post.php?item=${encodeURIComponent(item.item_key)}" aria-label="Show comments">
@@ -1044,7 +1130,43 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7A8.38 8.38 0 0 1 4 11.5a8.5 8.5 0 0 1 17 0Z"></path>
                 </svg>
                 ${label ? `<span>${label}</span>` : ''}
+                ${unreadCount > 0 ? `<span class="feed-action-unread-badge">${unreadLabel}</span>` : ''}
             </a>
+        `;
+    }
+
+    function renderReactionDisclosure(item) {
+        const itemKey = item.item_key || '';
+        const unreadCount = Number(item.unread_reaction_count || 0);
+        const unreadLabel = unreadCount > 9 ? '9+' : String(unreadCount);
+        const panelId = `feed-reaction-list-${String(itemKey).replace(/[^a-z0-9_-]/gi, '-')}`;
+
+        return `
+            <div class="feed-reaction-disclosure" data-reaction-disclosure data-item-key="${escapeHtml(itemKey)}" data-unread-count="${unreadCount}">
+                <button type="button" class="feed-reaction-disclosure-toggle" data-reaction-disclosure-toggle aria-expanded="false" aria-controls="${escapeHtml(panelId)}">
+                    <span>Reactions</span>
+                    ${unreadCount > 0 ? `<span class="feed-action-unread-badge">${unreadLabel}</span>` : ''}
+                    <span class="feed-reaction-disclosure-arrow" aria-hidden="true">⌄</span>
+                </button>
+            </div>
+        `;
+    }
+
+    function renderReactionPanel(item, isExpanded = false) {
+        const itemKey = item.item_key || '';
+        const entries = Array.isArray(item.reaction_entries) ? item.reaction_entries : [];
+        const panelId = `feed-reaction-list-${String(itemKey).replace(/[^a-z0-9_-]/gi, '-')}`;
+
+        return `
+            <div class="feed-reaction-list" id="${escapeHtml(panelId)}" data-reaction-disclosure-panel data-item-key="${escapeHtml(itemKey)}"${isExpanded ? '' : ' hidden'}>
+                ${entries.length ? entries.map((entry) => `
+                    <div class="feed-reaction-list-item">
+                        <strong>${escapeHtml(entry.name || 'Someone')}</strong>
+                        <span>${escapeHtml(reactionTextLabels[entry.type] || entry.type || 'Reaction')}</span>
+                        ${entry.created_at ? `<time>${escapeHtml(formatDate(entry.created_at))}</time>` : ''}
+                    </div>
+                `).join('') : '<p>No reactions yet.</p>'}
+            </div>
         `;
     }
 

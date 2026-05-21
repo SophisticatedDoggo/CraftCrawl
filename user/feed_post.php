@@ -75,10 +75,16 @@ function render_feed_thread_reactions($conn, $user_id, $item) {
     }
 
     $labels = [
-        'cheers' => '🍻 Cheers',
-        'nice_find' => '🔥 Nice',
-        'want_to_go' => '📍 Want to Go',
-        'trophy' => '🏆 Trophy',
+        'cheers' => '🍻',
+        'nice_find' => '🔥',
+        'want_to_go' => '📍',
+        'trophy' => '🏆',
+    ];
+    $aria_labels = [
+        'cheers' => 'Cheers',
+        'nice_find' => 'Nice',
+        'want_to_go' => 'Want to Go',
+        'trophy' => 'Trophy',
     ];
     $reactions = [];
 
@@ -109,7 +115,7 @@ function render_feed_thread_reactions($conn, $user_id, $item) {
         $reaction = $reactions[$reaction_type] ?? ['count' => 0, 'reacted' => false];
         $active_class = $reaction['reacted'] ? ' is-active' : '';
         $count_text = $reaction['count'] > 0 ? ' ' . (int) $reaction['count'] : '';
-        $html .= '<button type="button" class="' . $active_class . '" data-feed-reaction data-item-key="' . escape_output($item_key) . '" data-reaction-type="' . escape_output($reaction_type) . '">';
+        $html .= '<button type="button" class="' . $active_class . '" data-feed-reaction data-item-key="' . escape_output($item_key) . '" data-reaction-type="' . escape_output($reaction_type) . '" aria-label="' . escape_output($aria_labels[$reaction_type] ?? $reaction_type) . '">';
         $html .= escape_output($labels[$reaction_type] ?? $reaction_type) . $count_text;
         $html .= '</button>';
     }
@@ -238,8 +244,13 @@ $feed_item = craftcrawl_feed_item_by_key($conn, $user_id, $item_key);
 if (!$feed_item) {
     http_response_code(404);
 } elseif (!empty($feed_item['is_self'])) {
-    $seen_stmt = $conn->prepare("UPDATE users SET socialNotificationsSeenAt=NOW() WHERE id=?");
-    $seen_stmt->bind_param("i", $user_id);
+    $notification_type = 'comment';
+    $seen_stmt = $conn->prepare("
+        INSERT INTO feed_notification_reads (user_id, feed_item_key, notification_type, seenAt)
+        VALUES (?, ?, ?, NOW())
+        ON DUPLICATE KEY UPDATE seenAt=VALUES(seenAt)
+    ");
+    $seen_stmt->bind_param("iss", $user_id, $item_key, $notification_type);
     $seen_stmt->execute();
 }
 

@@ -270,11 +270,18 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                 SELECT COUNT(*) AS total
                 FROM feed_reactions activity
                 WHERE activity.user_id<>?
-                    AND activity.createdAt > ?
+                    AND activity.createdAt > COALESCE((
+                        SELECT fnr.seenAt
+                        FROM feed_notification_reads fnr
+                        WHERE fnr.user_id=?
+                            AND fnr.feed_item_key=activity.feed_item_key
+                            AND fnr.notification_type='reaction'
+                        LIMIT 1
+                    ), ?)
                     AND $owned_item_exists
             ",
-            "isiiiiiis",
-            [$user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, (string) $user_id]
+            "iisiiiiiis",
+            [$user_id, $user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, (string) $user_id]
         );
 
         $social_notifications += craftcrawl_notification_count_value(
@@ -284,11 +291,18 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                 FROM feed_comments activity
                 WHERE activity.user_id<>?
                     AND activity.deletedAt IS NULL
-                    AND activity.createdAt > ?
+                    AND activity.createdAt > COALESCE((
+                        SELECT fnr.seenAt
+                        FROM feed_notification_reads fnr
+                        WHERE fnr.user_id=?
+                            AND fnr.feed_item_key=activity.feed_item_key
+                            AND fnr.notification_type='comment'
+                        LIMIT 1
+                    ), ?)
                     AND $owned_item_exists
             ",
-            "isiiiiiis",
-            [$user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, (string) $user_id]
+            "iisiiiiiis",
+            [$user_id, $user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, (string) $user_id]
         );
     }
 

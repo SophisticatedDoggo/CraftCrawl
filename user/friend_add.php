@@ -89,7 +89,7 @@ try {
 
         $badges = craftcrawl_award_eligible_badges($conn, $user_id);
         craftcrawl_award_eligible_badges($conn, $friend_id);
-        $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Friend Added', craftcrawl_badge_xp_items($badges));
+        $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Badge Earned', craftcrawl_badge_xp_items($badges));
         $conn->commit();
 
         if ($reverse_request) {

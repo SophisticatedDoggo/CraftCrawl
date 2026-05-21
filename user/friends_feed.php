@@ -18,10 +18,12 @@ $user_id = (int) $_SESSION['user_id'];
 $before_raw = $_GET['before'] ?? null;
 $before_dt = ($before_raw && strtotime($before_raw)) ? date('Y-m-d H:i:s', strtotime($before_raw)) : null;
 
-$seen_stmt = $conn->prepare("SELECT friendsSeenAt FROM users WHERE id=?");
+$seen_stmt = $conn->prepare("SELECT friendsSeenAt, socialNotificationsSeenAt FROM users WHERE id=?");
 $seen_stmt->bind_param("i", $user_id);
 $seen_stmt->execute();
-$seen_at = $seen_stmt->get_result()->fetch_assoc()['friendsSeenAt'] ?? null;
+$seen_row = $seen_stmt->get_result()->fetch_assoc() ?: [];
+$seen_at = $seen_row['friendsSeenAt'] ?? null;
+$social_seen_at = $seen_row['socialNotificationsSeenAt'] ?? '1970-01-01 00:00:00';
 
 $friend_stmt = $conn->prepare("
     SELECT
@@ -542,17 +544,18 @@ foreach ($feed as $feed_item) {
     $feed_owner_by_key[$feed_item['item_key']] = (int) ($feed_item['owner_user_id'] ?? 0);
 }
 $reactions_by_item = [];
+$reaction_entries_by_item = [];
 $comment_counts_by_item = [];
 
 if (!empty($feed_item_keys)) {
     $reaction_placeholders = implode(',', array_fill(0, count($feed_item_keys), '?'));
     $reaction_types = str_repeat('s', count($feed_item_keys));
     $reaction_sql = "
-        SELECT fr.feed_item_key, fr.reaction_type, fr.user_id, u.fName, u.lName
+        SELECT fr.feed_item_key, fr.reaction_type, fr.user_id, fr.createdAt, u.fName, u.lName
         FROM feed_reactions fr
         INNER JOIN users u ON u.id = fr.user_id
         WHERE fr.feed_item_key IN ($reaction_placeholders)
-        ORDER BY fr.createdAt ASC, fr.id ASC
+        ORDER BY fr.createdAt DESC, fr.id DESC
     ";
     $reaction_stmt = $conn->prepare($reaction_sql);
     $reaction_params = [$reaction_types];
@@ -587,6 +590,16 @@ if (!empty($feed_item_keys)) {
         }
 
         $reactor_name = trim($reaction['fName'] . ' ' . $reaction['lName']);
+        if (!isset($reaction_entries_by_item[$key])) {
+            $reaction_entries_by_item[$key] = [];
+        }
+        $reaction_entries_by_item[$key][] = [
+            'type' => $type,
+            'user_id' => $reactor_id,
+            'name' => $reactor_id === $user_id ? 'You' : $reactor_name,
+            'is_you' => $reactor_id === $user_id,
+            'created_at' => $reaction['createdAt']
+        ];
         $reactions_by_item[$key][$type]['count']++;
         $reactions_by_item[$key][$type]['reacted'] = $reactions_by_item[$key][$type]['reacted'] || $reactor_id === $user_id;
         $reactions_by_item[$key][$type]['reactors'][] = [
@@ -598,6 +611,7 @@ if (!empty($feed_item_keys)) {
 
     foreach ($feed as $index => $feed_item) {
         $feed[$index]['reactions'] = array_values($reactions_by_item[$feed_item['item_key']] ?? []);
+        $feed[$index]['reaction_entries'] = array_values($reaction_entries_by_item[$feed_item['item_key']] ?? []);
     }
 }
 
@@ -627,6 +641,83 @@ if (!empty($feed_item_keys)) {
 
     foreach ($feed as $index => $feed_item) {
         $feed[$index]['comment_count'] = $comment_counts_by_item[$feed_item['item_key']] ?? 0;
+    }
+}
+
+if (!empty($feed_item_keys)) {
+    $unread_placeholders = implode(',', array_fill(0, count($feed_item_keys), '?'));
+    $unread_types = str_repeat('s', count($feed_item_keys));
+
+    $unread_reaction_sql = "
+        SELECT activity.feed_item_key, COUNT(*) AS total
+        FROM feed_reactions activity
+        WHERE activity.user_id<>?
+            AND activity.feed_item_key IN ($unread_placeholders)
+            AND activity.createdAt > COALESCE((
+                SELECT fnr.seenAt
+                FROM feed_notification_reads fnr
+                WHERE fnr.user_id=?
+                    AND fnr.feed_item_key=activity.feed_item_key
+                    AND fnr.notification_type='reaction'
+                LIMIT 1
+            ), ?)
+        GROUP BY activity.feed_item_key
+    ";
+    $unread_reaction_stmt = $conn->prepare($unread_reaction_sql);
+    $unread_reaction_params = ['i' . $unread_types . 'is', &$user_id];
+    foreach ($feed_item_keys as $index => $feed_item_key) {
+        $unread_reaction_params[] = &$feed_item_keys[$index];
+    }
+    $unread_reaction_params[] = &$user_id;
+    $unread_reaction_params[] = &$social_seen_at;
+    call_user_func_array([$unread_reaction_stmt, 'bind_param'], $unread_reaction_params);
+    $unread_reaction_stmt->execute();
+    $unread_reaction_counts = [];
+    $unread_reaction_result = $unread_reaction_stmt->get_result();
+    while ($row = $unread_reaction_result->fetch_assoc()) {
+        $unread_reaction_counts[$row['feed_item_key']] = (int) $row['total'];
+    }
+
+    $unread_comment_sql = "
+        SELECT activity.feed_item_key, COUNT(*) AS total
+        FROM feed_comments activity
+        WHERE activity.user_id<>?
+            AND activity.deletedAt IS NULL
+            AND activity.feed_item_key IN ($unread_placeholders)
+            AND activity.createdAt > COALESCE((
+                SELECT fnr.seenAt
+                FROM feed_notification_reads fnr
+                WHERE fnr.user_id=?
+                    AND fnr.feed_item_key=activity.feed_item_key
+                    AND fnr.notification_type='comment'
+                LIMIT 1
+            ), ?)
+        GROUP BY activity.feed_item_key
+    ";
+    $unread_comment_stmt = $conn->prepare($unread_comment_sql);
+    $unread_comment_params = ['i' . $unread_types . 'is', &$user_id];
+    foreach ($feed_item_keys as $index => $feed_item_key) {
+        $unread_comment_params[] = &$feed_item_keys[$index];
+    }
+    $unread_comment_params[] = &$user_id;
+    $unread_comment_params[] = &$social_seen_at;
+    call_user_func_array([$unread_comment_stmt, 'bind_param'], $unread_comment_params);
+    $unread_comment_stmt->execute();
+    $unread_comment_counts = [];
+    $unread_comment_result = $unread_comment_stmt->get_result();
+    while ($row = $unread_comment_result->fetch_assoc()) {
+        $unread_comment_counts[$row['feed_item_key']] = (int) $row['total'];
+    }
+
+    foreach ($feed as $index => $feed_item) {
+        if (($feed_item['owner_user_id'] ?? 0) !== $user_id) {
+            $feed[$index]['unread_comment_count'] = 0;
+            $feed[$index]['unread_reaction_count'] = 0;
+            continue;
+        }
+
+        $feed[$index]['unread_comment_count'] = $unread_comment_counts[$feed_item['item_key']] ?? 0;
+        $feed[$index]['unread_reaction_count'] = $unread_reaction_counts[$feed_item['item_key']] ?? 0;
     }
 }
 

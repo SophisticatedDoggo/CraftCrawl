@@ -3203,12 +3203,11 @@ a.text-link:focus {
 }
 
 .feed-action-row {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(40px, 1fr) auto minmax(0, 1fr);
+    align-items: center;
     gap: 8px;
     margin-top: 16px;
-    flex-wrap: wrap;
 }
 
 .friends-feed-item .feed-action-row {
@@ -3221,6 +3220,7 @@ a.text-link:focus {
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
+    justify-content: flex-start;
 }
 
 .feed-reactions {
@@ -3228,7 +3228,8 @@ a.text-link:focus {
     flex-wrap: wrap;
     gap: 6px;
     justify-content: flex-end;
-    margin-left: auto;
+    justify-self: end;
+    margin-left: 0;
     margin-top: 0;
 }
 
@@ -3274,6 +3275,111 @@ a.text-link:focus {
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
+}
+
+.feed-action-unread-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    color: #fff;
+    background: var(--color-danger);
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.feed-reaction-disclosure {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    justify-self: center;
+    width: auto;
+    margin-top: 0;
+}
+
+.feed-reaction-disclosure-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: auto;
+    min-width: 104px;
+    min-height: 34px;
+    padding: 7px 10px;
+    border: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
+    border-radius: 0;
+    color: var(--color-muted);
+    background: transparent;
+    box-shadow: none;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.feed-reaction-disclosure-toggle:hover,
+.feed-reaction-disclosure-toggle:focus {
+    color: var(--color-primary);
+    background: transparent;
+    border-bottom-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-border));
+}
+
+.feed-reaction-disclosure-toggle[aria-expanded="true"] .feed-reaction-disclosure-arrow {
+    transform: rotate(180deg);
+}
+
+.feed-reaction-disclosure-arrow {
+    display: inline-block;
+    transition: transform 140ms ease;
+}
+
+.feed-reaction-list {
+    display: grid;
+    gap: 8px;
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-muted);
+}
+
+.friends-feed-item .feed-reaction-list {
+    width: calc(100% + var(--feed-avatar-track) + var(--feed-column-gap));
+    margin-left: calc(-1 * (var(--feed-avatar-track) + var(--feed-column-gap)));
+}
+
+.feed-reaction-list[hidden] {
+    display: none;
+}
+
+.feed-reaction-list p {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 13px;
+}
+
+.feed-reaction-list-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 3px 10px;
+    align-items: baseline;
+    font-size: 13px;
+}
+
+.feed-reaction-list-item strong,
+.feed-reaction-list-item span {
+    min-width: 0;
+}
+
+.feed-reaction-list-item time {
+    grid-row: span 2;
+    color: var(--color-muted);
+    font-size: 12px;
+    white-space: nowrap;
 }
 
 .feed-panel .friends-feed {

@@ -357,7 +357,7 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user
                     $owner_id,
                     'New reaction',
                     $reactor_name . ' reacted ' . ($reaction_labels[$reaction_type] ?? 'to your post') . ' on your CraftCrawl post.',
-                    'user/feed_post.php?item=' . rawurlencode($item_key) . '&focus_section=reactions'
+                    'user/feed.php?focus_item=' . rawurlencode($item_key) . '&focus_section=reactions'
                 );
             } catch (Throwable $push_error) {
                 error_log(
@@ -372,16 +372,17 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user
 
     $reaction_stage = 'load_reaction_counts';
     $count_stmt = $conn->prepare("
-        SELECT fr.reaction_type, fr.user_id, u.fName, u.lName
+        SELECT fr.reaction_type, fr.user_id, fr.createdAt, u.fName, u.lName
         FROM feed_reactions fr
         INNER JOIN users u ON u.id = fr.user_id
         WHERE fr.feed_item_key=?
-        ORDER BY fr.createdAt ASC, fr.id ASC
+        ORDER BY fr.createdAt DESC, fr.id DESC
     ");
     $count_stmt->bind_param("s", $item_key);
     $count_stmt->execute();
     $result = $count_stmt->get_result();
     $reactions = [];
+    $reaction_entries = [];
 
     while ($reaction = $result->fetch_assoc()) {
         $type = $reaction['reaction_type'];
@@ -401,6 +402,13 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user
         }
 
         $reactor_name = trim($reaction['fName'] . ' ' . $reaction['lName']);
+        $reaction_entries[] = [
+            'type' => $type,
+            'user_id' => $reactor_id,
+            'name' => $reactor_id === $user_id ? 'You' : $reactor_name,
+            'is_you' => $reactor_id === $user_id,
+            'created_at' => $reaction['createdAt']
+        ];
         $reactions[$type]['count']++;
         $reactions[$type]['reacted'] = $reactions[$type]['reacted'] || $reactor_id === $user_id;
         $reactions[$type]['reactors'][] = [
@@ -410,7 +418,12 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user
         ];
     }
 
-    echo json_encode(['ok' => true, 'reactions' => array_values($reactions), 'xp_reward' => $reward_payload]);
+    echo json_encode([
+        'ok' => true,
+        'reactions' => array_values($reactions),
+        'reaction_entries' => $reaction_entries,
+        'xp_reward' => $reward_payload
+    ]);
 } catch (Throwable $error) {
     error_log(
         'Feed reaction toggle failed at stage ' . $reaction_stage

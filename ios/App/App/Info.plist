@@ -144,6 +144,10 @@
 	<string>CraftCrawl uses your location to find nearby check-ins.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>CraftCrawl uses your location to find nearby check-ins while you are using the app.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>CraftCrawl uses your camera so you can take photos for reviews and profile updates.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>CraftCrawl lets you choose photos from your library for reviews and profile updates.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
