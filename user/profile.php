@@ -333,14 +333,14 @@ if (!$profile) {
                 </div>
             </div>
             <div class="business-header-actions user-subpage-header-actions">
-                <a href="portal.php" data-back-link>Back</a>
+                <a href="portal.php" data-back-link>&lt;</a>
                 <a href="friends.php">Friends</a>
                 <?php if ($is_own_profile) : ?>
                     <a href="settings.php">Settings</a>
                 <?php endif; ?>
             </div>
             <?php if (!$is_own_profile) : ?>
-                <a class="mobile-context-back" href="friends.php" data-back-link>Back</a>
+                <a class="mobile-context-back" href="friends.php" data-back-link>&lt;</a>
             <?php endif; ?>
         </header>
 

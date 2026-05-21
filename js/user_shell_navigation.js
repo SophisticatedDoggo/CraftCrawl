@@ -2,6 +2,7 @@
     const baseFiles = new Set(['portal.php', 'events.php', 'feed.php', 'quests.php']);
     const shellFiles = new Set([...baseFiles, 'friends.php', 'rewards.php', 'profile.php', 'settings.php', 'feed_post.php', 'business_details.php']);
     let navigating = false;
+    const baseScrollPositions = new Map();
 
     function absoluteUrl(value, base = window.location.href) { return new URL(value, base).href; }
     function currentFile(url = window.location.href) { return new URL(url, window.location.href).pathname.split('/').pop() || 'portal.php'; }
@@ -14,6 +15,17 @@
     }
     function activeContent() { return document.querySelector('[data-user-page-content]:not([hidden])'); }
     function baseContent() { return document.querySelector('[data-user-page-content] [data-user-tab-shell]')?.closest('[data-user-page-content]') || null; }
+    function saveBaseScroll(url = window.location.href) {
+        if (isBaseUrl(url)) {
+            baseScrollPositions.set(currentFile(url), window.scrollY || document.documentElement.scrollTop || 0);
+        }
+    }
+    function restoreBaseScroll(url) {
+        const savedScroll = baseScrollPositions.get(currentFile(url));
+        if (typeof savedScroll !== 'number') return false;
+        window.requestAnimationFrame(() => window.scrollTo(0, savedScroll));
+        return true;
+    }
 
     function setActiveTab(url) {
         const file = currentFile(url);
@@ -112,12 +124,14 @@
                     userInitiated: Boolean(options.userInitiated),
                     trackPageView: false
                 });
+                restoreBaseScroll(url);
             } else {
                 const doc = await fetchDocument(url, { noStore: Boolean(options.noStore) });
                 const nextContent = doc.querySelector('[data-user-page-content]');
                 if (!nextContent || !visibleContent) throw new Error('Missing shell content.');
 
                 if (!destinationIsBase && liveBaseContent && visibleContent === liveBaseContent) {
+                    saveBaseScroll();
                     document.querySelectorAll('[data-user-page-content]').forEach((content) => {
                         if (content !== liveBaseContent) content.remove();
                     });
@@ -133,9 +147,10 @@
                 initSwappedContent(nextContent);
             }
 
-            if (!options.replace) history.pushState({ craftcrawlUserShell: true }, '', url);
+            if (options.replace) history.replaceState({ craftcrawlUserShell: true }, '', url);
+            else history.pushState({ craftcrawlUserShell: true }, '', url);
             setActiveTab(url);
-            window.scrollTo(0, 0);
+            if (!destinationIsBase || !restoreBaseScroll(url)) window.scrollTo(0, 0);
             document.dispatchEvent(new CustomEvent('craftcrawl:user-shell-navigated', { detail: { url } }));
             window.CraftCrawlTrackPageView?.(url, document.title);
             return true;
@@ -174,6 +189,7 @@
     }, true);
     window.addEventListener('popstate', () => { if (isShellUrl(window.location.href)) navigate(window.location.href, { replace: true }); });
     window.CraftCrawlNavigateUserShell = navigate;
+    window.CraftCrawlSaveUserShellBaseScroll = saveBaseScroll;
     window.CraftCrawlRefreshUserShell = function () {
         return navigate(window.location.href, { replace: true, noStore: true });
     };

@@ -187,7 +187,7 @@ $form_date = $editing_event['eventDate'] ?? $selected_date;
                 </button>
                 <div class="mobile-actions-panel" data-mobile-actions-panel>
                     <a href="locations.php">Locations</a>
-                    <a href="events.php?month=<?php echo escape_output($calendar_month); ?>" data-back-link>Back</a>
+                    <a href="events.php?month=<?php echo escape_output($calendar_month); ?>" data-back-link>&lt;</a>
                     <a href="analytics.php">Stats</a>
                     <a href="settings.php">Settings</a>
                     <form action="../logout.php" method="POST">

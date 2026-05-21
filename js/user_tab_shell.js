@@ -9,6 +9,7 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
 
     const routeByTab = { map: 'portal.php', events: 'events.php', feed: 'feed.php', quests: 'quests.php' };
     const titleByTab = { map: 'CraftCrawl | Home', events: 'CraftCrawl | Events', feed: 'CraftCrawl | Feed', quests: 'CraftCrawl | Quests' };
+    const tabScrollPositions = {};
     const tabFromPath = (pathname) => {
         if (pathname.endsWith('/portal.php') || pathname.endsWith('/user/')) return 'map';
         if (pathname.endsWith('/events.php')) return 'events';
@@ -52,6 +53,11 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
         const url = new URL(destination, window.location.href);
         const tab = tabFromPath(url.pathname);
         if (!routeByTab[tab]) return false;
+        const previousTab = shell.dataset.activeUserTab;
+        if (previousTab && routeByTab[previousTab]) {
+            tabScrollPositions[previousTab] = window.scrollY || document.documentElement.scrollTop || 0;
+            window.CraftCrawlSaveUserShellBaseScroll?.();
+        }
         syncTab(tab, {
             updateHistory: tab !== shell.dataset.activeUserTab || url.search !== window.location.search || url.hash !== window.location.hash,
             search: url.search,
@@ -61,6 +67,8 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
         });
         if (tab === 'map' && url.hash === '#checkin-panel') {
             document.getElementById('checkin-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else if (previousTab !== tab && typeof tabScrollPositions[tab] === 'number') {
+            window.requestAnimationFrame(() => window.scrollTo(0, tabScrollPositions[tab]));
         } else {
             window.scrollTo(0, 0);
         }

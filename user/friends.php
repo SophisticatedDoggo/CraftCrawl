@@ -173,7 +173,7 @@ $leaderboard = $leaderboard_stmt->get_result();
             </div>
             <div class="business-header-actions user-subpage-header-actions">
                 <button type="button" class="refresh-page-button" data-refresh-button>Refresh</button>
-                <a href="portal.php" data-back-link>Back</a>
+                <a href="portal.php" data-back-link>&lt;</a>
                 <a href="profile.php">Profile</a>
                 <a href="settings.php">Settings</a>
             </div>

@@ -88,7 +88,7 @@ $badge_count = (int) ($badge_count_stmt->get_result()->fetch_assoc()['total'] ??
                 </div>
             </div>
             <div class="business-header-actions user-subpage-header-actions">
-                <a href="portal.php" data-back-link>Back</a>
+                <a href="portal.php" data-back-link>&lt;</a>
                 <a href="friends.php">Friends</a>
                 <a href="profile.php">Profile</a>
             </div>
