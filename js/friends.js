@@ -1260,7 +1260,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             feedThreadOverlayContent?.replaceChildren();
             feedThreadOverlayItemKey = '';
             animateThreadReturnAnchor(0, itemKey);
-        }, 180);
+        }, 110);
 
         if (options.useHistory && history.state?.craftcrawlFeedThreadOverlay) {
             history.back();

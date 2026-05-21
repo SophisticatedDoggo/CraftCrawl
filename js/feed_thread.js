@@ -104,7 +104,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
                         useHistory: true,
                         returnItemKey: threadPage.dataset.feedThreadItemKey || ''
                     });
-                }, 70);
+                }, 35);
                 return;
             }
             threadPage.classList.add('feed-thread-page-compacting');
@@ -114,7 +114,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
                 } else {
                     window.location.href = 'feed.php';
                 }
-            }, 70);
+            }, 35);
         }
 
         threadPage.addEventListener('pointerdown', (event) => {
@@ -141,7 +141,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
                     swipe.active = false;
                     return;
                 }
-                if (deltaX < 12 || Math.abs(deltaX) < Math.abs(deltaY) * 1.15) {
+                if (deltaX < 6 || Math.abs(deltaX) < Math.abs(deltaY) * 1.05) {
                     return;
                 }
                 swipe.dragging = true;
@@ -160,7 +160,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             if (!swipe.active || event.pointerId !== swipe.pointerId) return;
 
             const deltaX = event.clientX - swipe.startX;
-            const shouldDismiss = swipe.dragging && deltaX > Math.min(150, window.innerWidth * 0.28);
+            const shouldDismiss = swipe.dragging && deltaX > Math.min(82, window.innerWidth * 0.16);
             swipe.active = false;
             threadPage.classList.remove('is-swipe-dragging');
             const dragTarget = overlayContent || threadPage;

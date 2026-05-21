@@ -3922,7 +3922,7 @@ body.events-page-body .portal-level-summary {
 }
 
 .feed-thread-overlay.is-closing .feed-thread-overlay-content {
-    animation: feedThreadOverlayOut 180ms ease-in both;
+    animation: feedThreadOverlayOut 110ms ease-in both;
 }
 
 .feed-thread-overlay.is-swipe-dragging .feed-thread-overlay-content,
