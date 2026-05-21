@@ -1159,6 +1159,10 @@ window.CraftCrawlInitFriends = function (scope = document) {
             highlight.className = 'feed-return-highlight';
             highlight.setAttribute('aria-hidden', 'true');
             item.appendChild(highlight);
+            void highlight.offsetWidth;
+            window.requestAnimationFrame(() => {
+                highlight.classList.add('is-animating');
+            });
             window.setTimeout(() => {
                 highlight.remove();
                 item.classList.remove('has-thread-return-highlight');

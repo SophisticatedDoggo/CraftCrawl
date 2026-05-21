@@ -3060,7 +3060,15 @@ a.text-link:focus {
     right: 0;
     bottom: 0;
     left: 0;
+    z-index: 4;
+    opacity: 0;
+    transform: scaleX(.94);
+    transform-origin: center;
     pointer-events: none;
+    will-change: opacity, transform;
+}
+
+.feed-return-highlight.is-animating {
     animation: feedThreadReturnRailHighlight 1000ms ease-in-out both;
 }
 
@@ -3073,6 +3081,7 @@ a.text-link:focus {
     height: 2px;
     border-radius: 999px;
     background: var(--color-primary);
+    box-shadow: 0 0 8px rgba(180, 69, 54, 0.32);
 }
 
 .feed-return-highlight::before {
