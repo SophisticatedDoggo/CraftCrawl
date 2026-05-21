@@ -3753,6 +3753,11 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     color: var(--color-muted);
 }
 
+[data-profile-filter-item][hidden],
+[data-profile-filter-empty][hidden] {
+    display: none !important;
+}
+
 .profile-location-remove {
     border-color: color-mix(in srgb, var(--color-danger) 42%, var(--color-border));
     color: var(--color-danger);
