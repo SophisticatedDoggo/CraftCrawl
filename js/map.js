@@ -1116,6 +1116,7 @@ function renderEventsFeed(events) {
     }
 
     if (!events.length) {
+        removeEventStickyDayHeader();
         feedContainer.innerHTML = '<p>No upcoming events yet.</p>';
         return;
     }
@@ -1172,15 +1173,8 @@ function renderEventsFeed(events) {
         `;
     }).join('');
 
-    feedContainer.innerHTML = `
-        <div class="event-feed-date-rail" aria-hidden="true">
-            <div class="event-feed-date-rail-track">
-                <span data-event-date-rail-label></span>
-            </div>
-        </div>
-        ${eventsMarkup}
-    `;
-    setupEventDateRail(feedContainer);
+    feedContainer.innerHTML = eventsMarkup;
+    setupEventStickyDayHeader(feedContainer);
 
     feedContainer.querySelectorAll('[data-event-want]').forEach((button) => {
         button.addEventListener('click', () => {
@@ -1219,30 +1213,40 @@ function renderEventsFeed(events) {
     });
 }
 
-function setupEventDateRail(container) {
-    const rail = container.querySelector('[data-event-date-rail-label]');
-    if (!rail) {
-        return;
-    }
+function setupEventStickyDayHeader(container) {
+    removeEventStickyDayHeader();
 
-    const state = container.eventDateRailState || {
+    const stickyHeader = document.createElement('div');
+    stickyHeader.className = 'event-feed-floating-day-header';
+    stickyHeader.setAttribute('aria-hidden', 'true');
+    stickyHeader.innerHTML = '<span></span>';
+    document.body.appendChild(stickyHeader);
+
+    const label = stickyHeader.querySelector('span');
+    const state = container.eventStickyDayState || {
         activeDate: '',
         ticking: false
     };
-    state.rail = rail;
+    state.header = stickyHeader;
+    state.label = label;
     state.activeDate = '';
-    container.eventDateRailState = state;
+    container.eventStickyDayState = state;
 
-    function updateRail() {
+    function updateStickyHeader() {
         state.ticking = false;
         const headers = Array.from(container.querySelectorAll('[data-event-day-header]'));
-        if (!headers.length || !state.rail) {
+        if (!headers.length || !state.header || !state.label) {
             return;
         }
 
-        const threshold = Math.min(window.innerHeight * 0.28, 160);
-        let activeHeader = headers[0];
+        const feedRect = container.getBoundingClientRect();
+        const shouldShow = window.matchMedia('(max-width: 760px)').matches
+            && feedRect.top <= 68
+            && feedRect.bottom > 96;
+        state.header.classList.toggle('is-visible', shouldShow);
 
+        const threshold = 74;
+        let activeHeader = headers[0];
         headers.forEach((header) => {
             if (header.getBoundingClientRect().top <= threshold) {
                 activeHeader = header;
@@ -1252,9 +1256,9 @@ function setupEventDateRail(container) {
         const nextDate = activeHeader.dataset.dateKey || '';
         if (nextDate && nextDate !== state.activeDate) {
             state.activeDate = nextDate;
-            state.rail.textContent = activeHeader.dataset.dateLabel || '';
-            state.rail.classList.remove('is-changing');
-            window.requestAnimationFrame(() => state.rail?.classList.add('is-changing'));
+            state.label.textContent = activeHeader.dataset.dateLabel || '';
+            state.header.classList.remove('is-changing');
+            window.requestAnimationFrame(() => state.header?.classList.add('is-changing'));
         }
     }
 
@@ -1263,17 +1267,22 @@ function setupEventDateRail(container) {
             return;
         }
         state.ticking = true;
-        window.requestAnimationFrame(updateRail);
+        window.requestAnimationFrame(updateStickyHeader);
     }
 
-    if (container.dataset.eventDateRailReady !== 'true') {
-        container.dataset.eventDateRailReady = 'true';
+    if (container.dataset.eventStickyDayReady !== 'true') {
+        container.dataset.eventStickyDayReady = 'true';
         window.addEventListener('scroll', requestUpdate, { passive: true });
         window.addEventListener('resize', requestUpdate);
+        document.addEventListener('scroll', requestUpdate, { capture: true, passive: true });
     }
 
-    updateRail();
-    window.setTimeout(updateRail, 80);
+    updateStickyHeader();
+    window.setTimeout(updateStickyHeader, 80);
+}
+
+function removeEventStickyDayHeader() {
+    document.querySelectorAll('.event-feed-floating-day-header').forEach((header) => header.remove());
 }
 
 function escapeHtml(value) {
