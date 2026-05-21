@@ -30,6 +30,78 @@ function craftcrawl_user_can_view_feed_actor($conn, $viewer_id, $actor_id) {
     return (bool) $stmt->get_result()->fetch_assoc();
 }
 
+function craftcrawl_feed_item_owner_id($conn, $item_key) {
+    if (preg_match('/^first_visit:(\d+)$/', $item_key, $matches)) {
+        $visit_id = (int) $matches[1];
+        $stmt = $conn->prepare("SELECT user_id FROM user_visits WHERE id=? LIMIT 1");
+        $stmt->bind_param("i", $visit_id);
+        $stmt->execute();
+        $visit = $stmt->get_result()->fetch_assoc();
+
+        return $visit ? (int) $visit['user_id'] : 0;
+    }
+
+    if (preg_match('/^level_up:(\d+)$/', $item_key, $matches)) {
+        $xp_id = (int) $matches[1];
+        $stmt = $conn->prepare("SELECT user_id FROM xp_log WHERE id=? LIMIT 1");
+        $stmt->bind_param("i", $xp_id);
+        $stmt->execute();
+        $xp = $stmt->get_result()->fetch_assoc();
+
+        return $xp ? (int) $xp['user_id'] : 0;
+    }
+
+    if (preg_match('/^event_want:(\d+)$/', $item_key, $matches)) {
+        $want_id = (int) $matches[1];
+        $stmt = $conn->prepare("SELECT user_id FROM event_want_to_go WHERE id=? LIMIT 1");
+        $stmt->bind_param("i", $want_id);
+        $stmt->execute();
+        $want = $stmt->get_result()->fetch_assoc();
+
+        return $want ? (int) $want['user_id'] : 0;
+    }
+
+    if (preg_match('/^location_want:(\d+)$/', $item_key, $matches)) {
+        $want_id = (int) $matches[1];
+        $stmt = $conn->prepare("SELECT user_id FROM want_to_go_locations WHERE id=? LIMIT 1");
+        $stmt->bind_param("i", $want_id);
+        $stmt->execute();
+        $want = $stmt->get_result()->fetch_assoc();
+
+        return $want ? (int) $want['user_id'] : 0;
+    }
+
+    if (preg_match('/^badge_earned:(\d+)$/', $item_key, $matches)) {
+        $badge_id = (int) $matches[1];
+        $stmt = $conn->prepare("SELECT user_id FROM user_badges WHERE id=? LIMIT 1");
+        $stmt->bind_param("i", $badge_id);
+        $stmt->execute();
+        $badge = $stmt->get_result()->fetch_assoc();
+
+        return $badge ? (int) $badge['user_id'] : 0;
+    }
+
+    if (preg_match('/^quest_complete:(\d+)$/', $item_key, $matches)) {
+        $completion_id = (int) $matches[1];
+        $stmt = $conn->prepare("SELECT user_id FROM user_quest_completions WHERE id=? LIMIT 1");
+        $stmt->bind_param("i", $completion_id);
+        $stmt->execute();
+        $quest = $stmt->get_result()->fetch_assoc();
+
+        return $quest ? (int) $quest['user_id'] : 0;
+    }
+
+    if (preg_match('/^quest_sweep:(daily|weekly):(\d+):\d{8}$/', $item_key, $matches)) {
+        return (int) $matches[2];
+    }
+
+    if (preg_match('/^business_post:(\d+)$/', $item_key)) {
+        return 0;
+    }
+
+    return 0;
+}
+
 function craftcrawl_feed_actor_payload($row) {
     return [
         'id' => (int) ($row['user_id'] ?? 0),
