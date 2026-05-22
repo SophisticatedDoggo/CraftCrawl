@@ -281,6 +281,29 @@ if (!$profile) {
         $unvisited_stmt->execute();
         $friend_unvisited_locations = $unvisited_stmt->get_result();
 
+        $profile_friends_stmt = $conn->prepare("
+            SELECT
+                u.id,
+                u.fName,
+                u.lName,
+                " . craftcrawl_level_sql('u.total_xp') . " AS level,
+                u.selected_title_index,
+                u.selected_profile_frame, u.selected_profile_frame_style,
+                u.profile_photo_url,
+                p.object_key AS profile_photo_object_key,
+                CASE WHEN viewer_friend.id IS NULL THEN 0 ELSE 1 END AS is_viewer_friend
+            FROM user_friends uf
+            INNER JOIN users u ON u.id = uf.friend_user_id
+            LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+            LEFT JOIN user_friends viewer_friend
+                ON viewer_friend.user_id=? AND viewer_friend.friend_user_id=u.id
+            WHERE uf.user_id=? AND u.disabledAt IS NULL
+            ORDER BY u.fName ASC, u.lName ASC
+        ");
+        $profile_friends_stmt->bind_param("ii", $viewer_id, $profile_id);
+        $profile_friends_stmt->execute();
+        $profile_friends = $profile_friends_stmt->get_result();
+
     }
 
     if ($can_view_liked_businesses) {
@@ -689,6 +712,52 @@ if (!$profile) {
             </section>
 
             <?php if (!$is_own_profile) : ?>
+                <section class="settings-panel" data-profile-filter-list data-profile-page-size="10">
+                    <div class="profile-list-header">
+                        <h2>Their Friends</h2>
+                        <label class="profile-list-search">
+                            <span class="visually-hidden">Search their friends</span>
+                            <input type="search" placeholder="Search" autocomplete="off" data-profile-filter-input>
+                        </label>
+                    </div>
+                    <div class="friend-current-list profile-friends-list" data-profile-filter-items>
+                        <?php if ($profile_friends->num_rows === 0) : ?>
+                            <p>No friends to show yet.</p>
+                        <?php endif; ?>
+                        <?php while ($profile_friend = $profile_friends->fetch_assoc()) : ?>
+                            <?php
+                                $profile_friend_level = max(1, (int) ($profile_friend['level'] ?? 1));
+                                $profile_friend_selected_idx = $profile_friend['selected_title_index'] !== null ? (int) $profile_friend['selected_title_index'] : null;
+                                $profile_friend_title = craftcrawl_user_effective_title($profile_friend_level, $profile_friend_selected_idx);
+                                $profile_friend_name = trim($profile_friend['fName'] . ' ' . $profile_friend['lName']);
+                                $can_open_profile_friend = (int) $profile_friend['id'] === $viewer_id || !empty($profile_friend['is_viewer_friend']);
+                            ?>
+                            <article class="friend-current-item" data-profile-filter-item>
+                                <?php echo craftcrawl_render_user_avatar($profile_friend, 'medium', 'profile-friend-avatar'); ?>
+                                <div class="friend-current-summary">
+                                    <div class="friend-current-name-row">
+                                        <strong><?php echo escape_output($profile_friend_name); ?></strong>
+                                    </div>
+                                    <p class="friend-current-meta">Level <?php echo escape_output($profile_friend_level); ?><?php echo $profile_friend_title !== '' ? ' · ' . escape_output($profile_friend_title) : ''; ?></p>
+                                </div>
+                                <div class="friend-current-actions">
+                                    <?php if ($can_open_profile_friend) : ?>
+                                        <a href="profile.php?id=<?php echo escape_output($profile_friend['id']); ?>">View Profile</a>
+                                    <?php else : ?>
+                                        <span class="profile-friend-private-label">Friend of friend</span>
+                                    <?php endif; ?>
+                                </div>
+                            </article>
+                        <?php endwhile; ?>
+                        <p class="profile-list-empty" data-profile-filter-empty hidden>No friends match your search.</p>
+                    </div>
+                    <nav class="profile-list-pagination" data-profile-pagination hidden aria-label="Their friends pages">
+                        <button type="button" data-profile-page-prev>Previous</button>
+                        <span data-profile-page-status></span>
+                        <button type="button" data-profile-page-next>Next</button>
+                    </nav>
+                </section>
+
                 <section class="settings-panel">
                     <h2>Shared Locations</h2>
                     <div class="friend-location-grid">

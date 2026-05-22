@@ -96,6 +96,57 @@ $recommendation_stmt->bind_param("i", $user_id);
 $recommendation_stmt->execute();
 $recommendations = $recommendation_stmt->get_result();
 
+$suggested_friend_stmt = $conn->prepare("
+    SELECT
+        u.id,
+        u.fName,
+        u.lName,
+        u.total_xp,
+        " . craftcrawl_level_sql('u.total_xp') . " AS level,
+        u.selected_title_index,
+        u.selected_profile_frame, u.selected_profile_frame_style,
+        u.profile_photo_url,
+        p.object_key AS profile_photo_object_key,
+        COUNT(DISTINCT my_friends.friend_user_id) AS mutual_friend_count
+    FROM user_friends my_friends
+    INNER JOIN user_friends mutual_links
+        ON mutual_links.user_id = my_friends.friend_user_id
+    INNER JOIN users u
+        ON u.id = mutual_links.friend_user_id
+    LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+    LEFT JOIN user_friends existing_friend
+        ON existing_friend.user_id=? AND existing_friend.friend_user_id=u.id
+    LEFT JOIN user_friends reverse_existing_friend
+        ON reverse_existing_friend.user_id=u.id AND reverse_existing_friend.friend_user_id=?
+    LEFT JOIN friend_requests sent
+        ON sent.requester_user_id=? AND sent.addressee_user_id=u.id AND sent.status='pending'
+    LEFT JOIN friend_requests received
+        ON received.requester_user_id=u.id AND received.addressee_user_id=? AND received.status='pending'
+    WHERE my_friends.user_id=?
+        AND u.id <> ?
+        AND u.disabledAt IS NULL
+        AND existing_friend.id IS NULL
+        AND reverse_existing_friend.id IS NULL
+        AND sent.id IS NULL
+        AND received.id IS NULL
+    GROUP BY
+        u.id,
+        u.fName,
+        u.lName,
+        u.total_xp,
+        u.selected_title_index,
+        u.selected_profile_frame,
+        u.selected_profile_frame_style,
+        u.profile_photo_url,
+        p.object_key
+    HAVING mutual_friend_count >= 2
+    ORDER BY mutual_friend_count DESC, u.fName ASC, u.lName ASC
+    LIMIT 8
+");
+$suggested_friend_stmt->bind_param("iiiiii", $user_id, $user_id, $user_id, $user_id, $user_id, $user_id);
+$suggested_friend_stmt->execute();
+$suggested_friends = $suggested_friend_stmt->get_result();
+
 $leaderboard_order = $active_leaderboard['order'];
 $leaderboard_stmt = $conn->prepare("
     SELECT
@@ -245,6 +296,36 @@ $leaderboard = $leaderboard_stmt->get_result();
                             <a href="../business_details.php?id=<?php echo escape_output($recommendation['business_id']); ?>">View Location</a>
                             <button type="button" data-recommendation-id="<?php echo escape_output($recommendation['id']); ?>" data-recommendation-status="viewed">Mark Seen</button>
                             <button type="button" data-recommendation-id="<?php echo escape_output($recommendation['id']); ?>" data-recommendation-status="dismissed">Dismiss</button>
+                        </div>
+                    </article>
+                <?php endwhile; ?>
+            </div>
+        </section>
+
+        <section class="settings-panel friends-manager-section">
+            <h2>Suggested Friends</h2>
+            <div class="friend-recommendation-list">
+                <?php if ($suggested_friends->num_rows === 0) : ?>
+                    <p>No suggested friends yet.</p>
+                <?php endif; ?>
+                <?php while ($suggested_friend = $suggested_friends->fetch_assoc()) : ?>
+                    <?php
+                        $suggested_level = max(1, (int) ($suggested_friend['level'] ?? 1));
+                        $suggested_selected_idx = $suggested_friend['selected_title_index'] !== null ? (int) $suggested_friend['selected_title_index'] : null;
+                        $suggested_title = craftcrawl_user_effective_title($suggested_level, $suggested_selected_idx);
+                        $suggested_name = trim($suggested_friend['fName'] . ' ' . $suggested_friend['lName']);
+                        $mutual_friend_count = (int) $suggested_friend['mutual_friend_count'];
+                    ?>
+                    <article class="friend-recommendation-card friend-suggestion-card" data-suggested-friend-id="<?php echo escape_output($suggested_friend['id']); ?>">
+                        <?php echo craftcrawl_render_user_avatar($suggested_friend, 'medium', 'friend-suggestion-avatar'); ?>
+                        <div>
+                            <strong><?php echo escape_output($suggested_name); ?></strong>
+                            <span>Level <?php echo escape_output($suggested_level); ?><?php echo $suggested_title !== '' ? ' · ' . escape_output($suggested_title) : ''; ?></span>
+                            <span><?php echo escape_output($mutual_friend_count); ?> mutual <?php echo $mutual_friend_count === 1 ? 'friend' : 'friends'; ?></span>
+                        </div>
+                        <div>
+                            <a href="profile.php?id=<?php echo escape_output($suggested_friend['id']); ?>">View Profile</a>
+                            <button type="button" data-suggested-friend-action="invite" data-friend-id="<?php echo escape_output($suggested_friend['id']); ?>">Invite</button>
                         </div>
                     </article>
                 <?php endwhile; ?>

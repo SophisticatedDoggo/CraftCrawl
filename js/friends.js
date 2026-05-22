@@ -10,6 +10,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     const currentFriendsList = root.querySelector('[data-current-friends-list]');
     const currentFriendsFilter = root.querySelector('[data-current-friends-filter]');
     const recommendationButtons = root.querySelectorAll('[data-recommendation-id]');
+    const suggestedFriendButtons = root.querySelectorAll('[data-suggested-friend-action]');
     const feed = panel?.querySelector('[data-friends-feed]');
     const sentinel = feed?.querySelector('[data-feed-sentinel]');
     const status = root.querySelector('[data-friends-status]');
@@ -1996,6 +1997,41 @@ window.CraftCrawlInitFriends = function (scope = document) {
     if (currentFriendsFilter) {
         currentFriendsFilter.addEventListener('input', () => renderCurrentFriends(currentFriendsCache));
     }
+
+    suggestedFriendButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            button.disabled = true;
+            button.classList.add('is-loading');
+            button.textContent = 'Sending...';
+
+            postForm(userEndpoint('friend_add.php'), {
+                csrf_token: csrfToken,
+                friend_id: button.dataset.friendId
+            })
+                .then((data) => {
+                    if (!data.ok) {
+                        showStatus(data.message || 'Friend invite could not be sent.', true);
+                        button.disabled = false;
+                        button.classList.remove('is-loading');
+                        button.textContent = 'Invite';
+                        return;
+                    }
+
+                    showStatus(data.message || 'Friend invite sent.', false);
+                    if (data.xp_reward && window.craftcrawlShowXpReward) {
+                        window.craftcrawlShowXpReward(data.xp_reward);
+                    }
+                    button.closest('.friend-suggestion-card')?.remove();
+                    refreshFriendsData();
+                })
+                .catch(() => {
+                    showStatus('Friend invite could not be sent. Please try again.', true);
+                    button.disabled = false;
+                    button.classList.remove('is-loading');
+                    button.textContent = 'Invite';
+                });
+        });
+    });
 
     recommendationButtons.forEach((button) => {
         button.addEventListener('click', () => {

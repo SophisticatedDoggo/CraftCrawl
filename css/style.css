@@ -3837,6 +3837,10 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     background: var(--color-surface-muted);
 }
 
+.friend-suggestion-card {
+    grid-template-columns: auto minmax(0, 1fr) max-content;
+}
+
 .friend-location-card strong,
 .friend-location-card span,
 .friend-recommendation-card strong,
@@ -3915,6 +3919,30 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     color: var(--color-muted);
 }
 
+.profile-list-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.profile-list-pagination span {
+    color: var(--color-muted);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.profile-friend-private-label {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    color: var(--color-muted);
+    font-size: 13px;
+    font-weight: 800;
+}
+
 [data-profile-filter-item][hidden],
 [data-profile-filter-empty][hidden] {
     display: none !important;
@@ -3941,6 +3969,10 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     flex-wrap: wrap;
     gap: 8px;
     justify-content: flex-end;
+}
+
+.friend-suggestion-card > div:last-child {
+    grid-column: auto;
 }
 
 .friends-leaderboard article {
