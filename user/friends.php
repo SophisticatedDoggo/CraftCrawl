@@ -195,7 +195,33 @@ $leaderboard_stmt = $conn->prepare("
 ");
 $leaderboard_stmt->bind_param("ii", $user_id, $user_id);
 $leaderboard_stmt->execute();
-$leaderboard = $leaderboard_stmt->get_result();
+$leaderboard_result = $leaderboard_stmt->get_result();
+$leaderboard_rows = [];
+$leaderboard_rank = 1;
+$viewer_leaderboard_row = null;
+
+while ($leaderboard_row = $leaderboard_result->fetch_assoc()) {
+    $leaderboard_row['rank'] = $leaderboard_rank;
+    if ((int) $leaderboard_row['id'] === $user_id) {
+        $viewer_leaderboard_row = $leaderboard_row;
+    }
+    $leaderboard_rows[] = $leaderboard_row;
+    $leaderboard_rank++;
+}
+
+$visible_leaderboard_rows = array_slice($leaderboard_rows, 0, 10);
+$viewer_in_top_ten = false;
+
+foreach ($visible_leaderboard_rows as $leaderboard_row) {
+    if ((int) $leaderboard_row['id'] === $user_id) {
+        $viewer_in_top_ten = true;
+        break;
+    }
+}
+
+if (!$viewer_in_top_ten && $viewer_leaderboard_row !== null) {
+    $visible_leaderboard_rows[] = $viewer_leaderboard_row;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -248,8 +274,7 @@ $leaderboard = $leaderboard_stmt->get_result();
                 <?php endforeach; ?>
             </nav>
             <div class="friends-leaderboard">
-                <?php $rank = 1; ?>
-                <?php while ($leader = $leaderboard->fetch_assoc()) : ?>
+                <?php foreach ($visible_leaderboard_rows as $leader) : ?>
                     <?php
                         $level = (int) $leader['level'];
                         $selected_idx = $leader['selected_title_index'] !== null ? (int) $leader['selected_title_index'] : null;
@@ -259,7 +284,7 @@ $leaderboard = $leaderboard_stmt->get_result();
                         $metric_text = $leaderboard_mode === 'level' ? '' : (int) ($leader[$metric_key] ?? 0) . ' ' . $active_leaderboard['metric_label'];
                     ?>
                     <article <?php echo (int) $leader['id'] === $user_id ? 'data-user-progress-summary' : ''; ?>>
-                        <strong><?php echo escape_output(ordinal_rank($rank)); ?></strong>
+                        <strong><?php echo escape_output(ordinal_rank($leader['rank'])); ?></strong>
                         <?php echo craftcrawl_render_user_avatar($leader, 'medium', 'leaderboard-avatar'); ?>
                         <div>
                             <div class="leaderboard-row-top">
@@ -272,8 +297,7 @@ $leaderboard = $leaderboard_stmt->get_result();
                             <a class="leaderboard-profile-link" href="profile.php?id=<?php echo escape_output($leader['id']); ?>">View Profile</a>
                         </div>
                     </article>
-                    <?php $rank++; ?>
-                <?php endwhile; ?>
+                <?php endforeach; ?>
             </div>
         </section>
 
