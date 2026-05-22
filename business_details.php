@@ -885,6 +885,23 @@ function format_event_time_range($event) {
     $craftcrawl_user_logout_action = '/logout.php';
     include __DIR__ . '/user/app_nav.php';
     ?>
+<?php if ($business['bType'] === 'social_club') : ?>
+    <section
+        class="welcome-modal"
+        data-social-club-disclaimer
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="social-club-disclaimer-title"
+    >
+        <div class="welcome-modal-backdrop" aria-hidden="true"></div>
+        <div class="welcome-modal-panel">
+            <span class="welcome-modal-kicker">Heads up</span>
+            <h2 id="social-club-disclaimer-title">Membership may be required.</h2>
+            <p>Social clubs often require a membership or guest sponsorship for entry. Check with the location directly before visiting.</p>
+            <button type="button" data-social-club-disclaimer-dismiss>Got it</button>
+        </div>
+    </section>
+<?php endif; ?>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
     window.CRAFTCRAWL_XP_REWARD_POPUP = <?php echo json_encode($xp_reward_popup, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
@@ -914,5 +931,6 @@ function format_event_time_range($event) {
 <script src="js/user_tab_shell.js?v=<?php echo filemtime(__DIR__ . '/js/user_tab_shell.js'); ?>"></script>
 <script src="js/user_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/js/user_shell_navigation.js'); ?>"></script>
 <script src="js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/js/depth_animations.js'); ?>"></script>
+<script src="js/social_club_disclaimer.js?v=<?php echo filemtime(__DIR__ . '/js/social_club_disclaimer.js'); ?>"></script>
 </body>
 </html>

@@ -296,10 +296,18 @@ map.on('load', function () {
         const coordinates = e.features[0].geometry.coordinates.slice();
         const properties = e.features[0].properties;
 
-        new mapboxgl.Popup()
-            .setLngLat(coordinates)
-            .setHTML(getBusinessPopupHTML(properties, coordinates))
-            .addTo(map);
+        const openPopup = () => {
+            new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(getBusinessPopupHTML(properties, coordinates))
+                .addTo(map);
+        };
+
+        if (properties.businessType === 'social_club') {
+            showSocialClubDisclaimerIfNeeded(openPopup);
+        } else {
+            openPopup();
+        }
     };
 
     map.on('click', 'clusters', zoomToCluster);
@@ -364,6 +372,51 @@ function escapeHtml(value) {
     const element = document.createElement('span');
     element.textContent = value || '';
     return element.innerHTML;
+}
+
+function showSocialClubDisclaimerIfNeeded(callback) {
+    const storageKey = 'craftcrawl_social_club_disclaimer_seen';
+
+    if (sessionStorage.getItem(storageKey)) {
+        callback();
+        return;
+    }
+
+    const existing = document.querySelector('[data-social-club-disclaimer]');
+    if (existing) {
+        existing.remove();
+        document.body.classList.remove('welcome-modal-open');
+    }
+
+    const modal = document.createElement('section');
+    modal.className = 'welcome-modal';
+    modal.setAttribute('data-social-club-disclaimer', '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'social-club-disclaimer-title');
+    modal.innerHTML = `
+        <div class="welcome-modal-backdrop" aria-hidden="true"></div>
+        <div class="welcome-modal-panel">
+            <span class="welcome-modal-kicker">Heads up</span>
+            <h2 id="social-club-disclaimer-title">Membership may be required.</h2>
+            <p>Social clubs often require a membership or guest sponsorship for entry. Check with the location directly before visiting.</p>
+            <button type="button" data-social-club-disclaimer-dismiss>Got it</button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    document.body.classList.add('welcome-modal-open');
+    modal.querySelector('[data-social-club-disclaimer-dismiss]')?.focus();
+
+    modal.querySelector('[data-social-club-disclaimer-dismiss]')?.addEventListener('click', () => {
+        sessionStorage.setItem(storageKey, '1');
+        modal.classList.add('is-closing');
+        document.body.classList.remove('welcome-modal-open');
+        window.setTimeout(() => {
+            modal.remove();
+            callback();
+        }, 180);
+    });
 }
 
 function getBusinessPopupHTML(properties, coordinates) {
@@ -787,7 +840,7 @@ function renderBusinessList(features) {
             : '';
 
         return `
-            <li class="business-list-item" data-business-id="${escapeHtml(properties.id)}" role="button" tabindex="0" aria-label="Show ${escapeHtml(properties.title)} on map">
+            <li class="business-list-item" data-business-id="${escapeHtml(properties.id)}" data-business-type="${escapeHtml(properties.businessType)}" role="button" tabindex="0" aria-label="Show ${escapeHtml(properties.title)} on map">
                 <span class="business-list-number business-list-number-${properties.businessType}">
                     ${properties.listNumber}
                 </span>
@@ -810,11 +863,22 @@ function setupBusinessListMapLinks(listContainer) {
             const clickedLink = event.target instanceof Element ? event.target.closest('a') : null;
 
             if (clickedLink) {
+                if (item.dataset.businessType === 'social_club') {
+                    event.preventDefault();
+                    showSocialClubDisclaimerIfNeeded(() => {
+                        window.location.href = clickedLink.href;
+                    });
+                }
                 return;
             }
 
             item.blur();
-            focusBusinessOnMap(item.dataset.businessId);
+
+            if (item.dataset.businessType === 'social_club') {
+                showSocialClubDisclaimerIfNeeded(() => focusBusinessOnMap(item.dataset.businessId));
+            } else {
+                focusBusinessOnMap(item.dataset.businessId);
+            }
         });
 
         item.addEventListener('keydown', (event) => {
@@ -825,7 +889,12 @@ function setupBusinessListMapLinks(listContainer) {
             }
 
             event.preventDefault();
-            focusBusinessOnMap(item.dataset.businessId);
+
+            if (item.dataset.businessType === 'social_club') {
+                showSocialClubDisclaimerIfNeeded(() => focusBusinessOnMap(item.dataset.businessId));
+            } else {
+                focusBusinessOnMap(item.dataset.businessId);
+            }
         });
     });
 }
