@@ -1317,6 +1317,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
             if (feedThreadOverlayContent) {
                 feedThreadOverlayContent.style.transform = '';
                 feedThreadOverlayContent.style.opacity = '';
+                feedThreadOverlayContent.classList.remove('is-swipe-scroll-locked');
+                delete feedThreadOverlayContent.dataset.feedSwipeScrollTop;
             }
             feedThreadOverlayContent?.replaceChildren();
             feedThreadOverlayItemKey = '';

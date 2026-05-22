@@ -237,6 +237,8 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
             if (eventDetailOverlayContent) {
                 eventDetailOverlayContent.style.transform = '';
                 eventDetailOverlayContent.style.opacity = '';
+                eventDetailOverlayContent.classList.remove('is-swipe-scroll-locked');
+                delete eventDetailOverlayContent.dataset.eventSwipeScrollTop;
             }
             eventDetailOverlayContent?.replaceChildren();
             refreshVisibleEvents();
