@@ -10,6 +10,8 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
     const routeByTab = { map: 'portal.php', events: 'events.php', feed: 'feed.php', quests: 'quests.php' };
     const titleByTab = { map: 'CraftCrawl | Home', events: 'CraftCrawl | Events', feed: 'CraftCrawl | Feed', quests: 'CraftCrawl | Quests' };
     const tabScrollPositions = {};
+    let questPanelRefreshPromise = null;
+    let questPanelLastRefresh = Date.now();
     const tabFromPath = (pathname) => {
         if (pathname.endsWith('/portal.php') || pathname.endsWith('/user/')) return 'map';
         if (pathname.endsWith('/events.php')) return 'events';
@@ -17,6 +19,80 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
         if (pathname.endsWith('/quests.php')) return 'quests';
         return null;
     };
+    const tabUrl = (tab) => {
+        const tabLink = tabbar.querySelector(`.mobile-app-tab[href$="/${routeByTab[tab]}"], .mobile-app-tab[href$="${routeByTab[tab]}"]`);
+        return new URL(tabLink?.href || routeByTab[tab], window.location.href);
+    };
+
+    function markQuestPanelStale() {
+        if (document.contains(shell)) {
+            shell.dataset.questPanelStale = 'true';
+        }
+    }
+
+    function refreshQuestPanel(options = {}) {
+        if (!document.contains(shell)) {
+            return Promise.resolve(false);
+        }
+
+        const existingPanel = shell.querySelector('[data-user-tab-panel="quests"]');
+        if (!existingPanel) {
+            return Promise.resolve(false);
+        }
+
+        const isStale = shell.dataset.questPanelStale === 'true';
+        const shouldRefresh = Boolean(options.force || isStale || Date.now() - questPanelLastRefresh > 30000);
+
+        if (!shouldRefresh) {
+            return Promise.resolve(false);
+        }
+
+        if (questPanelRefreshPromise) {
+            return questPanelRefreshPromise;
+        }
+
+        existingPanel.classList.add('is-refreshing');
+        const url = tabUrl('quests');
+        url.searchParams.set('_cc_refresh', String(Date.now()));
+
+        questPanelRefreshPromise = fetch(url.href, {
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: {
+                Accept: 'text/html',
+                'Cache-Control': 'no-cache',
+                'X-Requested-With': 'CraftCrawlShell'
+            }
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Quest refresh failed.');
+                }
+                return response.text();
+            })
+            .then((html) => {
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const nextPanel = doc.querySelector('[data-user-tab-panel="quests"]');
+                const currentPanel = shell.querySelector('[data-user-tab-panel="quests"]');
+
+                if (!nextPanel || !currentPanel) {
+                    return false;
+                }
+
+                currentPanel.replaceChildren(...Array.from(nextPanel.childNodes));
+                shell.dataset.questPanelStale = 'false';
+                questPanelLastRefresh = Date.now();
+                window.CraftCrawlInitPullToRefresh?.(currentPanel);
+                return true;
+            })
+            .catch(() => false)
+            .finally(() => {
+                shell.querySelector('[data-user-tab-panel="quests"]')?.classList.remove('is-refreshing');
+                questPanelRefreshPromise = null;
+            });
+
+        return questPanelRefreshPromise;
+    }
 
     function syncTab(tab, options = {}) {
         if (!document.contains(shell) || !routeByTab[tab]) return;
@@ -47,6 +123,10 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
                 userInitiated: Boolean(options.userInitiated)
             }
         }));
+
+        if (tab === 'quests') {
+            refreshQuestPanel({ force: Boolean(options.userInitiated) });
+        }
     }
 
     window.CraftCrawlSwitchUserTab = function (destination, options = {}) {
@@ -98,6 +178,21 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
             url: window.location.href
         });
     }
+
+    window.CraftCrawlMarkQuestPanelStale = markQuestPanelStale;
+    window.CraftCrawlRefreshQuestPanel = refreshQuestPanel;
+    window.addEventListener('craftcrawl:quest-progress-changed', markQuestPanelStale);
+    window.addEventListener('pageshow', (event) => {
+        if (!event.persisted) {
+            return;
+        }
+
+        markQuestPanelStale();
+        if (shell.dataset.activeUserTab === 'quests') {
+            refreshQuestPanel({ force: true });
+        }
+    });
+
     return true;
 };
 window.CraftCrawlInitUserTabShell();

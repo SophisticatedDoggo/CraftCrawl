@@ -128,6 +128,10 @@
                             : '';
 
                         showStatus(`${data.message}${badgeText}`, false);
+                        window.CraftCrawlMarkQuestPanelStale?.();
+                        window.dispatchEvent(new CustomEvent('craftcrawl:quest-progress-changed', {
+                            detail: { source: 'check_in', questRewards: data.quest_rewards || [] }
+                        }));
                         if (window.craftcrawlShowXpReward) {
                             window.craftcrawlShowXpReward(data);
                         }
