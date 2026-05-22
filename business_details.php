@@ -132,6 +132,13 @@ $location_id = (int) $business['location_id'];
 $legacy_business_id = !empty($business['legacy_business_id']) ? (int) $business['legacy_business_id'] : null;
 $is_claimed_location = $business['visibility_status'] === 'public_claimed';
 $business_phone_href = dialable_phone_number($business['bPhone'] ?? '');
+
+$disclaimer_pref_stmt = $conn->prepare("SELECT show_social_club_disclaimer FROM users WHERE id=? LIMIT 1");
+$disclaimer_pref_stmt->bind_param("i", $user_id);
+$disclaimer_pref_stmt->execute();
+$disclaimer_pref_row = $disclaimer_pref_stmt->get_result()->fetch_assoc();
+$show_social_club_disclaimer = $disclaimer_pref_row === null || !empty($disclaimer_pref_row['show_social_club_disclaimer']);
+
 $business_hours = craftcrawl_location_hours_for_form($conn, $location_id);
 $business_hours_text = craftcrawl_business_hours_have_saved_hours($business_hours)
     ? craftcrawl_format_business_hours($business_hours)
@@ -885,7 +892,7 @@ function format_event_time_range($event) {
     $craftcrawl_user_logout_action = '/logout.php';
     include __DIR__ . '/user/app_nav.php';
     ?>
-<?php if ($business['bType'] === 'social_club') : ?>
+<?php if ($business['bType'] === 'social_club' && $show_social_club_disclaimer) : ?>
     <section
         class="welcome-modal"
         data-social-club-disclaimer

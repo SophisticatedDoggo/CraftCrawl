@@ -375,6 +375,11 @@ function escapeHtml(value) {
 }
 
 function showSocialClubDisclaimerIfNeeded(callback) {
+    if (!window.CRAFTCRAWL_SHOW_SOCIAL_CLUB_DISCLAIMER) {
+        callback();
+        return;
+    }
+
     const storageKey = 'craftcrawl_social_club_disclaimer_seen';
 
     if (sessionStorage.getItem(storageKey)) {
@@ -723,7 +728,12 @@ function setupBusinessSearch() {
         const matches = getBusinessSearchMatches(searchInput.value);
 
         if (matches.length) {
-            openBusinessDetails(matches[0].properties.id);
+            const match = matches[0];
+            if (match.properties.businessType === 'social_club') {
+                showSocialClubDisclaimerIfNeeded(() => openBusinessDetails(match.properties.id));
+            } else {
+                openBusinessDetails(match.properties.id);
+            }
         }
     });
 
@@ -796,6 +806,14 @@ function renderBusinessSearchResults(matches) {
         link.href = `../business_details.php?id=${properties.id}`;
         name.textContent = properties.title;
         meta.textContent = `${formatBusinessType(properties.businessType)} · ${properties.city}, ${properties.state}`;
+
+        if (properties.businessType === 'social_club') {
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                searchResults.hidden = true;
+                showSocialClubDisclaimerIfNeeded(() => openBusinessDetails(properties.id));
+            });
+        }
 
         link.append(name, meta);
         searchResults.appendChild(link);

@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
     show_liked_businesses BOOL NOT NULL DEFAULT TRUE,
     show_profile_rewards BOOL NOT NULL DEFAULT TRUE,
     notify_social_activity BOOL NOT NULL DEFAULT TRUE,
+    show_social_club_disclaimer BOOL NOT NULL DEFAULT TRUE,
     display_palette VARCHAR(20) NOT NULL DEFAULT 'trail-map',
     profile_photo_id INT,
     profile_photo_url VARCHAR(2048),

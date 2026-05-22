@@ -12,6 +12,11 @@ $welcome_stmt->execute();
 $welcome_user = $welcome_stmt->get_result()->fetch_assoc();
 $show_welcome_modal = $welcome_user && empty($welcome_user['welcomeSeenAt']);
 $show_suggestion_saved_modal = ($_GET['message'] ?? '') === 'suggestion_saved';
+$disclaimer_pref_stmt = $conn->prepare("SELECT show_social_club_disclaimer FROM users WHERE id=? LIMIT 1");
+$disclaimer_pref_stmt->bind_param("i", $user_id);
+$disclaimer_pref_stmt->execute();
+$disclaimer_pref_row = $disclaimer_pref_stmt->get_result()->fetch_assoc();
+$show_social_club_disclaimer = $disclaimer_pref_row === null || !empty($disclaimer_pref_row['show_social_club_disclaimer']);
 $craftcrawl_portal_active = 'map';
 $craftcrawl_portal_show_search = true;
 $craftcrawl_portal_shell = true;
@@ -80,6 +85,7 @@ $craftcrawl_portal_shell = true;
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
     window.CRAFTCRAWL_CSRF_TOKEN = "<?php echo escape_output(craftcrawl_csrf_token()); ?>";
+    window.CRAFTCRAWL_SHOW_SOCIAL_CLUB_DISCLAIMER = <?php echo $show_social_club_disclaimer ? 'true' : 'false'; ?>;
 </script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="../js/location.js?v=<?php echo filemtime(__DIR__ . '/../js/location.js'); ?>"></script>

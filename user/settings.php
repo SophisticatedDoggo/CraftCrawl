@@ -25,6 +25,7 @@ $settings_stmt = $conn->prepare("
         u.show_want_to_go,
         u.notify_social_activity,
         u.allow_post_interactions,
+        u.show_social_club_disclaimer,
         " . craftcrawl_level_sql('u.total_xp') . " AS level,
         u.selected_title_index,
         u.selected_profile_frame, u.selected_profile_frame_style,
@@ -77,6 +78,7 @@ $show_profile_rewards        = !isset($user_settings['show_profile_rewards'])   
 $show_want_to_go             = !isset($user_settings['show_want_to_go'])            || !empty($user_settings['show_want_to_go']);
 $notify_social_activity      = !isset($user_settings['notify_social_activity'])     || !empty($user_settings['notify_social_activity']);
 $allow_post_interactions     = !isset($user_settings['allow_post_interactions'])    || !empty($user_settings['allow_post_interactions']);
+$show_social_club_disclaimer = !isset($user_settings['show_social_club_disclaimer']) || !empty($user_settings['show_social_club_disclaimer']);
 $password_auth_enabled       = !empty($user_settings['password_auth_enabled']);
 $user_level = (int) ($user_settings['level'] ?? 1);
 $selected_title_index = $user_settings['selected_title_index'] !== null ? (int) $user_settings['selected_title_index'] : null;
@@ -191,12 +193,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $show_profile_rewards        = isset($_POST['show_profile_rewards']);
         $show_want_to_go_new         = isset($_POST['show_want_to_go']);
         $notify_social_activity      = isset($_POST['notify_social_activity']);
-        $allow_post_interactions_new = isset($_POST['allow_post_interactions']);
+        $allow_post_interactions_new     = isset($_POST['allow_post_interactions']);
+        $show_social_club_disclaimer_new = isset($_POST['show_social_club_disclaimer']);
 
         $prev_show_wtg = !empty($user_settings['show_want_to_go']);
 
-        $privacy_stmt = $conn->prepare("UPDATE users SET auto_accept_friend_invites=?, show_feed_activity=?, show_liked_businesses=?, show_profile_rewards=?, show_want_to_go=?, notify_social_activity=?, allow_post_interactions=? WHERE id=?");
-        $privacy_stmt->bind_param("iiiiiiii",
+        $privacy_stmt = $conn->prepare("UPDATE users SET auto_accept_friend_invites=?, show_feed_activity=?, show_liked_businesses=?, show_profile_rewards=?, show_want_to_go=?, notify_social_activity=?, allow_post_interactions=?, show_social_club_disclaimer=? WHERE id=?");
+        $privacy_stmt->bind_param("iiiiiiiii",
             $auto_accept_friend_invites ? 1 : 0,
             $show_feed_activity ? 1 : 0,
             $show_liked_businesses ? 1 : 0,
@@ -204,6 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $show_want_to_go_new ? 1 : 0,
             $notify_social_activity ? 1 : 0,
             $allow_post_interactions_new ? 1 : 0,
+            $show_social_club_disclaimer_new ? 1 : 0,
             $user_id
         );
         $privacy_stmt->execute();
@@ -407,6 +411,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span>
                         <strong>Allow Reactions and Comments on My Activity</strong>
                         <small>Let friends react to and comment on your check-ins, level-ups, and other feed posts.</small>
+                    </span>
+                </label>
+                <label class="settings-toggle">
+                    <input type="checkbox" name="show_social_club_disclaimer" value="1" <?php echo $show_social_club_disclaimer ? 'checked' : ''; ?>>
+                    <span>
+                        <strong>Social Club Membership Reminders</strong>
+                        <small>Show a heads-up when viewing social clubs that may require a membership for entry.</small>
                     </span>
                 </label>
                 <button type="submit">Save Privacy Settings</button>
