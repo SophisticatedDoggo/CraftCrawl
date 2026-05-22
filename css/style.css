@@ -4018,7 +4018,8 @@ body.feed-thread-overlay-open {
 }
 
 .feed-thread-overlay .feed-thread-page {
-    min-height: 100%;
+    min-height: auto;
+    padding-bottom: 24px;
     background: var(--color-bg);
 }
 
