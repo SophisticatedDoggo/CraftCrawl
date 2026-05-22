@@ -4579,15 +4579,15 @@ a.mobile-context-back.feed-thread-back-link:focus {
 
 .event-feed-floating-day-header {
     position: fixed;
-    top: env(safe-area-inset-top, 0px);
+    top: 0;
     right: 0;
     left: 0;
     z-index: 60;
     display: none;
     align-items: center;
     gap: 12px;
-    min-height: 54px;
-    padding: 14px 18px 16px;
+    min-height: calc(54px + env(safe-area-inset-top, 0px));
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 16px;
     border-bottom: 1px solid color-mix(in srgb, var(--color-border) 82%, var(--color-primary));
     color: var(--color-muted);
     background: var(--color-bg);
