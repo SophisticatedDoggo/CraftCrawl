@@ -563,7 +563,6 @@ if (!$profile) {
                                                         <?php if ($slot_badge) : ?>
                                                             <img class="badge-icon" src="../images/badges/<?php echo escape_output($slot_badge['badge_key']); ?>.svg" alt="" loading="lazy" width="52" height="52">
                                                             <strong><?php echo escape_output($slot_badge['badge_name']); ?></strong>
-                                                            <button type="button" class="badge-showcase-editor-remove" data-editor-remove>Remove</button>
                                                         <?php else : ?>
                                                             <span class="badge-showcase-empty">Open slot</span>
                                                         <?php endif; ?>

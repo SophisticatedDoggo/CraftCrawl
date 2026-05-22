@@ -10744,15 +10744,6 @@ body.has-modal-open {
     line-height: 1.25;
 }
 
-.badge-showcase-editor-remove {
-    grid-column: 2;
-    justify-self: start;
-    width: auto;
-    min-height: 0;
-    padding: 4px 8px;
-    font-size: 0.76rem;
-}
-
 .badge-showcase-earned-list {
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
     align-content: start;
@@ -10780,6 +10771,18 @@ body.has-modal-open {
 }
 
 .badge-showcase-earned-badge.is-showcased {
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface));
+}
+
+.badge-showcase-earned-badge:hover {
+    border-color: var(--color-border);
+    color: inherit;
+    background: var(--color-surface-muted);
+    box-shadow: none;
+}
+
+.badge-showcase-earned-badge.is-showcased:hover {
     border-color: var(--color-primary);
     background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface));
 }

@@ -104,7 +104,6 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
         content.innerHTML = `
             <img class="badge-icon" src="${badgeIconPath(badge.badge_key)}" alt="" loading="lazy" width="52" height="52">
             <strong>${escapeHtml(badge.badge_name)}</strong>
-            <button type="button" class="badge-showcase-editor-remove" data-editor-remove>Remove</button>
         `;
     }
 
@@ -263,13 +262,6 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
     });
 
     slotsWrap?.addEventListener('click', (event) => {
-        const remove = event.target instanceof Element ? event.target.closest('[data-editor-remove]') : null;
-        if (remove) {
-            renderSlot(remove.closest('[data-editor-slot]'), null);
-            syncEarnedState();
-            return;
-        }
-
         const slot = event.target instanceof Element ? event.target.closest('[data-editor-slot]') : null;
         if (slot && (slot.dataset.badgeKey || '')) {
             renderSlot(slot, null);
