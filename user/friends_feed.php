@@ -425,6 +425,41 @@ while ($sweep = $sweep_result->fetch_assoc()) {
     ];
 }
 
+$before_clause_user_posts = $before_dt ? ' AND ufp.createdAt < ?' : '';
+$user_posts_sql = "
+    SELECT ufp.id, ufp.user_id, ufp.body, ufp.createdAt, actor.allow_post_interactions
+    FROM user_feed_posts ufp
+    INNER JOIN users actor ON actor.id = ufp.user_id
+    WHERE ufp.deletedAt IS NULL
+        AND ufp.user_id IN ($placeholders)
+        AND actor.show_feed_activity=TRUE
+        AND actor.disabledAt IS NULL
+    $before_clause_user_posts
+    ORDER BY ufp.createdAt DESC, ufp.id DESC
+    LIMIT 80
+";
+$user_posts_stmt = $conn->prepare($user_posts_sql);
+$before_dt
+    ? craftcrawl_bind_feed_user_ids_before($user_posts_stmt, $types, $feed_user_ids, $before_dt)
+    : craftcrawl_bind_feed_user_ids($user_posts_stmt, $types, $feed_user_ids);
+$user_posts_stmt->execute();
+$user_posts_result = $user_posts_stmt->get_result();
+
+while ($user_post = $user_posts_result->fetch_assoc()) {
+    $actor_id = (int) $user_post['user_id'];
+    $feed[] = [
+        'item_key' => 'user_post:' . (int) $user_post['id'],
+        'type' => 'user_post',
+        'created_at' => $user_post['createdAt'],
+        'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
+        'actor' => craftcrawl_feed_person_payload($people[$actor_id] ?? []),
+        'owner_user_id' => $actor_id,
+        'is_self' => $actor_id === $user_id,
+        'allow_interactions' => (bool) $user_post['allow_post_interactions'],
+        'body' => $user_post['body']
+    ];
+}
+
 // Business posts from followed businesses — viewer-specific, not friend-based
 if ($before_dt) {
     $post_feed_stmt = $conn->prepare("

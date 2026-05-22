@@ -42,6 +42,7 @@ function feed_thread_reaction_options($item) {
         'quest_complete' => ['cheers', 'nice_find', 'trophy'],
         'quest_sweep' => ['cheers', 'nice_find', 'trophy'],
         'business_post' => ['cheers', 'want_to_go'],
+        'user_post' => ['cheers', 'nice_find'],
     ];
 
     $type = $item['type'] ?? '';
@@ -125,6 +126,28 @@ function render_feed_thread_reactions($conn, $user_id, $item) {
     return $html;
 }
 
+function render_feed_thread_detail_link($item) {
+    $type = $item['type'] ?? '';
+
+    if (($type === 'event_want' || $type === 'event') && !empty($item['event_id'])) {
+        return '
+            <div class="feed-detail-link-row">
+                <a class="feed-detail-link" href="../event_details.php?id=' . escape_output($item['event_id']) . '&date=' . escape_output($item['event_date'] ?? '') . '">View Event</a>
+            </div>
+        ';
+    }
+
+    if (in_array($type, ['first_visit', 'location_want', 'business_post'], true) && !empty($item['business_id'])) {
+        return '
+            <div class="feed-detail-link-row">
+                <a class="feed-detail-link" href="../business_details.php?id=' . escape_output($item['business_id']) . '">View Business</a>
+            </div>
+        ';
+    }
+
+    return '';
+}
+
 function render_feed_thread_post($item, $actions_html = '') {
     $date = format_feed_date($item['created_at'] ?? '');
     $actor_name = !empty($item['is_self']) ? 'You' : ($item['friend_name'] ?? 'A friend');
@@ -159,7 +182,7 @@ function render_feed_thread_post($item, $actions_html = '') {
                 <div>
                     <strong>' . escape_output($want_phrase) . ' to go to ' . escape_output($item['event_name']) . '</strong>
                     <p>' . escape_output($item['business_name']) . ' · ' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
-                    <a href="../event_details.php?id=' . escape_output($item['event_id']) . '&date=' . escape_output($item['event_date']) . '">View event</a>
+                    ' . render_feed_thread_detail_link($item) . '
                     ' . $actions_html . '
                 </div>
             </article>
@@ -174,7 +197,7 @@ function render_feed_thread_post($item, $actions_html = '') {
                     <strong>' . escape_output($item['event_name']) . '</strong>
                     <p>' . escape_output($item['business_name']) . ' · ' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
                     ' . (!empty($item['event_description']) ? '<p>' . nl2br(escape_output($item['event_description'])) . '</p>' : '') . '
-                    <a href="../event_details.php?id=' . escape_output($item['event_id']) . '&date=' . escape_output($item['event_date']) . '">View event</a>
+                    ' . render_feed_thread_detail_link($item) . '
                     ' . $actions_html . '
                 </div>
             </article>
@@ -188,7 +211,7 @@ function render_feed_thread_post($item, $actions_html = '') {
                 <div>
                     <strong>' . escape_output($want_phrase) . ' to visit ' . escape_output($item['business_name']) . '</strong>
                     <p>' . escape_output($item['business_type']) . ' · ' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
-                    <a href="../business_details.php?id=' . escape_output($item['business_id']) . '">View business</a>
+                    ' . render_feed_thread_detail_link($item) . '
                     ' . $actions_html . '
                 </div>
             </article>
@@ -204,7 +227,21 @@ function render_feed_thread_post($item, $actions_html = '') {
                     <strong>' . escape_output($item['business_name']) . '</strong>
                     <p>' . escape_output($item['title']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
                     ' . (!empty($item['body']) ? '<p>' . nl2br(escape_output($item['body'])) . '</p>' : '') . '
-                    <a href="../business_details.php?id=' . escape_output($item['business_id']) . '">View Business</a>
+                    ' . render_feed_thread_detail_link($item) . '
+                    ' . $actions_html . '
+                </div>
+            </article>
+        ';
+    }
+
+    if (($item['type'] ?? '') === 'user_post') {
+        return '
+            <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
+                ' . $avatar . '
+                <div>
+                    <strong>' . escape_output($actor_name) . '</strong>
+                    <p>' . ($date ? escape_output($date) : '') . '</p>
+                    <p class="feed-user-post-body">' . nl2br(escape_output($item['body'] ?? '')) . '</p>
                     ' . $actions_html . '
                 </div>
             </article>
@@ -244,7 +281,7 @@ function render_feed_thread_post($item, $actions_html = '') {
             <div>
                 <strong>' . escape_output($actor_name) . ' visited ' . escape_output($item['business_name']) . ' for the first time</strong>
                 <p>' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
-                <a href="../business_details.php?id=' . escape_output($item['business_id']) . '">View business</a>
+                ' . render_feed_thread_detail_link($item) . '
                 ' . $actions_html . '
             </div>
         </article>
@@ -288,7 +325,7 @@ if ($feed_item && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Block comments when item owner has disabled interactions
     $item_type_prefix = explode(':', $item_key)[0];
-    if (in_array($item_type_prefix, ['first_visit', 'level_up', 'event_want', 'location_want', 'badge_earned', 'quest_complete', 'quest_sweep'], true)) {
+    if (in_array($item_type_prefix, ['first_visit', 'level_up', 'event_want', 'location_want', 'badge_earned', 'quest_complete', 'quest_sweep', 'user_post'], true)) {
         $item_owner_id = craftcrawl_feed_item_owner_id($conn, $item_key);
         if ($item_owner_id && $item_owner_id !== $user_id) {
             $interact_stmt = $conn->prepare("SELECT allow_post_interactions FROM users WHERE id=? LIMIT 1");
@@ -355,11 +392,12 @@ if ($feed_item && $_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    craftcrawl_redirect('user/feed_post.php?item=' . rawurlencode($item_key) . '&message=' . ($parent_comment_id ? 'replied' : 'commented'));
+    craftcrawl_redirect('user/feed_post.php?item=' . rawurlencode($item_key) . '&message=' . ($parent_comment_id ? 'replied' : 'commented') . '&focus_comment=' . rawurlencode((string) $new_comment_id));
 }
 
 $comments = [];
 $replies_by_comment = [];
+$focus_comment_id = filter_var($_GET['focus_comment'] ?? null, FILTER_VALIDATE_INT) ?: 0;
 
 if ($feed_item) {
     $comments_stmt = $conn->prepare("
@@ -434,8 +472,9 @@ if ($feed_item) {
                 <p class="form-message form-message-error">Comments are not enabled on this post.</p>
             <?php endif; ?>
 
-            <section class="settings-panel feed-thread-panel">
+            <section class="settings-panel feed-thread-panel" data-compose-target data-compose-label="post">
                 <?php echo render_feed_thread_post($feed_item, render_feed_thread_reactions($conn, $user_id, $feed_item)); ?>
+                <button type="button" class="feed-reply-toggle feed-post-reply-toggle" data-reply-toggle data-parent-comment-id="" data-reply-label="post" data-reply-target="[data-compose-target]">Reply</button>
             </section>
 
             <section class="settings-panel feed-thread-panel">
@@ -463,21 +502,20 @@ if ($feed_item) {
                                 <span><?php echo escape_output(format_feed_date($comment['createdAt'])); ?></span>
                             </div>
                             <p><?php echo nl2br(escape_output($comment['body'])); ?></p>
-                            <button type="button" class="feed-reply-toggle" data-reply-toggle aria-expanded="false" aria-controls="reply-form-<?php echo escape_output($comment['id']); ?>">Reply</button>
-                            <form method="POST" class="feed-comment-form feed-reply-form" id="reply-form-<?php echo escape_output($comment['id']); ?>" hidden>
-                                <?php echo craftcrawl_csrf_input(); ?>
-                                <input type="hidden" name="item_key" value="<?php echo escape_output($item_key); ?>">
-                                <input type="hidden" name="parent_comment_id" value="<?php echo escape_output($comment['id']); ?>">
-                                <label for="reply-body-<?php echo escape_output($comment['id']); ?>">Reply to <?php echo escape_output($commenter_name); ?></label>
-                                <textarea id="reply-body-<?php echo escape_output($comment['id']); ?>" name="body" maxlength="500" rows="3" required placeholder="Write a reply"></textarea>
-                                <div>
-                                    <button type="submit">Post Reply</button>
-                                    <button type="button" class="secondary-button" data-reply-cancel>Cancel</button>
-                                </div>
-                            </form>
+                            <button type="button" class="feed-reply-toggle" data-reply-toggle data-parent-comment-id="<?php echo escape_output($comment['id']); ?>" data-reply-label="<?php echo escape_output($commenter_name); ?>" data-reply-target="comment-<?php echo escape_output($comment['id']); ?>">Reply</button>
                             <?php if (!empty($replies_by_comment[(int) $comment['id']])) : ?>
-                                <div class="feed-reply-list">
-                                    <?php foreach ($replies_by_comment[(int) $comment['id']] as $reply) : ?>
+                                <?php
+                                    $comment_replies = $replies_by_comment[(int) $comment['id']];
+                                    $reply_count = count($comment_replies);
+                                    $replies_panel_id = 'replies-' . (int) $comment['id'];
+                                    $should_expand_replies = $focus_comment_id > 0 && in_array($focus_comment_id, array_map(fn($reply) => (int) $reply['id'], $comment_replies), true);
+                                ?>
+                                <button type="button" class="feed-replies-toggle" data-replies-toggle aria-expanded="<?php echo $should_expand_replies ? 'true' : 'false'; ?>" aria-controls="<?php echo escape_output($replies_panel_id); ?>">
+                                    <span><?php echo escape_output($reply_count . ' ' . ($reply_count === 1 ? 'Reply' : 'Replies')); ?></span>
+                                    <span class="feed-replies-toggle-arrow" aria-hidden="true">⌄</span>
+                                </button>
+                                <div class="feed-reply-list" id="<?php echo escape_output($replies_panel_id); ?>"<?php echo $should_expand_replies ? '' : ' hidden'; ?>>
+                                    <?php foreach ($comment_replies as $reply) : ?>
                                         <?php
                                             $replyer_name = !empty($reply['business_id'])
                                                 ? trim($reply['bName']) . ' (Owner)'
@@ -496,6 +534,7 @@ if ($feed_item) {
                                                 <span><?php echo escape_output(format_feed_date($reply['createdAt'])); ?></span>
                                             </div>
                                             <p><?php echo nl2br(escape_output($reply['body'])); ?></p>
+                                            <button type="button" class="feed-reply-toggle" data-reply-toggle data-parent-comment-id="<?php echo escape_output($comment['id']); ?>" data-reply-label="<?php echo escape_output($replyer_name); ?>" data-reply-target="comment-<?php echo escape_output($reply['id']); ?>">Reply</button>
                                         </article>
                                     <?php endforeach; ?>
                                 </div>
@@ -505,14 +544,18 @@ if ($feed_item) {
                 </div>
             </section>
 
-            <section class="settings-panel feed-thread-panel">
-                <h2>Add Comment</h2>
-                <form method="POST" class="feed-comment-form">
+            <section class="settings-panel feed-thread-panel feed-compose-panel">
+                <form method="POST" class="feed-comment-form feed-compose-form" id="feed-compose-form" hidden>
                     <?php echo craftcrawl_csrf_input(); ?>
                     <input type="hidden" name="item_key" value="<?php echo escape_output($item_key); ?>">
+                    <input type="hidden" name="parent_comment_id" value="" data-compose-parent-id>
+                    <div class="feed-compose-context">
+                        <span data-compose-context>Commenting on this post</span>
+                        <button type="button" data-compose-cancel aria-label="Close composer">&times;</button>
+                    </div>
                     <label for="feed-comment-body">Comment</label>
-                    <textarea id="feed-comment-body" name="body" maxlength="500" rows="4" required placeholder="Write a comment"></textarea>
-                    <button type="submit">Post Comment</button>
+                    <textarea id="feed-comment-body" name="body" maxlength="500" rows="4" required placeholder="Join the conversation"></textarea>
+                    <button type="submit" data-compose-submit>Post Comment</button>
                 </form>
             </section>
         <?php endif; ?>

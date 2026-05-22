@@ -229,6 +229,23 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
         [$user_id, $friends_seen_at]
     );
 
+    $new_feed_items += craftcrawl_notification_count_value(
+        $conn,
+        "
+            SELECT COUNT(*) AS total
+            FROM user_feed_posts ufp
+            INNER JOIN users actor ON actor.id = ufp.user_id
+            WHERE ufp.createdAt > ?
+                AND ufp.deletedAt IS NULL
+                AND ufp.user_id<>?
+                AND actor.show_feed_activity=TRUE
+                AND actor.disabledAt IS NULL
+                AND $friend_activity_exists
+        ",
+        "sii",
+        [$friends_seen_at, $user_id, $user_id]
+    );
+
     $social_notifications = 0;
 
     if (!empty($user['notify_social_activity'])) {
@@ -260,6 +277,12 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                     SELECT 1 FROM user_quest_completions uqc
                     WHERE CONCAT('quest_complete:', uqc.id)=activity.feed_item_key AND uqc.user_id=?
                 )
+                OR EXISTS (
+                    SELECT 1 FROM user_feed_posts ufp
+                    WHERE CONCAT('user_post:', ufp.id)=activity.feed_item_key
+                        AND ufp.user_id=?
+                        AND ufp.deletedAt IS NULL
+                )
                 OR activity.feed_item_key REGEXP CONCAT('^quest_sweep:(daily|weekly):', ?, ':[0-9]{8}$')
             )
         ";
@@ -280,8 +303,8 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                     ), ?)
                     AND $owned_item_exists
             ",
-            "iisiiiiiis",
-            [$user_id, $user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, (string) $user_id]
+            "iisiiiiiiis",
+            [$user_id, $user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, (string) $user_id]
         );
 
         $social_notifications += craftcrawl_notification_count_value(
@@ -301,8 +324,8 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                     ), ?)
                     AND $owned_item_exists
             ",
-            "iisiiiiiis",
-            [$user_id, $user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, (string) $user_id]
+            "iisiiiiiiis",
+            [$user_id, $user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, (string) $user_id]
         );
     }
 

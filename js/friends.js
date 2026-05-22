@@ -55,6 +55,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         badge_earned: ['cheers', 'nice_find', 'trophy'],
         quest_complete: ['cheers', 'nice_find', 'trophy'],
         quest_sweep: ['cheers', 'nice_find', 'trophy'],
+        user_post: ['cheers', 'nice_find'],
         business_post: ['cheers', 'want_to_go']
     };
     const isUserPath = /\/user\/?$|\/user\//.test(window.location.pathname);
@@ -1013,6 +1014,19 @@ window.CraftCrawlInitFriends = function (scope = document) {
             `;
         }
 
+        if (item.type === 'user_post') {
+            return `
+                <article class="friends-feed-item" ${feedItemAttrs(item)}>
+                    ${renderAvatar(item.actor, item.friend_name)}
+                    <div class="feed-item-content">
+                        ${renderFeedMeta(actorName, date)}
+                        <p class="feed-item-detail feed-user-post-body">${escapeHtml(item.body || '')}</p>
+                        ${actions}
+                    </div>
+                </article>
+            `;
+        }
+
         if (item.type === 'business_post') {
             const isPoll = item.post_type === 'poll';
             let pollSection = '';
@@ -1688,6 +1702,119 @@ window.CraftCrawlInitFriends = function (scope = document) {
             });
     }
 
+    function ensureFeedComposer() {
+        if (!panel || panel.dataset.feedComposerReady === 'true') {
+            return;
+        }
+        panel.dataset.feedComposerReady = 'true';
+        document.querySelectorAll('[data-feed-compose-fab], [data-feed-compose-modal]').forEach((element) => {
+            element.remove();
+        });
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'feed-compose-fab';
+        button.dataset.feedComposeFab = 'true';
+        button.setAttribute('aria-label', 'Compose a feed post');
+        button.innerHTML = `
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+            </svg>
+        `;
+
+        const overlay = document.createElement('div');
+        overlay.className = 'feed-compose-modal';
+        overlay.dataset.feedComposeModal = 'true';
+        overlay.hidden = true;
+        overlay.innerHTML = `
+            <div class="feed-compose-modal-scrim" data-feed-compose-close></div>
+            <form class="feed-compose-sheet" data-feed-compose-form>
+                <div class="feed-compose-sheet-header">
+                    <strong>New Post</strong>
+                    <button type="button" data-feed-compose-close aria-label="Close composer">&times;</button>
+                </div>
+                <label for="feed-compose-body">Post</label>
+                <textarea id="feed-compose-body" name="body" maxlength="360" rows="5" required placeholder="Share something with your friends"></textarea>
+                <div class="feed-compose-sheet-footer">
+                    <span data-feed-compose-count>360</span>
+                    <button type="submit">Post</button>
+                </div>
+            </form>
+        `;
+
+        document.body.appendChild(button);
+        document.body.appendChild(overlay);
+
+        const formEl = overlay.querySelector('[data-feed-compose-form]');
+        const textarea = overlay.querySelector('textarea');
+        const counter = overlay.querySelector('[data-feed-compose-count]');
+
+        function updateCount() {
+            if (counter && textarea) {
+                counter.textContent = String(360 - textarea.value.length);
+            }
+        }
+
+        function openComposer() {
+            overlay.hidden = false;
+            document.body.classList.add('feed-compose-modal-open');
+            updateCount();
+            window.requestAnimationFrame(() => textarea?.focus());
+        }
+
+        function closeComposer() {
+            overlay.hidden = true;
+            document.body.classList.remove('feed-compose-modal-open');
+            formEl?.reset();
+            updateCount();
+        }
+
+        button.addEventListener('click', openComposer);
+        overlay.querySelectorAll('[data-feed-compose-close]').forEach((closeButton) => {
+            closeButton.addEventListener('click', closeComposer);
+        });
+        textarea?.addEventListener('input', updateCount);
+
+        formEl?.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const body = textarea?.value.trim() || '';
+            if (!body) {
+                textarea?.focus();
+                return;
+            }
+
+            const submit = formEl.querySelector('button[type="submit"]');
+            submit.disabled = true;
+            postForm(userEndpoint('feed_post_create.php'), {
+                csrf_token: csrfToken,
+                body
+            })
+                .then((data) => {
+                    if (!data.ok) {
+                        showStatus(data.message || 'Post could not be created.', true);
+                        return;
+                    }
+                    closeComposer();
+                    return loadFeed().then(() => {
+                        if (data.item_key) {
+                            requestedFocusItemKey = data.item_key;
+                            requestedFocusSection = '';
+                            requestedFeedFocusSignature = [data.item_key, '', '', ''].join('|');
+                            hasFocusedFeedItem = false;
+                            focusFeedItemIfRequested();
+                        }
+                    });
+                })
+                .catch(() => {
+                    showStatus('Post could not be created.', true);
+                })
+                .finally(() => {
+                    submit.disabled = false;
+                });
+        });
+    }
+
     function isFeedTabActive() {
         return Boolean(panel && !panel.closest('[data-user-tab-panel]')?.hidden);
     }
@@ -1859,6 +1986,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     if (managerPage) {
         refreshFriendsData();
     } else if (panel) {
+        ensureFeedComposer();
         loadRequests();
         loadFeed();
     } else {

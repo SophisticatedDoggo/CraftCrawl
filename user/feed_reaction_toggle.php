@@ -35,10 +35,11 @@ $reaction_options_by_type = [
     'quest_complete' => ['cheers', 'nice_find', 'trophy'],
     'quest_sweep' => ['cheers', 'nice_find', 'trophy'],
     'business_post' => ['cheers', 'want_to_go'],
+    'user_post' => ['cheers', 'nice_find'],
 ];
 
 $item_type = null;
-if (preg_match('/^(first_visit|level_up|event_want|location_want|badge_earned|quest_complete|business_post):\d+$/', $item_key, $type_matches)
+if (preg_match('/^(first_visit|level_up|event_want|location_want|badge_earned|quest_complete|business_post|user_post):\d+$/', $item_key, $type_matches)
     || preg_match('/^(quest_sweep):(daily|weekly):\d+:\d{8}$/', $item_key, $type_matches)) {
     $item_type = $type_matches[1];
 }
@@ -226,6 +227,30 @@ function craftcrawl_feed_item_is_visible($conn, $user_id, $item_key) {
         return (bool) $stmt->get_result()->fetch_assoc();
     }
 
+    if (preg_match('/^user_post:(\d+)$/', $item_key, $matches)) {
+        $post_id = (int) $matches[1];
+        $stmt = $conn->prepare("
+            SELECT ufp.id
+            FROM user_feed_posts ufp
+            INNER JOIN users u ON u.id = ufp.user_id
+            WHERE ufp.id=?
+                AND ufp.deletedAt IS NULL
+                AND u.show_feed_activity=TRUE
+                AND u.disabledAt IS NULL
+                AND (
+                    ufp.user_id=?
+                    OR EXISTS (
+                        SELECT 1 FROM user_friends uf
+                        WHERE uf.user_id=? AND uf.friend_user_id=ufp.user_id
+                    )
+                )
+            LIMIT 1
+        ");
+        $stmt->bind_param("iii", $post_id, $user_id, $user_id);
+        $stmt->execute();
+        return (bool) $stmt->get_result()->fetch_assoc();
+    }
+
     return false;
 }
 
@@ -285,6 +310,11 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user
         $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
     } elseif (preg_match('/^quest_sweep:(daily|weekly):(\d+):\d{8}$/', $item_key, $m)) {
         $owner_user_id = (int) $m[2];
+    } elseif (preg_match('/^user_post:(\d+)$/', $item_key, $m)) {
+        $item_id = (int) $m[1];
+        $s = $conn->prepare("SELECT user_id FROM user_feed_posts WHERE id=? AND deletedAt IS NULL LIMIT 1");
+        $s->bind_param("i", $item_id); $s->execute();
+        $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
     }
 
     if (!$owner_user_id || $owner_user_id === (int) $viewer_user_id) {

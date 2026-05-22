@@ -103,6 +103,16 @@ function craftcrawl_feed_item_owner_id($conn, $item_key) {
         return 0;
     }
 
+    if (preg_match('/^user_post:(\d+)$/', $item_key, $matches)) {
+        $post_id = (int) $matches[1];
+        $stmt = $conn->prepare("SELECT user_id FROM user_feed_posts WHERE id=? AND deletedAt IS NULL LIMIT 1");
+        $stmt->bind_param("i", $post_id);
+        $stmt->execute();
+        $post = $stmt->get_result()->fetch_assoc();
+
+        return $post ? (int) $post['user_id'] : 0;
+    }
+
     return 0;
 }
 
@@ -471,6 +481,36 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
             'body' => $bpost['body'],
             'city' => $bpost['city'],
             'state' => $bpost['state']
+        ];
+    }
+
+    if (preg_match('/^user_post:(\d+)$/', $item_key, $matches)) {
+        $post_id = (int) $matches[1];
+        $stmt = $conn->prepare("
+            SELECT ufp.id, ufp.user_id, ufp.body, ufp.createdAt,
+                u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
+            FROM user_feed_posts ufp
+            INNER JOIN users u ON u.id = ufp.user_id
+            LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+            WHERE ufp.id=? AND ufp.deletedAt IS NULL AND u.disabledAt IS NULL
+            LIMIT 1
+        ");
+        $stmt->bind_param("i", $post_id);
+        $stmt->execute();
+        $post = $stmt->get_result()->fetch_assoc();
+
+        if (!$post || !craftcrawl_user_can_view_feed_actor($conn, $viewer_id, (int) $post['user_id'])) {
+            return null;
+        }
+
+        return [
+            'item_key' => $item_key,
+            'type' => 'user_post',
+            'created_at' => $post['createdAt'],
+            'friend_name' => craftcrawl_feed_actor_name($post['user_id'], $viewer_id, $post['fName'], $post['lName']),
+            'actor' => craftcrawl_feed_actor_payload($post),
+            'is_self' => (int) $post['user_id'] === (int) $viewer_id,
+            'body' => $post['body']
         ];
     }
 

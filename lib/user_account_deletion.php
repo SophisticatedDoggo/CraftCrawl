@@ -12,6 +12,7 @@ function craftcrawl_delete_user_account(mysqli $conn, int $user_id): void {
 
         craftcrawl_delete_user_feed_comments($conn, $user_id, $feed_item_keys);
         craftcrawl_delete_user_feed_reactions($conn, $user_id, $feed_item_keys);
+        craftcrawl_delete_user_rows($conn, 'user_feed_posts', 'user_id=?', 'i', [$user_id]);
 
         // Tokens are not foreign-keyed to users, so remove them explicitly.
         craftcrawl_delete_user_rows($conn, 'account_login_tokens', 'account_type=? AND account_id=?', 'si', ['user', $user_id]);
@@ -84,6 +85,7 @@ function craftcrawl_user_feed_item_keys(mysqli $conn, int $user_id): array {
         ['location_want', 'want_to_go_locations'],
         ['badge_earned', 'user_badges'],
         ['quest_complete', 'user_quest_completions'],
+        ['user_post', 'user_feed_posts'],
     ];
 
     $keys = [];

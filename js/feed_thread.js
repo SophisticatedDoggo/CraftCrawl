@@ -117,6 +117,55 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             }, 35);
         }
 
+        function moveSwipe(clientX, clientY, event = null) {
+            if (!swipe.active) return;
+
+            const deltaX = clientX - swipe.startX;
+            const deltaY = clientY - swipe.startY;
+            swipe.lastX = clientX;
+
+            if (!swipe.dragging) {
+                if (Math.abs(deltaY) > 34 && Math.abs(deltaY) > Math.abs(deltaX) * 1.7) {
+                    swipe.active = false;
+                    return;
+                }
+                if (deltaX < 4 || Math.abs(deltaX) < Math.abs(deltaY) * 0.65) {
+                    return;
+                }
+                swipe.dragging = true;
+                threadPage.classList.add('is-swipe-dragging');
+                overlay?.classList.add('is-swipe-dragging');
+            }
+
+            if (event?.cancelable) {
+                event.preventDefault();
+            }
+            const dragX = Math.max(0, deltaX);
+            const dragTarget = overlayContent || threadPage;
+            dragTarget.style.transform = `translateX(${dragX}px) scale(${Math.max(0.96, 1 - dragX / 2600)})`;
+            dragTarget.style.opacity = String(Math.max(0.35, 1 - dragX / 520));
+        }
+
+        function finishSwipeAt(clientX) {
+            if (!swipe.active) return;
+
+            const deltaX = clientX - swipe.startX;
+            const shouldDismiss = swipe.dragging && deltaX > Math.min(70, window.innerWidth * 0.13);
+            swipe.active = false;
+            threadPage.classList.remove('is-swipe-dragging');
+            overlay?.classList.remove('is-swipe-dragging');
+            const dragTarget = overlayContent || threadPage;
+
+            if (shouldDismiss) {
+                dismissThread();
+            } else {
+                dragTarget.style.transform = '';
+                dragTarget.style.opacity = '';
+            }
+
+            swipe.dragging = false;
+        }
+
         threadPage.addEventListener('pointerdown', (event) => {
             if (event.pointerType === 'mouse' && event.button !== 0) return;
             if (isSwipeIgnored(event.target)) return;
@@ -132,84 +181,169 @@ window.CraftCrawlInitFeedThread = function (root = document) {
 
         threadPage.addEventListener('pointermove', (event) => {
             if (!swipe.active || event.pointerId !== swipe.pointerId) return;
-
-            const deltaX = event.clientX - swipe.startX;
-            const deltaY = event.clientY - swipe.startY;
-            swipe.lastX = event.clientX;
-
-            if (!swipe.dragging) {
-                if (Math.abs(deltaY) > 30 && Math.abs(deltaY) > Math.abs(deltaX) * 1.45) {
-                    swipe.active = false;
-                    return;
-                }
-                if (deltaX < 6 || Math.abs(deltaX) < Math.abs(deltaY) * 0.85) {
-                    return;
-                }
-                swipe.dragging = true;
-                threadPage.classList.add('is-swipe-dragging');
-            }
-
-            if (event.cancelable) {
-                event.preventDefault();
-            }
-            const dragX = Math.max(0, deltaX);
-            const dragTarget = overlayContent || threadPage;
-            overlay?.classList.add('is-swipe-dragging');
-            dragTarget.style.transform = `translateX(${dragX}px) scale(${Math.max(0.96, 1 - dragX / 2600)})`;
-            dragTarget.style.opacity = String(Math.max(0.35, 1 - dragX / 520));
+            moveSwipe(event.clientX, event.clientY, event);
         });
 
         function finishSwipe(event) {
             if (!swipe.active || event.pointerId !== swipe.pointerId) return;
 
             const finishX = typeof event.clientX === 'number' && event.clientX !== 0 ? event.clientX : swipe.lastX;
-            const deltaX = finishX - swipe.startX;
-            const shouldDismiss = swipe.dragging && deltaX > Math.min(82, window.innerWidth * 0.16);
-            swipe.active = false;
-            threadPage.classList.remove('is-swipe-dragging');
-            const dragTarget = overlayContent || threadPage;
-            overlay?.classList.remove('is-swipe-dragging');
-
-            if (shouldDismiss) {
-                dismissThread();
-            } else {
-                dragTarget.style.transform = '';
-                dragTarget.style.opacity = '';
-            }
-
-            swipe.dragging = false;
+            finishSwipeAt(finishX);
         }
 
         threadPage.addEventListener('pointerup', finishSwipe);
         threadPage.addEventListener('pointercancel', finishSwipe);
+        threadPage.addEventListener('touchstart', (event) => {
+            if (swipe.active || event.touches.length !== 1 || isSwipeIgnored(event.target)) return;
+            const touch = event.touches[0];
+            swipe.active = true;
+            swipe.pointerId = null;
+            swipe.startX = touch.clientX;
+            swipe.startY = touch.clientY;
+            swipe.lastX = touch.clientX;
+            swipe.dragging = false;
+        }, { passive: true });
+        threadPage.addEventListener('touchmove', (event) => {
+            if (!swipe.active || swipe.pointerId !== null || event.touches.length !== 1) return;
+            const touch = event.touches[0];
+            moveSwipe(touch.clientX, touch.clientY, event);
+        }, { passive: false });
+        threadPage.addEventListener('touchend', () => {
+            if (!swipe.active || swipe.pointerId !== null) return;
+            finishSwipeAt(swipe.lastX);
+        });
+        threadPage.addEventListener('touchcancel', () => {
+            if (!swipe.active || swipe.pointerId !== null) return;
+            finishSwipeAt(swipe.lastX);
+        });
+    }
+
+    const composeForm = root.querySelector('#feed-compose-form');
+    const composeParentInput = root.querySelector('[data-compose-parent-id]');
+    const composeContext = root.querySelector('[data-compose-context]');
+    const composeSubmit = root.querySelector('[data-compose-submit]');
+    let activeComposeTarget = null;
+
+    function updateComposerSpace() {
+        if (!composeForm || composeForm.hidden || !threadPage) return 0;
+
+        const composerHeight = Math.ceil(composeForm.getBoundingClientRect().height || 0);
+        const offset = composerHeight + 28;
+        threadPage.style.setProperty('--feed-compose-offset', `${offset}px`);
+        threadPage.classList.add('is-compose-open');
+        return offset;
+    }
+
+    function revealComposeTarget() {
+        if (!activeComposeTarget) return;
+
+        const offset = updateComposerSpace();
+        const scroller = activeComposeTarget.closest('[data-feed-thread-overlay-content]')
+            || document.scrollingElement
+            || document.documentElement;
+
+        activeComposeTarget.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+
+        window.setTimeout(() => {
+            const rect = activeComposeTarget.getBoundingClientRect();
+            const visualViewport = window.visualViewport;
+            const viewportTop = visualViewport?.offsetTop || 0;
+            const viewportHeight = visualViewport?.height || window.innerHeight;
+            const visibleTop = viewportTop + 18;
+            const visibleBottom = viewportTop + viewportHeight - offset - 18;
+            let adjustment = 0;
+
+            if (rect.bottom > visibleBottom) {
+                adjustment = rect.bottom - visibleBottom;
+            } else if (rect.top < visibleTop) {
+                adjustment = rect.top - visibleTop;
+            }
+
+            if (adjustment !== 0) {
+                scroller.scrollBy({
+                    top: adjustment,
+                    behavior: 'smooth'
+                });
+            }
+        }, 120);
+    }
+
+    function clearComposeTarget() {
+        activeComposeTarget?.classList.remove('is-compose-target');
+        activeComposeTarget = null;
+    }
+
+    function closeComposer() {
+        if (composeForm) composeForm.hidden = true;
+        threadPage?.classList.remove('is-compose-open');
+        threadPage?.style.removeProperty('--feed-compose-offset');
+        clearComposeTarget();
+    }
+
+    function openComposer(options = {}) {
+        if (!composeForm) return;
+
+        const parentId = options.parentId || '';
+        const label = options.label || 'post';
+        const targetSelector = options.target || '[data-compose-target]';
+        const target = targetSelector.startsWith('#') || targetSelector.startsWith('[')
+            ? root.querySelector(targetSelector)
+            : root.querySelector(`#${CSS.escape(targetSelector)}`);
+
+        clearComposeTarget();
+        activeComposeTarget = target || null;
+        activeComposeTarget?.classList.add('is-compose-target');
+
+        if (composeParentInput) composeParentInput.value = parentId;
+        if (composeContext) {
+            composeContext.textContent = parentId ? `Replying to ${label}` : 'Commenting on this post';
+        }
+        if (composeSubmit) {
+            composeSubmit.textContent = parentId ? 'Post Reply' : 'Post Comment';
+        }
+
+        composeForm.hidden = false;
+        updateComposerSpace();
+        window.requestAnimationFrame(() => {
+            revealComposeTarget();
+            composeForm.querySelector('textarea')?.focus();
+            window.setTimeout(revealComposeTarget, 220);
+        });
     }
 
     root.querySelectorAll('[data-reply-toggle]').forEach((button) => {
-        if (button.dataset.replyToggleReady === 'true') return;
-        button.dataset.replyToggleReady = 'true';
+        if (button.dataset.composeTriggerReady === 'true') return;
+        button.dataset.composeTriggerReady = 'true';
         button.addEventListener('click', () => {
-            const form = document.getElementById(button.getAttribute('aria-controls'));
-            const isExpanded = button.getAttribute('aria-expanded') === 'true';
-            button.setAttribute('aria-expanded', String(!isExpanded));
-            button.textContent = isExpanded ? 'Reply' : 'Hide Reply';
-            if (form) {
-                form.hidden = isExpanded;
-                if (!isExpanded) form.querySelector('textarea')?.focus();
-            }
+            openComposer({
+                parentId: button.dataset.parentCommentId || '',
+                label: button.dataset.replyLabel || 'post',
+                target: button.dataset.replyTarget || '[data-compose-target]'
+            });
         });
     });
-    root.querySelectorAll('[data-reply-cancel]').forEach((button) => {
-        if (button.dataset.replyCancelReady === 'true') return;
-        button.dataset.replyCancelReady = 'true';
+
+    root.querySelectorAll('[data-replies-toggle]').forEach((button) => {
+        if (button.dataset.repliesToggleReady === 'true') return;
+        button.dataset.repliesToggleReady = 'true';
         button.addEventListener('click', () => {
-            const form = button.closest('.feed-reply-form');
-            const toggle = form ? document.querySelector(`[aria-controls="${form.id}"]`) : null;
-            if (form) form.hidden = true;
-            if (toggle) {
-                toggle.setAttribute('aria-expanded', 'false');
-                toggle.textContent = 'Reply';
-            }
+            const panelId = button.getAttribute('aria-controls') || '';
+            const panel = panelId ? root.querySelector(`#${CSS.escape(panelId)}`) : null;
+            if (!panel) return;
+
+            const isExpanded = button.getAttribute('aria-expanded') === 'true';
+            button.setAttribute('aria-expanded', String(!isExpanded));
+            panel.hidden = isExpanded;
         });
+    });
+
+    root.querySelectorAll('[data-compose-cancel]').forEach((button) => {
+        if (button.dataset.composeCancelReady === 'true') return;
+        button.dataset.composeCancelReady = 'true';
+        button.addEventListener('click', closeComposer);
     });
 
     root.querySelectorAll('.feed-comment-form').forEach((form) => {
@@ -254,6 +388,10 @@ window.CraftCrawlInitFeedThread = function (root = document) {
                     form.querySelectorAll('button[type="submit"]').forEach((button) => {
                         button.disabled = false;
                     });
+                    if (form.classList.contains('feed-compose-form')) {
+                        form.querySelector('textarea').value = '';
+                        closeComposer();
+                    }
                 });
         });
     });
