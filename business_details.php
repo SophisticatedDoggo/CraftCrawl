@@ -133,11 +133,18 @@ $legacy_business_id = !empty($business['legacy_business_id']) ? (int) $business[
 $is_claimed_location = $business['visibility_status'] === 'public_claimed';
 $business_phone_href = dialable_phone_number($business['bPhone'] ?? '');
 
-$disclaimer_pref_stmt = $conn->prepare("SELECT show_social_club_disclaimer FROM users WHERE id=? LIMIT 1");
-$disclaimer_pref_stmt->bind_param("i", $user_id);
-$disclaimer_pref_stmt->execute();
-$disclaimer_pref_row = $disclaimer_pref_stmt->get_result()->fetch_assoc();
-$show_social_club_disclaimer = $disclaimer_pref_row === null || !empty($disclaimer_pref_row['show_social_club_disclaimer']);
+$show_social_club_disclaimer = true;
+if ($business['bType'] === 'social_club') {
+    $disclaimer_pref_stmt = $conn->prepare("SELECT show_social_club_disclaimer FROM users WHERE id=? LIMIT 1");
+    if ($disclaimer_pref_stmt) {
+        $disclaimer_pref_stmt->bind_param("i", $user_id);
+        $disclaimer_pref_stmt->execute();
+        $disclaimer_pref_row = $disclaimer_pref_stmt->get_result()->fetch_assoc();
+        if ($disclaimer_pref_row) {
+            $show_social_club_disclaimer = !empty($disclaimer_pref_row['show_social_club_disclaimer']);
+        }
+    }
+}
 
 $business_hours = craftcrawl_location_hours_for_form($conn, $location_id);
 $business_hours_text = craftcrawl_business_hours_have_saved_hours($business_hours)
@@ -521,6 +528,9 @@ function format_event_time_range($event) {
             <?php endif; ?>
 
             <p class="business-preview-type"><?php echo escape_output(format_business_type($business['bType'])); ?></p>
+            <?php if ($business['bType'] === 'social_club') : ?>
+                <p class="social-club-membership-notice">May Require Membership for Entry</p>
+            <?php endif; ?>
             <h1><?php echo escape_output($business['bName']); ?></h1>
             <?php if ($is_claimed_location) : ?>
                 <div class="claimed-listing-notice">

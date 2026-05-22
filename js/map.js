@@ -375,7 +375,7 @@ function escapeHtml(value) {
 }
 
 function showSocialClubDisclaimerIfNeeded(callback) {
-    if (!window.CRAFTCRAWL_SHOW_SOCIAL_CLUB_DISCLAIMER) {
+    if (window.CRAFTCRAWL_SHOW_SOCIAL_CLUB_DISCLAIMER === false) {
         callback();
         return;
     }

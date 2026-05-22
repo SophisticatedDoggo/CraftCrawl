@@ -5188,6 +5188,13 @@ a.mobile-context-back.feed-thread-back-link:focus {
     font-weight: 700;
 }
 
+.social-club-membership-notice {
+    color: var(--color-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin: 0;
+}
+
 .analytics-hero {
     display: flex;
     justify-content: space-between;

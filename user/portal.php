@@ -12,11 +12,16 @@ $welcome_stmt->execute();
 $welcome_user = $welcome_stmt->get_result()->fetch_assoc();
 $show_welcome_modal = $welcome_user && empty($welcome_user['welcomeSeenAt']);
 $show_suggestion_saved_modal = ($_GET['message'] ?? '') === 'suggestion_saved';
+$show_social_club_disclaimer = true;
 $disclaimer_pref_stmt = $conn->prepare("SELECT show_social_club_disclaimer FROM users WHERE id=? LIMIT 1");
-$disclaimer_pref_stmt->bind_param("i", $user_id);
-$disclaimer_pref_stmt->execute();
-$disclaimer_pref_row = $disclaimer_pref_stmt->get_result()->fetch_assoc();
-$show_social_club_disclaimer = $disclaimer_pref_row === null || !empty($disclaimer_pref_row['show_social_club_disclaimer']);
+if ($disclaimer_pref_stmt) {
+    $disclaimer_pref_stmt->bind_param("i", $user_id);
+    $disclaimer_pref_stmt->execute();
+    $disclaimer_pref_row = $disclaimer_pref_stmt->get_result()->fetch_assoc();
+    if ($disclaimer_pref_row) {
+        $show_social_club_disclaimer = !empty($disclaimer_pref_row['show_social_club_disclaimer']);
+    }
+}
 $craftcrawl_portal_active = 'map';
 $craftcrawl_portal_show_search = true;
 $craftcrawl_portal_shell = true;
