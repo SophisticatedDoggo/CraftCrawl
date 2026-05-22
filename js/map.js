@@ -405,6 +405,7 @@ function showSocialClubDisclaimerIfNeeded(callback) {
             <span class="welcome-modal-kicker">Heads up</span>
             <h2 id="social-club-disclaimer-title">Membership may be required.</h2>
             <p>Social clubs often require a membership or guest sponsorship for entry. Check with the location directly before visiting.</p>
+            <p><small>These popups can be disabled in settings.</small></p>
             <button type="button" data-social-club-disclaimer-dismiss>Got it</button>
         </div>
     `;
