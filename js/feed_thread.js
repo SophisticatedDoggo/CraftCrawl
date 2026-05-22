@@ -253,9 +253,15 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         }
 
         const visualViewport = window.visualViewport;
-        const keyboardOffset = visualViewport
-            ? Math.max(0, window.innerHeight - visualViewport.height - visualViewport.offsetTop)
+        const layoutHeight = Math.min(
+            window.innerHeight || 0,
+            document.documentElement.clientHeight || window.innerHeight || 0
+        ) || window.innerHeight || 0;
+        const rawKeyboardOffset = visualViewport
+            ? Math.max(0, layoutHeight - visualViewport.height - visualViewport.offsetTop)
             : 0;
+        const maxKeyboardOffset = Math.min(430, Math.max(0, layoutHeight * 0.55));
+        const keyboardOffset = Math.min(rawKeyboardOffset, maxKeyboardOffset);
         const textareaFocused = composeForm.contains(document.activeElement);
         composerKeyboardOffset = textareaFocused
             ? Math.max(composerKeyboardOffset, keyboardOffset)
@@ -274,43 +280,6 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         threadPage.style.setProperty('--feed-compose-offset', `${offset}px`);
         threadPage.classList.add('is-compose-open');
         return offset;
-    }
-
-    function revealComposeTarget() {
-        if (!activeComposeTarget) return;
-
-        const offset = updateComposerSpace();
-        const scroller = activeComposeTarget.closest('[data-feed-thread-overlay-content]')
-            || document.scrollingElement
-            || document.documentElement;
-
-        activeComposeTarget.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-        });
-
-        window.setTimeout(() => {
-            const rect = activeComposeTarget.getBoundingClientRect();
-            const visualViewport = window.visualViewport;
-            const viewportTop = visualViewport?.offsetTop || 0;
-            const viewportHeight = visualViewport?.height || window.innerHeight;
-            const visibleTop = viewportTop + 18;
-            const visibleBottom = viewportTop + viewportHeight - offset - 18;
-            let adjustment = 0;
-
-            if (rect.bottom > visibleBottom) {
-                adjustment = rect.bottom - visibleBottom;
-            } else if (rect.top < visibleTop) {
-                adjustment = rect.top - visibleTop;
-            }
-
-            if (adjustment !== 0) {
-                scroller.scrollBy({
-                    top: adjustment,
-                    behavior: 'smooth'
-                });
-            }
-        }, 120);
     }
 
     function clearComposeTarget() {
@@ -354,15 +323,8 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         document.body.classList.add('feed-comment-composer-open');
         updateComposerSpace();
         window.requestAnimationFrame(() => {
-            revealComposeTarget();
             composeForm.querySelector('textarea')?.focus();
-            window.setTimeout(revealComposeTarget, 220);
-            [80, 180, 360, 700].forEach((delay) => {
-                window.setTimeout(() => {
-                    updateComposerSpace();
-                    revealComposeTarget();
-                }, delay);
-            });
+            [80, 180, 360, 700].forEach((delay) => window.setTimeout(updateComposerSpace, delay));
         });
     }
 
