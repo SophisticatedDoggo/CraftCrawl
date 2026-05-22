@@ -57,6 +57,22 @@ function focusNotificationTargetWhenVisible(target) {
 window.CraftCrawlInitFeedThread = function (root = document) {
     const threadPage = root.querySelector('.feed-thread-page');
 
+    function updateThreadScrollability() {
+        const page = root.querySelector('.feed-thread-page');
+        const overlay = page?.closest('[data-feed-thread-overlay]');
+        const overlayContent = overlay?.querySelector('[data-feed-thread-overlay-content]');
+        if (!overlayContent) return;
+
+        const canScroll = overlayContent.scrollHeight > overlayContent.clientHeight + 2;
+        overlayContent.classList.toggle('is-not-scrollable', !canScroll);
+    }
+
+    function scheduleThreadScrollabilityUpdate() {
+        updateThreadScrollability();
+        window.requestAnimationFrame(updateThreadScrollability);
+        window.setTimeout(updateThreadScrollability, 220);
+    }
+
     if (threadPage && threadPage.dataset.swipeDismissReady !== 'true') {
         threadPage.dataset.swipeDismissReady = 'true';
         const overlay = threadPage.closest('[data-feed-thread-overlay]');
@@ -66,17 +82,10 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         const swipeAbort = new AbortController();
         swipeSurface._craftcrawlFeedSwipeAbort = swipeAbort;
 
-        function updateSwipeSurfaceScrollability() {
-            if (!overlayContent) return;
-            const canScroll = overlayContent.scrollHeight > overlayContent.clientHeight + 2;
-            overlayContent.classList.toggle('is-not-scrollable', !canScroll);
-        }
-
-        updateSwipeSurfaceScrollability();
-        window.requestAnimationFrame(updateSwipeSurfaceScrollability);
-        window.setTimeout(updateSwipeSurfaceScrollability, 350);
-        window.addEventListener('resize', updateSwipeSurfaceScrollability, { signal: swipeAbort.signal });
-        window.visualViewport?.addEventListener('resize', updateSwipeSurfaceScrollability, { signal: swipeAbort.signal });
+        scheduleThreadScrollabilityUpdate();
+        window.setTimeout(updateThreadScrollability, 350);
+        window.addEventListener('resize', scheduleThreadScrollabilityUpdate, { signal: swipeAbort.signal });
+        window.visualViewport?.addEventListener('resize', scheduleThreadScrollabilityUpdate, { signal: swipeAbort.signal });
 
         const swipe = {
             active: false,
@@ -279,6 +288,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         const offset = composerHeight + 28;
         threadPage.style.setProperty('--feed-compose-offset', `${offset}px`);
         threadPage.classList.add('is-compose-open');
+        scheduleThreadScrollabilityUpdate();
         return offset;
     }
 
@@ -295,6 +305,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         threadPage?.classList.remove('is-compose-open');
         threadPage?.style.removeProperty('--feed-compose-offset');
         clearComposeTarget();
+        scheduleThreadScrollabilityUpdate();
     }
 
     function openComposer(options = {}) {
@@ -361,6 +372,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             const isExpanded = button.getAttribute('aria-expanded') === 'true';
             button.setAttribute('aria-expanded', String(!isExpanded));
             panel.hidden = isExpanded;
+            scheduleThreadScrollabilityUpdate();
         });
     });
 
