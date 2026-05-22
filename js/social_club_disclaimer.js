@@ -1,6 +1,8 @@
-(() => {
-    const modal = document.querySelector('[data-social-club-disclaimer]');
+window.CraftCrawlInitSocialClubDisclaimer = function (root = document) {
+    const modal = root.querySelector('[data-social-club-disclaimer]');
     if (!modal) return;
+    if (modal.dataset.socialClubDisclaimerInitialized === 'true') return;
+    modal.dataset.socialClubDisclaimerInitialized = 'true';
 
     const dismissButton = modal.querySelector('[data-social-club-disclaimer-dismiss]');
 
@@ -14,4 +16,6 @@
     }
 
     dismissButton?.addEventListener('click', dismiss);
-})();
+};
+
+window.CraftCrawlInitSocialClubDisclaimer();

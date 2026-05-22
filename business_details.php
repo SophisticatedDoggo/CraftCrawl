@@ -527,10 +527,12 @@ function format_event_time_range($event) {
                 <img class="business-cover-photo" src="<?php echo escape_output($cover_url); ?>" alt="<?php echo escape_output($business['bName']); ?> cover photo">
             <?php endif; ?>
 
-            <p class="business-preview-type"><?php echo escape_output(format_business_type($business['bType'])); ?></p>
-            <?php if ($business['bType'] === 'social_club') : ?>
-                <p class="social-club-membership-notice">May Require Membership for Entry</p>
-            <?php endif; ?>
+            <p class="business-preview-type">
+                <?php echo escape_output(format_business_type($business['bType'])); ?>
+                <?php if ($business['bType'] === 'social_club') : ?>
+                    <span class="social-club-membership-notice"> - May Require Membership for Entry</span>
+                <?php endif; ?>
+            </p>
             <h1><?php echo escape_output($business['bName']); ?></h1>
             <?php if ($is_claimed_location) : ?>
                 <div class="claimed-listing-notice">
@@ -895,13 +897,6 @@ function format_event_time_range($event) {
         <img class="photo-lightbox-image review-photo-lightbox-image" id="business-gallery-lightbox-image" alt="<?php echo escape_output($business['bName']); ?> photo">
         <button type="button" class="photo-lightbox-nav photo-lightbox-next review-photo-lightbox-nav review-photo-lightbox-next business-gallery-lightbox-nav" id="business-gallery-lightbox-next" aria-label="Next photo">&rsaquo;</button>
     </div>
-    </div>
-    <?php
-    $craftcrawl_portal_active = '';
-    $craftcrawl_user_nav_prefix = '/user/';
-    $craftcrawl_user_logout_action = '/logout.php';
-    include __DIR__ . '/user/app_nav.php';
-    ?>
 <?php if ($business['bType'] === 'social_club' && $show_social_club_disclaimer) : ?>
     <section
         class="welcome-modal"
@@ -920,6 +915,13 @@ function format_event_time_range($event) {
         </div>
     </section>
 <?php endif; ?>
+    </div>
+    <?php
+    $craftcrawl_portal_active = '';
+    $craftcrawl_user_nav_prefix = '/user/';
+    $craftcrawl_user_logout_action = '/logout.php';
+    include __DIR__ . '/user/app_nav.php';
+    ?>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
     window.CRAFTCRAWL_XP_REWARD_POPUP = <?php echo json_encode($xp_reward_popup, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;

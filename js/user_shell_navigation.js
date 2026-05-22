@@ -94,6 +94,7 @@
         window.CraftCrawlInitBadgeShowcase?.(root);
         window.CraftCrawlInitProfileListSearch?.(root);
         window.CraftCrawlInitFeedThread?.(root);
+        window.CraftCrawlInitSocialClubDisclaimer?.(root);
         window.CraftCrawlInitPullToRefresh?.(root);
         window.CraftCrawlInitMobileActionsMenu?.();
     }
