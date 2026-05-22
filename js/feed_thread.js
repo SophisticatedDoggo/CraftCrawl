@@ -122,14 +122,19 @@ window.CraftCrawlInitFeedThread = function (root = document) {
 
             const deltaX = clientX - swipe.startX;
             const deltaY = clientY - swipe.startY;
+            const absX = Math.abs(deltaX);
+            const absY = Math.abs(deltaY);
             swipe.lastX = clientX;
 
             if (!swipe.dragging) {
-                if (Math.abs(deltaY) > 34 && Math.abs(deltaY) > Math.abs(deltaX) * 1.7) {
+                if (absY > 58 && absY > absX * 2.3) {
                     swipe.active = false;
                     return;
                 }
-                if (deltaX < 4 || Math.abs(deltaX) < Math.abs(deltaY) * 0.65) {
+                if (deltaX > 6 && absX > absY * 0.42 && event?.cancelable) {
+                    event.preventDefault();
+                }
+                if (deltaX < 6 || absX < absY * 0.42) {
                     return;
                 }
                 swipe.dragging = true;
@@ -202,7 +207,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             swipe.startY = touch.clientY;
             swipe.lastX = touch.clientX;
             swipe.dragging = false;
-        }, { passive: true });
+        }, { passive: false });
         threadPage.addEventListener('touchmove', (event) => {
             if (!swipe.active || swipe.pointerId !== null || event.touches.length !== 1) return;
             const touch = event.touches[0];
@@ -223,10 +228,31 @@ window.CraftCrawlInitFeedThread = function (root = document) {
     const composeContext = root.querySelector('[data-compose-context]');
     const composeSubmit = root.querySelector('[data-compose-submit]');
     let activeComposeTarget = null;
+    let composerKeyboardOffset = 0;
+
+    function updateComposerViewportOffset() {
+        if (!composeForm || composeForm.hidden) {
+            document.documentElement.style.removeProperty('--feed-compose-keyboard-offset');
+            return 0;
+        }
+
+        const visualViewport = window.visualViewport;
+        const keyboardOffset = visualViewport
+            ? Math.max(0, window.innerHeight - visualViewport.height - visualViewport.offsetTop)
+            : 0;
+        const textareaFocused = composeForm.contains(document.activeElement);
+        composerKeyboardOffset = textareaFocused
+            ? Math.max(composerKeyboardOffset, keyboardOffset)
+            : keyboardOffset;
+
+        document.documentElement.style.setProperty('--feed-compose-keyboard-offset', `${Math.ceil(composerKeyboardOffset)}px`);
+        return composerKeyboardOffset;
+    }
 
     function updateComposerSpace() {
         if (!composeForm || composeForm.hidden || !threadPage) return 0;
 
+        updateComposerViewportOffset();
         const composerHeight = Math.ceil(composeForm.getBoundingClientRect().height || 0);
         const offset = composerHeight + 28;
         threadPage.style.setProperty('--feed-compose-offset', `${offset}px`);
@@ -278,6 +304,9 @@ window.CraftCrawlInitFeedThread = function (root = document) {
 
     function closeComposer() {
         if (composeForm) composeForm.hidden = true;
+        composerKeyboardOffset = 0;
+        document.documentElement.style.removeProperty('--feed-compose-keyboard-offset');
+        document.body.classList.remove('feed-comment-composer-open');
         threadPage?.classList.remove('is-compose-open');
         threadPage?.style.removeProperty('--feed-compose-offset');
         clearComposeTarget();
@@ -306,12 +335,29 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         }
 
         composeForm.hidden = false;
+        document.body.classList.add('feed-comment-composer-open');
         updateComposerSpace();
         window.requestAnimationFrame(() => {
             revealComposeTarget();
             composeForm.querySelector('textarea')?.focus();
             window.setTimeout(revealComposeTarget, 220);
+            [80, 180, 360, 700].forEach((delay) => {
+                window.setTimeout(() => {
+                    updateComposerSpace();
+                    revealComposeTarget();
+                }, delay);
+            });
         });
+    }
+
+    if (window.visualViewport && threadPage && threadPage.dataset.composeViewportReady !== 'true') {
+        threadPage.dataset.composeViewportReady = 'true';
+        const syncComposerViewport = () => {
+            if (!composeForm || composeForm.hidden) return;
+            updateComposerSpace();
+        };
+        window.visualViewport.addEventListener('resize', syncComposerViewport);
+        window.visualViewport.addEventListener('scroll', syncComposerViewport);
     }
 
     root.querySelectorAll('[data-reply-toggle]').forEach((button) => {

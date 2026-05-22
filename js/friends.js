@@ -80,6 +80,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let feedThreadOverlayContent = null;
     let feedThreadOverlayItemKey = '';
     let feedThreadOverlayBaseUrl = '';
+    let feedThreadPendingReturnItemKey = '';
+    let feedThreadPendingReturnUntil = 0;
 
     function installFeedReactionHandler() {
         if (document.documentElement.dataset.feedReactionReady === 'true') {
@@ -1109,7 +1111,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             sentinel.hidden = !hasMore;
         }
 
-        animateThreadReturnAnchor();
+        playPendingThreadReturnAnchor();
     }
 
     function takeThreadReturnItemKey() {
@@ -1130,8 +1132,36 @@ window.CraftCrawlInitFriends = function (scope = document) {
         } catch (_) {}
     }
 
+    function queueThreadReturnAnchor(itemKey) {
+        if (!itemKey) return;
+
+        feedThreadPendingReturnItemKey = itemKey;
+        feedThreadPendingReturnUntil = Date.now() + 1700;
+        [140, 360, 760].forEach((delay) => {
+            window.setTimeout(playPendingThreadReturnAnchor, delay);
+        });
+    }
+
+    function playPendingThreadReturnAnchor() {
+        if (!feedThreadPendingReturnItemKey) {
+            const storedItemKey = takeThreadReturnItemKey();
+            if (storedItemKey) {
+                queueThreadReturnAnchor(storedItemKey);
+            }
+            return;
+        }
+
+        if (Date.now() > feedThreadPendingReturnUntil) {
+            feedThreadPendingReturnItemKey = '';
+            feedThreadPendingReturnUntil = 0;
+            return;
+        }
+
+        animateThreadReturnAnchor(0, feedThreadPendingReturnItemKey);
+    }
+
     function animateThreadReturnAnchor(attempt = 0, itemKey = '') {
-        const returnItemKey = itemKey || takeThreadReturnItemKey();
+        const returnItemKey = itemKey;
         if (!feed || !returnItemKey) {
             return;
         }
@@ -1153,7 +1183,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
             item.classList.remove('is-opening-thread');
             item.classList.add('has-thread-return-highlight');
-            item.querySelector('.feed-return-highlight')?.remove();
+            if (item.querySelector('.feed-return-highlight')) {
+                return;
+            }
             const highlight = document.createElement('span');
             highlight.className = 'feed-return-highlight';
             highlight.setAttribute('aria-hidden', 'true');
@@ -1180,6 +1212,10 @@ window.CraftCrawlInitFriends = function (scope = document) {
             window.setTimeout(() => {
                 highlight.remove();
                 item.classList.remove('has-thread-return-highlight');
+                if (returnItemKey === feedThreadPendingReturnItemKey && Date.now() > feedThreadPendingReturnUntil) {
+                    feedThreadPendingReturnItemKey = '';
+                    feedThreadPendingReturnUntil = 0;
+                }
             }, 1050);
         };
 
@@ -1189,7 +1225,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     document.addEventListener('craftcrawl:user-shell-navigated', (event) => {
         const url = new URL(event.detail?.url || window.location.href, window.location.href);
         if (url.pathname.endsWith('/feed.php')) {
-            animateThreadReturnAnchor();
+            playPendingThreadReturnAnchor();
         }
     });
 
@@ -1266,6 +1302,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         const itemKey = options.returnItemKey || feedThreadOverlayItemKey;
         if (itemKey) {
             clearThreadReturnItemKey();
+            queueThreadReturnAnchor(itemKey);
         }
         feedThreadOverlay.classList.add('is-closing');
         document.body.classList.remove('feed-thread-overlay-open');
@@ -1273,13 +1310,15 @@ window.CraftCrawlInitFriends = function (scope = document) {
         window.setTimeout(() => {
             feedThreadOverlay.hidden = true;
             feedThreadOverlay.classList.remove('is-open', 'is-closing', 'is-swipe-dragging', 'is-swipe-dismissing');
+            document.documentElement.style.removeProperty('--feed-compose-keyboard-offset');
+            document.body.classList.remove('feed-comment-composer-open');
             if (feedThreadOverlayContent) {
                 feedThreadOverlayContent.style.transform = '';
                 feedThreadOverlayContent.style.opacity = '';
             }
             feedThreadOverlayContent?.replaceChildren();
             feedThreadOverlayItemKey = '';
-            animateThreadReturnAnchor(0, itemKey);
+            playPendingThreadReturnAnchor();
         }, 110);
 
         if (options.useHistory && history.state?.craftcrawlFeedThreadOverlay) {

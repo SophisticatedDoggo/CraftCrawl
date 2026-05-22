@@ -3962,6 +3962,7 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     --feed-compose-offset: 0px;
     max-width: 760px;
     touch-action: pan-y;
+    overscroll-behavior: contain;
     transform-origin: center top;
     will-change: transform, opacity;
 }
@@ -4012,6 +4013,7 @@ body.feed-thread-overlay-open {
     box-shadow: -18px 0 36px color-mix(in srgb, var(--color-text) 12%, transparent);
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
+    overscroll-behavior: contain;
     will-change: transform, opacity;
 }
 
@@ -4111,7 +4113,7 @@ a.mobile-context-back.feed-thread-back-link:focus {
 .feed-compose-form {
     position: fixed;
     right: 0;
-    bottom: 0;
+    bottom: var(--feed-compose-keyboard-offset, 0px);
     left: 0;
     z-index: 1211;
     display: grid;
