@@ -278,10 +278,10 @@ $leaderboard = $leaderboard_stmt->get_result();
         </section>
 
         <section class="settings-panel">
-            <h2>Recommended For You</h2>
+            <h2>Location Recommendations</h2>
             <div class="friend-recommendation-list">
                 <?php if ($recommendations->num_rows === 0) : ?>
-                    <p>No active recommendations yet.</p>
+                    <p>No location recommendations from friends yet.</p>
                 <?php endif; ?>
                 <?php while ($recommendation = $recommendations->fetch_assoc()) : ?>
                     <article class="friend-recommendation-card">
