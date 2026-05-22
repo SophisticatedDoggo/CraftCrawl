@@ -3990,7 +3990,8 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     font-size: 13px;
 }
 
-.feed-thread-page {
+.feed-thread-page,
+.event-detail-page {
     --feed-compose-offset: 0px;
     max-width: 760px;
     touch-action: pan-y;
@@ -4003,11 +4004,13 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     padding-bottom: var(--feed-compose-offset);
 }
 
-body.feed-thread-overlay-open {
+body.feed-thread-overlay-open,
+body.event-detail-overlay-open {
     overflow: hidden;
 }
 
-.feed-thread-overlay {
+.feed-thread-overlay,
+.event-detail-overlay {
     position: fixed;
     inset: 0;
     z-index: 1200;
@@ -4016,11 +4019,13 @@ body.feed-thread-overlay-open {
     background: transparent;
 }
 
-.feed-thread-overlay[hidden] {
+.feed-thread-overlay[hidden],
+.event-detail-overlay[hidden] {
     display: none;
 }
 
-.feed-thread-overlay-scrim {
+.feed-thread-overlay-scrim,
+.event-detail-overlay-scrim {
     position: absolute;
     inset: 0;
     background: var(--color-bg);
@@ -4029,11 +4034,15 @@ body.feed-thread-overlay-open {
 
 .feed-thread-overlay.is-swipe-dragging .feed-thread-overlay-scrim,
 .feed-thread-overlay.is-swipe-dismissing .feed-thread-overlay-scrim,
-.feed-thread-overlay.is-closing .feed-thread-overlay-scrim {
+.feed-thread-overlay.is-closing .feed-thread-overlay-scrim,
+.event-detail-overlay.is-swipe-dragging .event-detail-overlay-scrim,
+.event-detail-overlay.is-swipe-dismissing .event-detail-overlay-scrim,
+.event-detail-overlay.is-closing .event-detail-overlay-scrim {
     opacity: 0;
 }
 
-.feed-thread-overlay-content {
+.feed-thread-overlay-content,
+.event-detail-overlay-content {
     position: relative;
     z-index: 1;
     width: min(100%, 760px);
@@ -4049,18 +4058,21 @@ body.feed-thread-overlay-open {
     will-change: transform, opacity;
 }
 
-.feed-thread-overlay-content.is-not-scrollable {
+.feed-thread-overlay-content.is-not-scrollable,
+.event-detail-overlay-content.is-not-scrollable {
     overflow-y: hidden;
     touch-action: none;
 }
 
-.feed-thread-overlay .feed-thread-page {
+.feed-thread-overlay .feed-thread-page,
+.event-detail-overlay .event-detail-page {
     min-height: auto;
     padding-bottom: 24px;
     background: var(--color-bg);
 }
 
-body.feed-thread-overlay-open .mobile-app-tabbar {
+body.feed-thread-overlay-open .mobile-app-tabbar,
+body.event-detail-overlay-open .mobile-app-tabbar {
     display: none;
 }
 
@@ -4069,16 +4081,20 @@ body.events-page-body .portal-level-summary {
     display: none !important;
 }
 
-.feed-thread-overlay.is-open .feed-thread-overlay-content {
+.feed-thread-overlay.is-open .feed-thread-overlay-content,
+.event-detail-overlay.is-open .event-detail-overlay-content {
     animation: feedThreadOverlayIn 220ms cubic-bezier(.2, .82, .2, 1);
 }
 
-.feed-thread-overlay.is-closing .feed-thread-overlay-content {
+.feed-thread-overlay.is-closing .feed-thread-overlay-content,
+.event-detail-overlay.is-closing .event-detail-overlay-content {
     animation: feedThreadOverlayOut 110ms ease-in both;
 }
 
 .feed-thread-overlay.is-swipe-dragging .feed-thread-overlay-content,
-.feed-thread-overlay.is-swipe-dismissing .feed-thread-overlay-content {
+.feed-thread-overlay.is-swipe-dismissing .feed-thread-overlay-content,
+.event-detail-overlay.is-swipe-dragging .event-detail-overlay-content,
+.event-detail-overlay.is-swipe-dismissing .event-detail-overlay-content {
     animation: none;
     transition: none;
 }
@@ -4111,7 +4127,8 @@ a.mobile-context-back.feed-thread-back-link:focus {
     box-shadow: none;
 }
 
-.feed-thread-page-entering {
+.feed-thread-page-entering,
+.event-detail-page-entering {
     animation: feedThreadPostSettleIn 220ms cubic-bezier(.2, .82, .2, 1) both;
 }
 
@@ -4119,16 +4136,19 @@ a.mobile-context-back.feed-thread-back-link:focus {
     animation: feedThreadCommentsExpand 340ms cubic-bezier(.2, .82, .2, 1) both;
 }
 
-.feed-thread-page.is-swipe-dragging {
+.feed-thread-page.is-swipe-dragging,
+.event-detail-page.is-swipe-dragging {
     touch-action: pan-y;
     transition: none;
 }
 
-.feed-thread-page-dismissing {
+.feed-thread-page-dismissing,
+.event-detail-page-dismissing {
     animation: feedThreadSwipeAway 190ms ease-in both;
 }
 
-.feed-thread-page-compacting {
+.feed-thread-page-compacting,
+.event-detail-page-compacting {
     animation: feedThreadCompactOut 150ms cubic-bezier(.3, 0, .7, 1) both;
 }
 
@@ -4292,12 +4312,18 @@ a.mobile-context-back.feed-thread-back-link:focus {
 
 @media (prefers-reduced-motion: reduce) {
     .friends-feed-item,
+    .event-feed-item,
     .feed-thread-page-entering,
+    .event-detail-page-entering,
     .feed-thread-page-entering .feed-thread-panel:not(:first-of-type),
     .feed-thread-overlay.is-open .feed-thread-overlay-content,
+    .event-detail-overlay.is-open .event-detail-overlay-content,
     .feed-thread-overlay.is-closing .feed-thread-overlay-content,
+    .event-detail-overlay.is-closing .event-detail-overlay-content,
     .feed-thread-page-dismissing,
+    .event-detail-page-dismissing,
     .feed-thread-page-compacting,
+    .event-detail-page-compacting,
     .feed-return-highlight {
         transition: none;
     }
@@ -4522,6 +4548,25 @@ a.mobile-context-back.feed-thread-back-link:focus {
     white-space: nowrap;
 }
 
+.details-nav a.feed-thread-back-link {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    color: var(--color-primary);
+    background: transparent;
+    box-shadow: none;
+    font-size: 1.55rem;
+    line-height: 1;
+    font-weight: 900;
+}
+
+.details-nav a.feed-thread-back-link:hover,
+.details-nav a.feed-thread-back-link:focus {
+    color: var(--color-primary-dark);
+    background: transparent;
+    box-shadow: none;
+}
+
 .admin-page .business-header-actions {
     gap: 8px;
 }
@@ -4546,6 +4591,22 @@ a.mobile-context-back.feed-thread-back-link:focus {
     box-shadow: var(--glass-shadow);
     backdrop-filter: blur(14px) saturate(1.08);
     -webkit-backdrop-filter: blur(14px) saturate(1.08);
+    transform-origin: center top;
+    transition: transform 240ms cubic-bezier(.2, .82, .2, 1), background-color 180ms ease, opacity 180ms ease, box-shadow 180ms ease;
+    cursor: pointer;
+}
+
+.event-feed-item.is-opening-event {
+    position: relative;
+    z-index: 3;
+    background:
+        color-mix(in srgb, var(--color-primary) 6%, transparent),
+        var(--glass-surface),
+        var(--color-surface);
+}
+
+.event-feed-item:has(a:hover, button:hover, input:hover, textarea:hover, select:hover) {
+    cursor: default;
 }
 
 .event-feed-item-with-cover {

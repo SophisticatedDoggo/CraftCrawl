@@ -113,17 +113,13 @@ if (isset($_SESSION['user_id'])) {
     <?php require_once __DIR__ . '/lib/google_analytics.php'; echo craftcrawl_google_analytics_tag(); ?>
 </head>
 <body>
-    <main class="event-detail-page">
+    <main class="event-detail-page" data-event-detail-page data-event-id="<?php echo escape_output($event_id); ?>" data-occurrence-date="<?php echo escape_output($occurrence_date); ?>">
         <div class="details-nav">
             <?php if ($is_business_owner) : ?>
-                <a href="business/events.php?month=<?php echo escape_output(date('Y-m', strtotime($occurrence_date))); ?>" data-back-link>Back</a>
+                <a class="feed-thread-back-link" href="business/events.php?month=<?php echo escape_output(date('Y-m', strtotime($occurrence_date))); ?>" data-back-link>&lt;</a>
             <?php else : ?>
-                <a href="business_details.php?id=<?php echo escape_output($event['location_id']); ?>" data-back-link>Back</a>
+                <a class="feed-thread-back-link" href="user/events.php" data-back-link>&lt;</a>
             <?php endif; ?>
-            <form action="logout.php" method="POST">
-                <?php echo craftcrawl_csrf_input(); ?>
-                <button type="submit">Logout</button>
-            </form>
         </div>
 
         <article class="event-detail-card">
@@ -174,37 +170,8 @@ if (isset($_SESSION['user_id'])) {
             </div>
         </article>
     </main>
-    <script>
-        document.querySelectorAll('[data-event-detail-want]').forEach((form) => {
-            form.addEventListener('submit', (event) => {
-                event.preventDefault();
-                const button = form.querySelector('button');
-                const savedInput = form.querySelector('[name="is_saved"]');
-                button.disabled = true;
-                button.classList.add('is-loading');
-
-                fetch(form.action, {
-                    method: 'POST',
-                    body: new FormData(form),
-                    credentials: 'same-origin'
-                })
-                    .then((response) => response.json())
-                    .then((data) => {
-                        if (!data.ok) {
-                            return;
-                        }
-                        savedInput.value = data.is_saved ? '1' : '0';
-                        button.classList.toggle('is-active', Boolean(data.is_saved));
-                        button.textContent = `📍 Want to Go ${Number(data.count || 0)}`;
-                        window.dispatchEvent(new CustomEvent('craftcrawl:event-want-updated'));
-                    })
-                    .finally(() => {
-                        button.disabled = false;
-                        button.classList.remove('is-loading');
-                    });
-            });
-        });
-    </script>
+    <script src="js/portal_events.js?v=<?php echo filemtime(__DIR__ . '/js/portal_events.js'); ?>"></script>
+    <script src="js/level_celebration.js?v=<?php echo filemtime(__DIR__ . '/js/level_celebration.js'); ?>"></script>
     <script src="js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/js/depth_animations.js'); ?>"></script>
 </body>
 </html>

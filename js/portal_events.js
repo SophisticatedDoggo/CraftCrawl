@@ -1,6 +1,8 @@
 window.CraftCrawlInitPortalEvents = function (root = document) {
     const feedContainer = root.querySelector('#events-feed');
     const likedEventsOnly = root.querySelector('#liked-events-only');
+    let eventDetailOverlay = null;
+    let eventDetailOverlayContent = null;
 
     if (!feedContainer || feedContainer.dataset.portalEventsReady === 'true') {
         return false;
@@ -66,7 +68,7 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
 
             return `
                 ${dayHeader}
-                <article class="event-feed-item ${event.coverPhotoUrl ? 'event-feed-item-with-cover' : ''}">
+                <article class="event-feed-item ${event.coverPhotoUrl ? 'event-feed-item-with-cover' : ''}" data-event-feed-item data-event-id="${event.id}" data-occurrence-date="${escapeHtml(event.date)}" data-event-detail-url="${eventUrl}" role="link" tabindex="0">
                     ${coverPhoto}
                     <div class="event-feed-details">
                         <h3>${eventName}</h3>
@@ -75,7 +77,7 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
                         ${description ? `<p>${description}</p>` : ''}
                     </div>
                     <div class="event-feed-actions">
-                        <a href="${eventUrl}">View event</a>
+                        <a href="${eventUrl}" data-event-detail-link>View event</a>
                         <a href="../business_details.php?id=${event.businessId}">View business</a>
                         <a class="event-comments-link" href="${commentsUrl}">${commentLabel}</a>
                         <button
@@ -131,7 +133,157 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
                     });
             });
         });
+
+        feedContainer.querySelectorAll('[data-event-detail-link]').forEach((link) => {
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                openEventDetailOverlay(link.href, link.closest('[data-event-feed-item]'));
+            });
+        });
+
+        feedContainer.querySelectorAll('[data-event-feed-item]').forEach((item) => {
+            item.addEventListener('click', (event) => {
+                if (event.target.closest('a, button, input, textarea, select, label, [role="button"]')) {
+                    return;
+                }
+                openEventDetailOverlay(item.dataset.eventDetailUrl, item);
+            });
+            item.addEventListener('keydown', (event) => {
+                if (event.target !== item || !['Enter', ' '].includes(event.key)) {
+                    return;
+                }
+                event.preventDefault();
+                openEventDetailOverlay(item.dataset.eventDetailUrl, item);
+            });
+        });
     }
+
+    function normalizeEventDetailUrl(url) {
+        return new URL(url, window.location.href).href;
+    }
+
+    async function fetchEventDetailPage(url) {
+        const response = await fetch(url, {
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: { 'X-Requested-With': 'CraftCrawlShell' }
+        });
+        if (!response.ok) throw new Error('Event could not be loaded.');
+        const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+        const page = doc.querySelector('.event-detail-page');
+        if (!page) throw new Error('Event content was missing.');
+        return page;
+    }
+
+    function ensureEventDetailOverlay() {
+        if (eventDetailOverlay) {
+            return eventDetailOverlay;
+        }
+
+        eventDetailOverlay = document.createElement('div');
+        eventDetailOverlay.className = 'event-detail-overlay';
+        eventDetailOverlay.setAttribute('data-event-detail-overlay', '');
+        eventDetailOverlay.hidden = true;
+        eventDetailOverlay.innerHTML = '<div class="event-detail-overlay-scrim" data-event-detail-overlay-close></div><div class="event-detail-overlay-content" data-event-detail-overlay-content></div>';
+        document.body.appendChild(eventDetailOverlay);
+        eventDetailOverlayContent = eventDetailOverlay.querySelector('[data-event-detail-overlay-content]');
+
+        eventDetailOverlay.addEventListener('click', (event) => {
+            if (event.target.closest('[data-event-detail-overlay-close]')) {
+                closeEventDetailOverlay({ useHistory: true });
+            }
+        });
+
+        return eventDetailOverlay;
+    }
+
+    function absolutizeEventDetailUrls(page, sourceUrl) {
+        page.querySelectorAll('[href]').forEach((element) => {
+            element.setAttribute('href', new URL(element.getAttribute('href'), sourceUrl).href);
+        });
+        page.querySelectorAll('[src]').forEach((element) => {
+            element.setAttribute('src', new URL(element.getAttribute('src'), sourceUrl).href);
+        });
+        page.querySelectorAll('form[action]').forEach((form) => {
+            form.setAttribute('action', new URL(form.getAttribute('action'), sourceUrl).href);
+        });
+    }
+
+    function setEventDetailOverlayContent(page, sourceUrl) {
+        ensureEventDetailOverlay();
+        eventDetailOverlayContent.style.transform = '';
+        eventDetailOverlayContent.style.opacity = '';
+        absolutizeEventDetailUrls(page, sourceUrl);
+        page.classList.add('event-detail-page-entering');
+        eventDetailOverlayContent.replaceChildren(page);
+        window.setTimeout(() => page.classList.remove('event-detail-page-entering'), 420);
+        window.CraftCrawlInitEventDetail?.(eventDetailOverlay);
+    }
+
+    function closeEventDetailOverlay(options = {}) {
+        if (!eventDetailOverlay || eventDetailOverlay.hidden) {
+            return false;
+        }
+        if (eventDetailOverlay.classList.contains('is-closing')) {
+            return true;
+        }
+
+        eventDetailOverlay.classList.add('is-closing');
+        document.body.classList.remove('event-detail-overlay-open');
+
+        window.setTimeout(() => {
+            eventDetailOverlay.hidden = true;
+            eventDetailOverlay.classList.remove('is-open', 'is-closing', 'is-swipe-dragging', 'is-swipe-dismissing');
+            if (eventDetailOverlayContent) {
+                eventDetailOverlayContent.style.transform = '';
+                eventDetailOverlayContent.style.opacity = '';
+            }
+            eventDetailOverlayContent?.replaceChildren();
+            refreshVisibleEvents();
+        }, 110);
+
+        if (options.useHistory && history.state?.craftcrawlEventDetailOverlay) {
+            history.back();
+        }
+
+        return true;
+    }
+
+    async function openEventDetailOverlay(url, eventItem = null, options = {}) {
+        const targetUrl = normalizeEventDetailUrl(url);
+        eventItem?.classList.add('is-opening-event');
+
+        try {
+            ensureEventDetailOverlay();
+            eventDetailOverlay.classList.remove('is-closing', 'is-swipe-dragging', 'is-swipe-dismissing');
+            eventDetailOverlayContent.style.transform = '';
+            eventDetailOverlayContent.style.opacity = '';
+            const page = await fetchEventDetailPage(targetUrl);
+            setEventDetailOverlayContent(page, targetUrl);
+            eventDetailOverlay.hidden = false;
+            eventDetailOverlay.classList.add('is-open');
+            document.body.classList.add('event-detail-overlay-open');
+            eventItem?.classList.remove('is-opening-event');
+
+            if (options.updateHistory !== false) {
+                history.pushState({ craftcrawlEventDetailOverlay: true }, '', targetUrl);
+            }
+            return true;
+        } catch (_) {
+            eventItem?.classList.remove('is-opening-event');
+            window.location.href = targetUrl;
+            return true;
+        }
+    }
+
+    window.CraftCrawlOpenEventDetailOverlay = openEventDetailOverlay;
+    window.CraftCrawlCloseEventDetailOverlay = closeEventDetailOverlay;
+
+    window.addEventListener('popstate', () => {
+        if (eventDetailOverlay && !eventDetailOverlay.hidden && !history.state?.craftcrawlEventDetailOverlay) {
+            closeEventDetailOverlay({ useHistory: false });
+        }
+    });
 
     function setupEventStickyDayHeader(container) {
         removeEventStickyDayHeader();
@@ -263,4 +415,204 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
     return true;
 };
 
+window.CraftCrawlInitEventDetail = function (root = document) {
+    const detailPage = root.querySelector('.event-detail-page');
+
+    if (!detailPage || detailPage.dataset.eventDetailReady === 'true') {
+        return false;
+    }
+    detailPage.dataset.eventDetailReady = 'true';
+
+    detailPage.querySelectorAll('[data-event-detail-want]').forEach((form) => {
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const button = form.querySelector('button');
+            const savedInput = form.querySelector('[name="is_saved"]');
+            button.disabled = true;
+            button.classList.add('is-loading');
+
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                credentials: 'same-origin'
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (!data.ok) {
+                        return;
+                    }
+                    savedInput.value = data.is_saved ? '1' : '0';
+                    button.classList.toggle('is-active', Boolean(data.is_saved));
+                    button.textContent = `📍 Want to Go ${Number(data.count || 0)}`;
+                    if (data.xp_reward && window.craftcrawlShowXpReward) {
+                        window.craftcrawlShowXpReward(data.xp_reward);
+                    }
+                    window.dispatchEvent(new CustomEvent('craftcrawl:event-want-updated'));
+                })
+                .finally(() => {
+                    button.disabled = false;
+                    button.classList.remove('is-loading');
+                });
+        });
+    });
+
+    const overlay = detailPage.closest('[data-event-detail-overlay]');
+    const overlayContent = overlay?.querySelector('[data-event-detail-overlay-content]');
+    const swipeSurface = overlayContent || detailPage;
+    swipeSurface._craftcrawlEventSwipeAbort?.abort();
+    const swipeAbort = new AbortController();
+    swipeSurface._craftcrawlEventSwipeAbort = swipeAbort;
+
+    function dismissEventDetail() {
+        if (overlay && typeof window.CraftCrawlCloseEventDetailOverlay === 'function') {
+            overlay.classList.add('is-swipe-dismissing');
+            window.setTimeout(() => {
+                window.CraftCrawlCloseEventDetailOverlay({ useHistory: true });
+            }, 35);
+            return;
+        }
+
+        detailPage.classList.add('event-detail-page-compacting');
+        window.setTimeout(() => {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = 'user/events.php';
+            }
+        }, 35);
+    }
+
+    detailPage.querySelectorAll('[data-back-link]').forEach((link) => {
+        if (link.dataset.eventDetailBackReady === 'true') return;
+        link.dataset.eventDetailBackReady = 'true';
+        link.addEventListener('click', (event) => {
+            if (overlay && typeof window.CraftCrawlCloseEventDetailOverlay === 'function') {
+                event.preventDefault();
+                window.CraftCrawlCloseEventDetailOverlay({ useHistory: true });
+            }
+        }, { capture: true });
+    });
+
+    const swipe = {
+        active: false,
+        pointerId: null,
+        startX: 0,
+        startY: 0,
+        lastX: 0,
+        dragging: false
+    };
+
+    function isSwipeIgnored(target) {
+        return Boolean(target.closest('a, button, input, textarea, select, label, [role="button"], form'));
+    }
+
+    function moveSwipe(clientX, clientY, event = null) {
+        if (!swipe.active) return;
+
+        const deltaX = clientX - swipe.startX;
+        const deltaY = clientY - swipe.startY;
+        const absY = Math.abs(deltaY);
+        swipe.lastX = clientX;
+
+        if (deltaX > 6 && event?.cancelable) {
+            event.preventDefault();
+        }
+
+        if (!swipe.dragging) {
+            if (deltaX < 6 && absY > 64) {
+                swipe.active = false;
+                return;
+            }
+            if (deltaX < 8) {
+                return;
+            }
+            swipe.dragging = true;
+            detailPage.classList.add('is-swipe-dragging');
+            overlay?.classList.add('is-swipe-dragging');
+        }
+
+        if (event?.cancelable) {
+            event.preventDefault();
+        }
+        const dragX = Math.max(0, deltaX);
+        const dragTarget = overlayContent || detailPage;
+        dragTarget.style.transform = `translateX(${dragX}px) scale(${Math.max(0.96, 1 - dragX / 2600)})`;
+        dragTarget.style.opacity = String(Math.max(0.35, 1 - dragX / 520));
+    }
+
+    function finishSwipeAt(clientX) {
+        if (!swipe.active) return;
+
+        const deltaX = clientX - swipe.startX;
+        const dismissDistance = Math.min(110, Math.max(82, window.innerWidth * 0.18));
+        const shouldDismiss = swipe.dragging && deltaX > dismissDistance;
+        swipe.active = false;
+        detailPage.classList.remove('is-swipe-dragging');
+        overlay?.classList.remove('is-swipe-dragging');
+        const dragTarget = overlayContent || detailPage;
+
+        if (shouldDismiss) {
+            dismissEventDetail();
+        } else {
+            dragTarget.style.transform = '';
+            dragTarget.style.opacity = '';
+        }
+
+        swipe.dragging = false;
+    }
+
+    swipeSurface.addEventListener('pointerdown', (event) => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        if (isSwipeIgnored(event.target)) return;
+
+        swipe.active = true;
+        swipe.pointerId = event.pointerId;
+        swipe.startX = event.clientX;
+        swipe.startY = event.clientY;
+        swipe.lastX = event.clientX;
+        swipe.dragging = false;
+        swipeSurface.setPointerCapture?.(event.pointerId);
+    }, { signal: swipeAbort.signal });
+
+    swipeSurface.addEventListener('pointermove', (event) => {
+        if (!swipe.active || event.pointerId !== swipe.pointerId) return;
+        moveSwipe(event.clientX, event.clientY, event);
+    }, { signal: swipeAbort.signal });
+
+    function finishSwipe(event) {
+        if (!swipe.active || event.pointerId !== swipe.pointerId) return;
+        const finishX = typeof event.clientX === 'number' && event.clientX !== 0 ? event.clientX : swipe.lastX;
+        finishSwipeAt(finishX);
+    }
+
+    swipeSurface.addEventListener('pointerup', finishSwipe, { signal: swipeAbort.signal });
+    swipeSurface.addEventListener('pointercancel', finishSwipe, { signal: swipeAbort.signal });
+    swipeSurface.addEventListener('touchstart', (event) => {
+        if (swipe.active || event.touches.length !== 1 || isSwipeIgnored(event.target)) return;
+        const touch = event.touches[0];
+        swipe.active = true;
+        swipe.pointerId = null;
+        swipe.startX = touch.clientX;
+        swipe.startY = touch.clientY;
+        swipe.lastX = touch.clientX;
+        swipe.dragging = false;
+    }, { passive: false, signal: swipeAbort.signal });
+    swipeSurface.addEventListener('touchmove', (event) => {
+        if (!swipe.active || swipe.pointerId !== null || event.touches.length !== 1) return;
+        const touch = event.touches[0];
+        moveSwipe(touch.clientX, touch.clientY, event);
+    }, { passive: false, signal: swipeAbort.signal });
+    swipeSurface.addEventListener('touchend', () => {
+        if (!swipe.active || swipe.pointerId !== null) return;
+        finishSwipeAt(swipe.lastX);
+    }, { signal: swipeAbort.signal });
+    swipeSurface.addEventListener('touchcancel', () => {
+        if (!swipe.active || swipe.pointerId !== null) return;
+        finishSwipeAt(swipe.lastX);
+    }, { signal: swipeAbort.signal });
+
+    return true;
+};
+
 window.CraftCrawlInitPortalEvents();
+window.CraftCrawlInitEventDetail();
