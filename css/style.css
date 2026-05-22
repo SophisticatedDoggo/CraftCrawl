@@ -4038,8 +4038,11 @@ body.event-detail-overlay-open {
     top: 0;
     bottom: 0;
     left: 0;
-    z-index: 3;
-    width: max(32px, env(safe-area-inset-left));
+    z-index: 4;
+    width: clamp(64px, 18vw, 104px);
+    padding-left: env(safe-area-inset-left);
+    background: transparent;
+    pointer-events: auto;
     touch-action: none;
 }
 
