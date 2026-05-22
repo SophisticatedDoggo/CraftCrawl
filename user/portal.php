@@ -64,6 +64,7 @@ $craftcrawl_portal_shell = true;
                     <li><strong>Return visits</strong> earn 25 XP once per day per location.</li>
                     <li>As your XP grows, you <strong>level up</strong> and unlock profile titles, themes, app icons, badge showcase slots, and profile customizations.</li>
                     <li>You can also earn <strong>badges</strong> for milestones along the way.</li>
+                    <li>Visit the <strong>Rewards</strong> page to see all rewards that can be earned from levelling up and completing various tasks.</li>
                 </ul>
                 <button type="button" data-welcome-dismiss>Start exploring</button>
             </div>

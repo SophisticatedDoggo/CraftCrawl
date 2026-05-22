@@ -25,7 +25,6 @@ $settings_stmt = $conn->prepare("
         u.show_want_to_go,
         u.notify_social_activity,
         u.allow_post_interactions,
-        u.show_social_club_disclaimer,
         " . craftcrawl_level_sql('u.total_xp') . " AS level,
         u.selected_title_index,
         u.selected_profile_frame, u.selected_profile_frame_style,
@@ -78,7 +77,16 @@ $show_profile_rewards        = !isset($user_settings['show_profile_rewards'])   
 $show_want_to_go             = !isset($user_settings['show_want_to_go'])            || !empty($user_settings['show_want_to_go']);
 $notify_social_activity      = !isset($user_settings['notify_social_activity'])     || !empty($user_settings['notify_social_activity']);
 $allow_post_interactions     = !isset($user_settings['allow_post_interactions'])    || !empty($user_settings['allow_post_interactions']);
-$show_social_club_disclaimer = !isset($user_settings['show_social_club_disclaimer']) || !empty($user_settings['show_social_club_disclaimer']);
+$show_social_club_disclaimer = true;
+$disclaimer_pref_stmt = $conn->prepare("SELECT show_social_club_disclaimer FROM users WHERE id=? LIMIT 1");
+if ($disclaimer_pref_stmt) {
+    $disclaimer_pref_stmt->bind_param("i", $user_id);
+    $disclaimer_pref_stmt->execute();
+    $disclaimer_pref_row = $disclaimer_pref_stmt->get_result()->fetch_assoc();
+    if ($disclaimer_pref_row) {
+        $show_social_club_disclaimer = !empty($disclaimer_pref_row['show_social_club_disclaimer']);
+    }
+}
 $password_auth_enabled       = !empty($user_settings['password_auth_enabled']);
 $user_level = (int) ($user_settings['level'] ?? 1);
 $selected_title_index = $user_settings['selected_title_index'] !== null ? (int) $user_settings['selected_title_index'] : null;
@@ -198,8 +206,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $prev_show_wtg = !empty($user_settings['show_want_to_go']);
 
-        $privacy_stmt = $conn->prepare("UPDATE users SET auto_accept_friend_invites=?, show_feed_activity=?, show_liked_businesses=?, show_profile_rewards=?, show_want_to_go=?, notify_social_activity=?, allow_post_interactions=?, show_social_club_disclaimer=? WHERE id=?");
-        $privacy_stmt->bind_param("iiiiiiiii",
+        $privacy_stmt = $conn->prepare("UPDATE users SET auto_accept_friend_invites=?, show_feed_activity=?, show_liked_businesses=?, show_profile_rewards=?, show_want_to_go=?, notify_social_activity=?, allow_post_interactions=? WHERE id=?");
+        $privacy_stmt->bind_param("iiiiiiii",
             $auto_accept_friend_invites ? 1 : 0,
             $show_feed_activity ? 1 : 0,
             $show_liked_businesses ? 1 : 0,
@@ -207,10 +215,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $show_want_to_go_new ? 1 : 0,
             $notify_social_activity ? 1 : 0,
             $allow_post_interactions_new ? 1 : 0,
-            $show_social_club_disclaimer_new ? 1 : 0,
             $user_id
         );
         $privacy_stmt->execute();
+
+        $disclaimer_upd = $conn->prepare("UPDATE users SET show_social_club_disclaimer=? WHERE id=?");
+        if ($disclaimer_upd) {
+            $disclaimer_upd->bind_param("ii", $show_social_club_disclaimer_new, $user_id);
+            $disclaimer_upd->execute();
+        }
 
         if ((bool) $show_want_to_go_new !== $prev_show_wtg) {
             $new_vis = $show_want_to_go_new ? 'friends_only' : 'private';
