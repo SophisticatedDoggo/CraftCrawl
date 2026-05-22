@@ -122,19 +122,19 @@ window.CraftCrawlInitFeedThread = function (root = document) {
 
             const deltaX = clientX - swipe.startX;
             const deltaY = clientY - swipe.startY;
-            const absX = Math.abs(deltaX);
             const absY = Math.abs(deltaY);
             swipe.lastX = clientX;
 
+            if (deltaX > 2 && event?.cancelable) {
+                event.preventDefault();
+            }
+
             if (!swipe.dragging) {
-                if (absY > 58 && absY > absX * 2.3) {
+                if (deltaX < 4 && absY > 72) {
                     swipe.active = false;
                     return;
                 }
-                if (deltaX > 6 && absX > absY * 0.42 && event?.cancelable) {
-                    event.preventDefault();
-                }
-                if (deltaX < 6 || absX < absY * 0.42) {
+                if (deltaX < 3) {
                     return;
                 }
                 swipe.dragging = true;
@@ -155,7 +155,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             if (!swipe.active) return;
 
             const deltaX = clientX - swipe.startX;
-            const shouldDismiss = swipe.dragging && deltaX > Math.min(70, window.innerWidth * 0.13);
+            const shouldDismiss = swipe.dragging && deltaX > Math.min(52, window.innerWidth * 0.11);
             swipe.active = false;
             threadPage.classList.remove('is-swipe-dragging');
             overlay?.classList.remove('is-swipe-dragging');
