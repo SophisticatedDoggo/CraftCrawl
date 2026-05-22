@@ -80,8 +80,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let feedThreadOverlayContent = null;
     let feedThreadOverlayItemKey = '';
     let feedThreadOverlayBaseUrl = '';
-    let feedThreadReturnAnimationTimer = null;
-    let feedThreadLastReturnItemKey = '';
 
     function installFeedReactionHandler() {
         if (document.documentElement.dataset.feedReactionReady === 'true') {
@@ -1020,7 +1018,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
-                        <p class="feed-item-detail feed-user-post-body">${escapeHtml(item.body || '')}</p>
+                        <p class="feed-user-post-body">${escapeHtml(item.body || '')}</p>
                         ${actions}
                     </div>
                 </article>
@@ -1137,21 +1135,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
         if (!feed || !returnItemKey) {
             return;
         }
-        if (attempt === 0 && returnItemKey === feedThreadLastReturnItemKey && feedThreadReturnAnimationTimer) {
-            return;
-        }
-        if (attempt === 0) {
-            feedThreadLastReturnItemKey = returnItemKey;
-            if (feedThreadReturnAnimationTimer) {
-                window.clearTimeout(feedThreadReturnAnimationTimer);
-            }
-            feedThreadReturnAnimationTimer = window.setTimeout(() => {
-                feedThreadLastReturnItemKey = '';
-                feedThreadReturnAnimationTimer = null;
-            }, 1200);
-        }
 
-        window.requestAnimationFrame(() => {
+        const play = () => {
             const item = feed.querySelector(`[data-feed-item-key="${CSS.escape(returnItemKey)}"]`);
             if (!item) {
                 if (attempt < 4) {
@@ -1163,7 +1148,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             const rect = item.getBoundingClientRect();
             const outOfView = rect.top < 76 || rect.bottom > window.innerHeight - 86;
             if (outOfView) {
-                item.scrollIntoView({ block: 'center' });
+                item.scrollIntoView({ block: 'center', behavior: 'auto' });
             }
 
             item.classList.remove('is-opening-thread');
@@ -1172,16 +1157,33 @@ window.CraftCrawlInitFriends = function (scope = document) {
             const highlight = document.createElement('span');
             highlight.className = 'feed-return-highlight';
             highlight.setAttribute('aria-hidden', 'true');
+            highlight.innerHTML = '<span class="feed-return-highlight-rail"></span><span class="feed-return-highlight-rail"></span>';
             item.appendChild(highlight);
-            void highlight.offsetWidth;
-            window.requestAnimationFrame(() => {
+
+            const rails = Array.from(highlight.querySelectorAll('.feed-return-highlight-rail'));
+            if (typeof highlight.animate === 'function') {
+                rails.forEach((rail) => {
+                    rail.animate([
+                        { opacity: 0, transform: 'scaleX(.92)' },
+                        { opacity: 1, transform: 'scaleX(1)', offset: 0.45 },
+                        { opacity: 0, transform: 'scaleX(.92)' }
+                    ], {
+                        duration: 1000,
+                        easing: 'ease-in-out',
+                        fill: 'both'
+                    });
+                });
+            } else {
                 highlight.classList.add('is-animating');
-            });
+            }
+
             window.setTimeout(() => {
                 highlight.remove();
                 item.classList.remove('has-thread-return-highlight');
             }, 1050);
-        });
+        };
+
+        window.setTimeout(play, attempt === 0 ? 40 : 0);
     }
 
     document.addEventListener('craftcrawl:user-shell-navigated', (event) => {

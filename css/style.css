@@ -3059,20 +3059,10 @@ a.text-link:focus {
     bottom: 0;
     left: 0;
     z-index: 4;
-    opacity: 0;
-    transform: scaleX(.94);
-    transform-origin: center;
     pointer-events: none;
-    will-change: opacity, transform;
 }
 
-.feed-return-highlight.is-animating {
-    animation: feedThreadReturnRailHighlight 1000ms ease-in-out both;
-}
-
-.feed-return-highlight::before,
-.feed-return-highlight::after {
-    content: "";
+.feed-return-highlight-rail {
     position: absolute;
     right: 0;
     left: 0;
@@ -3080,13 +3070,21 @@ a.text-link:focus {
     border-radius: 999px;
     background: var(--color-primary);
     box-shadow: 0 0 8px rgba(180, 69, 54, 0.32);
+    opacity: 0;
+    transform: scaleX(.92);
+    transform-origin: center;
+    will-change: opacity, transform;
 }
 
-.feed-return-highlight::before {
+.feed-return-highlight.is-animating .feed-return-highlight-rail {
+    animation: feedThreadReturnRailHighlight 1000ms ease-in-out both;
+}
+
+.feed-return-highlight-rail:first-child {
     top: 0;
 }
 
-.feed-return-highlight::after {
+.feed-return-highlight-rail:last-child {
     bottom: 0;
 }
 
@@ -3169,6 +3167,14 @@ a.text-link:focus {
 .friends-feed-item .feed-item-detail {
     margin-top: 6px;
     line-height: 1.45;
+}
+
+.friends-feed-item .feed-user-post-body {
+    margin: 4px 0 0;
+    color: var(--color-heading);
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.38;
 }
 
 .friend-request-item > div:last-child {
