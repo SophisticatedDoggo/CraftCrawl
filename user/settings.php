@@ -195,26 +195,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($form_action === 'privacy') {
-        $auto_accept_friend_invites  = isset($_POST['auto_accept_friend_invites']);
-        $show_feed_activity          = isset($_POST['show_feed_activity']);
-        $show_liked_businesses       = isset($_POST['show_liked_businesses']);
-        $show_profile_rewards        = isset($_POST['show_profile_rewards']);
-        $show_want_to_go_new         = isset($_POST['show_want_to_go']);
-        $notify_social_activity      = isset($_POST['notify_social_activity']);
-        $allow_post_interactions_new     = isset($_POST['allow_post_interactions']);
-        $show_social_club_disclaimer_new = isset($_POST['show_social_club_disclaimer']);
+        $auto_accept_friend_invites      = isset($_POST['auto_accept_friend_invites'])      ? 1 : 0;
+        $show_feed_activity              = isset($_POST['show_feed_activity'])              ? 1 : 0;
+        $show_liked_businesses           = isset($_POST['show_liked_businesses'])           ? 1 : 0;
+        $show_profile_rewards            = isset($_POST['show_profile_rewards'])            ? 1 : 0;
+        $show_want_to_go_new             = isset($_POST['show_want_to_go'])                 ? 1 : 0;
+        $notify_social_activity          = isset($_POST['notify_social_activity'])          ? 1 : 0;
+        $allow_post_interactions_new     = isset($_POST['allow_post_interactions'])         ? 1 : 0;
+        $show_social_club_disclaimer_new = isset($_POST['show_social_club_disclaimer'])     ? 1 : 0;
 
         $prev_show_wtg = !empty($user_settings['show_want_to_go']);
 
         $privacy_stmt = $conn->prepare("UPDATE users SET auto_accept_friend_invites=?, show_feed_activity=?, show_liked_businesses=?, show_profile_rewards=?, show_want_to_go=?, notify_social_activity=?, allow_post_interactions=? WHERE id=?");
         $privacy_stmt->bind_param("iiiiiiii",
-            $auto_accept_friend_invites ? 1 : 0,
-            $show_feed_activity ? 1 : 0,
-            $show_liked_businesses ? 1 : 0,
-            $show_profile_rewards ? 1 : 0,
-            $show_want_to_go_new ? 1 : 0,
-            $notify_social_activity ? 1 : 0,
-            $allow_post_interactions_new ? 1 : 0,
+            $auto_accept_friend_invites,
+            $show_feed_activity,
+            $show_liked_businesses,
+            $show_profile_rewards,
+            $show_want_to_go_new,
+            $notify_social_activity,
+            $allow_post_interactions_new,
             $user_id
         );
         $privacy_stmt->execute();
