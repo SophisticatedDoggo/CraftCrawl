@@ -66,6 +66,18 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         const swipeAbort = new AbortController();
         swipeSurface._craftcrawlFeedSwipeAbort = swipeAbort;
 
+        function updateSwipeSurfaceScrollability() {
+            if (!overlayContent) return;
+            const canScroll = overlayContent.scrollHeight > overlayContent.clientHeight + 2;
+            overlayContent.classList.toggle('is-not-scrollable', !canScroll);
+        }
+
+        updateSwipeSurfaceScrollability();
+        window.requestAnimationFrame(updateSwipeSurfaceScrollability);
+        window.setTimeout(updateSwipeSurfaceScrollability, 350);
+        window.addEventListener('resize', updateSwipeSurfaceScrollability, { signal: swipeAbort.signal });
+        window.visualViewport?.addEventListener('resize', updateSwipeSurfaceScrollability, { signal: swipeAbort.signal });
+
         const swipe = {
             active: false,
             pointerId: null,

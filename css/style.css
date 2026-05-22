@@ -4017,6 +4017,11 @@ body.feed-thread-overlay-open {
     will-change: transform, opacity;
 }
 
+.feed-thread-overlay-content.is-not-scrollable {
+    overflow-y: hidden;
+    touch-action: none;
+}
+
 .feed-thread-overlay .feed-thread-page {
     min-height: auto;
     padding-bottom: 24px;
