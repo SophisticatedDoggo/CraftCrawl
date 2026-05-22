@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/quests.php';
+require_once __DIR__ . '/feed_items.php';
 
 function craftcrawl_notification_count_value($conn, $sql, $types = '', $params = []) {
     $stmt = $conn->prepare($sql);
@@ -28,11 +29,54 @@ function craftcrawl_notification_count_value($conn, $sql, $types = '', $params =
     return (int) ($row['total'] ?? 0);
 }
 
+function craftcrawl_user_can_mark_feed_comments_seen($conn, $user_id, $feed_item_key) {
+    $user_id = (int) $user_id;
+    $feed_item_key = trim((string) $feed_item_key);
+
+    if ($user_id <= 0 || $feed_item_key === '') {
+        return false;
+    }
+
+    if (craftcrawl_feed_item_owner_id($conn, $feed_item_key) === $user_id) {
+        return true;
+    }
+
+    $stmt = $conn->prepare("
+        SELECT id
+        FROM feed_comments
+        WHERE feed_item_key=?
+            AND user_id=?
+            AND deletedAt IS NULL
+        LIMIT 1
+    ");
+    $stmt->bind_param("si", $feed_item_key, $user_id);
+    $stmt->execute();
+
+    return (bool) $stmt->get_result()->fetch_assoc();
+}
+
+function craftcrawl_mark_feed_comment_notifications_seen($conn, $user_id, $feed_item_key) {
+    if (!craftcrawl_user_can_mark_feed_comments_seen($conn, $user_id, $feed_item_key)) {
+        return false;
+    }
+
+    $notification_type = 'comment';
+    $stmt = $conn->prepare("
+        INSERT INTO feed_notification_reads (user_id, feed_item_key, notification_type, seenAt)
+        VALUES (?, ?, ?, NOW())
+        ON DUPLICATE KEY UPDATE seenAt=VALUES(seenAt)
+    ");
+    $stmt->bind_param("iss", $user_id, $feed_item_key, $notification_type);
+    $stmt->execute();
+
+    return true;
+}
+
 function craftcrawl_user_notification_counts($conn, $user_id) {
     $user_id = (int) $user_id;
 
     $user_stmt = $conn->prepare("
-        SELECT notify_social_activity, friendsSeenAt, socialNotificationsSeenAt
+        SELECT notify_social_activity, friendsSeenAt, feedSeenAt, socialNotificationsSeenAt
         FROM users
         WHERE id=? AND disabledAt IS NULL
         LIMIT 1
@@ -53,6 +97,7 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
     }
 
     $friends_seen_at = $user['friendsSeenAt'] ?? '1970-01-01 00:00:00';
+    $feed_seen_at = $user['feedSeenAt'] ?? $friends_seen_at;
     $social_seen_at = $user['socialNotificationsSeenAt'] ?? '1970-01-01 00:00:00';
 
     $pending_invites = craftcrawl_notification_count_value(
@@ -106,7 +151,7 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                 AND $friend_activity_exists
         ",
         "sii",
-        [$friends_seen_at, $user_id, $user_id]
+        [$feed_seen_at, $user_id, $user_id]
     );
 
     $new_feed_items += craftcrawl_notification_count_value(
@@ -123,7 +168,7 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                 AND $friend_activity_exists
         ",
         "sii",
-        [$friends_seen_at, $user_id, $user_id]
+        [$feed_seen_at, $user_id, $user_id]
     );
 
     $new_feed_items += craftcrawl_notification_count_value(
@@ -139,7 +184,7 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                 AND $friend_activity_exists
         ",
         "sii",
-        [$friends_seen_at, $user_id, $user_id]
+        [$feed_seen_at, $user_id, $user_id]
     );
 
     $new_feed_items += craftcrawl_notification_count_value(
@@ -158,7 +203,7 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                 AND $friend_activity_exists
         ",
         "sii",
-        [$friends_seen_at, $user_id, $user_id]
+        [$feed_seen_at, $user_id, $user_id]
     );
 
     $new_feed_items += craftcrawl_notification_count_value(
@@ -174,7 +219,7 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                 AND $friend_activity_exists
         ",
         "sii",
-        [$friends_seen_at, $user_id, $user_id]
+        [$feed_seen_at, $user_id, $user_id]
     );
 
     $new_feed_items += craftcrawl_notification_count_value(
@@ -190,7 +235,7 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                 AND $friend_activity_exists
         ",
         "sii",
-        [$friends_seen_at, $user_id, $user_id]
+        [$feed_seen_at, $user_id, $user_id]
     );
 
     $daily_required = CRAFTCRAWL_DAILY_QUEST_COUNT;
@@ -213,7 +258,7 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
             ) quest_sweeps
         ",
         "iisii",
-        [$user_id, $user_id, $friends_seen_at, $weekly_required, $daily_required]
+        [$user_id, $user_id, $feed_seen_at, $weekly_required, $daily_required]
     );
 
     $new_feed_items += craftcrawl_notification_count_value(
@@ -226,7 +271,7 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
             WHERE bp.created_at > ?
         ",
         "is",
-        [$user_id, $friends_seen_at]
+        [$user_id, $feed_seen_at]
     );
 
     $new_feed_items += craftcrawl_notification_count_value(
@@ -243,7 +288,7 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                 AND $friend_activity_exists
         ",
         "sii",
-        [$friends_seen_at, $user_id, $user_id]
+        [$feed_seen_at, $user_id, $user_id]
     );
 
     $social_notifications = 0;
@@ -307,12 +352,28 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
             [$user_id, $user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, (string) $user_id]
         );
 
+        $comment_notification_scope = "
+            (
+                $owned_item_exists
+                OR (
+                    activity.parent_comment_id IS NOT NULL
+                    AND EXISTS (
+                        SELECT 1
+                        FROM feed_comments parent_comment
+                        WHERE parent_comment.id=activity.parent_comment_id
+                            AND parent_comment.user_id=?
+                            AND parent_comment.deletedAt IS NULL
+                    )
+                )
+            )
+        ";
+
         $social_notifications += craftcrawl_notification_count_value(
             $conn,
             "
                 SELECT COUNT(*) AS total
                 FROM feed_comments activity
-                WHERE activity.user_id<>?
+                WHERE (activity.user_id IS NULL OR activity.user_id<>?)
                     AND activity.deletedAt IS NULL
                     AND activity.createdAt > COALESCE((
                         SELECT fnr.seenAt
@@ -322,10 +383,10 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                             AND fnr.notification_type='comment'
                         LIMIT 1
                     ), ?)
-                    AND $owned_item_exists
+                    AND $comment_notification_scope
             ",
-            "iisiiiiiiis",
-            [$user_id, $user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, (string) $user_id]
+            "iisiiiiiiisi",
+            [$user_id, $user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, (string) $user_id, $user_id]
         );
     }
 

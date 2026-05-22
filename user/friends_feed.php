@@ -742,10 +742,22 @@ if (!empty($feed_item_keys)) {
         $unread_reaction_counts[$row['feed_item_key']] = (int) $row['total'];
     }
 
+    $owned_feed_item_keys = array_values(array_filter($feed_item_keys, function ($feed_item_key) use ($feed_owner_by_key, $user_id) {
+        return (int) ($feed_owner_by_key[$feed_item_key] ?? 0) === (int) $user_id;
+    }));
+    $owned_comment_scope = 'FALSE';
+    $owned_comment_types = '';
+
+    if (!empty($owned_feed_item_keys)) {
+        $owned_comment_placeholders = implode(',', array_fill(0, count($owned_feed_item_keys), '?'));
+        $owned_comment_types = str_repeat('s', count($owned_feed_item_keys));
+        $owned_comment_scope = "activity.feed_item_key IN ($owned_comment_placeholders)";
+    }
+
     $unread_comment_sql = "
         SELECT activity.feed_item_key, COUNT(*) AS total
         FROM feed_comments activity
-        WHERE activity.user_id<>?
+        WHERE (activity.user_id IS NULL OR activity.user_id<>?)
             AND activity.deletedAt IS NULL
             AND activity.feed_item_key IN ($unread_placeholders)
             AND activity.createdAt > COALESCE((
@@ -756,15 +768,32 @@ if (!empty($feed_item_keys)) {
                     AND fnr.notification_type='comment'
                 LIMIT 1
             ), ?)
+            AND (
+                $owned_comment_scope
+                OR (
+                    activity.parent_comment_id IS NOT NULL
+                    AND EXISTS (
+                        SELECT 1
+                        FROM feed_comments parent_comment
+                        WHERE parent_comment.id=activity.parent_comment_id
+                            AND parent_comment.user_id=?
+                            AND parent_comment.deletedAt IS NULL
+                    )
+                )
+            )
         GROUP BY activity.feed_item_key
     ";
     $unread_comment_stmt = $conn->prepare($unread_comment_sql);
-    $unread_comment_params = ['i' . $unread_types . 'is', &$user_id];
+    $unread_comment_params = ['i' . $unread_types . 'is' . $owned_comment_types . 'i', &$user_id];
     foreach ($feed_item_keys as $index => $feed_item_key) {
         $unread_comment_params[] = &$feed_item_keys[$index];
     }
     $unread_comment_params[] = &$user_id;
     $unread_comment_params[] = &$social_seen_at;
+    foreach ($owned_feed_item_keys as $index => $feed_item_key) {
+        $unread_comment_params[] = &$owned_feed_item_keys[$index];
+    }
+    $unread_comment_params[] = &$user_id;
     call_user_func_array([$unread_comment_stmt, 'bind_param'], $unread_comment_params);
     $unread_comment_stmt->execute();
     $unread_comment_counts = [];
@@ -775,8 +804,8 @@ if (!empty($feed_item_keys)) {
 
     foreach ($feed as $index => $feed_item) {
         if (($feed_item['owner_user_id'] ?? 0) !== $user_id) {
-            $feed[$index]['unread_comment_count'] = 0;
             $feed[$index]['unread_reaction_count'] = 0;
+            $feed[$index]['unread_comment_count'] = $unread_comment_counts[$feed_item['item_key']] ?? 0;
             continue;
         }
 

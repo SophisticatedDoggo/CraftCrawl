@@ -296,15 +296,8 @@ $feed_item = craftcrawl_feed_item_by_key($conn, $user_id, $item_key);
 
 if (!$feed_item) {
     http_response_code(404);
-} elseif (!empty($feed_item['is_self'])) {
-    $notification_type = 'comment';
-    $seen_stmt = $conn->prepare("
-        INSERT INTO feed_notification_reads (user_id, feed_item_key, notification_type, seenAt)
-        VALUES (?, ?, ?, NOW())
-        ON DUPLICATE KEY UPDATE seenAt=VALUES(seenAt)
-    ");
-    $seen_stmt->bind_param("iss", $user_id, $item_key, $notification_type);
-    $seen_stmt->execute();
+} else {
+    craftcrawl_mark_feed_comment_notifications_seen($conn, $user_id, $item_key);
 }
 
 if ($feed_item && $_SERVER['REQUEST_METHOD'] === 'POST') {

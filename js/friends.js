@@ -456,13 +456,14 @@ window.CraftCrawlInitFriends = function (scope = document) {
             .catch(() => {});
     }
 
-    function markFriendsSeen() {
+    function markFriendsSeen(scope = 'all') {
         if (!csrfToken) {
             return Promise.resolve();
         }
 
         return postForm(userEndpoint('friend_seen.php'), {
-            csrf_token: csrfToken
+            csrf_token: csrfToken,
+            scope
         })
             .then(() => loadStatus())
             .catch(() => {});
@@ -1880,7 +1881,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             refreshVisibleFeed()
                 .then(() => {
                     if (event.detail?.userInitiated) {
-                        return markFriendsSeen();
+                        return markFriendsSeen('feed');
                     }
 
                     return null;
@@ -1925,7 +1926,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             .then(() => loadStatus())
             .then(() => {
                 if (managerPage && currentStatus.newFriends > 0) {
-                    return markFriendsSeen();
+                    return markFriendsSeen('friends');
                 }
 
                 return null;

@@ -20,7 +20,20 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 craftcrawl_verify_csrf();
 
 $user_id = (int) $_SESSION['user_id'];
-$stmt = $conn->prepare("UPDATE users SET friendsSeenAt=NOW() WHERE id=?");
+$scope = (string) ($_POST['scope'] ?? 'all');
+
+if (!in_array($scope, ['friends', 'feed', 'all'], true)) {
+    $scope = 'all';
+}
+
+if ($scope === 'friends') {
+    $stmt = $conn->prepare("UPDATE users SET friendsSeenAt=NOW() WHERE id=?");
+} elseif ($scope === 'feed') {
+    $stmt = $conn->prepare("UPDATE users SET feedSeenAt=NOW() WHERE id=?");
+} else {
+    $stmt = $conn->prepare("UPDATE users SET friendsSeenAt=NOW(), feedSeenAt=NOW() WHERE id=?");
+}
+
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 

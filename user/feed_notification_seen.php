@@ -30,9 +30,11 @@ if ($item_key === '' || !in_array($notification_type, ['comment', 'reaction'], t
     exit();
 }
 
-$owner_id = craftcrawl_feed_item_owner_id($conn, $item_key);
+$can_mark_seen = $notification_type === 'comment'
+    ? craftcrawl_user_can_mark_feed_comments_seen($conn, $user_id, $item_key)
+    : craftcrawl_feed_item_owner_id($conn, $item_key) === $user_id;
 
-if ($owner_id !== $user_id) {
+if (!$can_mark_seen) {
     http_response_code(403);
     echo json_encode(['ok' => false, 'message' => 'Notification could not be updated.']);
     exit();

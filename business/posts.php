@@ -19,6 +19,7 @@ function clean_text($value) {
 
 require_once '../config.php';
 require_once '../lib/business_post_render.php';
+require_once '../lib/onesignal.php';
 require_once '../lib/user_avatar.php';
 
 $business_stmt = $conn->prepare("SELECT name AS bName FROM locations WHERE id=?");
@@ -181,7 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Verify the parent comment is on a post owned by this business
         $parent_stmt = $conn->prepare("
-            SELECT fc.id, fc.feed_item_key
+            SELECT fc.id, fc.feed_item_key, fc.user_id
             FROM feed_comments fc
             WHERE fc.id=? AND fc.parent_comment_id IS NULL AND fc.deletedAt IS NULL
             LIMIT 1
@@ -212,6 +213,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ");
         $reply_stmt->bind_param("isis", $parent_comment_id, $item_key, $business_id, $body);
         $reply_stmt->execute();
+        $new_reply_id = (int) $conn->insert_id;
+
+        if (!empty($parent_comment['user_id'])) {
+            $thread_url = 'user/feed_post.php?item=' . rawurlencode($item_key) . '&focus_comment=' . rawurlencode((string) $new_reply_id);
+            craftcrawl_send_push_to_user(
+                $conn,
+                (int) $parent_comment['user_id'],
+                'New reply from ' . ($selected_location['name'] ?? 'a business'),
+                ($selected_location['name'] ?? 'A business') . ' replied to your post comment.',
+                $thread_url
+            );
+        }
+
         header('Location: posts.php?message=reply_saved#comment-' . $parent_comment_id);
         exit();
     }

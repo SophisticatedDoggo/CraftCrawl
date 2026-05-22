@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
     selected_profile_frame VARCHAR(20) DEFAULT NULL,
     selected_profile_frame_style VARCHAR(20) DEFAULT 'solid',
     friendsSeenAt DATETIME,
+    feedSeenAt DATETIME,
     socialNotificationsSeenAt DATETIME,
     welcomeSeenAt DATETIME,
     createdAt DATETIME NOT NULL,
