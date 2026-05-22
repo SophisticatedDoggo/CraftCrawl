@@ -4039,7 +4039,7 @@ body.event-detail-overlay-open {
     bottom: 0;
     left: 0;
     z-index: 4;
-    width: clamp(64px, 18vw, 104px);
+    width: clamp(128px, 36vw, 208px);
     padding-left: env(safe-area-inset-left);
     background: transparent;
     pointer-events: auto;
