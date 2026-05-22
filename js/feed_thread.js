@@ -61,6 +61,10 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         threadPage.dataset.swipeDismissReady = 'true';
         const overlay = threadPage.closest('[data-feed-thread-overlay]');
         const overlayContent = overlay?.querySelector('[data-feed-thread-overlay-content]');
+        const swipeSurface = overlayContent || threadPage;
+        swipeSurface._craftcrawlFeedSwipeAbort?.abort();
+        const swipeAbort = new AbortController();
+        swipeSurface._craftcrawlFeedSwipeAbort = swipeAbort;
 
         const swipe = {
             active: false,
@@ -171,7 +175,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             swipe.dragging = false;
         }
 
-        threadPage.addEventListener('pointerdown', (event) => {
+        swipeSurface.addEventListener('pointerdown', (event) => {
             if (event.pointerType === 'mouse' && event.button !== 0) return;
             if (isSwipeIgnored(event.target)) return;
 
@@ -181,13 +185,13 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             swipe.startY = event.clientY;
             swipe.lastX = event.clientX;
             swipe.dragging = false;
-            threadPage.setPointerCapture?.(event.pointerId);
-        });
+            swipeSurface.setPointerCapture?.(event.pointerId);
+        }, { signal: swipeAbort.signal });
 
-        threadPage.addEventListener('pointermove', (event) => {
+        swipeSurface.addEventListener('pointermove', (event) => {
             if (!swipe.active || event.pointerId !== swipe.pointerId) return;
             moveSwipe(event.clientX, event.clientY, event);
-        });
+        }, { signal: swipeAbort.signal });
 
         function finishSwipe(event) {
             if (!swipe.active || event.pointerId !== swipe.pointerId) return;
@@ -196,9 +200,9 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             finishSwipeAt(finishX);
         }
 
-        threadPage.addEventListener('pointerup', finishSwipe);
-        threadPage.addEventListener('pointercancel', finishSwipe);
-        threadPage.addEventListener('touchstart', (event) => {
+        swipeSurface.addEventListener('pointerup', finishSwipe, { signal: swipeAbort.signal });
+        swipeSurface.addEventListener('pointercancel', finishSwipe, { signal: swipeAbort.signal });
+        swipeSurface.addEventListener('touchstart', (event) => {
             if (swipe.active || event.touches.length !== 1 || isSwipeIgnored(event.target)) return;
             const touch = event.touches[0];
             swipe.active = true;
@@ -207,20 +211,20 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             swipe.startY = touch.clientY;
             swipe.lastX = touch.clientX;
             swipe.dragging = false;
-        }, { passive: false });
-        threadPage.addEventListener('touchmove', (event) => {
+        }, { passive: false, signal: swipeAbort.signal });
+        swipeSurface.addEventListener('touchmove', (event) => {
             if (!swipe.active || swipe.pointerId !== null || event.touches.length !== 1) return;
             const touch = event.touches[0];
             moveSwipe(touch.clientX, touch.clientY, event);
-        }, { passive: false });
-        threadPage.addEventListener('touchend', () => {
+        }, { passive: false, signal: swipeAbort.signal });
+        swipeSurface.addEventListener('touchend', () => {
             if (!swipe.active || swipe.pointerId !== null) return;
             finishSwipeAt(swipe.lastX);
-        });
-        threadPage.addEventListener('touchcancel', () => {
+        }, { signal: swipeAbort.signal });
+        swipeSurface.addEventListener('touchcancel', () => {
             if (!swipe.active || swipe.pointerId !== null) return;
             finishSwipeAt(swipe.lastX);
-        });
+        }, { signal: swipeAbort.signal });
     }
 
     const composeForm = root.querySelector('#feed-compose-form');
