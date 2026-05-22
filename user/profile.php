@@ -545,7 +545,7 @@ if (!$profile) {
                                 <header class="badge-showcase-modal-header">
                                     <div>
                                         <h3 id="badge-showcase-editor-title">Edit Badge Showcase</h3>
-                                        <p class="form-help">Drag earned badges into your unlocked showcase slots.</p>
+                                        <p class="form-help">Tap earned badges to add them to open showcase slots.</p>
                                     </div>
                                     <button type="button" class="badge-showcase-modal-close" data-showcase-editor-close aria-label="Close badge showcase editor">&times;</button>
                                 </header>
@@ -565,7 +565,7 @@ if (!$profile) {
                                                             <strong><?php echo escape_output($slot_badge['badge_name']); ?></strong>
                                                             <button type="button" class="badge-showcase-editor-remove" data-editor-remove>Remove</button>
                                                         <?php else : ?>
-                                                            <span class="badge-showcase-empty">Drop badge here</span>
+                                                            <span class="badge-showcase-empty">Open slot</span>
                                                         <?php endif; ?>
                                                     </div>
                                                 </div>
@@ -574,6 +574,17 @@ if (!$profile) {
                                     </section>
                                     <section>
                                         <h4>Earned Badges</h4>
+                                        <?php if (!empty($earned_badges)) : ?>
+                                            <label class="visually-hidden" for="badge_showcase_earned_search">Search earned badges</label>
+                                            <input
+                                                type="search"
+                                                id="badge_showcase_earned_search"
+                                                class="badge-showcase-earned-search"
+                                                placeholder="Search earned badges"
+                                                autocomplete="off"
+                                                data-earned-badge-search
+                                            >
+                                        <?php endif; ?>
                                         <div class="badge-showcase-earned-list" data-showcase-earned-list>
                                             <?php if (empty($earned_badges)) : ?>
                                                 <p class="form-help">Earn a badge to start building your showcase.</p>
@@ -599,6 +610,9 @@ if (!$profile) {
                                                     </span>
                                                 </button>
                                             <?php endforeach; ?>
+                                            <?php if (!empty($earned_badges)) : ?>
+                                                <p class="form-help badge-showcase-earned-empty" data-earned-badge-empty hidden>No earned badges found.</p>
+                                            <?php endif; ?>
                                         </div>
                                     </section>
                                 </div>

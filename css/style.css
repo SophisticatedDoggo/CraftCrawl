@@ -10680,6 +10680,12 @@ body.has-modal-open {
     color: var(--color-heading);
 }
 
+.badge-showcase-earned-search {
+    width: 100%;
+    min-height: 42px;
+    margin: 0 0 10px;
+}
+
 .badge-showcase-editor-slots,
 .badge-showcase-earned-list {
     display: grid;
@@ -10698,11 +10704,6 @@ body.has-modal-open {
     border-radius: var(--radius-sm);
     background: var(--color-surface-muted);
     transition: border-color 160ms ease, background-color 160ms ease;
-}
-
-.badge-showcase-editor-slot.is-drag-over {
-    border-color: var(--color-primary);
-    background: color-mix(in srgb, var(--color-primary) 9%, var(--color-surface-muted));
 }
 
 .badge-showcase-editor-slot-label {
@@ -10772,26 +10773,10 @@ body.has-modal-open {
     background: var(--color-surface-muted);
     box-shadow: none;
     text-align: left;
-    cursor: grab;
-    touch-action: none;
+    cursor: pointer;
+    touch-action: manipulation;
     user-select: none;
     -webkit-user-select: none;
-}
-
-.badge-showcase-earned-badge:active {
-    cursor: grabbing;
-}
-
-.badge-showcase-earned-badge.is-drag-source {
-    opacity: 0.54;
-}
-
-.badge-showcase-earned-badge.is-pointer-dragging {
-    border-color: var(--color-primary);
-    background: var(--color-surface);
-    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.24);
-    opacity: 0.96;
-    transform-origin: top left;
 }
 
 .badge-showcase-earned-badge.is-showcased {
@@ -10806,6 +10791,11 @@ body.has-modal-open {
 
 .badge-showcase-earned-badge small {
     color: var(--color-muted);
+}
+
+.badge-showcase-earned-empty {
+    grid-column: 1 / -1;
+    margin: 4px 0 0;
 }
 
 .badge-showcase-modal-actions {

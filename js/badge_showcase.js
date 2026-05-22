@@ -12,11 +12,9 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
     const status = section.querySelector('[data-showcase-editor-status]');
     const slotsWrap = section.querySelector('[data-showcase-editor-slots]');
     const earnedList = section.querySelector('[data-showcase-earned-list]');
-    const modalPanel = section.querySelector('.badge-showcase-modal-panel');
-    const dragStartThreshold = 16;
-    let selectedBadgeKey = '';
-    let dragState = null;
-    let suppressNextClick = false;
+    const earnedSearch = section.querySelector('[data-earned-badge-search]');
+    const earnedEmpty = section.querySelector('[data-earned-badge-empty]');
+    let statusTimer = null;
     let lockedScrollY = 0;
 
     function postForm(url, values) {
@@ -98,7 +96,7 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
 
         if (!badge) {
             slot.dataset.badgeKey = '';
-            content.innerHTML = '<span class="badge-showcase-empty">Drop badge here</span>';
+            content.innerHTML = '<span class="badge-showcase-empty">Open slot</span>';
             return;
         }
 
@@ -115,15 +113,49 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
         section.querySelectorAll('[data-earned-badge]').forEach((badge) => {
             const isShowcased = showcasedKeys.has(badge.dataset.badgeKey || '');
             badge.classList.toggle('is-showcased', isShowcased);
-            badge.setAttribute('aria-pressed', String((badge.dataset.badgeKey || '') === selectedBadgeKey));
+            badge.setAttribute('aria-pressed', String(isShowcased));
         });
+    }
+
+    function filterEarnedBadges() {
+        const query = String(earnedSearch?.value || '').trim().toLowerCase();
+        let visibleCount = 0;
+
+        section.querySelectorAll('[data-earned-badge]').forEach((badge) => {
+            const haystack = [
+                badge.dataset.badgeName,
+                badge.dataset.badgeDescription,
+                badge.dataset.badgeRequirement,
+                badge.dataset.badgeTier,
+                badge.dataset.badgeKey
+            ].join(' ').toLowerCase();
+            const isVisible = !query || haystack.includes(query);
+            badge.hidden = !isVisible;
+            if (isVisible) visibleCount += 1;
+        });
+
+        if (earnedEmpty) {
+            earnedEmpty.hidden = visibleCount > 0;
+        }
     }
 
     function setStatus(message, isError = false) {
         if (!status) return;
+        if (statusTimer) {
+            window.clearTimeout(statusTimer);
+            statusTimer = null;
+        }
         status.hidden = !message;
         status.textContent = message || '';
         status.classList.toggle('is-error', isError);
+    }
+
+    function setTemporaryStatus(message, isError = false, duration = 3000) {
+        setStatus(message, isError);
+        if (!message) return;
+        statusTimer = window.setTimeout(() => {
+            setStatus('');
+        }, duration);
     }
 
     function placeBadge(slot, badgeKey) {
@@ -140,120 +172,27 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
         setStatus('');
     }
 
-    function clearDragOver() {
-        section.querySelectorAll('[data-editor-slot].is-drag-over').forEach((slot) => {
-            slot.classList.remove('is-drag-over');
-        });
+    function firstOpenSlot() {
+        return Array.from(section.querySelectorAll('[data-editor-slot]'))
+            .find((slot) => !(slot.dataset.badgeKey || ''));
     }
 
-    function slotFromPoint(x, y) {
-        const previousDisplay = dragState?.clone?.style.display || '';
-        if (dragState?.clone) {
-            dragState.clone.style.display = 'none';
-        }
-        const target = document.elementFromPoint(x, y);
-        if (dragState?.clone) {
-            dragState.clone.style.display = previousDisplay;
-        }
-        return target instanceof Element ? target.closest('[data-editor-slot]') : null;
-    }
+    function addBadgeToOpenSlot(badgeKey) {
+        if (!badgeKey) return;
 
-    function buildDragClone(source) {
-        const clone = source.cloneNode(true);
-        const rect = source.getBoundingClientRect();
-        clone.classList.add('is-pointer-dragging');
-        clone.style.position = 'fixed';
-        clone.style.left = '0';
-        clone.style.top = '0';
-        clone.style.width = `${Math.min(rect.width, 280)}px`;
-        clone.style.zIndex = '120';
-        clone.style.pointerEvents = 'none';
-        document.body.appendChild(clone);
-        dragState.cloneWidth = clone.offsetWidth || Math.min(rect.width, 280);
-        dragState.cloneHeight = clone.offsetHeight || rect.height;
-        return clone;
-    }
-
-    function moveDragClone(x, y) {
-        if (!dragState?.clone) return;
-        const offsetX = (dragState.cloneWidth || dragState.clone.offsetWidth || 0) / 2;
-        const offsetY = (dragState.cloneHeight || dragState.clone.offsetHeight || 0) / 2;
-        dragState.clone.style.transform = `translate3d(${x - offsetX}px, ${y - offsetY}px, 0)`;
-    }
-
-    function maybeAutoScroll(y) {
-        if (!modalPanel) return;
-        const rect = modalPanel.getBoundingClientRect();
-        const edgeSize = 80;
-
-        if (y < rect.top + edgeSize) {
-            modalPanel.scrollTop -= Math.max(4, Math.round((rect.top + edgeSize - y) / 5));
-        } else if (y > rect.bottom - edgeSize) {
-            modalPanel.scrollTop += Math.max(4, Math.round((y - (rect.bottom - edgeSize)) / 5));
-        }
-    }
-
-    function beginPointerDrag(event, badge) {
-        if (!badge || event.button > 0) return;
-
-        dragState = {
-            pointerId: event.pointerId,
-            badgeKey: badge.dataset.badgeKey || '',
-            startX: event.clientX,
-            startY: event.clientY,
-            isDragging: false,
-            source: badge,
-            clone: null,
-            cloneWidth: 0,
-            cloneHeight: 0
-        };
-        badge.setPointerCapture?.(event.pointerId);
-    }
-
-    function handlePointerMove(event) {
-        if (!dragState || dragState.pointerId !== event.pointerId) return;
-
-        const distance = Math.hypot(event.clientX - dragState.startX, event.clientY - dragState.startY);
-        if (!dragState.isDragging && distance < dragStartThreshold) {
+        const isAlreadyShowcased = currentShowcase().some((item) => item.badge_key === badgeKey);
+        if (isAlreadyShowcased) {
+            setTemporaryStatus('That badge is already in your showcase.');
             return;
         }
 
-        event.preventDefault();
-        if (!dragState.isDragging) {
-            dragState.isDragging = true;
-            suppressNextClick = true;
-            selectedBadgeKey = '';
-            dragState.source.classList.add('is-drag-source');
-            dragState.clone = buildDragClone(dragState.source);
-            setStatus('Drop the badge into a showcase slot.');
+        const slot = firstOpenSlot();
+        if (!slot) {
+            setTemporaryStatus("There's no open slots.", true);
+            return;
         }
 
-        moveDragClone(event.clientX, event.clientY);
-        maybeAutoScroll(event.clientY);
-        clearDragOver();
-        slotFromPoint(event.clientX, event.clientY)?.classList.add('is-drag-over');
-    }
-
-    function finishPointerDrag(event) {
-        if (!dragState || dragState.pointerId !== event.pointerId) return;
-
-        const finishedDrag = dragState.isDragging;
-        const slot = finishedDrag ? slotFromPoint(event.clientX, event.clientY) : null;
-        const badgeKey = dragState.badgeKey;
-        dragState.source.classList.remove('is-drag-source');
-        dragState.clone?.remove();
-        dragState = null;
-        clearDragOver();
-
-        if (finishedDrag) {
-            event.preventDefault();
-            if (slot) {
-                placeBadge(slot, badgeKey);
-            } else {
-                setStatus('Drop on an unlocked showcase slot.', true);
-            }
-            window.setTimeout(() => { suppressNextClick = false; }, 0);
-        }
+        placeBadge(slot, badgeKey);
     }
 
     function openEditor() {
@@ -272,7 +211,6 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
         document.body.classList.remove('has-modal-open');
         document.body.style.top = '';
         window.scrollTo(0, lockedScrollY);
-        selectedBadgeKey = '';
         syncEarnedState();
     }
 
@@ -311,51 +249,17 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
         saveShowcase(event.currentTarget);
     });
 
+    earnedSearch?.addEventListener('input', filterEarnedBadges);
+
     earnedList?.addEventListener('dragstart', (event) => {
         event.preventDefault();
     });
 
-    earnedList?.addEventListener('pointerdown', (event) => {
-        const badge = event.target instanceof Element ? event.target.closest('[data-earned-badge]') : null;
-        beginPointerDrag(event, badge);
-    });
-
-    earnedList?.addEventListener('pointermove', handlePointerMove, { passive: false });
-    earnedList?.addEventListener('pointerup', finishPointerDrag);
-    earnedList?.addEventListener('pointercancel', finishPointerDrag);
-
     earnedList?.addEventListener('click', (event) => {
-        if (suppressNextClick) {
-            event.preventDefault();
-            event.stopPropagation();
-            suppressNextClick = false;
-            return;
-        }
         const badge = event.target instanceof Element ? event.target.closest('[data-earned-badge]') : null;
         if (!badge) return;
-        selectedBadgeKey = selectedBadgeKey === badge.dataset.badgeKey ? '' : (badge.dataset.badgeKey || '');
-        syncEarnedState();
-        setStatus(selectedBadgeKey ? 'Choose a showcase slot for this badge.' : '');
-    });
-
-    slotsWrap?.addEventListener('dragover', (event) => {
-        const slot = event.target instanceof Element ? event.target.closest('[data-editor-slot]') : null;
-        if (!slot) return;
         event.preventDefault();
-        slot.classList.add('is-drag-over');
-    });
-
-    slotsWrap?.addEventListener('dragleave', (event) => {
-        const slot = event.target instanceof Element ? event.target.closest('[data-editor-slot]') : null;
-        if (slot) slot.classList.remove('is-drag-over');
-    });
-
-    slotsWrap?.addEventListener('drop', (event) => {
-        const slot = event.target instanceof Element ? event.target.closest('[data-editor-slot]') : null;
-        if (!slot) return;
-        event.preventDefault();
-        slot.classList.remove('is-drag-over');
-        placeBadge(slot, event.dataTransfer.getData('text/plain'));
+        addBadgeToOpenSlot(badge.dataset.badgeKey || '');
     });
 
     slotsWrap?.addEventListener('click', (event) => {
@@ -367,10 +271,10 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
         }
 
         const slot = event.target instanceof Element ? event.target.closest('[data-editor-slot]') : null;
-        if (slot && selectedBadgeKey) {
-            placeBadge(slot, selectedBadgeKey);
-            selectedBadgeKey = '';
+        if (slot && (slot.dataset.badgeKey || '')) {
+            renderSlot(slot, null);
             syncEarnedState();
+            setStatus('');
         }
     });
 
@@ -381,5 +285,6 @@ window.CraftCrawlInitBadgeShowcase = function (root = document) {
     });
 
     syncEarnedState();
+    filterEarnedBadges();
 };
 window.CraftCrawlInitBadgeShowcase();
