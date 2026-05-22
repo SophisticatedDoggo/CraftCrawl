@@ -1261,7 +1261,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         feedThreadOverlay.className = 'feed-thread-overlay';
         feedThreadOverlay.setAttribute('data-feed-thread-overlay', '');
         feedThreadOverlay.hidden = true;
-        feedThreadOverlay.innerHTML = '<div class="feed-thread-overlay-scrim" data-feed-thread-overlay-close></div><div class="feed-thread-overlay-content" data-feed-thread-overlay-content></div>';
+        feedThreadOverlay.innerHTML = '<div class="feed-thread-overlay-scrim" data-feed-thread-overlay-close></div><div class="feed-thread-edge-swipe" data-feed-thread-edge-swipe aria-hidden="true"></div><div class="feed-thread-overlay-content" data-feed-thread-overlay-content></div>';
         document.body.appendChild(feedThreadOverlay);
         feedThreadOverlayContent = feedThreadOverlay.querySelector('[data-feed-thread-overlay-content]');
 

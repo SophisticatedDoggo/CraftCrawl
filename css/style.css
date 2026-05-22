@@ -4032,6 +4032,17 @@ body.event-detail-overlay-open {
     transition: opacity 160ms ease;
 }
 
+.feed-thread-edge-swipe,
+.event-detail-edge-swipe {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 3;
+    width: max(32px, env(safe-area-inset-left));
+    touch-action: none;
+}
+
 .feed-thread-overlay.is-swipe-dragging .feed-thread-overlay-scrim,
 .feed-thread-overlay.is-swipe-dismissing .feed-thread-overlay-scrim,
 .feed-thread-overlay.is-closing .feed-thread-overlay-scrim,
