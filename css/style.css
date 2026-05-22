@@ -5190,7 +5190,7 @@ a.mobile-context-back.feed-thread-back-link:focus {
 
 .social-club-membership-notice {
     color: #d4af37;
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 700;
     text-transform: uppercase;
     -webkit-text-stroke: 0.5px #000;
