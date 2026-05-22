@@ -150,16 +150,16 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             const absY = Math.abs(deltaY);
             swipe.lastX = clientX;
 
-            if (deltaX > 2 && event?.cancelable) {
+            if (deltaX > 6 && event?.cancelable) {
                 event.preventDefault();
             }
 
             if (!swipe.dragging) {
-                if (deltaX < 4 && absY > 72) {
+                if (deltaX < 6 && absY > 64) {
                     swipe.active = false;
                     return;
                 }
-                if (deltaX < 3) {
+                if (deltaX < 8) {
                     return;
                 }
                 swipe.dragging = true;
@@ -180,7 +180,8 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             if (!swipe.active) return;
 
             const deltaX = clientX - swipe.startX;
-            const shouldDismiss = swipe.dragging && deltaX > Math.min(52, window.innerWidth * 0.11);
+            const dismissDistance = Math.min(110, Math.max(82, window.innerWidth * 0.18));
+            const shouldDismiss = swipe.dragging && deltaX > dismissDistance;
             swipe.active = false;
             threadPage.classList.remove('is-swipe-dragging');
             overlay?.classList.remove('is-swipe-dragging');
