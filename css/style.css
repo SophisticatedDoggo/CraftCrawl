@@ -4075,6 +4075,12 @@ body.event-detail-overlay-open {
     touch-action: none;
 }
 
+.feed-thread-overlay-content.is-swipe-scroll-locked,
+.event-detail-overlay-content.is-swipe-scroll-locked {
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: auto;
+}
+
 .feed-thread-overlay .feed-thread-page,
 .event-detail-overlay .event-detail-page {
     min-height: auto;

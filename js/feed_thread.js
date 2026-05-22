@@ -94,7 +94,8 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             startX: 0,
             startY: 0,
             lastX: 0,
-            dragging: false
+            dragging: false,
+            scrollLocked: false
         };
 
         function isSwipeIgnored(target) {
@@ -177,6 +178,22 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             dragTarget.style.opacity = String(Math.max(0.35, 1 - dragX / 520));
         }
 
+        function lockOverlayScrollForSwipe() {
+            if (!overlayContent || swipe.scrollLocked) return;
+            swipe.scrollLocked = true;
+            overlayContent.dataset.feedSwipeScrollTop = String(overlayContent.scrollTop);
+            overlayContent.classList.add('is-swipe-scroll-locked');
+        }
+
+        function unlockOverlayScrollForSwipe() {
+            if (!overlayContent || !swipe.scrollLocked) return;
+            const scrollTop = Number(overlayContent.dataset.feedSwipeScrollTop || overlayContent.scrollTop || 0);
+            swipe.scrollLocked = false;
+            overlayContent.classList.remove('is-swipe-scroll-locked');
+            overlayContent.scrollTop = scrollTop;
+            delete overlayContent.dataset.feedSwipeScrollTop;
+        }
+
         function finishSwipeAt(clientX) {
             if (!swipe.active) return;
 
@@ -193,6 +210,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             } else {
                 dragTarget.style.transform = '';
                 dragTarget.style.opacity = '';
+                unlockOverlayScrollForSwipe();
             }
 
             swipe.dragging = false;
@@ -206,6 +224,9 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         swipeSurfaces.forEach((surface) => surface.addEventListener('pointerdown', (event) => {
             if (event.pointerType === 'mouse' && event.button !== 0) return;
             if (isSwipeIgnored(event.target)) return;
+            if (surface === edgeSwipe) {
+                lockOverlayScrollForSwipe();
+            }
 
             swipe.active = true;
             swipe.pointerId = event.pointerId;
@@ -232,6 +253,9 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         swipeSurfaces.forEach((surface) => surface.addEventListener('pointercancel', finishSwipe, { signal: swipeAbort.signal }));
         swipeSurfaces.forEach((surface) => surface.addEventListener('touchstart', (event) => {
             if (swipe.active || event.touches.length !== 1 || isSwipeIgnored(event.target)) return;
+            if (surface === edgeSwipe) {
+                lockOverlayScrollForSwipe();
+            }
             const touch = event.touches[0];
             swipe.active = true;
             swipe.pointerId = null;
