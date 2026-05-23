@@ -1286,9 +1286,18 @@ a.text-link:focus {
     display: grid;
     grid-template-columns: repeat(4, minmax(54px, 1fr));
     overflow: hidden;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-surface);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.055) 34%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.045) 46%, rgba(255, 255, 255, 0.015)),
+        color-mix(in srgb, var(--color-surface) 18%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.26),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.055),
+        0 7px 16px color-mix(in srgb, var(--color-text) 12%, transparent);
+    backdrop-filter: blur(22px) saturate(1.45);
+    -webkit-backdrop-filter: blur(22px) saturate(1.45);
 }
 
 .business-list-radius-toggle input {
@@ -1303,9 +1312,11 @@ a.text-link:focus {
     align-items: center;
     min-height: 38px;
     padding: 8px 12px;
-    border-right: 1px solid var(--color-border);
-    color: var(--color-text-muted);
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    color: var(--color-primary);
     cursor: pointer;
+    font-weight: 800;
 }
 
 .business-list-radius-toggle label:last-child {
@@ -1313,13 +1324,16 @@ a.text-link:focus {
 }
 
 .business-list-radius-toggle input:checked + label {
-    background: var(--color-primary);
-    color: var(--color-button-text);
+    color: #fff;
+    background:
+        var(--glass-button),
+        var(--color-primary);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 5px 14px color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
 .business-list-radius-toggle input:focus-visible + label {
-    outline: 2px solid var(--color-focus);
-    outline-offset: -2px;
+    outline: 2px solid color-mix(in srgb, var(--color-primary) 50%, transparent);
+    outline-offset: -3px;
 }
 
 .business-list-item {
@@ -2858,10 +2872,18 @@ a.text-link:focus {
     height: 46px;
     min-height: 46px;
     padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.94);
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.08) 35%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.07) 48%, rgba(255, 255, 255, 0.02)),
+        color-mix(in srgb, var(--color-surface) 18%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.34),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+        0 10px 24px color-mix(in srgb, var(--color-text) 18%, transparent);
+    backdrop-filter: blur(22px) saturate(1.45);
+    -webkit-backdrop-filter: blur(22px) saturate(1.45);
     cursor: pointer;
 }
 
@@ -2899,7 +2921,10 @@ a.text-link:focus {
 .map-location-control:hover,
 .map-location-control:focus-visible {
     border-color: var(--color-primary);
-    background: #ffffff;
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.1) 35%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.08) 48%, rgba(255, 255, 255, 0.03)),
+        color-mix(in srgb, var(--color-surface) 24%, transparent);
     outline: 0;
     transform: translateY(-1px);
 }
@@ -2916,10 +2941,18 @@ a.text-link:focus {
     height: 46px;
     min-height: 46px;
     padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.94);
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.08) 35%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.07) 48%, rgba(255, 255, 255, 0.02)),
+        color-mix(in srgb, var(--color-surface) 18%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.34),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+        0 10px 24px color-mix(in srgb, var(--color-text) 18%, transparent);
+    backdrop-filter: blur(22px) saturate(1.45);
+    -webkit-backdrop-filter: blur(22px) saturate(1.45);
     cursor: pointer;
 }
 
@@ -2941,7 +2974,10 @@ a.text-link:focus {
 .map-expand-control:hover,
 .map-expand-control:focus-visible {
     border-color: var(--color-primary);
-    background: #ffffff;
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.1) 35%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.08) 48%, rgba(255, 255, 255, 0.03)),
+        color-mix(in srgb, var(--color-surface) 24%, transparent);
     outline: 0;
     transform: translateY(-1px);
 }
@@ -9236,10 +9272,14 @@ a.event-calendar-event:focus .event-calendar-event-name {
         z-index: 3;
         gap: 10px;
         padding: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.72);
-        border-radius: var(--radius-md);
-        background: rgba(255, 255, 255, 0.94);
-        box-shadow: 0 16px 36px rgba(15, 23, 42, 0.28);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 22px;
+        background:
+            linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.025) 46%, rgba(255, 255, 255, 0.01)),
+            color-mix(in srgb, var(--color-bg) 62%, transparent);
+        box-shadow: 0 16px 36px color-mix(in srgb, var(--color-text) 22%, transparent);
+        backdrop-filter: blur(22px) saturate(1.28);
+        -webkit-backdrop-filter: blur(22px) saturate(1.28);
     }
 
     #map-panel.is-map-expanded .business-list,
@@ -12140,4 +12180,30 @@ button.mobile-app-tab.is-active,
     color: var(--color-primary);
     background: transparent;
     box-shadow: none;
+}
+
+:root[data-palette$="-dark"] .business-list-radius-toggle input:checked + label {
+    color: #000;
+}
+
+:root[data-palette$="-dark"] .map-location-control,
+:root[data-palette$="-dark"] .map-expand-control {
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.06) 35%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05) 48%, rgba(255, 255, 255, 0.015)),
+        color-mix(in srgb, var(--color-surface) 13%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.28),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.055),
+        0 7px 16px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-palette$="-dark"] .map-location-control:hover,
+:root[data-palette$="-dark"] .map-location-control:focus-visible,
+:root[data-palette$="-dark"] .map-expand-control:hover,
+:root[data-palette$="-dark"] .map-expand-control:focus-visible {
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.08) 35%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.06) 48%, rgba(255, 255, 255, 0.02)),
+        color-mix(in srgb, var(--color-surface) 17%, transparent);
 }
