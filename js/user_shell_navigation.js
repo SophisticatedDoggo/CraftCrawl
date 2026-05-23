@@ -30,6 +30,22 @@
         return true;
     }
 
+    function forceCloseFeedThreadOverlay() {
+        document.querySelectorAll('[data-feed-thread-overlay]').forEach((overlay) => {
+            overlay.hidden = true;
+            overlay.remove();
+        });
+        document.body.classList.remove('feed-thread-overlay-open', 'feed-comment-composer-open');
+        document.documentElement.classList.remove('feed-thread-open-requested');
+        document.documentElement.style.removeProperty('--feed-compose-keyboard-offset');
+    }
+
+    function cleanOrphanedFeedThreadOverlay(url = window.location.href) {
+        if (currentFile(url) !== 'feed_post.php') {
+            forceCloseFeedThreadOverlay();
+        }
+    }
+
     function setActiveTab(url) {
         const file = currentFile(url);
         const active = file === 'portal.php' ? 'map' : file === 'events.php' ? 'events' : file === 'feed.php' ? 'feed' : file === 'quests.php' ? 'quests' : '';
@@ -164,6 +180,7 @@
 
             if (options.replace) history.replaceState({ craftcrawlUserShell: true }, '', url);
             else history.pushState({ craftcrawlUserShell: true }, '', url);
+            cleanOrphanedFeedThreadOverlay(url);
             setActiveTab(url);
             if (!destinationIsBase || !restoreBaseScroll(url)) window.scrollTo(0, 0);
             document.dispatchEvent(new CustomEvent('craftcrawl:user-shell-navigated', { detail: { url } }));
@@ -197,17 +214,23 @@
         const linkUrl = new URL(link.href, window.location.href);
         const targetUrl = linkUrl.href;
         const isFeedThreadOverlayLink = Boolean(link.closest('[data-feed-thread-overlay]'));
-        if (isFeedThreadOverlayLink && isShellUrl(targetUrl) && typeof window.CraftCrawlCloseFeedThreadOverlay === 'function') {
+        if (isFeedThreadOverlayLink && isShellUrl(targetUrl)) {
             event.preventDefault();
             event.stopPropagation();
-            const shouldReplaceOverlayState = Boolean(history.state?.craftcrawlFeedThreadOverlay);
-            window.CraftCrawlCloseFeedThreadOverlay({ useHistory: false, immediate: true, skipReturnAnchor: true });
+            const shouldReplaceOverlayState = Boolean(history.state?.craftcrawlFeedThreadOverlay)
+                || currentFile(window.location.href) === 'feed_post.php';
+            window.CraftCrawlCloseFeedThreadOverlay?.({ useHistory: false, immediate: true, skipReturnAnchor: true });
+            forceCloseFeedThreadOverlay();
             if (typeof window.CraftCrawlSwitchUserTab === 'function'
-                && window.CraftCrawlSwitchUserTab(targetUrl, { userInitiated: true })) return;
+                && window.CraftCrawlSwitchUserTab(targetUrl, { userInitiated: true })) {
+                if (shouldReplaceOverlayState) history.replaceState({ craftcrawlUserShell: true }, '', targetUrl);
+                forceCloseFeedThreadOverlay();
+                return;
+            }
             navigate(targetUrl, {
                 userInitiated: true,
                 replace: shouldReplaceOverlayState
-            });
+            }).finally(forceCloseFeedThreadOverlay);
             return;
         }
 
@@ -230,7 +253,11 @@
             && window.CraftCrawlSwitchUserTab(link.href, { userInitiated: true })) return;
         navigate(link.href, { userInitiated: true });
     }, true);
-    window.addEventListener('popstate', () => { if (isShellUrl(window.location.href)) navigate(window.location.href, { replace: true }); });
+    window.addEventListener('popstate', () => {
+        cleanOrphanedFeedThreadOverlay();
+        if (isShellUrl(window.location.href)) navigate(window.location.href, { replace: true });
+    });
+    window.addEventListener('pageshow', () => cleanOrphanedFeedThreadOverlay());
     window.CraftCrawlNavigateUserShell = navigate;
     window.CraftCrawlSaveUserShellBaseScroll = saveBaseScroll;
     window.CraftCrawlRefreshUserShell = function () {
