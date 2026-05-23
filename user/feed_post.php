@@ -191,6 +191,19 @@ function render_feed_thread_post($item, $actions_html = '') {
         ';
     }
 
+    if (($item['type'] ?? '') === 'badge_earned') {
+        return '
+            <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
+                ' . $avatar . '
+                <div>
+                    <strong>Earned ' . escape_output($item['badge_name']) . '</strong>
+                    <p>' . escape_output($item['badge_description']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
+                    ' . $actions_html . '
+                </div>
+            </article>
+        ';
+    }
+
     if (($item['type'] ?? '') === 'event_want') {
         return '
             <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>

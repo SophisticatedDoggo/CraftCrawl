@@ -251,6 +251,22 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
         return true;
     }
 
+    function dismissEventDetailOverlay(options = {}) {
+        if (!eventDetailOverlay || eventDetailOverlay.hidden) {
+            return false;
+        }
+
+        const shouldRestoreUrl = options.restoreUrl !== false
+            && history.state?.craftcrawlEventDetailOverlay;
+        closeEventDetailOverlay({ useHistory: false });
+
+        if (shouldRestoreUrl) {
+            history.replaceState({ craftcrawlUserShell: true }, '', 'events.php');
+        }
+
+        return true;
+    }
+
     async function openEventDetailOverlay(url, eventItem = null, options = {}) {
         const targetUrl = normalizeEventDetailUrl(url);
         eventItem?.classList.add('is-opening-event');
@@ -280,6 +296,7 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
 
     window.CraftCrawlOpenEventDetailOverlay = openEventDetailOverlay;
     window.CraftCrawlCloseEventDetailOverlay = closeEventDetailOverlay;
+    window.CraftCrawlDismissEventDetailOverlay = dismissEventDetailOverlay;
 
     window.addEventListener('popstate', () => {
         if (eventDetailOverlay && !eventDetailOverlay.hidden && !history.state?.craftcrawlEventDetailOverlay) {
@@ -656,8 +673,9 @@ window.CraftCrawlInitEventDetail = function (root = document) {
         link.dataset.eventDetailBackReady = 'true';
         link.addEventListener('click', (event) => {
             event.preventDefault();
-            if (overlay && typeof window.CraftCrawlCloseEventDetailOverlay === 'function') {
-                window.CraftCrawlCloseEventDetailOverlay({ useHistory: true });
+            event.stopPropagation();
+            if (overlay && typeof window.CraftCrawlDismissEventDetailOverlay === 'function') {
+                window.CraftCrawlDismissEventDetailOverlay();
                 return;
             }
 
