@@ -77,7 +77,6 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         threadPage.dataset.swipeDismissReady = 'true';
         const overlay = threadPage.closest('[data-feed-thread-overlay]');
         const overlayContent = overlay?.querySelector('[data-feed-thread-overlay-content]');
-        const edgeSwipe = overlay?.querySelector('[data-feed-thread-edge-swipe]');
         const swipeSurface = overlayContent || threadPage;
         swipeSurface._craftcrawlFeedSwipeAbort?.abort();
         const swipeAbort = new AbortController();
@@ -216,7 +215,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             swipe.dragging = false;
         }
 
-        const swipeSurfaces = Array.from(new Set([swipeSurface, edgeSwipe].filter(Boolean)));
+        const swipeSurfaces = [swipeSurface];
         swipeSurfaces.forEach((surface) => {
             surface._craftcrawlFeedSwipeAbort = swipeAbort;
         });
@@ -224,9 +223,6 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         swipeSurfaces.forEach((surface) => surface.addEventListener('pointerdown', (event) => {
             if (event.pointerType === 'mouse' && event.button !== 0) return;
             if (isSwipeIgnored(event.target)) return;
-            if (surface === edgeSwipe) {
-                lockOverlayScrollForSwipe();
-            }
 
             swipe.active = true;
             swipe.pointerId = event.pointerId;
@@ -253,9 +249,6 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         swipeSurfaces.forEach((surface) => surface.addEventListener('pointercancel', finishSwipe, { signal: swipeAbort.signal }));
         swipeSurfaces.forEach((surface) => surface.addEventListener('touchstart', (event) => {
             if (swipe.active || event.touches.length !== 1 || isSwipeIgnored(event.target)) return;
-            if (surface === edgeSwipe) {
-                lockOverlayScrollForSwipe();
-            }
             const touch = event.touches[0];
             swipe.active = true;
             swipe.pointerId = null;

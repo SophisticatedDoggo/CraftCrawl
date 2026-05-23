@@ -4088,6 +4088,10 @@ body.event-detail-overlay-open {
     touch-action: none;
 }
 
+.feed-thread-edge-swipe {
+    pointer-events: none;
+}
+
 .feed-thread-overlay.is-swipe-dragging .feed-thread-overlay-scrim,
 .feed-thread-overlay.is-swipe-dismissing .feed-thread-overlay-scrim,
 .feed-thread-overlay.is-closing .feed-thread-overlay-scrim,
