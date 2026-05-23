@@ -1325,7 +1325,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         }
 
         const itemKey = options.returnItemKey || feedThreadOverlayItemKey;
-        if (itemKey) {
+        if (itemKey && !options.skipReturnAnchor) {
             clearThreadReturnItemKey();
             queueThreadReturnAnchor(itemKey);
         }

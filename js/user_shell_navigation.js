@@ -195,6 +195,22 @@
         }
 
         const linkUrl = new URL(link.href, window.location.href);
+        const targetUrl = linkUrl.href;
+        const isFeedThreadOverlayLink = Boolean(link.closest('[data-feed-thread-overlay]'));
+        if (isFeedThreadOverlayLink && isShellUrl(targetUrl) && typeof window.CraftCrawlCloseFeedThreadOverlay === 'function') {
+            event.preventDefault();
+            event.stopPropagation();
+            const shouldReplaceOverlayState = Boolean(history.state?.craftcrawlFeedThreadOverlay);
+            window.CraftCrawlCloseFeedThreadOverlay({ useHistory: false, immediate: true, skipReturnAnchor: true });
+            if (typeof window.CraftCrawlSwitchUserTab === 'function'
+                && window.CraftCrawlSwitchUserTab(targetUrl, { userInitiated: true })) return;
+            navigate(targetUrl, {
+                userInitiated: true,
+                replace: shouldReplaceOverlayState
+            });
+            return;
+        }
+
         if (typeof window.CraftCrawlOpenFeedThreadOverlay === 'function'
             && currentFile(linkUrl.href) === 'feed_post.php'
             && linkUrl.searchParams.has('item')
