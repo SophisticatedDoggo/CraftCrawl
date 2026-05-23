@@ -8,10 +8,15 @@ let renderedMapItemCount = 0;
 let userLocationPollId = null;
 let isUserLocationRequestInFlight = false;
 let hasBoundUserLocationLifecycleEvents = false;
-const mapRadiusModeMinZoom = 8;
-const mapRadiusMeters = 50 * 1609.344;
+let collapsedBusinessListSortValue = null;
+const mapRadiusModeMinZoom = 7;
+const defaultMapRadiusMiles = 50;
+const milesToMeters = 1609.344;
 const userLocationRefreshMs = 10000;
 const mapClusterMaxZoom = 12;
+const fallbackMapCenter = [-98.5795, 39.8283];
+const fallbackMapZoom = 3.2;
+const initialUserMapZoom = 11.5;
 const isMobileMapViewport = window.matchMedia('(max-width: 700px), (pointer: coarse)').matches;
 const mapMarkerCircleRadius = isMobileMapViewport ? 20 : 15;
 const mapMarkerTextSize = isMobileMapViewport ? 18 : 14;
@@ -25,27 +30,41 @@ const mapClusterHitboxRadius = isMobileMapViewport ? [38, 44, 50] : [28, 34, 40]
 const businessTypeFilters = ['brewery', 'winery', 'cidery', 'distillery', 'meadery', 'bar', 'social_club'];
 
 mapboxgl.accessToken = window.MAPBOX_ACCESS_TOKEN;
-// creates the map, setting the container to the id of the div you added in step 2, and setting the initial center and zoom level of the map
-const map = new mapboxgl.Map({
-    container: 'map', // container ID
-    style: 'mapbox://styles/mapbox/standard',
-    config: {
-        basemap: {
-            showPlaceLabels: true,
-            showPointOfInterestLabels: false,
-            fuelingStationModePointOfInterestLabels: 'none',
-            showIndoorLabels: false
-        }
-    },
-    center: [-79.3432615, 40.208976], // starting position [lng, lat]
-    zoom: 6.5, // starting zoom
-});
+let map = null;
 
 // Start locating the user immediately so native iOS does not wait for Mapbox
 // style loading before beginning the first location lookup.
 requestInitialUserLocation();
 setupUserLocationLifecycleRefresh();
 
+function createCraftCrawlMap(initialCenter, initialZoom) {
+    if (map) {
+        return;
+    }
+
+    map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/standard',
+        config: {
+            basemap: {
+                showPlaceLabels: true,
+                showPointOfInterestLabels: false,
+                fuelingStationModePointOfInterestLabels: 'none',
+                showIndoorLabels: false
+            }
+        },
+        center: initialCenter,
+        zoom: initialZoom
+    });
+
+    setupMapLayersAndInteractions();
+}
+
+function createFallbackMap() {
+    createCraftCrawlMap(fallbackMapCenter, fallbackMapZoom);
+}
+
+function setupMapLayersAndInteractions() {
 map.on('load', function () {
     updateMapZoomDebug();
 
@@ -332,6 +351,7 @@ map.on('load', function () {
     updateUserLocationMarker();
     startUserLocationRefresh();
     setupUserLocationControl();
+    setupMapExpandControl();
 
     map.on('moveend', (event) => {
         updateBusinessListForCurrentMapArea(Boolean(event.originalEvent));
@@ -345,11 +365,16 @@ map.on('load', function () {
         updateRenderedMapItemCount();
     });
 });
+}
 
 setupPortalTabs();
 
 window.addEventListener('craftcrawl:user-tab-changed', (event) => {
-    if (event.detail?.tab === 'map') {
+    if (event.detail?.tab !== 'map') {
+        setMapExpanded(false);
+    }
+
+    if (event.detail?.tab === 'map' && map) {
         window.setTimeout(() => map.resize(), 0);
     }
 });
@@ -485,6 +510,7 @@ function requestUserLocation(options = {}) {
         if (shouldShowErrors) {
             showLocationStatus('Your browser does not support location lookup.', true);
         }
+        createFallbackMap();
         return;
     }
 
@@ -503,6 +529,10 @@ function requestUserLocation(options = {}) {
 
     if (!didStartLocationRequest) {
         isUserLocationRequestInFlight = false;
+        if (!map) {
+            createFallbackMap();
+        }
+
         if (shouldUpdateDependentViews) {
             updateLocationAwareBusinessList();
         }
@@ -515,6 +545,11 @@ function requestUserLocation(options = {}) {
             longitude: position.coords.longitude,
             accuracy: position.coords.accuracy
         };
+
+        if (!map) {
+            createCraftCrawlMap([userLocation.longitude, userLocation.latitude], initialUserMapZoom);
+            hasCenteredOnUserLocation = true;
+        }
 
         updateUserLocationMarker();
         if (options.centerOnLocation) {
@@ -533,6 +568,11 @@ function requestUserLocation(options = {}) {
 
     function handleLocationError(error) {
         isUserLocationRequestInFlight = false;
+        const willRequestPreciseLocation = options.requestPreciseAfterCoarse && (!error || error.code !== 1);
+        if (!map && !willRequestPreciseLocation) {
+            createFallbackMap();
+        }
+
         if (shouldShowErrors && error && error.code === 1) {
             showLocationStatus('Location access is off. Enable location access for CraftCrawl to center the map near you.', true);
         }
@@ -541,7 +581,7 @@ function requestUserLocation(options = {}) {
             updateLocationAwareBusinessList();
         }
 
-        if (options.requestPreciseAfterCoarse && (!error || error.code !== 1)) {
+        if (willRequestPreciseLocation) {
             requestPreciseUserLocationAfterCoarse(shouldShowErrors);
         }
     }
@@ -632,6 +672,89 @@ function setupUserLocationControl() {
     });
 }
 
+function setupMapExpandControl() {
+    const button = document.getElementById('map-expand-toggle');
+
+    if (!button || button.dataset.ready === 'true') {
+        return;
+    }
+
+    button.dataset.ready = 'true';
+    button.addEventListener('click', () => {
+        const mapPanel = document.getElementById('map-panel');
+        setMapExpanded(!mapPanel?.classList.contains('is-map-expanded'));
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            setMapExpanded(false);
+        }
+    });
+}
+
+function setMapExpanded(isExpanded) {
+    const mapPanel = document.getElementById('map-panel');
+    const button = document.getElementById('map-expand-toggle');
+    const sortSelect = document.getElementById('business-list-sort');
+    const sortLabel = document.querySelector('label[for="business-list-sort"]');
+
+    if (!mapPanel || !button) {
+        return;
+    }
+
+    if (isExpanded && !mapPanel.classList.contains('is-map-expanded')) {
+        collapsedBusinessListSortValue = sortSelect ? sortSelect.value : null;
+    }
+
+    mapPanel.classList.toggle('is-map-expanded', isExpanded);
+    document.body.classList.toggle('map-expanded-open', isExpanded);
+    button.setAttribute('aria-pressed', isExpanded ? 'true' : 'false');
+    button.setAttribute('aria-label', isExpanded ? 'Collapse map' : 'Expand map');
+    button.title = isExpanded ? 'Collapse map' : 'Expand map';
+    if (sortLabel) {
+        sortLabel.textContent = isExpanded ? 'Sort map' : 'Sort list';
+    }
+    updateExpandedSortOptions(isExpanded);
+
+    if (sortSelect) {
+        if (isExpanded && !isBusinessTypeFilter(sortSelect.value)) {
+            sortSelect.value = businessTypeFilters[0];
+        } else if (!isExpanded && collapsedBusinessListSortValue) {
+            sortSelect.value = collapsedBusinessListSortValue;
+        }
+    }
+
+    if (locationsAreLoaded) {
+        if (isExpanded) {
+            updateExpandedMapForSort();
+        } else {
+            updateLocationAwareBusinessList();
+        }
+    }
+
+    window.setTimeout(() => {
+        map?.resize();
+    }, 0);
+}
+
+function isMapExpanded() {
+    return Boolean(document.getElementById('map-panel')?.classList.contains('is-map-expanded'));
+}
+
+function updateExpandedSortOptions(isExpanded) {
+    const sortSelect = document.getElementById('business-list-sort');
+
+    if (!sortSelect) {
+        return;
+    }
+
+    Array.from(sortSelect.options).forEach((option) => {
+        const isListOnlySort = option.value === 'map' || option.value === 'nearby' || option.value === 'name';
+        option.hidden = isExpanded && isListOnlySort;
+        option.disabled = isExpanded && isListOnlySort;
+    });
+}
+
 function applyLocationAwareListAndMap(options = {}) {
     if (!locationsAreLoaded) {
         return;
@@ -679,6 +802,10 @@ function showLocationStatus(message, isError) {
 }
 
 function updateUserLocationMarker() {
+    if (!map) {
+        return;
+    }
+
     const source = map.getSource('user-location');
 
     if (!source || !userLocation) {
@@ -701,7 +828,7 @@ function updateUserLocationMarker() {
 }
 
 function centerMapOnUserLocation() {
-    if (!userLocation) {
+    if (!map || !userLocation) {
         return;
     }
 
@@ -945,24 +1072,49 @@ function focusBusinessOnMap(businessId) {
 
 function setupBusinessListSort() {
     const sortSelect = document.getElementById('business-list-sort');
+    const radiusInputs = document.querySelectorAll('input[name="business-list-radius"]');
 
-    if (!sortSelect || sortSelect.dataset.ready === 'true') {
-        return;
+    if (sortSelect && sortSelect.dataset.ready !== 'true') {
+        sortSelect.dataset.ready = 'true';
+        sortSelect.addEventListener('change', () => {
+            if (isMapExpanded()) {
+                updateExpandedMapForSort();
+                return;
+            }
+
+            if (sortSelect.value === 'nearby' && !userLocation) {
+                requestUserLocation();
+                return;
+            }
+
+            updateBusinessListForSort(sortSelect.value);
+        });
     }
 
-    sortSelect.dataset.ready = 'true';
-    sortSelect.addEventListener('change', () => {
-        if (sortSelect.value === 'nearby' && !userLocation) {
-            requestUserLocation();
+    radiusInputs.forEach((radiusInput) => {
+        if (radiusInput.dataset.ready === 'true') {
             return;
         }
 
-        updateBusinessListForSort(sortSelect.value);
+        radiusInput.dataset.ready = 'true';
+        radiusInput.addEventListener('change', () => {
+            if (isMapExpanded()) {
+                updateExpandedMapForSort();
+                return;
+            }
+
+            updateLocationAwareBusinessList();
+        });
     });
 }
 
 function updateBusinessListForCurrentMapArea(useMapCenter = false) {
     if (!locationsAreLoaded) {
+        return;
+    }
+
+    if (isMapExpanded()) {
+        updateExpandedMapForSort();
         return;
     }
 
@@ -979,12 +1131,12 @@ function updateBusinessListForCurrentMapArea(useMapCenter = false) {
 function updateMapZoomDebug() {
     const zoomDebug = document.getElementById('map-zoom-debug');
 
-    if (!zoomDebug) {
+    if (!zoomDebug || !map) {
         return;
     }
 
     const zoom = map.getZoom();
-    const mode = zoom >= mapRadiusModeMinZoom ? '50 mi radius' : 'map view';
+    const mode = zoom >= mapRadiusModeMinZoom ? `${getSelectedMapRadiusMiles()} mi radius` : 'map view';
     zoomDebug.textContent = `Zoom ${zoom.toFixed(2)} · ${mode} · ${loadedBusinessCount} businesses · ${renderedMapItemCount} items`;
 }
 
@@ -998,6 +1150,19 @@ function updateBusinessListForSort(sortValue, options = {}) {
 
     updateMapBusinessNumbers(numberedFeatures);
     renderBusinessList(numberedFeatures);
+}
+
+function updateExpandedMapForSort() {
+    if (!locationsAreLoaded) {
+        return;
+    }
+
+    const sortSelect = document.getElementById('business-list-sort');
+    const sortValue = sortSelect && isBusinessTypeFilter(sortSelect.value) ? sortSelect.value : businessTypeFilters[0];
+    const features = getMapRelevantBusinessFeatures();
+    const orderedFeatures = sortFeaturesForExpandedMap(features, sortValue);
+
+    updateMapBusinessNumbers(orderedFeatures);
 }
 
 function getSortedBusinessFeatures(sortValue) {
@@ -1023,6 +1188,16 @@ function getSortedBusinessFeatures(sortValue) {
     }
 
     return features.sort(compareBusinessTitles);
+}
+
+function sortFeaturesForExpandedMap(features, sortValue) {
+    if (isBusinessTypeFilter(sortValue)) {
+        return [...features]
+            .filter((feature) => feature.properties.businessType === sortValue)
+            .sort(compareBusinessTitles);
+    }
+
+    return [];
 }
 
 function sortFeaturesForList(features, sortValue, reference) {
@@ -1091,10 +1266,18 @@ function updateRenderedMapItemCount() {
 
 function getBusinessFeaturesWithinMapRadius() {
     const reference = getMapCenterReference();
+    const mapRadiusMeters = getSelectedMapRadiusMiles() * milesToMeters;
 
     return allBusinessFeatures.filter((feature) => {
         return distanceFromFeatureToReference(feature, reference) <= mapRadiusMeters;
     });
+}
+
+function getSelectedMapRadiusMiles() {
+    const radiusInput = document.querySelector('input[name="business-list-radius"]:checked');
+    const radiusMiles = Number(radiusInput ? radiusInput.value : defaultMapRadiusMiles);
+
+    return [50, 25, 10, 5].includes(radiusMiles) ? radiusMiles : defaultMapRadiusMiles;
 }
 
 function getVisibleBusinessFeatures() {

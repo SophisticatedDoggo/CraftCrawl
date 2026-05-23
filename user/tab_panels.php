@@ -53,21 +53,39 @@ if (!function_exists('craftcrawl_render_portal_quest_card')) {
                 <button type="button" id="map-center-user" class="map-location-control" aria-label="Center map on your location" title="Center map on your location">
                     <span aria-hidden="true"></span>
                 </button>
+                <button type="button" id="map-expand-toggle" class="map-expand-control" aria-label="Expand map" title="Expand map" aria-pressed="false">
+                    <span aria-hidden="true"></span>
+                </button>
             </div>
             <div class="business-list-toolbar">
-                <label for="business-list-sort">Sort list</label>
-                <select id="business-list-sort">
-                    <option value="map">Map area</option>
-                    <option value="nearby">Near me</option>
-                    <option value="name">Name</option>
-                    <option value="brewery">Breweries</option>
-                    <option value="winery">Wineries</option>
-                    <option value="cidery">Cideries</option>
-                    <option value="distillery">Distilleries</option>
-                    <option value="meadery">Meaderies</option>
-                    <option value="bar">Bars</option>
-                    <option value="social_club">Social Clubs</option>
-                </select>
+                <div class="business-list-radius-control" role="group" aria-labelledby="business-list-radius-label">
+                    <span id="business-list-radius-label">Radius</span>
+                    <div class="business-list-radius-toggle">
+                        <input type="radio" id="business-list-radius-50" name="business-list-radius" value="50" checked>
+                        <label for="business-list-radius-50">50 mi</label>
+                        <input type="radio" id="business-list-radius-25" name="business-list-radius" value="25">
+                        <label for="business-list-radius-25">25 mi</label>
+                        <input type="radio" id="business-list-radius-10" name="business-list-radius" value="10">
+                        <label for="business-list-radius-10">10 mi</label>
+                        <input type="radio" id="business-list-radius-5" name="business-list-radius" value="5">
+                        <label for="business-list-radius-5">5 mi</label>
+                    </div>
+                </div>
+                <div class="business-list-sort-control">
+                    <label for="business-list-sort">Sort list</label>
+                    <select id="business-list-sort">
+                        <option value="map">Map area</option>
+                        <option value="nearby">Near me</option>
+                        <option value="name">Name</option>
+                        <option value="brewery">Breweries</option>
+                        <option value="winery">Wineries</option>
+                        <option value="cidery">Cideries</option>
+                        <option value="distillery">Distilleries</option>
+                        <option value="meadery">Meaderies</option>
+                        <option value="bar">Bars</option>
+                        <option value="social_club">Social Clubs</option>
+                    </select>
+                </div>
             </div>
             <ol id="business-list" class="business-list"></ol>
             <p class="location-suggestion-prompt">

@@ -1243,13 +1243,67 @@ a.text-link:focus {
     margin-top: 16px;
 }
 
+.business-list-radius-control,
+.business-list-sort-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.business-list-radius-control > span {
+    white-space: nowrap;
+}
+
 .business-list-toolbar label {
     white-space: nowrap;
 }
 
 .business-list-toolbar select {
     width: auto;
+}
+
+.business-list-sort-control select {
     min-width: 180px;
+}
+
+.business-list-radius-toggle {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(54px, 1fr));
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+}
+
+.business-list-radius-toggle input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.business-list-radius-toggle label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 38px;
+    padding: 8px 12px;
+    border-right: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+
+.business-list-radius-toggle label:last-child {
+    border-right: 0;
+}
+
+.business-list-radius-toggle input:checked + label {
+    background: var(--color-primary);
+    color: var(--color-button-text);
+}
+
+.business-list-radius-toggle input:focus-visible + label {
+    outline: 2px solid var(--color-focus);
+    outline-offset: -2px;
 }
 
 .business-list-item {
@@ -2832,6 +2886,52 @@ a.text-link:focus {
     background: #ffffff;
     outline: 0;
     transform: translateY(-1px);
+}
+
+.map-expand-control {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    z-index: 2;
+    display: none;
+    place-items: center;
+    width: 46px;
+    min-width: 46px;
+    height: 46px;
+    min-height: 46px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+    cursor: pointer;
+}
+
+.map-expand-control span {
+    display: block;
+    width: 22px;
+    height: 22px;
+    background:
+        linear-gradient(var(--color-primary), var(--color-primary)) left top / 9px 2px no-repeat,
+        linear-gradient(var(--color-primary), var(--color-primary)) left top / 2px 9px no-repeat,
+        linear-gradient(var(--color-primary), var(--color-primary)) right top / 9px 2px no-repeat,
+        linear-gradient(var(--color-primary), var(--color-primary)) right top / 2px 9px no-repeat,
+        linear-gradient(var(--color-primary), var(--color-primary)) left bottom / 9px 2px no-repeat,
+        linear-gradient(var(--color-primary), var(--color-primary)) left bottom / 2px 9px no-repeat,
+        linear-gradient(var(--color-primary), var(--color-primary)) right bottom / 9px 2px no-repeat,
+        linear-gradient(var(--color-primary), var(--color-primary)) right bottom / 2px 9px no-repeat;
+}
+
+.map-expand-control:hover,
+.map-expand-control:focus-visible {
+    border-color: var(--color-primary);
+    background: #ffffff;
+    outline: 0;
+    transform: translateY(-1px);
+}
+
+body.map-expanded-open {
+    overflow: hidden;
 }
 
 .events-feed {
@@ -8962,6 +9062,86 @@ a.event-calendar-event:focus .event-calendar-event-name {
         width: 100%;
     }
 
+    .map-location-control {
+        right: 28px;
+        bottom: 20px;
+    }
+
+    .map-expand-control {
+        display: grid;
+        left: 28px;
+        bottom: 20px;
+    }
+
+    #map-panel.is-map-expanded {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+        overflow: hidden;
+        border-radius: 0;
+        background: var(--color-surface);
+    }
+
+    #map-panel.is-map-expanded .map-shell {
+        flex: 1 1 auto;
+        min-height: 0;
+        margin: 0;
+        width: 100%;
+    }
+
+    #map-panel.is-map-expanded #map {
+        height: 100%;
+        min-height: 0;
+        border-radius: 0;
+    }
+
+    #map-panel.is-map-expanded .map-location-control {
+        right: calc(16px + env(safe-area-inset-right));
+        top: calc(56px + env(safe-area-inset-top));
+        bottom: auto;
+        z-index: 4;
+    }
+
+    #map-panel.is-map-expanded .map-expand-control {
+        left: calc(16px + env(safe-area-inset-left));
+        top: calc(56px + env(safe-area-inset-top));
+        bottom: auto;
+        z-index: 4;
+    }
+
+    #map-panel.is-map-expanded .business-list-toolbar {
+        position: absolute;
+        right: calc(12px + env(safe-area-inset-right));
+        bottom: calc(12px + env(safe-area-inset-bottom));
+        left: calc(12px + env(safe-area-inset-left));
+        z-index: 3;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: var(--radius-md);
+        background: rgba(255, 255, 255, 0.94);
+        box-shadow: 0 16px 36px rgba(15, 23, 42, 0.28);
+    }
+
+    #map-panel.is-map-expanded .business-list,
+    #map-panel.is-map-expanded .location-suggestion-prompt {
+        display: none;
+    }
+
+    #map-panel.is-map-expanded .business-list-radius-control,
+    #map-panel.is-map-expanded .business-list-sort-control {
+        gap: 5px;
+    }
+
+    #map-panel.is-map-expanded .business-list-radius-toggle label {
+        min-height: 34px;
+        padding: 7px 8px;
+        font-size: 0.9rem;
+    }
+
     .business-list-item {
         grid-template-columns: 56px minmax(0, 1fr);
         align-items: stretch;
@@ -8972,6 +9152,13 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .business-list-toolbar {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .business-list-radius-control,
+    .business-list-sort-control {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 6px;
     }
 
     .business-list-toolbar select {
