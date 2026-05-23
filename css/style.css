@@ -1312,18 +1312,17 @@ a.text-link:focus {
     align-items: center;
     min-height: 38px;
     padding: 8px 12px;
-    border-right: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 999px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
     color: var(--color-primary);
     cursor: pointer;
     font-weight: 800;
 }
 
-.business-list-radius-toggle label:last-child {
-    border-right: 0;
-}
-
 .business-list-radius-toggle input:checked + label {
+    border-radius: 999px;
     color: #fff;
     background:
         var(--glass-button),
