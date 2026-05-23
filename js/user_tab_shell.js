@@ -123,6 +123,7 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
                 userInitiated: Boolean(options.userInitiated)
             }
         }));
+        window.dispatchEvent(new CustomEvent('craftcrawl:mobile-tab-state-settled'));
 
         if (tab === 'quests') {
             refreshQuestPanel({ force: Boolean(options.userInitiated) });

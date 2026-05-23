@@ -68,6 +68,7 @@
         });
         window.CraftCrawlCloseMobileActionsMenu?.();
         window.CraftCrawlInitMobileActionsMenu?.();
+        window.dispatchEvent(new CustomEvent('craftcrawl:mobile-tab-state-settled'));
     }
 
     function copyInlineScript(script) {

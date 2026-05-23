@@ -97,12 +97,6 @@ function setupMomentumSafeMobileTabs() {
     }
 
     function activateMobileTab(tab) {
-        const tabbar = tab.closest('.mobile-app-tabbar');
-
-        if (tabbar) {
-            setMobileTabThumb(tabbar, tab);
-        }
-
         if (tab instanceof HTMLAnchorElement) {
             if (typeof window.CraftCrawlSwitchUserTab === 'function'
                 && window.CraftCrawlSwitchUserTab(tab.href, { userInitiated: true })) {
@@ -252,21 +246,13 @@ function setupMobileTabThumbs() {
             return;
         }
         tabbar.dataset.thumbReady = 'true';
-        tabbar.addEventListener('pointerdown', (event) => {
-            const tab = event.target instanceof Element ? event.target.closest('.mobile-app-tab') : null;
-
-            if (!tab || !tabbar.contains(tab)) {
-                return;
-            }
-
-            setMobileTabThumb(tabbar, tab);
-        });
     });
 
     syncThumbsWithoutAnimation();
 
     window.addEventListener('resize', syncThumbsWithoutAnimation);
     window.addEventListener('orientationchange', syncThumbsWithoutAnimation);
+    window.addEventListener('craftcrawl:mobile-tab-state-settled', () => syncThumbs({ animate: true }));
 
     if (document.fonts && typeof document.fonts.ready?.then === 'function') {
         document.fonts.ready.then(syncThumbsWithoutAnimation).catch(() => {});
