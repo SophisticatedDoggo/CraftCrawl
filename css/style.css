@@ -421,13 +421,19 @@ a:not(.mapboxgl-ctrl-logo) {
     justify-content: center;
     min-height: 36px;
     padding: 7px 12px;
-    border: 1px solid var(--color-primary);
+    border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 99px;
-    color: var(--color-on-primary);
+    color: var(--color-primary);
     background:
-        var(--glass-button),
-        var(--color-primary);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 2px 7px rgba(15, 23, 42, 0.1);
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.46), rgba(255, 255, 255, 0.12) 34%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.12) 46%, rgba(255, 255, 255, 0.04)),
+        color-mix(in srgb, var(--color-surface) 24%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.52),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.14),
+        0 8px 20px color-mix(in srgb, var(--color-text) 13%, transparent);
+    backdrop-filter: blur(22px) saturate(1.55);
+    -webkit-backdrop-filter: blur(22px) saturate(1.55);
     font-weight: 650;
     line-height: 1.2;
     text-align: center;
@@ -436,11 +442,12 @@ a:not(.mapboxgl-ctrl-logo) {
 
 a:not(.mapboxgl-ctrl-logo):hover,
 a:not(.mapboxgl-ctrl-logo):focus {
-    border-color: var(--color-primary-dark);
-    color: var(--color-on-primary);
+    border-color: color-mix(in srgb, var(--color-primary) 48%, rgba(255, 255, 255, 0.16));
+    color: var(--color-primary);
     background:
-        var(--glass-button),
-        var(--color-primary-dark);
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.54), rgba(255, 255, 255, 0.16) 34%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.15) 46%, rgba(255, 255, 255, 0.06)),
+        color-mix(in srgb, var(--color-surface) 30%, transparent);
 }
 
 button,
@@ -452,13 +459,19 @@ input[type="button"],
     justify-content: center;
     min-height: 40px;
     padding: 9px 14px;
-    border: 1px solid var(--color-primary);
+    border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 99px;
-    color: var(--color-on-primary);
+    color: var(--color-primary);
     background:
-        var(--glass-button),
-        var(--color-primary);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 2px 7px rgba(15, 23, 42, 0.1);
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.46), rgba(255, 255, 255, 0.12) 34%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.12) 46%, rgba(255, 255, 255, 0.04)),
+        color-mix(in srgb, var(--color-surface) 24%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.52),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.14),
+        0 8px 20px color-mix(in srgb, var(--color-text) 13%, transparent);
+    backdrop-filter: blur(22px) saturate(1.55);
+    -webkit-backdrop-filter: blur(22px) saturate(1.55);
     cursor: pointer;
     font: inherit;
     font-weight: 650;
@@ -475,11 +488,12 @@ input[type="button"]:hover,
 input[type="button"]:focus,
 .button-link:hover,
 .button-link:focus {
-    border-color: var(--color-primary-dark);
-    color: var(--color-on-primary);
+    border-color: color-mix(in srgb, var(--color-primary) 48%, rgba(255, 255, 255, 0.16));
+    color: var(--color-primary);
     background:
-        var(--glass-button),
-        var(--color-primary-dark);
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.54), rgba(255, 255, 255, 0.16) 34%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.15) 46%, rgba(255, 255, 255, 0.06)),
+        color-mix(in srgb, var(--color-surface) 30%, transparent);
 }
 
 button.is-loading,
@@ -511,18 +525,20 @@ input[type="button"].is-loading::before,
 }
 
 .button-link-secondary {
-    color: var(--brand-title);
+    color: var(--color-primary);
     background:
-        var(--glass-surface),
-        var(--color-surface);
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.46), rgba(255, 255, 255, 0.12) 34%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.12) 46%, rgba(255, 255, 255, 0.04)),
+        color-mix(in srgb, var(--color-surface) 24%, transparent);
 }
 
 .button-link-secondary:hover,
 .button-link-secondary:focus {
-    color: var(--color-on-primary);
+    color: var(--color-primary);
     background:
-        var(--glass-button),
-        var(--color-primary);
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.54), rgba(255, 255, 255, 0.16) 34%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.15) 46%, rgba(255, 255, 255, 0.06)),
+        color-mix(in srgb, var(--color-surface) 30%, transparent);
 }
 
 input,
@@ -11782,5 +11798,203 @@ body.has-modal-open {
 
     .verification-code-slots {
         gap: 6px;
+    }
+}
+
+a[data-back-link]:not(.mapboxgl-ctrl-logo),
+.details-nav a.feed-thread-back-link,
+.business-header-actions a.feed-thread-back-link,
+a.mobile-context-back.feed-thread-back-link {
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    color: var(--color-primary);
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.13) 35%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0.13) 48%, rgba(255, 255, 255, 0.04)),
+        color-mix(in srgb, var(--color-surface) 26%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.56),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.14),
+        0 8px 20px color-mix(in srgb, var(--color-text) 15%, transparent);
+    backdrop-filter: blur(24px) saturate(1.6);
+    -webkit-backdrop-filter: blur(24px) saturate(1.6);
+    font-size: 0;
+    line-height: 1;
+    text-decoration: none;
+}
+
+a[data-back-link]:not(.mapboxgl-ctrl-logo)::before,
+.details-nav a.feed-thread-back-link::before,
+.business-header-actions a.feed-thread-back-link::before,
+a.mobile-context-back.feed-thread-back-link::before {
+    content: "";
+    display: block;
+    width: 18px;
+    height: 18px;
+    background: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg%20viewBox%3D%270%200%2024%2024%27%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%3E%3Cpath%20d%3D%27M15%2018L9%2012L15%206%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%273.2%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27/%3E%3C/svg%3E") center / contain no-repeat;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg%20viewBox%3D%270%200%2024%2024%27%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%3E%3Cpath%20d%3D%27M15%2018L9%2012L15%206%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%273.2%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27/%3E%3C/svg%3E") center / contain no-repeat;
+    transform: translate(-1px, 3px);
+}
+
+a[data-back-link]:not(.mapboxgl-ctrl-logo):hover,
+a[data-back-link]:not(.mapboxgl-ctrl-logo):focus,
+.details-nav a.feed-thread-back-link:hover,
+.details-nav a.feed-thread-back-link:focus,
+.business-header-actions a.feed-thread-back-link:hover,
+.business-header-actions a.feed-thread-back-link:focus,
+a.mobile-context-back.feed-thread-back-link:hover,
+a.mobile-context-back.feed-thread-back-link:focus {
+    border-color: color-mix(in srgb, var(--color-primary) 45%, rgba(255, 255, 255, 0.12));
+    color: var(--color-primary);
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.17) 35%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.16) 48%, rgba(255, 255, 255, 0.06)),
+        color-mix(in srgb, var(--color-surface) 32%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.6),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.16),
+        0 10px 22px color-mix(in srgb, var(--color-text) 17%, transparent);
+}
+
+:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo),
+:root[data-palette$="-dark"] button,
+:root[data-palette$="-dark"] input[type="submit"],
+:root[data-palette$="-dark"] input[type="button"],
+:root[data-palette$="-dark"] .button-link,
+:root[data-palette$="-dark"] .button-link-secondary {
+    border-color: rgba(255, 255, 255, 0.13);
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.055) 34%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.045) 46%, rgba(255, 255, 255, 0.015)),
+        color-mix(in srgb, var(--color-surface) 12%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.26),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.055),
+        0 7px 16px rgba(0, 0, 0, 0.26);
+}
+
+:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):hover,
+:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):focus,
+:root[data-palette$="-dark"] button:hover,
+:root[data-palette$="-dark"] button:focus,
+:root[data-palette$="-dark"] input[type="submit"]:hover,
+:root[data-palette$="-dark"] input[type="submit"]:focus,
+:root[data-palette$="-dark"] input[type="button"]:hover,
+:root[data-palette$="-dark"] input[type="button"]:focus,
+:root[data-palette$="-dark"] .button-link:hover,
+:root[data-palette$="-dark"] .button-link:focus,
+:root[data-palette$="-dark"] .button-link-secondary:hover,
+:root[data-palette$="-dark"] .button-link-secondary:focus {
+    border-color: color-mix(in srgb, var(--color-primary) 34%, rgba(255, 255, 255, 0.13));
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.075) 34%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.055) 46%, rgba(255, 255, 255, 0.02)),
+        color-mix(in srgb, var(--color-surface) 16%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.31),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.065),
+        0 8px 18px rgba(0, 0, 0, 0.3);
+}
+
+:root[data-palette$="-dark"] a[data-back-link]:not(.mapboxgl-ctrl-logo),
+:root[data-palette$="-dark"] .details-nav a.feed-thread-back-link,
+:root[data-palette$="-dark"] .business-header-actions a.feed-thread-back-link,
+:root[data-palette$="-dark"] a.mobile-context-back.feed-thread-back-link {
+    border-color: rgba(255, 255, 255, 0.12);
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.06) 35%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05) 48%, rgba(255, 255, 255, 0.015)),
+        color-mix(in srgb, var(--color-surface) 13%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.28),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.055),
+        0 7px 16px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-palette$="-dark"] a[data-back-link]:not(.mapboxgl-ctrl-logo):hover,
+:root[data-palette$="-dark"] a[data-back-link]:not(.mapboxgl-ctrl-logo):focus,
+:root[data-palette$="-dark"] .details-nav a.feed-thread-back-link:hover,
+:root[data-palette$="-dark"] .details-nav a.feed-thread-back-link:focus,
+:root[data-palette$="-dark"] .business-header-actions a.feed-thread-back-link:hover,
+:root[data-palette$="-dark"] .business-header-actions a.feed-thread-back-link:focus,
+:root[data-palette$="-dark"] a.mobile-context-back.feed-thread-back-link:hover,
+:root[data-palette$="-dark"] a.mobile-context-back.feed-thread-back-link:focus {
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.08) 35%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.06) 48%, rgba(255, 255, 255, 0.02)),
+        color-mix(in srgb, var(--color-surface) 17%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.32),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.065),
+        0 8px 18px rgba(0, 0, 0, 0.32);
+}
+
+button[data-find-checkins] {
+    border-color: var(--color-primary);
+    color: #fff;
+    background:
+        var(--glass-button),
+        var(--color-primary);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 8px 18px color-mix(in srgb, var(--color-primary) 24%, transparent);
+}
+
+button[data-find-checkins]:hover,
+button[data-find-checkins]:focus {
+    border-color: var(--color-primary-dark);
+    color: #fff;
+    background:
+        var(--glass-button),
+        var(--color-primary-dark);
+}
+
+:root[data-palette$="-dark"] button[data-find-checkins],
+:root[data-palette$="-dark"] button[data-find-checkins]:hover,
+:root[data-palette$="-dark"] button[data-find-checkins]:focus {
+    color: #000;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    :root:not([data-palette$="-dark"]) .portal-tabs a.portal-tab:not(.mapboxgl-ctrl-logo) {
+        border-color: rgba(255, 255, 255, 0.16);
+        border-bottom-color: transparent;
+        color: var(--color-primary);
+        background:
+            radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.46), rgba(255, 255, 255, 0.12) 34%, transparent 66%),
+            linear-gradient(145deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.12) 46%, rgba(255, 255, 255, 0.04)),
+            color-mix(in srgb, var(--color-surface) 24%, transparent);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.52),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.14),
+            0 8px 20px color-mix(in srgb, var(--color-text) 13%, transparent);
+    }
+
+    :root:not([data-palette$="-dark"]) .portal-tabs a.portal-tab:not(.mapboxgl-ctrl-logo):hover,
+    :root:not([data-palette$="-dark"]) .portal-tabs a.portal-tab:not(.mapboxgl-ctrl-logo):focus {
+        border-color: color-mix(in srgb, var(--color-primary) 48%, rgba(255, 255, 255, 0.16));
+        border-bottom-color: transparent;
+        color: var(--color-primary);
+        background:
+            radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.54), rgba(255, 255, 255, 0.16) 34%, transparent 66%),
+            linear-gradient(145deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.15) 46%, rgba(255, 255, 255, 0.06)),
+            color-mix(in srgb, var(--color-surface) 30%, transparent);
+    }
+
+    :root:not([data-palette$="-dark"]) .portal-tabs a.portal-tab.is-active:not(.mapboxgl-ctrl-logo),
+    :root:not([data-palette$="-dark"]) .portal-tabs a.portal-tab.is-active:not(.mapboxgl-ctrl-logo):hover,
+    :root:not([data-palette$="-dark"]) .portal-tabs a.portal-tab.is-active:not(.mapboxgl-ctrl-logo):focus {
+        border-color: var(--color-primary);
+        color: #fff;
+        background:
+            var(--glass-button),
+            var(--color-primary);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 5px 14px rgba(15, 23, 42, 0.12);
     }
 }

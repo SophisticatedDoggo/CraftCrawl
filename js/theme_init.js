@@ -186,6 +186,19 @@ function suppressCraftCrawlNativeInternalLinkCallouts(event) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    function goBackWithHrefFallback(link) {
+        const fallbackUrl = link.href;
+        const startingUrl = window.location.href;
+
+        window.history.back();
+
+        window.setTimeout(() => {
+            if (window.location.href === startingUrl) {
+                window.location.href = fallbackUrl;
+            }
+        }, 350);
+    }
+
     document.querySelectorAll('[data-back-link]').forEach((link) => {
         link.addEventListener('click', (event) => {
             const currentUrl = new URL(window.location.href);
@@ -198,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             event.preventDefault();
-            window.history.back();
+            goBackWithHrefFallback(link);
         });
     });
 

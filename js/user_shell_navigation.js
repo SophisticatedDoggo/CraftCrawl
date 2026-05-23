@@ -225,7 +225,14 @@
 
             event.preventDefault();
             event.stopPropagation();
+            const fallbackUrl = link.href;
+            const startingUrl = window.location.href;
             window.history.back();
+            window.setTimeout(() => {
+                if (window.location.href === startingUrl) {
+                    window.location.href = fallbackUrl;
+                }
+            }, 350);
             return;
         }
 
