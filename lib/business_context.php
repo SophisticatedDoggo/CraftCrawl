@@ -108,6 +108,28 @@ function craftcrawl_business_selected_location($conn, $business_account_id, $loc
 
 function craftcrawl_business_location_destination($conn, $business_account_id) {
     craftcrawl_business_clear_selected_location();
+
+    $locations = craftcrawl_business_account_locations($conn, $business_account_id);
+    if (!empty($locations)) {
+        return 'business/locations.php';
+    }
+
+    $claim_stmt = $conn->prepare("
+        SELECT id
+        FROM business_claims
+        WHERE requester_account_id=?
+          AND status IN ('pending', 'needs_more_info', 'rejected')
+        ORDER BY COALESCE(updatedAt, createdAt) DESC, createdAt DESC
+        LIMIT 1
+    ");
+    $claim_stmt->bind_param('i', $business_account_id);
+    $claim_stmt->execute();
+    $claim = $claim_stmt->get_result()->fetch_assoc();
+
+    if ($claim) {
+        return 'business_claim_status.php?claim_id=' . (int) $claim['id'];
+    }
+
     return 'business/locations.php';
 }
 
