@@ -77,11 +77,14 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let hasFocusedFriend = false;
     let hasFocusedFeedItem = false;
     const threadReturnStorageKey = 'craftcrawlFeedThreadReturnItemKey';
-    let feedThreadOverlay = null;
-    let feedThreadOverlayContent = null;
-    let feedThreadOverlayItemKey = '';
-    let feedThreadOverlayBaseUrl = '';
-    let feedThreadOverlayCloseTimer = 0;
+    const feedThreadOverlayState = window.CraftCrawlFeedThreadOverlayState || {
+        overlay: null,
+        content: null,
+        itemKey: '',
+        baseUrl: '',
+        closeTimer: 0
+    };
+    window.CraftCrawlFeedThreadOverlayState = feedThreadOverlayState;
     let feedThreadPendingReturnItemKey = '';
     let feedThreadPendingReturnUntil = 0;
 
@@ -1264,51 +1267,64 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     function ensureFeedThreadOverlay() {
-        if (feedThreadOverlay) {
-            return feedThreadOverlay;
+        if (feedThreadOverlayState.overlay && !feedThreadOverlayState.overlay.isConnected) {
+            feedThreadOverlayState.overlay = null;
+            feedThreadOverlayState.content = null;
         }
 
-        feedThreadOverlay = document.createElement('div');
-        feedThreadOverlay.className = 'feed-thread-overlay';
-        feedThreadOverlay.setAttribute('data-feed-thread-overlay', '');
-        feedThreadOverlay.hidden = true;
-        feedThreadOverlay.innerHTML = '<div class="feed-thread-overlay-scrim" data-feed-thread-overlay-close></div><div class="feed-thread-overlay-content" data-feed-thread-overlay-content></div>';
-        document.body.appendChild(feedThreadOverlay);
-        feedThreadOverlayContent = feedThreadOverlay.querySelector('[data-feed-thread-overlay-content]');
+        if (feedThreadOverlayState.overlay) {
+            return feedThreadOverlayState.overlay;
+        }
 
-        feedThreadOverlay.addEventListener('click', (event) => {
+        const existingOverlay = document.querySelector('[data-feed-thread-overlay]');
+        if (existingOverlay) {
+            feedThreadOverlayState.overlay = existingOverlay;
+            feedThreadOverlayState.content = existingOverlay.querySelector('[data-feed-thread-overlay-content]');
+            return feedThreadOverlayState.overlay;
+        }
+
+        feedThreadOverlayState.overlay = document.createElement('div');
+        feedThreadOverlayState.overlay.className = 'feed-thread-overlay';
+        feedThreadOverlayState.overlay.setAttribute('data-feed-thread-overlay', '');
+        feedThreadOverlayState.overlay.hidden = true;
+        feedThreadOverlayState.overlay.innerHTML = '<div class="feed-thread-overlay-scrim" data-feed-thread-overlay-close></div><div class="feed-thread-overlay-content" data-feed-thread-overlay-content></div>';
+        document.body.appendChild(feedThreadOverlayState.overlay);
+        feedThreadOverlayState.content = feedThreadOverlayState.overlay.querySelector('[data-feed-thread-overlay-content]');
+
+        feedThreadOverlayState.overlay.addEventListener('click', (event) => {
             if (event.target.closest('[data-feed-thread-overlay-close]')) {
                 closeFeedThreadOverlay({ useHistory: true });
             }
         });
 
-        return feedThreadOverlay;
+        return feedThreadOverlayState.overlay;
     }
 
     function setFeedThreadOverlayContent(page) {
-        ensureFeedThreadOverlay();
-        feedThreadOverlayContent.style.transform = '';
-        feedThreadOverlayContent.style.opacity = '';
+        const overlay = ensureFeedThreadOverlay();
+        const overlayContent = feedThreadOverlayState.content;
+        overlayContent.style.transform = '';
+        overlayContent.style.opacity = '';
         page.classList.add('feed-thread-page-entering');
-        feedThreadOverlayContent.replaceChildren(page);
+        overlayContent.replaceChildren(page);
         window.setTimeout(() => page.classList.remove('feed-thread-page-entering'), 420);
-        window.CraftCrawlInitFeedThread?.(feedThreadOverlay);
+        window.CraftCrawlInitFeedThread?.(overlay);
     }
 
     function resetFeedThreadOverlayMotion() {
-        if (feedThreadOverlay) {
-            feedThreadOverlay.classList.remove('is-swipe-dragging', 'is-swipe-dismissing');
+        if (feedThreadOverlayState.overlay) {
+            feedThreadOverlayState.overlay.classList.remove('is-swipe-dragging', 'is-swipe-dismissing');
         }
-        if (feedThreadOverlayContent) {
-            feedThreadOverlayContent.style.transform = '';
-            feedThreadOverlayContent.style.opacity = '';
-            feedThreadOverlayContent.classList.remove('is-swipe-scroll-locked');
-            delete feedThreadOverlayContent.dataset.feedSwipeScrollTop;
+        if (feedThreadOverlayState.content) {
+            feedThreadOverlayState.content.style.transform = '';
+            feedThreadOverlayState.content.style.opacity = '';
+            feedThreadOverlayState.content.classList.remove('is-swipe-scroll-locked');
+            delete feedThreadOverlayState.content.dataset.feedSwipeScrollTop;
         }
     }
 
     async function refreshFeedThreadOverlay(url) {
-        if (!feedThreadOverlay || feedThreadOverlay.hidden) {
+        if (!feedThreadOverlayState.overlay || feedThreadOverlayState.overlay.hidden) {
             return false;
         }
         const page = await fetchFeedThreadPage(normalizeFeedThreadUrl(url));
@@ -1316,49 +1332,72 @@ window.CraftCrawlInitFriends = function (scope = document) {
         return true;
     }
 
+    function destroyFeedThreadOverlay(options = {}) {
+        window.clearTimeout(feedThreadOverlayState.closeTimer);
+        const overlays = Array.from(document.querySelectorAll('[data-feed-thread-overlay]'));
+        overlays.forEach((overlay) => {
+            overlay.hidden = true;
+            overlay.remove();
+        });
+        feedThreadOverlayState.overlay = null;
+        feedThreadOverlayState.content = null;
+        feedThreadOverlayState.itemKey = '';
+        feedThreadOverlayState.baseUrl = '';
+        feedThreadOverlayState.closeTimer = 0;
+        document.body.classList.remove('feed-thread-overlay-open', 'feed-comment-composer-open');
+        document.documentElement.classList.remove('feed-thread-open-requested');
+        document.documentElement.style.removeProperty('--feed-compose-keyboard-offset');
+        if (!options.skipReturnAnchor) {
+            playPendingThreadReturnAnchor();
+        }
+        return overlays.length > 0;
+    }
+
     function closeFeedThreadOverlay(options = {}) {
-        if (!feedThreadOverlay || feedThreadOverlay.hidden) {
+        const overlay = feedThreadOverlayState.overlay;
+        const overlayContent = feedThreadOverlayState.content;
+        if (!overlay || overlay.hidden) {
             return false;
         }
-        if (feedThreadOverlay.classList.contains('is-closing')) {
+        if (overlay.classList.contains('is-closing')) {
             return true;
         }
 
-        const itemKey = options.returnItemKey || feedThreadOverlayItemKey;
+        const itemKey = options.returnItemKey || feedThreadOverlayState.itemKey;
         if (itemKey && !options.skipReturnAnchor) {
             clearThreadReturnItemKey();
             queueThreadReturnAnchor(itemKey);
         }
-        window.clearTimeout(feedThreadOverlayCloseTimer);
+        window.clearTimeout(feedThreadOverlayState.closeTimer);
         resetFeedThreadOverlayMotion();
-        feedThreadOverlay.classList.add('is-closing');
+        overlay.classList.add('is-closing');
         document.body.classList.remove('feed-thread-overlay-open');
 
         let closeFinished = false;
         const finishClose = (event = null) => {
-            if (event && event.target !== feedThreadOverlayContent) {
+            if (event && event.target !== overlayContent) {
                 return;
             }
             if (closeFinished) {
                 return;
             }
             closeFinished = true;
-            window.clearTimeout(feedThreadOverlayCloseTimer);
-            feedThreadOverlay.hidden = true;
-            feedThreadOverlay.classList.remove('is-open', 'is-closing', 'is-swipe-dragging', 'is-swipe-dismissing');
+            window.clearTimeout(feedThreadOverlayState.closeTimer);
+            overlay.hidden = true;
+            overlay.classList.remove('is-open', 'is-closing', 'is-swipe-dragging', 'is-swipe-dismissing');
             document.documentElement.style.removeProperty('--feed-compose-keyboard-offset');
             document.body.classList.remove('feed-comment-composer-open');
             resetFeedThreadOverlayMotion();
-            feedThreadOverlayContent?.replaceChildren();
-            feedThreadOverlayItemKey = '';
+            overlayContent?.replaceChildren();
+            feedThreadOverlayState.itemKey = '';
             playPendingThreadReturnAnchor();
         };
 
         if (options.immediate) {
             finishClose();
         } else {
-            feedThreadOverlayCloseTimer = window.setTimeout(finishClose, 140);
-            feedThreadOverlayContent?.addEventListener('animationend', finishClose, { once: true });
+            feedThreadOverlayState.closeTimer = window.setTimeout(finishClose, 140);
+            overlayContent?.addEventListener('animationend', finishClose, { once: true });
         }
 
         if (options.useHistory && history.state?.craftcrawlFeedThreadOverlay) {
@@ -1379,15 +1418,17 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
         try {
             ensureFeedThreadOverlay();
-            feedThreadOverlay.classList.remove('is-closing', 'is-swipe-dragging', 'is-swipe-dismissing');
-            feedThreadOverlayContent.style.transform = '';
-            feedThreadOverlayContent.style.opacity = '';
+            const overlay = feedThreadOverlayState.overlay;
+            const overlayContent = feedThreadOverlayState.content;
+            overlay.classList.remove('is-closing', 'is-swipe-dragging', 'is-swipe-dismissing');
+            overlayContent.style.transform = '';
+            overlayContent.style.opacity = '';
             const page = await fetchFeedThreadPage(targetUrl);
-            feedThreadOverlayItemKey = itemKey;
-            feedThreadOverlayBaseUrl = window.location.href;
+            feedThreadOverlayState.itemKey = itemKey;
+            feedThreadOverlayState.baseUrl = window.location.href;
             setFeedThreadOverlayContent(page);
-            feedThreadOverlay.hidden = false;
-            feedThreadOverlay.classList.add('is-open');
+            overlay.hidden = false;
+            overlay.classList.add('is-open');
             document.body.classList.add('feed-thread-overlay-open');
             feedItem?.classList.remove('is-opening-thread');
 
@@ -1404,16 +1445,19 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
     window.CraftCrawlOpenFeedThreadOverlay = openFeedThreadOverlay;
     window.CraftCrawlCloseFeedThreadOverlay = closeFeedThreadOverlay;
+    window.CraftCrawlDestroyFeedThreadOverlay = destroyFeedThreadOverlay;
     window.CraftCrawlRefreshFeedThreadOverlay = refreshFeedThreadOverlay;
 
     window.addEventListener('popstate', () => {
-        if (feedThreadOverlay && !feedThreadOverlay.hidden && !history.state?.craftcrawlFeedThreadOverlay) {
+        const overlay = feedThreadOverlayState.overlay;
+        if (overlay && !overlay.hidden && !history.state?.craftcrawlFeedThreadOverlay) {
             closeFeedThreadOverlay({ useHistory: false });
         }
     });
 
     window.addEventListener('pageshow', () => {
-        if (!feedThreadOverlay || feedThreadOverlay.hidden) {
+        const overlay = feedThreadOverlayState.overlay;
+        if (!overlay || overlay.hidden) {
             return;
         }
         if (!history.state?.craftcrawlFeedThreadOverlay) {

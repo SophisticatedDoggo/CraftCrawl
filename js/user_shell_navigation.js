@@ -31,10 +31,21 @@
     }
 
     function forceCloseFeedThreadOverlay() {
-        document.querySelectorAll('[data-feed-thread-overlay]').forEach((overlay) => {
-            overlay.hidden = true;
-            overlay.remove();
-        });
+        if (typeof window.CraftCrawlDestroyFeedThreadOverlay === 'function') {
+            window.CraftCrawlDestroyFeedThreadOverlay({ skipReturnAnchor: true });
+        } else {
+            document.querySelectorAll('[data-feed-thread-overlay]').forEach((overlay) => {
+                overlay.hidden = true;
+                overlay.remove();
+            });
+            if (window.CraftCrawlFeedThreadOverlayState) {
+                window.CraftCrawlFeedThreadOverlayState.overlay = null;
+                window.CraftCrawlFeedThreadOverlayState.content = null;
+                window.CraftCrawlFeedThreadOverlayState.itemKey = '';
+                window.CraftCrawlFeedThreadOverlayState.baseUrl = '';
+                window.CraftCrawlFeedThreadOverlayState.closeTimer = 0;
+            }
+        }
         document.body.classList.remove('feed-thread-overlay-open', 'feed-comment-composer-open');
         document.documentElement.classList.remove('feed-thread-open-requested');
         document.documentElement.style.removeProperty('--feed-compose-keyboard-offset');
