@@ -74,16 +74,16 @@ if ($distance_meters > CRAFTCRAWL_CHECKIN_RADIUS_METERS) {
     exit();
 }
 
-if (empty($business['checkin_verification_enabled']) && !craftcrawl_location_has_verified_hours($conn, $location_id)) {
+$location_id = (int) $business['location_id'];
+$legacy_business_id = !empty($business['legacy_business_id']) ? (int) $business['legacy_business_id'] : null;
+
+if (!craftcrawl_location_checkins_are_available($conn, $location_id, $business['checkin_verification_enabled'])) {
     echo json_encode([
         'ok' => false,
         'message' => 'Check-ins are not available for this location yet.'
     ]);
     exit();
 }
-
-$location_id = (int) $business['location_id'];
-$legacy_business_id = !empty($business['legacy_business_id']) ? (int) $business['legacy_business_id'] : null;
 
 if (!craftcrawl_location_is_open_now($conn, $location_id)) {
     echo json_encode([

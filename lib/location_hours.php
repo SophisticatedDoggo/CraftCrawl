@@ -29,6 +29,10 @@ function craftcrawl_location_has_verified_hours($conn, $location_id) {
     return (int) ($stmt->get_result()->fetch_assoc()['total'] ?? 0) > 0;
 }
 
+function craftcrawl_location_checkins_are_available($conn, $location_id, $checkin_verification_enabled = false) {
+    return !empty($checkin_verification_enabled) || craftcrawl_location_has_verified_hours($conn, $location_id);
+}
+
 function craftcrawl_save_location_hours($conn, $location_id, $hours, $source = 'business_owner') {
     $delete_stmt = $conn->prepare("DELETE FROM location_hours WHERE location_id=?");
     $delete_stmt->bind_param("i", $location_id);
