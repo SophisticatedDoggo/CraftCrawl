@@ -41,6 +41,7 @@ $business_stmt = $conn->prepare("
         l.latitude,
         l.longitude,
         l.checkin_message,
+        l.visibility_status,
         l.checkin_verification_enabled
     FROM locations l
     LEFT JOIN businesses b ON b.id = l.legacy_business_id
@@ -99,7 +100,8 @@ $visit_count_stmt->execute();
 $visit_count = (int) ($visit_count_stmt->get_result()->fetch_assoc()['total'] ?? 0);
 
 $visit_type = $visit_count > 0 ? 'repeat' : 'first_time';
-$xp_awarded = $visit_type === 'first_time' ? CRAFTCRAWL_XP_FIRST_TIME_VISIT : CRAFTCRAWL_XP_REPEAT_VISIT;
+$is_verified_business = $business['visibility_status'] === 'public_claimed';
+$xp_awarded = craftcrawl_checkin_xp_amount($visit_type, $is_verified_business);
 
 if ($visit_type === 'repeat') {
     $cooldown_stmt = $conn->prepare("SELECT checkedInAt FROM user_visits WHERE user_id=? AND location_id=? AND xp_awarded > 0 ORDER BY checkedInAt DESC LIMIT 1");
@@ -148,6 +150,7 @@ try {
         'message' => ($visit_type === 'first_time' ? 'First-time visit checked in.' : 'Repeat visit checked in.'),
         'checkin_message' => $checkin_message,
         'xp_awarded' => $reward_payload['xp_awarded'] ?? $xp_awarded,
+        'xp_items' => $reward_payload['xp_items'] ?? $xp_items,
         'action_label' => $action_label,
         'badges' => $badges,
         'quest_rewards' => array_map(fn($quest) => $quest['name'], $quest_rewards),

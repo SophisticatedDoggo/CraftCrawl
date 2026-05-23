@@ -31,7 +31,7 @@ if ($user_latitude === false || $user_longitude === false) {
 }
 
 $business_stmt = $conn->prepare("
-    SELECT id, name, location_type, city, state, latitude, longitude, checkin_verification_enabled
+    SELECT id, name, location_type, city, state, latitude, longitude, visibility_status, checkin_verification_enabled
     FROM locations
     WHERE visibility_status IN ('public_unclaimed', 'public_claimed')
       AND disabledAt IS NULL
@@ -69,7 +69,8 @@ while ($business = $businesses->fetch_assoc()) {
     $eligible = $is_open && $checkins_enabled;
     $eligible_at = null;
     $unavailable_reason = !$checkins_enabled ? 'Check-ins not available yet' : ($is_open ? null : 'Currently closed');
-    $xp_awarded = $visit_type === 'first_time' ? CRAFTCRAWL_XP_FIRST_TIME_VISIT : CRAFTCRAWL_XP_REPEAT_VISIT;
+    $is_verified_business = $business['visibility_status'] === 'public_claimed';
+    $xp_awarded = craftcrawl_checkin_xp_amount($visit_type, $is_verified_business);
 
     if ($visit_type === 'repeat' && $last_xp_checkin && strtotime($last_xp_checkin) > strtotime('-' . CRAFTCRAWL_REPEAT_VISIT_COOLDOWN_DAYS . ' days')) {
         $eligible = false;

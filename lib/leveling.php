@@ -1,19 +1,34 @@
 <?php
 
-const CRAFTCRAWL_XP_FIRST_TIME_VISIT = 100;
-const CRAFTCRAWL_XP_REPEAT_VISIT = 25;
+const CRAFTCRAWL_XP_VERIFIED_FIRST_TIME_VISIT = 100;
+const CRAFTCRAWL_XP_VERIFIED_REPEAT_VISIT = 50;
+const CRAFTCRAWL_XP_UNVERIFIED_FIRST_TIME_VISIT = 50;
+const CRAFTCRAWL_XP_UNVERIFIED_REPEAT_VISIT = 25;
 const CRAFTCRAWL_XP_REVIEW = 25;
+const CRAFTCRAWL_LEVEL_XP_BASE = 100;
 const CRAFTCRAWL_MAX_LEVEL = 100;
 const CRAFTCRAWL_REPEAT_VISIT_COOLDOWN_DAYS = 1;
 const CRAFTCRAWL_CHECKIN_RADIUS_METERS = 402;
 
 function craftcrawl_level_xp_required($level) {
     $level = max(1, min(CRAFTCRAWL_MAX_LEVEL, (int) $level));
-    return $level >= CRAFTCRAWL_MAX_LEVEL ? 0 : $level * CRAFTCRAWL_XP_FIRST_TIME_VISIT;
+    return $level >= CRAFTCRAWL_MAX_LEVEL ? 0 : $level * CRAFTCRAWL_LEVEL_XP_BASE;
 }
 
 function craftcrawl_level_sql($total_xp_expression) {
     return "(SELECT COALESCE(MAX(l.level), 1) FROM levels l WHERE l.xp_required <= {$total_xp_expression})";
+}
+
+function craftcrawl_checkin_xp_amount($visit_type, $is_verified_business) {
+    if ($visit_type === 'first_time') {
+        return $is_verified_business
+            ? CRAFTCRAWL_XP_VERIFIED_FIRST_TIME_VISIT
+            : CRAFTCRAWL_XP_UNVERIFIED_FIRST_TIME_VISIT;
+    }
+
+    return $is_verified_business
+        ? CRAFTCRAWL_XP_VERIFIED_REPEAT_VISIT
+        : CRAFTCRAWL_XP_UNVERIFIED_REPEAT_VISIT;
 }
 
 function craftcrawl_level_xp_sql($total_xp_expression) {
