@@ -146,7 +146,9 @@ $event_comment_counts = craftcrawl_business_event_comment_counts_for_items($conn
         <section class="event-calendar-panel">
             <div class="business-section-header">
                 <h2>Calendar</h2>
-                <a href="event_edit.php?month=<?php echo escape_output($calendar_month); ?>">Add Event</a>
+                <a class="event-calendar-add-link" href="event_edit.php?month=<?php echo escape_output($calendar_month); ?>" aria-label="Add Event" title="Add Event">
+                    <span aria-hidden="true">+</span>
+                </a>
             </div>
 
                 <div class="calendar-header calendar-header-compact">

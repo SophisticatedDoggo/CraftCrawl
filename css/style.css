@@ -5249,6 +5249,22 @@ a.mobile-context-back.feed-thread-back-link:focus {
     margin: 0;
 }
 
+.event-calendar-add-link {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: 999px;
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.event-calendar-add-link span {
+    display: block;
+    transform: translateY(-1px);
+}
+
 .business-preview h2,
 .business-edit-panel h2 {
     margin-top: 0;
@@ -8347,6 +8363,10 @@ a.event-calendar-event:focus .event-calendar-event-name {
 
     .business-section-header > a {
         display: none;
+    }
+
+    .business-section-header > a.event-calendar-add-link {
+        display: inline-flex;
     }
 
     .user-subpage-actions-menu {
