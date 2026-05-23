@@ -717,8 +717,8 @@ function setMapExpanded(isExpanded) {
     updateExpandedSortOptions(isExpanded);
 
     if (sortSelect) {
-        if (isExpanded && !isBusinessTypeFilter(sortSelect.value)) {
-            sortSelect.value = businessTypeFilters[0];
+        if (isExpanded && sortSelect.value !== 'all_types') {
+            sortSelect.value = 'all_types';
         } else if (!isExpanded && collapsedBusinessListSortValue) {
             sortSelect.value = collapsedBusinessListSortValue;
         }
@@ -750,8 +750,9 @@ function updateExpandedSortOptions(isExpanded) {
 
     Array.from(sortSelect.options).forEach((option) => {
         const isListOnlySort = option.value === 'map' || option.value === 'nearby' || option.value === 'name';
-        option.hidden = isExpanded && isListOnlySort;
-        option.disabled = isExpanded && isListOnlySort;
+        const isExpandedOnlySort = option.value === 'all_types';
+        option.hidden = (isExpanded && isListOnlySort) || (!isExpanded && isExpandedOnlySort);
+        option.disabled = (isExpanded && isListOnlySort) || (!isExpanded && isExpandedOnlySort);
     });
 }
 
@@ -1158,7 +1159,7 @@ function updateExpandedMapForSort() {
     }
 
     const sortSelect = document.getElementById('business-list-sort');
-    const sortValue = sortSelect && isBusinessTypeFilter(sortSelect.value) ? sortSelect.value : businessTypeFilters[0];
+    const sortValue = sortSelect ? sortSelect.value : 'all_types';
     const features = getMapRelevantBusinessFeatures();
     const orderedFeatures = sortFeaturesForExpandedMap(features, sortValue);
 
@@ -1191,6 +1192,14 @@ function getSortedBusinessFeatures(sortValue) {
 }
 
 function sortFeaturesForExpandedMap(features, sortValue) {
+    if (sortValue === 'all_types') {
+        const reference = getMapCenterReference();
+
+        return [...features].sort((a, b) => {
+            return distanceFromFeatureToReference(a, reference) - distanceFromFeatureToReference(b, reference);
+        });
+    }
+
     if (isBusinessTypeFilter(sortValue)) {
         return [...features]
             .filter((feature) => feature.properties.businessType === sortValue)

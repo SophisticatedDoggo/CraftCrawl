@@ -77,6 +77,7 @@ if (!function_exists('craftcrawl_render_portal_quest_card')) {
                         <option value="map">Map area</option>
                         <option value="nearby">Near me</option>
                         <option value="name">Name</option>
+                        <option value="all_types" hidden disabled>All types</option>
                         <option value="brewery">Breweries</option>
                         <option value="winery">Wineries</option>
                         <option value="cidery">Cideries</option>
