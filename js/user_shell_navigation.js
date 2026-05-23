@@ -226,6 +226,35 @@
         // receive the one-time listener registered by theme_init.js on page load.
         // Preserve the shared back-link contract here before normal shell routing
         // treats the fallback href as a fresh navigation.
+        const feedThreadPage = link.closest('.feed-thread-page');
+        if (link.hasAttribute('data-back-link') && feedThreadPage) {
+            const overlay = link.closest('[data-feed-thread-overlay]');
+            const itemKey = feedThreadPage.dataset.feedThreadItemKey || '';
+
+            if (overlay && typeof window.CraftCrawlCloseFeedThreadOverlay === 'function') {
+                event.preventDefault();
+                event.stopPropagation();
+                window.CraftCrawlCloseFeedThreadOverlay({
+                    useHistory: true,
+                    returnItemKey: itemKey
+                });
+                return;
+            }
+
+            if (itemKey.startsWith('event:')) {
+                event.preventDefault();
+                event.stopPropagation();
+                const fallbackUrl = link.href;
+                if (typeof window.CraftCrawlSwitchUserTab === 'function'
+                    && window.CraftCrawlSwitchUserTab(fallbackUrl, { userInitiated: true })) {
+                    history.replaceState({ craftcrawlUserShell: true }, '', fallbackUrl);
+                    return;
+                }
+                navigate(fallbackUrl, { userInitiated: true, replace: true });
+                return;
+            }
+        }
+
         if (link.hasAttribute('data-back-link') && window.history.length > 1) {
             if (link.closest('[data-event-detail-overlay]') && typeof window.CraftCrawlDismissEventDetailOverlay === 'function') {
                 event.preventDefault();
