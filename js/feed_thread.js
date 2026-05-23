@@ -123,6 +123,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         });
 
         function dismissThread() {
+            const fallbackHref = threadPage.querySelector('[data-back-link]')?.href || 'feed.php';
             if (overlay && typeof window.CraftCrawlCloseFeedThreadOverlay === 'function') {
                 overlay.classList.add('is-swipe-dismissing');
                 window.setTimeout(() => {
@@ -138,7 +139,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
                 if (window.history.length > 1) {
                     window.history.back();
                 } else {
-                    window.location.href = 'feed.php';
+                    window.location.href = fallbackHref;
                 }
             }, 35);
         }

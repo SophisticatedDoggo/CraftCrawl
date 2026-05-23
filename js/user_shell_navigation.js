@@ -58,8 +58,18 @@
     }
 
     function setActiveTab(url) {
-        const file = currentFile(url);
-        const active = file === 'portal.php' ? 'map' : file === 'events.php' ? 'events' : file === 'feed.php' ? 'feed' : file === 'quests.php' ? 'quests' : '';
+        const nextUrl = new URL(url, window.location.href);
+        const file = currentFile(nextUrl.href);
+        const threadItem = file === 'feed_post.php' ? nextUrl.searchParams.get('item') || '' : '';
+        const active = file === 'portal.php'
+            ? 'map'
+            : file === 'events.php' || threadItem.startsWith('event:')
+                ? 'events'
+                : file === 'feed.php' || file === 'feed_post.php'
+                    ? 'feed'
+                    : file === 'quests.php'
+                        ? 'quests'
+                        : '';
         document.querySelectorAll('.mobile-app-tabbar .mobile-app-tab').forEach((tab) => {
             if (!(tab instanceof HTMLAnchorElement)) return;
             const fileName = currentFile(tab.href);

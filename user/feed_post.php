@@ -322,10 +322,15 @@ if ($item_key === '') {
 }
 
 $feed_item = craftcrawl_feed_item_by_key($conn, $user_id, $item_key);
+$feed_thread_back_href = 'feed.php';
 
 if (!$feed_item) {
     http_response_code(404);
 } else {
+    if (($feed_item['type'] ?? '') === 'event') {
+        $craftcrawl_portal_active = 'events';
+        $feed_thread_back_href = 'events.php';
+    }
     craftcrawl_mark_feed_comment_notifications_seen($conn, $user_id, $item_key);
 }
 
@@ -469,11 +474,11 @@ if ($feed_item) {
     <main class="settings-page feed-thread-page" data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>" data-feed-thread-item-key="<?php echo escape_output($item_key); ?>">
         <header class="settings-header">
             <div class="business-header-actions user-subpage-header-actions">
-                <a class="feed-thread-back-link" href="feed.php" data-back-link>&lt;</a>
+                <a class="feed-thread-back-link" href="<?php echo escape_output($feed_thread_back_href); ?>" data-back-link>&lt;</a>
                 <a href="friends.php">Friends</a>
                 <a href="profile.php">Profile</a>
             </div>
-            <a class="mobile-context-back feed-thread-back-link" href="feed.php" data-back-link>&lt;</a>
+            <a class="mobile-context-back feed-thread-back-link" href="<?php echo escape_output($feed_thread_back_href); ?>" data-back-link>&lt;</a>
         </header>
 
         <?php if (!$feed_item) : ?>
