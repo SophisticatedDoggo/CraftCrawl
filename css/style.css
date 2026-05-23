@@ -2256,6 +2256,26 @@ a.text-link:focus {
     align-self: start;
 }
 
+.friends-feed-item > .feed-avatar-link,
+.feed-comment > .feed-avatar-link {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    color: inherit;
+    background: transparent;
+    box-shadow: none;
+}
+
+.friends-feed-item > .feed-avatar-link:hover,
+.friends-feed-item > .feed-avatar-link:focus,
+.feed-comment > .feed-avatar-link:hover,
+.feed-comment > .feed-avatar-link:focus {
+    border-color: transparent;
+    color: inherit;
+    background: transparent;
+    box-shadow: none;
+}
+
 .profile-photo-preview {
     --avatar-size: 112px;
 }
@@ -4039,6 +4059,11 @@ body.event-detail-overlay-open {
 .feed-thread-overlay[hidden],
 .event-detail-overlay[hidden] {
     display: none;
+}
+
+.feed-thread-overlay.is-closing,
+.feed-thread-overlay.is-swipe-dismissing {
+    pointer-events: none;
 }
 
 .feed-thread-overlay-scrim,
