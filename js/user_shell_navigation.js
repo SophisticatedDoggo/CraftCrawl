@@ -216,6 +216,13 @@
         // Preserve the shared back-link contract here before normal shell routing
         // treats the fallback href as a fresh navigation.
         if (link.hasAttribute('data-back-link') && window.history.length > 1) {
+            if (link.closest('[data-event-detail-overlay]') && typeof window.CraftCrawlCloseEventDetailOverlay === 'function') {
+                event.preventDefault();
+                event.stopPropagation();
+                window.CraftCrawlCloseEventDetailOverlay({ useHistory: true });
+                return;
+            }
+
             event.preventDefault();
             event.stopPropagation();
             window.history.back();

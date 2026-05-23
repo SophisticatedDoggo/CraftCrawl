@@ -425,6 +425,172 @@ window.CraftCrawlInitEventDetail = function (root = document) {
     }
     detailPage.dataset.eventDetailReady = 'true';
 
+    function ensureEventCoverLightbox() {
+        let lightbox = document.getElementById('event-cover-lightbox');
+
+        if (lightbox) {
+            return lightbox;
+        }
+
+        lightbox = document.createElement('div');
+        lightbox.className = 'event-cover-lightbox';
+        lightbox.id = 'event-cover-lightbox';
+        lightbox.hidden = true;
+        lightbox.innerHTML = `
+            <div class="event-cover-lightbox-backdrop" data-event-cover-close></div>
+            <div class="event-cover-lightbox-stage" data-event-cover-stage>
+                <img class="event-cover-lightbox-image" alt="">
+            </div>
+            <div class="event-cover-lightbox-controls">
+                <button type="button" data-event-cover-zoom-out aria-label="Zoom out">-</button>
+                <button type="button" data-event-cover-zoom-in aria-label="Zoom in">+</button>
+                <button type="button" data-event-cover-reset aria-label="Reset zoom">1x</button>
+            </div>
+            <button type="button" class="event-cover-lightbox-close" data-event-cover-close aria-label="Close photo viewer">&times;</button>
+        `;
+        document.body.appendChild(lightbox);
+        return lightbox;
+    }
+
+    function openEventCoverLightbox(url, alt = '') {
+        const lightbox = ensureEventCoverLightbox();
+        const stage = lightbox.querySelector('[data-event-cover-stage]');
+        const image = lightbox.querySelector('.event-cover-lightbox-image');
+        const pointers = new Map();
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let dragStart = null;
+        let pinchStart = null;
+
+        function applyTransform() {
+            image.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`;
+            lightbox.classList.toggle('is-zoomed', scale > 1.01);
+        }
+
+        function clampPan() {
+            if (scale <= 1.01) {
+                translateX = 0;
+                translateY = 0;
+                return;
+            }
+
+            const bounds = stage.getBoundingClientRect();
+            const maxX = bounds.width * (scale - 1) / 2;
+            const maxY = bounds.height * (scale - 1) / 2;
+            translateX = Math.max(-maxX, Math.min(maxX, translateX));
+            translateY = Math.max(-maxY, Math.min(maxY, translateY));
+        }
+
+        function setScale(nextScale) {
+            scale = Math.max(1, Math.min(4, nextScale));
+            clampPan();
+            applyTransform();
+        }
+
+        function reset() {
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            applyTransform();
+        }
+
+        function close() {
+            lightbox.hidden = true;
+            image.removeAttribute('src');
+            image.style.transform = '';
+            document.body.classList.remove('lightbox-open');
+            lightbox._craftcrawlEventCoverAbort?.abort();
+        }
+
+        lightbox._craftcrawlEventCoverAbort?.abort();
+        const abort = new AbortController();
+        lightbox._craftcrawlEventCoverAbort = abort;
+
+        image.src = url;
+        image.alt = alt;
+        reset();
+        lightbox.hidden = false;
+        document.body.classList.add('lightbox-open');
+
+        lightbox.querySelectorAll('[data-event-cover-close]').forEach((control) => {
+            control.addEventListener('click', close, { signal: abort.signal });
+        });
+        lightbox.querySelector('[data-event-cover-zoom-in]')?.addEventListener('click', () => setScale(scale + 0.5), { signal: abort.signal });
+        lightbox.querySelector('[data-event-cover-zoom-out]')?.addEventListener('click', () => setScale(scale - 0.5), { signal: abort.signal });
+        lightbox.querySelector('[data-event-cover-reset]')?.addEventListener('click', reset, { signal: abort.signal });
+        lightbox.addEventListener('wheel', (event) => {
+            event.preventDefault();
+            setScale(scale + (event.deltaY < 0 ? 0.2 : -0.2));
+        }, { passive: false, signal: abort.signal });
+        lightbox.addEventListener('dblclick', (event) => {
+            event.preventDefault();
+            setScale(scale > 1.01 ? 1 : 2);
+        }, { signal: abort.signal });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !lightbox.hidden) {
+                close();
+            }
+        }, { signal: abort.signal });
+
+        stage.addEventListener('pointerdown', (event) => {
+            pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+            stage.setPointerCapture?.(event.pointerId);
+
+            if (pointers.size === 1 && scale > 1.01) {
+                dragStart = { x: event.clientX, y: event.clientY, translateX, translateY };
+            }
+
+            if (pointers.size === 2) {
+                const values = Array.from(pointers.values());
+                pinchStart = {
+                    distance: Math.hypot(values[1].x - values[0].x, values[1].y - values[0].y),
+                    scale
+                };
+                dragStart = null;
+            }
+        }, { signal: abort.signal });
+
+        stage.addEventListener('pointermove', (event) => {
+            if (!pointers.has(event.pointerId)) {
+                return;
+            }
+
+            pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+            if (pointers.size === 2 && pinchStart) {
+                event.preventDefault();
+                const values = Array.from(pointers.values());
+                const distance = Math.hypot(values[1].x - values[0].x, values[1].y - values[0].y);
+                setScale(pinchStart.scale * (distance / Math.max(1, pinchStart.distance)));
+                return;
+            }
+
+            if (dragStart && scale > 1.01) {
+                event.preventDefault();
+                translateX = dragStart.translateX + event.clientX - dragStart.x;
+                translateY = dragStart.translateY + event.clientY - dragStart.y;
+                clampPan();
+                applyTransform();
+            }
+        }, { signal: abort.signal });
+
+        function endPointer(event) {
+            pointers.delete(event.pointerId);
+            dragStart = null;
+            pinchStart = null;
+        }
+
+        stage.addEventListener('pointerup', endPointer, { signal: abort.signal });
+        stage.addEventListener('pointercancel', endPointer, { signal: abort.signal });
+    }
+
+    detailPage.querySelectorAll('[data-event-cover-lightbox]').forEach((button) => {
+        button.addEventListener('click', () => {
+            openEventCoverLightbox(button.dataset.eventCoverUrl, button.querySelector('img')?.alt || '');
+        });
+    });
+
     detailPage.querySelectorAll('[data-event-detail-want]').forEach((form) => {
         form.addEventListener('submit', (event) => {
             event.preventDefault();
@@ -489,10 +655,13 @@ window.CraftCrawlInitEventDetail = function (root = document) {
         if (link.dataset.eventDetailBackReady === 'true') return;
         link.dataset.eventDetailBackReady = 'true';
         link.addEventListener('click', (event) => {
+            event.preventDefault();
             if (overlay && typeof window.CraftCrawlCloseEventDetailOverlay === 'function') {
-                event.preventDefault();
                 window.CraftCrawlCloseEventDetailOverlay({ useHistory: true });
+                return;
             }
+
+            window.location.href = link.href;
         }, { capture: true });
     });
 

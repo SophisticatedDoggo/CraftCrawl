@@ -124,8 +124,11 @@ if (isset($_SESSION['user_id'])) {
 
         <article class="event-detail-card">
             <?php if (!empty($event['cover_photo_key'])) : ?>
-                <?php $cover_url = craftcrawl_cloudinary_delivery_url($event['cover_photo_key'], 'f_auto,q_auto,c_fill,w_1200,h_560'); ?>
-                <img class="event-detail-cover" src="<?php echo escape_output($cover_url); ?>" alt="<?php echo escape_output($event['eName']); ?> cover photo">
+                <?php $cover_url = craftcrawl_cloudinary_delivery_url($event['cover_photo_key'], 'f_auto,q_auto,c_pad,w_1200,h_600,b_black'); ?>
+                <?php $cover_full_url = craftcrawl_cloudinary_delivery_url($event['cover_photo_key'], 'f_auto,q_auto,c_limit,w_2200'); ?>
+                <button type="button" class="event-detail-cover-button" data-event-cover-lightbox data-event-cover-url="<?php echo escape_output($cover_full_url); ?>" aria-label="Open event photo">
+                    <img class="event-detail-cover" src="<?php echo escape_output($cover_url); ?>" alt="<?php echo escape_output($event['eName']); ?> cover photo">
+                </button>
             <?php endif; ?>
 
             <p class="business-preview-type"><?php echo escape_output(format_business_type($event['bType'])); ?></p>

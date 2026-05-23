@@ -25,7 +25,7 @@ function add_event_occurrence(&$events, $event, $date) {
         'date' => $date,
         'startTime' => $event['startTime'],
         'endTime' => $event['endTime'],
-        'coverPhotoUrl' => !empty($event['cover_photo_key']) ? craftcrawl_cloudinary_delivery_url($event['cover_photo_key'], 'f_auto,q_auto,c_fill,w_520,h_300') : null,
+        'coverPhotoUrl' => !empty($event['cover_photo_key']) ? craftcrawl_cloudinary_delivery_url($event['cover_photo_key'], 'f_auto,q_auto,c_pad,w_600,h_300,b_black') : null,
         'itemKey' => 'event:' . $event['id'] . ':' . $date,
         'commentCount' => 0,
         'wantToGoCount' => 0,

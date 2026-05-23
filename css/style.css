@@ -4861,11 +4861,10 @@ a.mobile-context-back.feed-thread-back-link:focus {
 .event-feed-cover {
     align-self: center;
     width: 100%;
-    height: 124px;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 2 / 1;
     border-radius: var(--radius-sm);
-    object-fit: cover;
-    background: var(--color-surface-muted);
+    object-fit: contain;
+    background: #000;
     box-shadow: var(--shadow-sm);
 }
 
@@ -5468,8 +5467,6 @@ a.mobile-context-back.feed-thread-back-link:focus {
     font-size: 0.875rem;
     font-weight: 700;
     text-transform: uppercase;
-    -webkit-text-stroke: 0.5px #000;
-    paint-order: stroke fill;
 }
 
 .analytics-hero {
@@ -7015,14 +7012,114 @@ body.lightbox-open {
     margin-top: 24px;
 }
 
+.event-detail-cover-button {
+    display: block;
+    width: 100%;
+    margin: 0 0 20px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: #000;
+    box-shadow: var(--shadow-sm);
+    cursor: zoom-in;
+}
+
+.event-detail-cover-button:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 3px;
+}
+
 .event-detail-cover {
     display: block;
     width: 100%;
-    aspect-ratio: 15 / 7;
-    margin-bottom: 20px;
+    aspect-ratio: 2 / 1;
     border-radius: var(--radius-md);
-    object-fit: cover;
-    background: var(--color-surface-muted);
+    object-fit: contain;
+    background: #000;
+}
+
+.event-cover-lightbox[hidden] {
+    display: none;
+}
+
+.event-cover-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 1400;
+    display: grid;
+    place-items: center;
+    padding: max(56px, env(safe-area-inset-top)) 18px max(42px, env(safe-area-inset-bottom));
+    background: rgba(0, 0, 0, 0.92);
+}
+
+.event-cover-lightbox-backdrop {
+    position: absolute;
+    inset: 0;
+}
+
+.event-cover-lightbox-stage {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    touch-action: none;
+}
+
+.event-cover-lightbox-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transform-origin: center center;
+    transition: transform 120ms ease;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.event-cover-lightbox.is-zoomed .event-cover-lightbox-image {
+    cursor: grab;
+}
+
+.event-cover-lightbox-close,
+.event-cover-lightbox-controls {
+    position: fixed;
+    z-index: 2;
+}
+
+.event-cover-lightbox-close {
+    top: max(16px, env(safe-area-inset-top));
+    right: 16px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    color: #fff;
+    background: rgba(17, 24, 39, 0.78);
+    box-shadow: none;
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.event-cover-lightbox-controls {
+    bottom: max(18px, env(safe-area-inset-bottom));
+    left: 50%;
+    display: flex;
+    gap: 8px;
+    transform: translateX(-50%);
+}
+
+.event-cover-lightbox-controls button {
+    min-width: 44px;
+    min-height: 40px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    color: #fff;
+    background: rgba(17, 24, 39, 0.78);
+    box-shadow: none;
 }
 
 .event-detail-card h1 {
@@ -8340,7 +8437,6 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .event-feed-item-with-cover .event-feed-cover {
         grid-column: 1;
         grid-row: 1;
-        height: 124px;
     }
 
     .event-feed-item-with-cover .event-feed-details,
@@ -8388,7 +8484,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .event-detail-cover {
-        aspect-ratio: 16 / 9;
+        aspect-ratio: 2 / 1;
     }
 
     .event-calendar {
@@ -9205,7 +9301,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .event-feed-cover {
-        aspect-ratio: 16 / 9;
+        aspect-ratio: 2 / 1;
     }
 
     .review-photo-lightbox {
