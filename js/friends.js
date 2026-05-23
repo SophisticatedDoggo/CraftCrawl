@@ -369,12 +369,22 @@ window.CraftCrawlInitFriends = function (scope = document) {
         const classes = `user-avatar user-avatar-medium feed-avatar ${frame ? `has-frame-${frame} has-frame-style-${frameStyle}` : ''}`;
         const name = data.name || fallbackName || 'A friend';
         const initials = data.initials || String(name).split(/\s+/).slice(0, 2).map((part) => part.charAt(0)).join('').toUpperCase() || 'CC';
+        const userId = Number.parseInt(data.id, 10);
+        const profileUrl = userId > 0 ? `profile.php?id=${encodeURIComponent(userId)}` : '';
+        const label = name === 'You' ? 'View your profile' : `View ${name}'s profile`;
+        let avatar = '';
 
         if (data.avatar_url) {
-            return `<span class="${classes}"><img src="${escapeHtml(data.avatar_url)}" alt="${escapeHtml(name)} profile photo" loading="lazy"></span>`;
+            avatar = `<span class="${classes}"><img src="${escapeHtml(data.avatar_url)}" alt="${escapeHtml(name)} profile photo" loading="lazy"></span>`;
+        } else {
+            avatar = `<span class="${classes}" aria-label="${escapeHtml(name)} profile photo"><span>${escapeHtml(initials)}</span></span>`;
         }
 
-        return `<span class="${classes}" aria-label="${escapeHtml(name)} profile photo"><span>${escapeHtml(initials)}</span></span>`;
+        if (!profileUrl) {
+            return avatar;
+        }
+
+        return `<a class="user-avatar-link feed-avatar-link" href="${profileUrl}" aria-label="${escapeHtml(label)}">${avatar}</a>`;
     }
 
     function feedItemAttrs(item) {

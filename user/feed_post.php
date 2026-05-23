@@ -31,6 +31,21 @@ function feed_thread_attrs($item) {
     return 'data-feed-item-type="' . escape_output($item['type'] ?? '') . '" data-feed-is-self="' . (!empty($item['is_self']) ? 'true' : 'false') . '"';
 }
 
+function feed_thread_profile_avatar_link($profile_user_id, $avatar_html, $profile_label) {
+    $profile_user_id = (int) $profile_user_id;
+
+    if ($profile_user_id <= 0 || $avatar_html === '') {
+        return $avatar_html;
+    }
+
+    $profile_label = trim((string) $profile_label);
+    $label = $profile_label === 'You'
+        ? 'View your profile'
+        : 'View ' . ($profile_label !== '' ? $profile_label . "'s" : "this person's") . ' profile';
+
+    return '<a class="user-avatar-link feed-avatar-link" href="profile.php?id=' . escape_output($profile_user_id) . '" aria-label="' . escape_output($label) . '">' . $avatar_html . '</a>';
+}
+
 function feed_thread_reaction_options($item) {
     $options_by_type = [
         'first_visit' => ['cheers', 'nice_find'],
@@ -161,6 +176,7 @@ function render_feed_thread_post($item, $actions_html = '') {
             'selected_profile_frame_style' => $item['actor']['frame_style'] ?? null
         ], 'medium', 'feed-avatar')
         : '';
+    $avatar = feed_thread_profile_avatar_link((int) ($item['actor']['id'] ?? 0), $avatar, $actor_name);
 
     if (($item['type'] ?? '') === 'level_up') {
         return '
@@ -486,7 +502,7 @@ if ($feed_item) {
                         ?>
                         <article class="feed-comment" id="comment-<?php echo escape_output($comment['id']); ?>">
                             <?php if (empty($comment['business_id'])) : ?>
-                                <?php echo craftcrawl_render_user_avatar($comment, 'small'); ?>
+                                <?php echo feed_thread_profile_avatar_link((int) $comment['user_id'], craftcrawl_render_user_avatar($comment, 'small'), $commenter_name); ?>
                             <?php else : ?>
                                 <span class="user-avatar user-avatar-small"><span>BO</span></span>
                             <?php endif; ?>
@@ -518,7 +534,7 @@ if ($feed_item) {
                                         ?>
                                         <article class="feed-comment feed-reply" id="comment-<?php echo escape_output($reply['id']); ?>">
                                             <?php if (empty($reply['business_id'])) : ?>
-                                                <?php echo craftcrawl_render_user_avatar($reply, 'small'); ?>
+                                                <?php echo feed_thread_profile_avatar_link((int) $reply['user_id'], craftcrawl_render_user_avatar($reply, 'small'), $replyer_name); ?>
                                             <?php else : ?>
                                                 <span class="user-avatar user-avatar-small"><span>BO</span></span>
                                             <?php endif; ?>
