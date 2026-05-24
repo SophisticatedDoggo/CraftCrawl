@@ -8606,7 +8606,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
         position: fixed;
         right: 10px;
         bottom: calc(92px + env(safe-area-inset-bottom));
-        z-index: 30;
+        z-index: 1210;
         display: none;
         min-width: 176px;
         padding: 10px;
@@ -12179,6 +12179,15 @@ button.mobile-app-tab.is-active,
 
 :root[data-palette$="-dark"] .business-list-radius-toggle input:checked + label {
     color: #000;
+}
+
+:root[data-palette$="-dark"] .feed-compose-fab,
+:root[data-palette$="-dark"] .feed-compose-fab:hover,
+:root[data-palette$="-dark"] .feed-compose-fab:focus {
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--color-primary) 36%, transparent);
 }
 
 :root[data-palette$="-dark"] .map-location-control,
