@@ -734,6 +734,7 @@ function setMapExpanded(isExpanded) {
 
     window.setTimeout(() => {
         map?.resize();
+        updateBusinessListRadiusThumb({ animate: false });
     }, 0);
 }
 
@@ -1074,6 +1075,12 @@ function focusBusinessOnMap(businessId) {
 function setupBusinessListSort() {
     const sortSelect = document.getElementById('business-list-sort');
     const radiusInputs = document.querySelectorAll('input[name="business-list-radius"]');
+    updateBusinessListRadiusThumb({ animate: false });
+
+    if (!window.CraftCrawlRadiusThumbResizeReady) {
+        window.CraftCrawlRadiusThumbResizeReady = true;
+        window.addEventListener('resize', () => updateBusinessListRadiusThumb({ animate: false }));
+    }
 
     if (sortSelect && sortSelect.dataset.ready !== 'true') {
         sortSelect.dataset.ready = 'true';
@@ -1099,6 +1106,8 @@ function setupBusinessListSort() {
 
         radiusInput.dataset.ready = 'true';
         radiusInput.addEventListener('change', () => {
+            updateBusinessListRadiusThumb();
+
             if (isMapExpanded()) {
                 updateExpandedMapForSort();
                 return;
@@ -1107,6 +1116,47 @@ function setupBusinessListSort() {
             updateLocationAwareBusinessList();
         });
     });
+}
+
+function updateBusinessListRadiusThumb(options = {}) {
+    const shouldAnimate = options.animate !== false;
+    const toggle = document.querySelector('.business-list-radius-toggle');
+    const checkedInput = toggle?.querySelector('input[name="business-list-radius"]:checked');
+    const checkedLabel = checkedInput ? checkedInput.nextElementSibling : null;
+
+    if (!toggle || !(checkedLabel instanceof HTMLLabelElement)) {
+        if (toggle) {
+            toggle.style.setProperty('--radius-toggle-thumb-opacity', '0');
+            toggle.classList.remove('is-radius-thumb-ready');
+        }
+        return;
+    }
+
+    const toggleRect = toggle.getBoundingClientRect();
+    const labelRect = checkedLabel.getBoundingClientRect();
+
+    if (!toggleRect.width || !labelRect.width) {
+        window.requestAnimationFrame(() => updateBusinessListRadiusThumb(options));
+        return;
+    }
+
+    if (!shouldAnimate) {
+        toggle.classList.remove('is-radius-thumb-ready');
+    }
+
+    toggle.style.setProperty('--radius-toggle-thumb-left', `${labelRect.left - toggleRect.left}px`);
+    toggle.style.setProperty('--radius-toggle-thumb-top', `${labelRect.top - toggleRect.top}px`);
+    toggle.style.setProperty('--radius-toggle-thumb-width', `${labelRect.width}px`);
+    toggle.style.setProperty('--radius-toggle-thumb-height', `${labelRect.height}px`);
+    toggle.style.setProperty('--radius-toggle-thumb-opacity', '1');
+
+    if (shouldAnimate) {
+        toggle.classList.add('is-radius-thumb-ready');
+    } else {
+        window.requestAnimationFrame(() => {
+            toggle.classList.add('is-radius-thumb-ready');
+        });
+    }
 }
 
 function updateBusinessListForCurrentMapArea(useMapCenter = false) {
