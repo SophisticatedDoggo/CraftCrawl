@@ -4235,12 +4235,8 @@ body.event-detail-overlay-open {
     width: clamp(128px, 36vw, 208px);
     padding-left: env(safe-area-inset-left);
     background: transparent;
-    pointer-events: auto;
-    touch-action: none;
-}
-
-.feed-thread-edge-swipe {
     pointer-events: none;
+    touch-action: none;
 }
 
 .feed-thread-overlay.is-swipe-dragging .feed-thread-overlay-scrim,
