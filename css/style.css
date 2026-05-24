@@ -415,7 +415,7 @@ h2 {
     font-size: clamp(1.35rem, 3vw, 2rem);
 }
 
-a:not(.mapboxgl-ctrl-logo):not(.text-link) {
+a:not(.mapboxgl-ctrl-logo) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -440,8 +440,8 @@ a:not(.mapboxgl-ctrl-logo):not(.text-link) {
     text-decoration: none;
 }
 
-a:not(.mapboxgl-ctrl-logo):not(.text-link):hover,
-a:not(.mapboxgl-ctrl-logo):not(.text-link):focus {
+a:not(.mapboxgl-ctrl-logo):hover,
+a:not(.mapboxgl-ctrl-logo):focus {
     border-color: color-mix(in srgb, var(--color-primary) 48%, rgba(255, 255, 255, 0.16));
     color: var(--color-primary);
     background:
@@ -1095,6 +1095,18 @@ a.mobile-context-back {
     max-width: 400px;
     min-height: 40px;
     transition: opacity 160ms ease;
+}
+
+.social-auth-provider[data-google-signin] {
+    border-radius: 4px;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.social-auth-provider[data-google-signin] iframe,
+.social-auth-provider[data-google-signin] > div {
+    background: #ffffff !important;
+    color-scheme: light;
 }
 
 .social-auth-provider-apple {
@@ -12184,7 +12196,7 @@ a.mobile-context-back.feed-thread-back-link:focus {
         0 10px 22px color-mix(in srgb, var(--color-text) 17%, transparent);
 }
 
-:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):not(.text-link),
+:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo),
 :root[data-palette$="-dark"] button,
 :root[data-palette$="-dark"] input[type="submit"],
 :root[data-palette$="-dark"] input[type="button"],
@@ -12201,8 +12213,8 @@ a.mobile-context-back.feed-thread-back-link:focus {
         0 7px 16px rgba(0, 0, 0, 0.26);
 }
 
-:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):not(.text-link):hover,
-:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):not(.text-link):focus,
+:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):hover,
+:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):focus,
 :root[data-palette$="-dark"] button:hover,
 :root[data-palette$="-dark"] button:focus,
 :root[data-palette$="-dark"] input[type="submit"]:hover,
@@ -12460,6 +12472,51 @@ button.mobile-app-tab.is-active,
 
 :root[data-palette$="-dark"] .business-list-radius-toggle input:checked + label {
     color: #000;
+}
+
+a.text-link,
+a.text-link:hover,
+a.text-link:focus,
+:root[data-palette$="-dark"] a.text-link,
+:root[data-palette$="-dark"] a.text-link:hover,
+:root[data-palette$="-dark"] a.text-link:focus {
+    display: inline;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    color: var(--color-primary);
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    font-weight: 700;
+    line-height: inherit;
+    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+a.text-link:hover,
+a.text-link:focus,
+:root[data-palette$="-dark"] a.text-link:hover,
+:root[data-palette$="-dark"] a.text-link:focus {
+    color: var(--color-primary-dark);
+}
+
+:root[data-palette$="-dark"] .social-auth-provider[data-google-signin],
+:root[data-palette$="-dark"] .social-auth-provider[data-google-signin] iframe,
+:root[data-palette$="-dark"] .social-auth-provider[data-google-signin] > div,
+:root[data-palette$="-dark"] .social-auth-native-fallback,
+:root[data-palette$="-dark"] .social-auth-native-fallback:hover,
+:root[data-palette$="-dark"] .social-auth-native-fallback:focus {
+    border-color: #dadce0;
+    color: #3c4043;
+    background: #ffffff !important;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    color-scheme: light;
 }
 
 :root[data-palette$="-dark"] .feed-compose-fab,
