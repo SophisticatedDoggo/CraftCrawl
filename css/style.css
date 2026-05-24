@@ -415,7 +415,7 @@ h2 {
     font-size: clamp(1.35rem, 3vw, 2rem);
 }
 
-a:not(.mapboxgl-ctrl-logo) {
+a:not(.mapboxgl-ctrl-logo):not(.text-link) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -440,8 +440,8 @@ a:not(.mapboxgl-ctrl-logo) {
     text-decoration: none;
 }
 
-a:not(.mapboxgl-ctrl-logo):hover,
-a:not(.mapboxgl-ctrl-logo):focus {
+a:not(.mapboxgl-ctrl-logo):not(.text-link):hover,
+a:not(.mapboxgl-ctrl-logo):not(.text-link):focus {
     border-color: color-mix(in srgb, var(--color-primary) 48%, rgba(255, 255, 255, 0.16));
     color: var(--color-primary);
     background:
@@ -12184,7 +12184,7 @@ a.mobile-context-back.feed-thread-back-link:focus {
         0 10px 22px color-mix(in srgb, var(--color-text) 17%, transparent);
 }
 
-:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo),
+:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):not(.text-link),
 :root[data-palette$="-dark"] button,
 :root[data-palette$="-dark"] input[type="submit"],
 :root[data-palette$="-dark"] input[type="button"],
@@ -12201,8 +12201,8 @@ a.mobile-context-back.feed-thread-back-link:focus {
         0 7px 16px rgba(0, 0, 0, 0.26);
 }
 
-:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):hover,
-:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):focus,
+:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):not(.text-link):hover,
+:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):not(.text-link):focus,
 :root[data-palette$="-dark"] button:hover,
 :root[data-palette$="-dark"] button:focus,
 :root[data-palette$="-dark"] input[type="submit"]:hover,
