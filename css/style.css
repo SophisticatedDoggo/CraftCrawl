@@ -12525,9 +12525,15 @@ button.mobile-app-tab.is-active,
 a.text-link,
 a.text-link:hover,
 a.text-link:focus,
+a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo),
+a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):hover,
+a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
 :root[data-palette$="-dark"] a.text-link,
 :root[data-palette$="-dark"] a.text-link:hover,
-:root[data-palette$="-dark"] a.text-link:focus {
+:root[data-palette$="-dark"] a.text-link:focus,
+:root[data-palette$="-dark"] a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo),
+:root[data-palette$="-dark"] a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):hover,
+:root[data-palette$="-dark"] a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     display: inline;
     min-height: 0;
     padding: 0;
@@ -12547,8 +12553,12 @@ a.text-link:focus,
 
 a.text-link:hover,
 a.text-link:focus,
+a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):hover,
+a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
 :root[data-palette$="-dark"] a.text-link:hover,
-:root[data-palette$="-dark"] a.text-link:focus {
+:root[data-palette$="-dark"] a.text-link:focus,
+:root[data-palette$="-dark"] a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):hover,
+:root[data-palette$="-dark"] a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
     color: var(--color-primary-dark);
 }
 

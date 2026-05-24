@@ -106,21 +106,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php require_once __DIR__ . '/lib/google_analytics.php'; echo craftcrawl_google_analytics_tag(); ?>
 </head>
 <body class="auth-body">
-    <main class="auth-card">
+    <main class="auth-card login-card">
         <a class="auth-back-link text-link" href="index.php" data-back-link>Back</a>
-        <img class="site-logo auth-logo" src="<?php echo craftcrawl_theme_logo_src('images/'); ?>" alt="CraftCrawl logo">
-        <h1>Admin Login</h1>
+        <div class="auth-top-section">
+            <img class="site-logo auth-logo" src="<?php echo craftcrawl_theme_logo_src('images/'); ?>" alt="CraftCrawl logo">
+            <div class="auth-heading-copy">
+                <span class="auth-context-kicker">Admin portal</span>
+                <h1>Admin sign in</h1>
+                <p>Access moderation, account tools, and platform controls.</p>
+            </div>
+        </div>
         <form action="" method="POST">
             <?php echo craftcrawl_csrf_input(); ?>
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required value="<?php echo escape_output($email); ?>"><br><br>
-            <label for="password">Password:</label>
-            <div class="password-field">
-                <input type="password" id="password" name="password" autocomplete="current-password" required>
-                <button type="button" class="password-toggle" data-password-toggle="password" aria-label="Show password" aria-pressed="false">
-                    <span class="password-toggle-eye" aria-hidden="true"></span>
-                </button>
-            </div><br><br>
+            <div class="auth-field">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required value="<?php echo escape_output($email); ?>">
+            </div>
+            <div class="auth-field">
+                <label for="password">Password</label>
+                <div class="password-field">
+                    <input type="password" id="password" name="password" autocomplete="current-password" required>
+                    <button type="button" class="password-toggle" data-password-toggle="password" aria-label="Show password" aria-pressed="false">
+                        <span class="password-toggle-eye" aria-hidden="true"></span>
+                    </button>
+                </div>
+            </div>
             <label class="remember-login-toggle">
                 <input type="checkbox" name="remember_me" value="1">
                 Stay signed in
