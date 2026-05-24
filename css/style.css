@@ -12276,6 +12276,14 @@ a.mobile-context-back.feed-thread-back-link:focus {
         0 8px 18px rgba(0, 0, 0, 0.3);
 }
 
+:root[data-palette$="-dark"] .leaderboard-mode-tabs a.is-active:not(.mapboxgl-ctrl-logo),
+:root[data-palette$="-dark"] .leaderboard-mode-tabs a.is-active:not(.mapboxgl-ctrl-logo):hover,
+:root[data-palette$="-dark"] .leaderboard-mode-tabs a.is-active:not(.mapboxgl-ctrl-logo):focus {
+    border-color: var(--color-primary);
+    color: #000000;
+    background: var(--color-primary);
+}
+
 :root[data-palette$="-dark"] a[data-back-link]:not(.mapboxgl-ctrl-logo),
 :root[data-palette$="-dark"] .details-nav a.feed-thread-back-link,
 :root[data-palette$="-dark"] .business-header-actions a.feed-thread-back-link,
