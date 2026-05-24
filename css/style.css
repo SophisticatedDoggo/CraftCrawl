@@ -12519,6 +12519,57 @@ a.text-link:focus,
     color-scheme: light;
 }
 
+.palette-switcher-settings button,
+.palette-switcher-settings button:not(.is-active),
+.palette-switcher-settings button:hover,
+.palette-switcher-settings button:focus,
+.palette-switcher-settings button:active,
+:root[data-palette$="-dark"] .palette-switcher-settings button,
+:root[data-palette$="-dark"] .palette-switcher-settings button:not(.is-active),
+:root[data-palette$="-dark"] .palette-switcher-settings button:hover,
+:root[data-palette$="-dark"] .palette-switcher-settings button:focus,
+:root[data-palette$="-dark"] .palette-switcher-settings button:active {
+    border-color: transparent;
+    color: var(--palette-preview-primary);
+    background: var(--palette-preview-bg);
+    box-shadow: 0 8px 18px color-mix(in srgb, var(--palette-preview-muted) 15%, transparent);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.palette-switcher-settings button.is-active,
+:root[data-palette$="-dark"] .palette-switcher-settings button.is-active {
+    border-color: var(--palette-preview-primary);
+}
+
+.danger-button,
+.danger-button:hover,
+.danger-button:focus,
+.admin-delete-form button,
+.admin-delete-form button:hover,
+.admin-delete-form button:focus,
+:root[data-palette$="-dark"] .danger-button,
+:root[data-palette$="-dark"] .danger-button:hover,
+:root[data-palette$="-dark"] .danger-button:focus,
+:root[data-palette$="-dark"] .admin-delete-form button,
+:root[data-palette$="-dark"] .admin-delete-form button:hover,
+:root[data-palette$="-dark"] .admin-delete-form button:focus {
+    border-color: var(--color-danger);
+    color: #ffffff;
+    background: var(--color-danger);
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--color-danger) 28%, transparent);
+}
+
+.danger-button:disabled,
+.admin-delete-form button:disabled,
+:root[data-palette$="-dark"] .danger-button:disabled,
+:root[data-palette$="-dark"] .admin-delete-form button:disabled {
+    border-color: color-mix(in srgb, var(--color-danger) 42%, var(--color-border));
+    color: color-mix(in srgb, #ffffff 72%, var(--color-muted));
+    background: color-mix(in srgb, var(--color-danger) 48%, var(--color-surface-muted));
+    box-shadow: none;
+}
+
 :root[data-palette$="-dark"] .feed-compose-fab,
 :root[data-palette$="-dark"] .feed-compose-fab:hover,
 :root[data-palette$="-dark"] .feed-compose-fab:focus {
