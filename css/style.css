@@ -2467,6 +2467,10 @@ a.text-link:focus {
     align-items: center;
 }
 
+.profile-identity {
+    gap: 34px;
+}
+
 .user-identity-row,
 .analytics-list-item .user-identity-row,
 .analytics-checkin-card .user-identity-row,
@@ -4251,9 +4255,13 @@ a.feed-detail-link:not(.mapboxgl-ctrl-logo) {
 }
 
 .leaderboard-mode-tabs a.is-active {
-    color: var(--color-on-primary);
+    color: #ffffff;
     background: var(--color-primary);
     border-color: var(--color-primary);
+}
+
+:root[data-palette$="-dark"] .leaderboard-mode-tabs a.is-active {
+    color: #000000;
 }
 
 .leaderboard-row-top {
