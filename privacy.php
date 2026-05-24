@@ -45,7 +45,7 @@ $contact_email = craftcrawl_env('CRAFTCRAWL_SUPPORT_EMAIL', 'support@craftcrawl.
             <p>We use email for account verification, password reset, and important account messages. We may use OneSignal for browser push notifications, including friend invites, accepted invites, comments, replies, and reactions. You can manage social notification preferences in user settings and can disable browser notifications through your browser.</p>
 
             <h2>Service Providers</h2>
-            <p>CraftCrawl uses third-party providers to operate the service, including hosting, database services, Cloudflare DNS/security, Mailgun email, OneSignal notifications, Cloudinary photos, Mapbox maps, Google Analytics usage measurement, and hCaptcha bot protection. These providers process data as needed to provide their services.</p>
+            <p>CraftCrawl uses third-party providers to operate the service, including hosting, database services, Cloudflare DNS/security, Mailgun email, OneSignal notifications, Cloudinary photos, Mapbox maps, Google Analytics usage measurement, and reCAPTCHA bot protection. These providers process data as needed to provide their services.</p>
 
             <h2>Business Analytics</h2>
             <p>Business accounts may see analytics related to check-ins at their business, including first-time visits, daily activity, and related aggregate engagement. These analytics are intended to help businesses understand CraftCrawl activity at their location.</p>
@@ -54,7 +54,7 @@ $contact_email = craftcrawl_env('CRAFTCRAWL_SUPPORT_EMAIL', 'support@craftcrawl.
             <p>You can update privacy settings, notification preferences, profile visibility-related settings, and account preferences from your account settings. You may also contact us to request help with account access, correction, or deletion.</p>
 
             <h2>Security</h2>
-            <p>We use reasonable safeguards such as password hashing, CSRF protection, email verification, hCaptcha, secure session practices, and access controls. No online service can guarantee perfect security.</p>
+            <p>We use reasonable safeguards such as password hashing, CSRF protection, email verification, reCAPTCHA, secure session practices, and access controls. No online service can guarantee perfect security.</p>
 
             <h2>Contact</h2>
             <p>Questions about this policy can be sent to <a class="text-link" href="mailto:<?php echo escape_output($contact_email); ?>"><?php echo escape_output($contact_email); ?></a>.</p>

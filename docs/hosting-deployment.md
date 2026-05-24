@@ -72,7 +72,7 @@ The repository includes these workflows:
 - `Capacitor Android Build`: builds a prod debug APK.
 - `Capacitor iOS Build`: builds a prod iOS simulator app on macOS.
 
-Do not store passwords, API keys, database credentials, hCaptcha secrets, Cloudinary secrets, or signing keys in the repo. Put them in GitHub Actions secrets and host environment variables.
+Do not store passwords, API keys, database credentials, reCAPTCHA secrets, Cloudinary secrets, or signing keys in the repo. Put them in GitHub Actions secrets and host environment variables.
 
 ## Domain and HTTPS
 

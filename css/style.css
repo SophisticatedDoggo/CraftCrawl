@@ -773,6 +773,150 @@ a.mobile-context-back {
     gap: 10px;
 }
 
+.login-card {
+    width: min(100%, 500px);
+}
+
+.login-card .auth-back-link {
+    margin-bottom: 10px;
+}
+
+.login-card .auth-top-section {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.login-card .auth-logo {
+    width: 86px;
+    margin: 0;
+}
+
+.auth-heading-copy {
+    display: grid;
+    gap: 6px;
+}
+
+.auth-heading-copy h1 {
+    margin: 0;
+    font-size: clamp(2.2rem, 8vw, 3.25rem);
+    line-height: 0.98;
+}
+
+.auth-heading-copy p {
+    max-width: 340px;
+    margin: 0 auto;
+    color: var(--color-muted);
+    font-size: 1rem;
+    font-weight: 650;
+    line-height: 1.4;
+}
+
+.auth-context-kicker {
+    justify-self: center;
+    display: inline-flex;
+    min-height: 28px;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: 999px;
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 9%, transparent);
+    font-size: 0.84rem;
+    font-weight: 800;
+}
+
+.login-context-panel {
+    margin: -2px 0 18px;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
+    border-left: 3px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+    color: var(--color-muted);
+    background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface));
+    font-size: 0.94rem;
+    font-weight: 650;
+    line-height: 1.4;
+}
+
+.auth-field {
+    display: grid;
+    gap: 7px;
+}
+
+.auth-field label {
+    color: var(--color-heading);
+    font-size: 0.94rem;
+}
+
+.login-card form {
+    gap: 14px;
+}
+
+.login-card input[type="email"],
+.login-card input[type="password"] {
+    min-height: 46px;
+    border-radius: 8px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0)),
+        var(--color-surface);
+}
+
+.login-card input[type="email"]:focus,
+.login-card input[type="password"]:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent), inset 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.login-card .password-toggle {
+    right: 5px;
+    border-radius: 8px;
+}
+
+.login-card .remember-login-toggle {
+    margin-top: -2px;
+    color: var(--color-muted);
+}
+
+.login-card .captcha-field {
+    display: flex;
+    justify-content: center;
+    margin: 0;
+}
+
+.login-card input[type="submit"] {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 4px;
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--color-primary) 26%, transparent);
+}
+
+.login-card input[type="submit"]:hover,
+.login-card input[type="submit"]:focus {
+    border-color: var(--color-primary-dark);
+    color: var(--color-on-primary);
+    background: var(--color-primary-dark);
+}
+
+.login-secondary-actions {
+    display: grid;
+    gap: 8px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+    color: var(--color-muted);
+    font-weight: 650;
+    text-align: center;
+}
+
+.login-secondary-actions p {
+    margin: 0;
+}
+
 .visually-hidden {
     position: absolute !important;
     width: 1px !important;
@@ -1177,23 +1321,153 @@ a.text-link:focus {
 }
 
 .landing-card {
+    display: grid;
+    gap: 18px;
+    width: min(100%, 560px);
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     text-align: center;
 }
 
-.landing-primary-actions {
+.landing-intro {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.landing-intro h1 {
+    margin: 0;
+    font-size: clamp(2rem, 7vw, 3.45rem);
+    line-height: 0.98;
+}
+
+.landing-intro p {
+    max-width: 360px;
+    margin: 0 auto;
+    color: var(--color-muted);
+    font-size: 1rem;
+    font-weight: 650;
+}
+
+.landing-choice-list {
+    display: grid;
     gap: 12px;
+    margin-top: 2px;
+    text-align: left;
+}
+
+.landing-choice {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px 14px;
+    align-items: center;
+    min-height: 0;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--color-border) 78%, var(--color-primary));
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0.1)),
+        var(--color-surface);
+    box-shadow: 0 12px 28px color-mix(in srgb, var(--color-text) 10%, transparent);
+    text-decoration: none;
+}
+
+.landing-choice:hover,
+.landing-choice:focus {
+    border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border));
+    color: var(--color-text);
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.13)),
+        color-mix(in srgb, var(--color-primary) 5%, var(--color-surface));
+}
+
+.landing-choice-primary {
+    border-color: color-mix(in srgb, var(--color-primary) 52%, var(--color-border));
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.54), rgba(255, 255, 255, 0.12)),
+        color-mix(in srgb, var(--color-primary) 13%, var(--color-surface));
+}
+
+.landing-choice-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    flex: 0 0 44px;
+    border: 1px solid color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
+    border-radius: 12px;
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 6px 14px color-mix(in srgb, var(--color-text) 10%, transparent);
+}
+
+.landing-choice-primary .landing-choice-icon {
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+}
+
+.landing-choice-icon svg {
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.landing-choice-copy {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.landing-choice-copy strong {
+    color: var(--color-heading);
+    font-size: 1.16rem;
+    line-height: 1.1;
+}
+
+.landing-choice-copy span {
+    color: var(--color-muted);
+    font-size: 0.95rem;
+    font-weight: 650;
+    line-height: 1.35;
+}
+
+.landing-choice-cta {
+    grid-column: 2;
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+    font-weight: 800;
+    line-height: 1;
+}
+
+.landing-choice-primary .landing-choice-cta {
+    color: var(--color-on-primary);
+    background: var(--color-primary);
 }
 
 .landing-admin-action {
-    margin-top: 28px;
-    padding-top: 18px;
+    margin-top: 2px;
+    padding-top: 16px;
     border-top: 1px solid var(--color-border);
 }
 
-.landing-admin-action .button-link {
-    width: min(100%, 220px);
+.landing-card .legal-links {
+    margin-top: 0;
 }
 
 .form-feedback:empty {
@@ -7518,7 +7792,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     background: var(--color-surface-muted);
 }
 
-.h-captcha {
+.g-recaptcha {
     max-width: 100%;
     overflow: hidden;
 }
@@ -8108,7 +8382,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .landing-card::before {
-        background: var(--color-border);
+        display: none;
     }
 
     #events-panel::before,
@@ -8182,7 +8456,14 @@ a.event-calendar-event:focus .event-calendar-event-name {
         align-self: center;
     }
 
-    .landing-primary-actions,
+    .landing-choice-icon {
+        width: 44px;
+        min-width: 44px;
+        height: 44px;
+        min-height: 44px;
+        border-radius: 12px;
+    }
+
     .business-portal-header,
     .business-portal-grid,
     .event-manager-grid,
@@ -12188,6 +12469,52 @@ button.mobile-app-tab.is-active,
     color: var(--color-on-primary);
     background: var(--color-primary);
     box-shadow: 0 10px 22px color-mix(in srgb, var(--color-primary) 36%, transparent);
+}
+
+:root[data-palette$="-dark"] a.landing-choice:not(.mapboxgl-ctrl-logo),
+:root[data-palette$="-dark"] a.landing-choice:not(.mapboxgl-ctrl-logo):hover,
+:root[data-palette$="-dark"] a.landing-choice:not(.mapboxgl-ctrl-logo):focus {
+    border-color: color-mix(in srgb, var(--color-border) 74%, var(--color-primary));
+    color: var(--color-text);
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
+        var(--color-surface);
+    box-shadow: 0 12px 28px color-mix(in srgb, #000 36%, transparent);
+}
+
+:root[data-palette$="-dark"] a.landing-choice-primary:not(.mapboxgl-ctrl-logo),
+:root[data-palette$="-dark"] a.landing-choice-primary:not(.mapboxgl-ctrl-logo):hover,
+:root[data-palette$="-dark"] a.landing-choice-primary:not(.mapboxgl-ctrl-logo):focus {
+    border-color: color-mix(in srgb, var(--color-primary) 58%, var(--color-border));
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+        color-mix(in srgb, var(--color-primary) 15%, var(--color-surface));
+}
+
+:root[data-palette$="-dark"] .landing-choice-primary .landing-choice-icon,
+:root[data-palette$="-dark"] .landing-choice-primary .landing-choice-cta {
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+}
+
+:root[data-palette$="-dark"] .landing-choice-icon {
+    border-color: color-mix(in srgb, var(--color-primary) 34%, var(--color-border));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 6px 14px color-mix(in srgb, #000 28%, transparent);
+}
+
+:root[data-palette$="-dark"] .login-card input[type="submit"],
+:root[data-palette$="-dark"] .login-card input[type="submit"]:hover,
+:root[data-palette$="-dark"] .login-card input[type="submit"]:focus {
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--color-primary) 26%, transparent);
+}
+
+:root[data-palette$="-dark"] .login-context-panel {
+    border-color: color-mix(in srgb, var(--color-primary) 36%, var(--color-border));
+    border-left-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
 }
 
 :root[data-palette$="-dark"] .map-location-control,

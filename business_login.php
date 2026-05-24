@@ -46,7 +46,7 @@ function escape_output($value) {
 }
 
 require_once 'config.php';
-require_once 'lib/hcaptcha.php';
+require_once 'lib/recaptcha.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
@@ -54,12 +54,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = strtolower(trim($_POST['email'] ?? ''));
     $password = (string) ($_POST['password'] ?? '');
     $remember_me = isset($_POST['remember_me']);
-    $captcha_token = $_POST['h-captcha-response'] ?? '';
+    $captcha_token = $_POST['g-recaptcha-response'] ?? '';
 
     try {
-        $captcha_valid = craftcrawl_hcaptcha_verify($captcha_token, $_SERVER['REMOTE_ADDR'] ?? null);
+        $captcha_valid = craftcrawl_recaptcha_verify($captcha_token, $_SERVER['REMOTE_ADDR'] ?? null);
     } catch (Throwable $error) {
-        error_log('Business login hCaptcha verification error: ' . $error->getMessage());
+        error_log('Business login reCAPTCHA verification error: ' . $error->getMessage());
         $captcha_valid = false;
     }
 
@@ -147,36 +147,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>CraftCrawl | Business Login</title>
     <script src="js/theme_init.js?v=<?php echo filemtime(__DIR__ . '/js/theme_init.js'); ?>"></script>
     <link rel="stylesheet" href="css/style.css?v=<?php echo filemtime(__DIR__ . '/css/style.css'); ?>">
-    <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <?php require_once __DIR__ . '/lib/google_analytics.php'; echo craftcrawl_google_analytics_tag(); ?>
 </head>
 <body class="auth-body">
-    <main class="auth-card">
+    <main class="auth-card login-card business-login-card">
         <a class="auth-back-link text-link" href="index.php">Back</a>
-        <img class="site-logo auth-logo" src="<?php echo craftcrawl_theme_logo_src('images/'); ?>" alt="CraftCrawl logo">
-        <h1>Business Login</h1>
+        <div class="auth-top-section">
+            <img class="site-logo auth-logo" src="<?php echo craftcrawl_theme_logo_src('images/'); ?>" alt="CraftCrawl logo">
+            <div class="auth-heading-copy">
+                <span class="auth-context-kicker">For owners and managers</span>
+                <h1>Business sign in</h1>
+                <p>Manage your listing, events, posts, and insights.</p>
+            </div>
+        </div>
+        <div class="login-context-panel">
+            Claim your location, keep business details current, and connect with local customers.
+        </div>
         <form id="business_login_form" action="" method="POST">
             <?php echo craftcrawl_csrf_input(); ?>
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" autocomplete="username" required value="<?php echo escape_output($email) ?>"><br><br>
-            <label for="password">Password:</label>
-            <div class="password-field">
-                <input type="password" id="password" name="password" autocomplete="current-password" required>
-                <button type="button" class="password-toggle" data-password-toggle="password" aria-label="Show password" aria-pressed="false">
-                    <span class="password-toggle-eye" aria-hidden="true"></span>
-                </button>
-            </div><br><br>
+            <div class="auth-field">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" autocomplete="username" required value="<?php echo escape_output($email) ?>">
+            </div>
+            <div class="auth-field">
+                <label for="password">Password</label>
+                <div class="password-field">
+                    <input type="password" id="password" name="password" autocomplete="current-password" required>
+                    <button type="button" class="password-toggle" data-password-toggle="password" aria-label="Show password" aria-pressed="false">
+                        <span class="password-toggle-eye" aria-hidden="true"></span>
+                    </button>
+                </div>
+            </div>
             <label class="remember-login-toggle">
                 <input type="checkbox" name="remember_me" value="1">
                 Stay signed in
             </label>
             <div class="captcha-field">
-                <?php echo craftcrawl_hcaptcha_widget(); ?>
+                <?php echo craftcrawl_recaptcha_widget(); ?>
             </div>
             <input type="submit" value="Login">
             <div class="form-feedback">
                 <?php if ($captcha_error) : ?>
-                    <p class="form-message form-message-error">Please complete the hCaptcha challenge.</p>
+                    <p class="form-message form-message-error">Please complete the reCAPTCHA challenge.</p>
                 <?php endif; ?>
                 <?php if ($login_error) : ?>
                     <p class="form-message form-message-error">Incorrect Email or Password</p>
@@ -192,8 +205,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
             </div>
         </form>
-        <p class="auth-switch"><a class="text-link" href="forgot_password.php?account_type=business">Forgot password?</a></p>
-        <p class="auth-switch"><a href="business_find_or_create.php">Create An Account</a></p>
+        <div class="login-secondary-actions">
+            <p><a class="text-link" href="forgot_password.php?account_type=business">Forgot your password?</a></p>
+            <p>Need to manage a business? <a class="text-link" href="business_find_or_create.php">Create a business account</a></p>
+        </div>
         <?php if ($verification_error || $signup_success) : ?>
             <p class="auth-switch">
                 <a class="text-link" href="verify_email.php?account_type=business<?php echo $email !== '' ? '&email=' . escape_output(rawurlencode($email)) : ''; ?>">Enter verification code</a>

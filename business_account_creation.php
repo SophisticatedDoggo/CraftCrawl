@@ -4,7 +4,7 @@ require_once __DIR__ . '/lib/appearance.php';
 craftcrawl_secure_session_start();
 include 'db.php';
 include 'config.php';
-require_once 'lib/hcaptcha.php';
+require_once 'lib/recaptcha.php';
 require_once 'lib/email_verification.php';
 
 $message = null;
@@ -23,17 +23,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = strtolower(trim($_POST['email'] ?? ''));
     $password = (string) ($_POST['password'] ?? '');
     $verify_password = (string) ($_POST['verify_password'] ?? '');
-    $captcha_token = $_POST['h-captcha-response'] ?? '';
+    $captcha_token = $_POST['g-recaptcha-response'] ?? '';
     $date = date('Y-m-d H:i:s');
 
     try {
-        $captcha_valid = craftcrawl_hcaptcha_verify($captcha_token, $_SERVER['REMOTE_ADDR'] ?? null);
+        $captcha_valid = craftcrawl_recaptcha_verify($captcha_token, $_SERVER['REMOTE_ADDR'] ?? null);
     } catch (Throwable $error) {
         $captcha_valid = false;
     }
 
     if (!$captcha_valid) {
-        $message = 'Please complete the hCaptcha challenge.';
+        $message = 'Please complete the reCAPTCHA challenge.';
     } elseif ($contact_name === '') {
         $message = 'Please enter a contact name.';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>CraftCrawl | Business Account Creation</title>
     <script src="js/theme_init.js?v=<?php echo filemtime(__DIR__ . '/js/theme_init.js'); ?>"></script>
     <link rel="stylesheet" href="css/style.css?v=<?php echo filemtime(__DIR__ . '/css/style.css'); ?>">
-    <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <?php require_once __DIR__ . '/lib/google_analytics.php'; echo craftcrawl_google_analytics_tag(); ?>
 </head>
 <body class="auth-body">
@@ -127,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="button" class="password-toggle" data-password-toggle="verify_password" aria-label="Show password" aria-pressed="false"><span class="password-toggle-eye" aria-hidden="true"></span></button>
             </div>
             <p id="password_match_helper" class="password-match-helper" aria-live="polite">Passwords must match.</p>
-            <div class="captcha-field"><?php echo craftcrawl_hcaptcha_widget(); ?></div>
+            <div class="captcha-field"><?php echo craftcrawl_recaptcha_widget(); ?></div>
             <input type="submit" value="Create Account">
         </form>
         <p class="auth-switch">Already have an account? <a href="business_login.php">Log in</a></p>

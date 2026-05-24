@@ -105,7 +105,7 @@ In Xcode, select an iPhone simulator and run the `App` scheme. For physical devi
 
 ## Production Readiness Checklist
 
-- Prod host has its own database, `.env` values, Cloudinary, hCaptcha, Mailgun, and OneSignal configuration.
+- Prod host has its own database, `.env` values, Cloudinary, reCAPTCHA, Mailgun, and OneSignal configuration.
 - `app.craftcrawl.site` has HTTPS and OneSignal configured for that origin.
 - Android debug build works against prod.
 - iOS simulator or TestFlight build works against prod.

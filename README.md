@@ -34,13 +34,13 @@ The upload helper lives in `lib/cloudinary_upload.php`. It validates JPEG, PNG,
 and WebP files, sends signed uploads to Cloudinary, and can save Cloudinary
 metadata into the `photos` table.
 
-## hCaptcha
+## reCAPTCHA
 
-CraftCrawl verifies hCaptcha on login and account creation forms. Do not commit
+CraftCrawl verifies reCAPTCHA on login and account creation forms. Do not commit
 the secret key to GitHub. Configure these values as host environment variables:
 
-- `HCAPTCHA_SITE_KEY`
-- `HCAPTCHA_SECRET_KEY`
+- `RECAPTCHA_SITE_KEY`
+- `RECAPTCHA_SECRET_KEY`
 
 ## Google and Apple sign-in
 

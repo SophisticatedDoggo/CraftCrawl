@@ -25,7 +25,7 @@ function escape_output($value) {
 }
 
 require_once 'config.php';
-require_once 'lib/hcaptcha.php';
+require_once 'lib/recaptcha.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
@@ -33,10 +33,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = strtolower(trim($_POST['email'] ?? ''));
     $password = (string) ($_POST['password'] ?? '');
     $remember_me = isset($_POST['remember_me']);
-    $captcha_token = $_POST['h-captcha-response'] ?? '';
+    $captcha_token = $_POST['g-recaptcha-response'] ?? '';
 
     try {
-        $captcha_valid = craftcrawl_hcaptcha_verify($captcha_token, $_SERVER['REMOTE_ADDR'] ?? null);
+        $captcha_valid = craftcrawl_recaptcha_verify($captcha_token, $_SERVER['REMOTE_ADDR'] ?? null);
     } catch (Throwable $error) {
         $captcha_valid = false;
     }
@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>CraftCrawl | Admin Login</title>
     <script src="js/theme_init.js?v=<?php echo filemtime(__DIR__ . '/js/theme_init.js'); ?>"></script>
     <link rel="stylesheet" href="css/style.css?v=<?php echo filemtime(__DIR__ . '/css/style.css'); ?>">
-    <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <?php require_once __DIR__ . '/lib/google_analytics.php'; echo craftcrawl_google_analytics_tag(); ?>
 </head>
 <body class="auth-body">
@@ -126,12 +126,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 Stay signed in
             </label>
             <div class="captcha-field">
-                <?php echo craftcrawl_hcaptcha_widget(); ?>
+                <?php echo craftcrawl_recaptcha_widget(); ?>
             </div>
             <input type="submit" value="Login">
             <div class="form-feedback">
                 <?php if ($captcha_error) : ?>
-                    <p class="form-message form-message-error">Please complete the hCaptcha challenge.</p>
+                    <p class="form-message form-message-error">Please complete the reCAPTCHA challenge.</p>
                 <?php endif; ?>
                 <?php if ($login_error) : ?>
                     <p class="form-message form-message-error">Incorrect Email or Password</p>

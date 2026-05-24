@@ -7,8 +7,8 @@ $CLOUDINARY_CLOUD_NAME = craftcrawl_env('CLOUDINARY_CLOUD_NAME');
 $CLOUDINARY_API_KEY = craftcrawl_env('CLOUDINARY_API_KEY');
 $CLOUDINARY_API_SECRET = craftcrawl_env('CLOUDINARY_API_SECRET');
 
-$HCAPTCHA_SITE_KEY = craftcrawl_env('HCAPTCHA_SITE_KEY');
-$HCAPTCHA_SECRET_KEY = craftcrawl_env('HCAPTCHA_SECRET_KEY');
+$RECAPTCHA_SITE_KEY = craftcrawl_env('RECAPTCHA_SITE_KEY');
+$RECAPTCHA_SECRET_KEY = craftcrawl_env('RECAPTCHA_SECRET_KEY');
 
 if (!function_exists('craftcrawl_first_env_list_value')) {
     function craftcrawl_first_env_list_value($key) {
