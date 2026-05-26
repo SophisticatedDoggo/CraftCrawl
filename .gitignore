@@ -5,6 +5,7 @@ migrations/*
 !migrations/
 !migrations/*.sql
 files/
+results/*.txt
 node_modules/
 dist/
 www/

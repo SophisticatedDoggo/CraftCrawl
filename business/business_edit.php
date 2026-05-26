@@ -157,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
                 <fieldset class="business-hours-editor">
                     <legend>Business Hours</legend>
-                    <p class="form-help">Required for visit XP eligibility. Mark closed days or enter opening and closing times.</p>
+                    <p class="form-help">Required for visit XP eligibility. For late-night hours, use the opening day and an after-midnight close time. Example: Friday 4:00 PM to 2:00 AM keeps check-ins available until Saturday 2:00 AM.</p>
                     <div class="business-hours-bulk" data-business-hours-bulk>
                         <div class="business-hours-bulk-times">
                             <label>

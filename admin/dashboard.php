@@ -120,6 +120,7 @@ $locations = $stmt->get_result();
                     <a href="dashboard.php">Dashboard</a>
                     <a href="accounts.php">Accounts</a>
                     <a href="review_center.php">Approval Center</a>
+                    <a href="import_locations.php">Import Locations</a>
                     <a href="reviews.php">Reviews</a>
                     <a href="content.php">Content</a>
                     <form action="../logout.php" method="POST"><?php echo craftcrawl_csrf_input(); ?><button type="submit">Logout</button></form>
@@ -139,9 +140,12 @@ $locations = $stmt->get_result();
         <section class="admin-panel">
             <div class="business-section-header">
                 <h2>Review Work</h2>
-                <a href="review_center.php">Open Approval Center</a>
+                <div class="business-header-actions">
+                    <a href="review_center.php">Open Approval Center</a>
+                    <a href="import_locations.php">Import Locations</a>
+                </div>
             </div>
-            <p>New submissions, claims, suggestions, imports, and check-in readiness work are reviewed in one place.</p>
+            <p>Run Google Places batches, then review new submissions, claims, suggestions, imports, and check-in readiness work.</p>
         </section>
 
         <section class="admin-panel">

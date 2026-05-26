@@ -28,6 +28,8 @@
         window.CraftCrawlInitBusinessPosts?.(root);
         window.CraftCrawlInitBusinessAddressAutofill?.(root);
         window.CraftCrawlInitAdminReviewEditToggle?.(root);
+        window.CraftCrawlInitGoogleImportTiles?.(root);
+        window.CraftCrawlInitAdminReviewCenter?.(root);
         window.CraftCrawlInitMobileActionsMenu?.();
     }
     async function loadScript(script) {

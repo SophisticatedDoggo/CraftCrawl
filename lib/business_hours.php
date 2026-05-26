@@ -197,6 +197,18 @@ function craftcrawl_format_time_for_display($time) {
     return date('g:i A', strtotime($time));
 }
 
+function craftcrawl_format_business_hours_range($opens_at, $closes_at) {
+    if ($opens_at === '00:00' && $closes_at === '00:00') {
+        return 'Open 24 hours';
+    }
+
+    $range = craftcrawl_format_time_for_display($opens_at)
+        . ' - '
+        . craftcrawl_format_time_for_display($closes_at);
+
+    return $opens_at >= $closes_at ? $range . ' next day' : $range;
+}
+
 function craftcrawl_format_business_hours($hours) {
     $lines = [];
 
@@ -211,9 +223,7 @@ function craftcrawl_format_business_hours($hours) {
         }
 
         $lines[] = $hour['day_label'] . ': '
-            . craftcrawl_format_time_for_display($hour['opens_at'])
-            . ' - '
-            . craftcrawl_format_time_for_display($hour['closes_at']);
+            . craftcrawl_format_business_hours_range($hour['opens_at'], $hour['closes_at']);
     }
 
     return implode("\n", $lines);

@@ -1,4 +1,26 @@
 window.CraftCrawlInitBusinessHoursEditor = function (root = document) {
+    function isOvernightRange(openValue, closeValue) {
+        return openValue !== '' && closeValue !== '' && openValue >= closeValue;
+    }
+
+    function updateOvernightHint(row) {
+        const closedInput = row.querySelector('[data-hours-closed]');
+        const openInput = row.querySelector('[data-hours-open]');
+        const closeInput = row.querySelector('[data-hours-close]');
+        let hint = row.querySelector('[data-hours-overnight-hint]');
+
+        if (!hint) {
+            hint = document.createElement('span');
+            hint.className = 'business-hours-overnight-hint';
+            hint.dataset.hoursOvernightHint = 'true';
+            hint.textContent = 'Closes next day';
+            row.appendChild(hint);
+        }
+
+        const shouldShow = !closedInput?.checked && isOvernightRange(openInput?.value || '', closeInput?.value || '');
+        hint.hidden = !shouldShow;
+    }
+
     function setRowDisabledState(row) {
         const closedInput = row.querySelector('[data-hours-closed]');
         const openInput = row.querySelector('[data-hours-open]');
@@ -11,6 +33,7 @@ window.CraftCrawlInitBusinessHoursEditor = function (root = document) {
         const isClosed = closedInput.checked;
         openInput.disabled = isClosed;
         closeInput.disabled = isClosed;
+        updateOvernightHint(row);
     }
 
     function selectedDayValues(editor) {
@@ -76,6 +99,12 @@ window.CraftCrawlInitBusinessHoursEditor = function (root = document) {
             setRowDisabledState(row);
             row.querySelector('[data-hours-closed]')?.addEventListener('change', () => {
                 setRowDisabledState(row);
+            });
+            row.querySelector('[data-hours-open]')?.addEventListener('input', () => {
+                updateOvernightHint(row);
+            });
+            row.querySelector('[data-hours-close]')?.addEventListener('input', () => {
+                updateOvernightHint(row);
             });
         });
 

@@ -5,6 +5,7 @@ include 'config.php';
 require_once 'lib/location_hours.php';
 require_once 'lib/location_duplicates.php';
 require_once 'lib/mapbox_search.php';
+require_once 'lib/google_places_search.php';
 
 if (!isset($_SESSION['business_account_id'])) {
     craftcrawl_redirect('business_login.php');
@@ -23,14 +24,17 @@ $search_area = trim($_GET['area'] ?? '');
 $search_type = trim($_GET['location_type'] ?? 'any');
 $search_name = trim($_GET['name_query'] ?? '');
 $search_scope = ($_GET['scope'] ?? 'area') === 'broadened' ? 'broadened' : 'area';
+$search_provider = ($_GET['provider'] ?? 'google') === 'mapbox' ? 'mapbox' : 'google';
 $allowed_types = ['any', 'brewery', 'winery', 'cidery', 'distillery', 'meadery', 'bar', 'social_club'];
 $location_type_labels = ['brewery'=>'Brewery','winery'=>'Winery','cidery'=>'Cidery','distillery'=>'Distillery','meadery'=>'Meadery','bar'=>'Bar','social_club'=>'Social Club'];
-$mapbox_results = [];
+$place_results = [];
 $selected_candidate = null;
 $manual_mode = ($_GET['manual'] ?? '') === '1';
 
 if ($search_area !== '' && in_array($search_type, $allowed_types, true)) {
-    $mapbox_results = craftcrawl_mapbox_import_candidates($MAPBOX_ACCESS_TOKEN, $search_type, $search_area, 10, $search_scope, $search_name);
+    $place_results = $search_provider === 'google'
+        ? craftcrawl_google_places_import_candidates($GOOGLE_PLACES_API_KEY, $search_type, $search_area, 10, $search_scope, $search_name)
+        : craftcrawl_mapbox_import_candidates($MAPBOX_ACCESS_TOKEN, $search_type, $search_area, 10, $search_scope, $search_name);
 }
 
 if (!empty($_GET['selected'])) {
@@ -82,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $conn->begin_transaction();
             $source_provider = clean_text($_POST['source_provider'] ?? 'manual');
             $source_place_id = clean_text($_POST['source_place_id'] ?? '');
-            if (!in_array($source_provider, ['manual', 'mapbox'], true)) { $source_provider = 'manual'; }
+            if (!in_array($source_provider, ['manual', 'mapbox', 'google'], true)) { $source_provider = 'manual'; }
             $location_stmt = $conn->prepare("INSERT INTO locations (name, phone, street_address, apt_suite, city, state, zip, latitude, longitude, website, location_type, hours_note, visibility_status, source_provider, source_place_id, normalized_name, normalized_address, website_domain, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_new_business', ?, ?, ?, ?, ?, ?)");
             $location_stmt->bind_param('sssssssddsssssssss', $name, $phone, $address, $apt_suite, $city, $state, $zip, $latitude, $longitude, $website, $type, $hours_note, $source_provider, $source_place_id, $normalized_name, $normalized_address, $website_domain, $date);
             $location_stmt->execute();
@@ -111,6 +115,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="js/theme_init.js?v=<?php echo filemtime(__DIR__ . '/js/theme_init.js'); ?>"></script>
     <link rel="stylesheet" href="css/style.css?v=<?php echo filemtime(__DIR__ . '/css/style.css'); ?>">
     <script id="search-js" defer src="https://api.mapbox.com/search-js/v1.5.0/web.js"></script>
+    <?php if (!empty($GOOGLE_MAPS_BROWSER_API_KEY)) : ?>
+        <script defer src="https://maps.googleapis.com/maps/api/js?key=<?php echo rawurlencode($GOOGLE_MAPS_BROWSER_API_KEY); ?>&libraries=places&loading=async"></script>
+    <?php endif; ?>
     <?php require_once __DIR__ . '/lib/google_analytics.php'; echo craftcrawl_google_analytics_tag(); ?>
 </head>
 <body class="auth-body">
@@ -118,21 +125,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a class="auth-back-link text-link" href="business/locations.php">Back</a>
         <img class="site-logo auth-logo" src="<?php echo craftcrawl_theme_logo_src('images/'); ?>" alt="CraftCrawl logo">
         <h1>Add a Location</h1>
-        <p class="form-help">Search Mapbox first so the location starts with clean place data. If it is already listed on CraftCrawl, go back and claim it instead.</p>
+        <p class="form-help">Search Google first so the location starts with clean place data. Use Mapbox only as a fallback if Google cannot find the location.</p>
         <?php if ($message) : ?><p class="form-message form-message-error"><?php echo escape_output($message); ?></p><?php endif; ?>
 
         <section class="admin-panel business-add-location-search-panel">
-            <h2>Find the business on Mapbox</h2>
+            <h2><?php echo $search_provider === 'mapbox' ? 'Fallback: Find the business with Mapbox' : 'Find the business with Google'; ?></h2>
             <form method="GET" class="admin-search-form business-location-claim-search">
                 <div class="admin-field"><label for="area">City, ZIP, or area</label><input id="area" name="area" required value="<?php echo escape_output($search_area); ?>"></div>
                 <div class="admin-field"><label for="location_type">Type</label><select id="location_type" name="location_type"><?php foreach ($allowed_types as $candidate_type) : ?><option value="<?php echo escape_output($candidate_type); ?>" <?php echo $search_type === $candidate_type ? 'selected' : ''; ?>><?php echo escape_output($candidate_type === 'any' ? 'Any type' : ucwords(str_replace('_', ' ', $candidate_type))); ?></option><?php endforeach; ?></select></div>
+                <div class="admin-field"><label for="provider">Search source</label><select id="provider" name="provider"><option value="google" <?php echo $search_provider === 'google' ? 'selected' : ''; ?>>Google Places</option><option value="mapbox" <?php echo $search_provider === 'mapbox' ? 'selected' : ''; ?>>Mapbox fallback</option></select></div>
                 <div class="admin-field"><label for="name_query">Business name</label><input id="name_query" name="name_query" value="<?php echo escape_output($search_name); ?>" placeholder="Optional"></div>
                 <button type="submit">Search</button>
             </form>
             <?php if ($search_area !== '') : ?>
-                <div class="business-section-header"><h3><?php echo $search_scope === 'broadened' ? 'Broadened Results' : 'Results'; ?></h3><?php if ($search_scope === 'area') : ?><a href="?area=<?php echo rawurlencode($search_area); ?>&location_type=<?php echo rawurlencode($search_type); ?>&name_query=<?php echo rawurlencode($search_name); ?>&scope=broadened">Broaden search</a><?php else : ?><a href="?area=<?php echo rawurlencode($search_area); ?>&location_type=<?php echo rawurlencode($search_type); ?>&name_query=<?php echo rawurlencode($search_name); ?>">Return to exact area search</a><?php endif; ?></div>
-                <?php if (empty($mapbox_results)) : ?><p>No Mapbox results found.</p><?php endif; ?>
-                <?php foreach ($mapbox_results as $result) : $candidate = base64_encode(json_encode(['name'=>$result['name'],'location_type'=>($search_type === 'any' ? '' : $search_type),'street_address'=>$result['street_address'],'city'=>$result['city'],'state'=>$result['state'],'zip'=>$result['zip'],'latitude'=>$result['latitude'],'longitude'=>$result['longitude'],'source_place_id'=>$result['source_place_id']])); ?>
+                <div class="business-section-header"><h3><?php echo $search_scope === 'broadened' ? 'Broadened Results' : 'Results'; ?></h3><?php if ($search_scope === 'area') : ?><a href="?area=<?php echo rawurlencode($search_area); ?>&location_type=<?php echo rawurlencode($search_type); ?>&provider=<?php echo rawurlencode($search_provider); ?>&name_query=<?php echo rawurlencode($search_name); ?>&scope=broadened">Broaden search</a><?php else : ?><a href="?area=<?php echo rawurlencode($search_area); ?>&location_type=<?php echo rawurlencode($search_type); ?>&provider=<?php echo rawurlencode($search_provider); ?>&name_query=<?php echo rawurlencode($search_name); ?>">Return to exact area search</a><?php endif; ?></div>
+                <?php if (empty($place_results)) : ?><p>No <?php echo escape_output($search_provider === 'google' ? 'Google Places' : 'Mapbox fallback'); ?> results found.</p><?php endif; ?>
+                <?php foreach ($place_results as $result) : $candidate = base64_encode(json_encode(['name'=>$result['name'],'location_type'=>($search_type === 'any' ? '' : $search_type),'street_address'=>$result['street_address'],'city'=>$result['city'],'state'=>$result['state'],'zip'=>$result['zip'],'latitude'=>$result['latitude'],'longitude'=>$result['longitude'],'source_provider'=>$result['source_provider'] ?? $search_provider,'source_place_id'=>$result['source_place_id'],'phone'=>$result['phone'] ?? '', 'website'=>$result['website'] ?? ''])); ?>
                     <article class="admin-list-item"><div><h3><?php echo escape_output($result['name']); ?></h3><p><?php echo escape_output($result['full_address']); ?></p></div><a href="?selected=<?php echo rawurlencode($candidate); ?>">Use this location</a></article>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -141,8 +149,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <form id="account_creation_form" class="business-add-location-form<?php echo $manual_mode ? ' is-visible' : ''; ?>" action="" method="POST">
             <?php echo craftcrawl_csrf_input(); ?>
-            <input type="hidden" name="source_provider" value="<?php echo $selected_candidate ? 'mapbox' : 'manual'; ?>">
-            <input type="hidden" name="source_place_id" value="<?php echo escape_output($selected_candidate['source_place_id'] ?? ''); ?>">
+            <input id="source_provider" type="hidden" name="source_provider" value="<?php echo escape_output($selected_candidate['source_provider'] ?? ($selected_candidate ? $search_provider : 'manual')); ?>">
+            <input id="source_place_id" type="hidden" name="source_place_id" value="<?php echo escape_output($selected_candidate['source_place_id'] ?? ''); ?>">
             <label for="business_name">Location Name</label>
             <input type="text" id="business_name" name="business_name" required value="<?php echo escape_output($name); ?>">
             <label for="business_types">Type</label>
@@ -153,12 +161,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endforeach; ?>
             </select>
             <label for="phone">Phone</label>
-            <input type="tel" id="phone" name="phone" placeholder="Optional" value="<?php echo escape_output($phone); ?>">
+            <input type="tel" id="phone" name="phone" placeholder="Optional" value="<?php echo escape_output($selected_candidate['phone'] ?? $phone); ?>">
             <label for="website">Website</label>
-            <input type="url" id="website" name="website" placeholder="Optional" value="<?php echo escape_output($website); ?>">
+            <input type="url" id="website" name="website" placeholder="Optional" value="<?php echo escape_output($selected_candidate['website'] ?? $website); ?>">
             <fieldset class="business-hours-editor">
                 <legend>Business Hours</legend>
-                <p class="form-help">Required for visit XP eligibility. Mark closed days or enter opening and closing times.</p>
+                <p class="form-help">Required for visit XP eligibility. For late-night hours, use the opening day and an after-midnight close time. Example: Friday 2:00 PM to 2:00 AM keeps check-ins available until Saturday 2:00 AM.</p>
                 <div class="business-hours-bulk" data-business-hours-bulk>
                     <div class="business-hours-bulk-times">
                         <label>
@@ -204,7 +212,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h3>Address</h3>
             <label for="street_address">Street Address</label>
             <input id="street_address" name="address" autocomplete="address-line1" required value="<?php echo escape_output($selected_candidate['street_address'] ?? ''); ?>">
-            <p class="form-help">Start typing a street address and select a Mapbox result so your map location stays accurate.</p>
+            <p class="form-help">Start typing a street address and select an exact result so your map location stays accurate.</p>
             <label for="apartment">Apartment / Suite</label>
             <input id="apartment" name="apartment" autocomplete="address-line2">
             <div class="business-form-row business-form-row-address">
@@ -218,6 +226,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
     </main>
 <script>window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";</script>
+<script>window.GOOGLE_MAPS_BROWSER_API_KEY = "<?php echo escape_output($GOOGLE_MAPS_BROWSER_API_KEY); ?>";</script>
 <script src="js/business_account_creation.js?v=<?php echo filemtime(__DIR__ . '/js/business_account_creation.js'); ?>"></script>
 <script src="js/business_add_location.js?v=<?php echo filemtime(__DIR__ . '/js/business_add_location.js'); ?>"></script>
 <script src="js/business_hours_editor.js?v=<?php echo filemtime(__DIR__ . '/js/business_hours_editor.js'); ?>"></script>

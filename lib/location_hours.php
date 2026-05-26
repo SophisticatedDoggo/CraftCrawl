@@ -33,25 +33,53 @@ function craftcrawl_location_checkins_are_available($conn, $location_id, $checki
     return !empty($checkin_verification_enabled) || craftcrawl_location_has_verified_hours($conn, $location_id);
 }
 
+function craftcrawl_location_hours_rows_are_open_now(array $rows, ?DateTimeInterface $now = null) {
+    $now = $now ?: new DateTimeImmutable('now');
+    $today = (int) $now->format('w');
+    $yesterday = ($today + 6) % 7;
+
+    foreach ($rows as $row) {
+        if (!empty($row['is_closed']) || empty($row['opens_at']) || empty($row['closes_at'])) {
+            continue;
+        }
+
+        $day = (int) $row['day_of_week'];
+        $opens = (string) $row['opens_at'];
+        $closes = (string) $row['closes_at'];
+
+        if ($day === $today && craftcrawl_time_is_within_hours($now, $opens, $closes)) {
+            return true;
+        }
+
+        if ($day === $yesterday && $opens >= $closes && craftcrawl_time_is_within_hours($now, $opens, $closes)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function craftcrawl_save_location_hours($conn, $location_id, $hours, $source = 'business_owner') {
+    $is_checkin_ready_source = in_array($source, ['business_owner', 'provider_import'], true);
     $delete_stmt = $conn->prepare("DELETE FROM location_hours WHERE location_id=?");
     $delete_stmt->bind_param("i", $location_id);
     $delete_stmt->execute();
 
     $insert_stmt = $conn->prepare("
         INSERT INTO location_hours (location_id, day_of_week, opens_at, closes_at, is_closed, source, verifiedAt, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, CASE WHEN ?='business_owner' THEN NOW() ELSE NULL END, NOW(), NOW())
+        VALUES (?, ?, ?, ?, ?, ?, CASE WHEN ?=1 THEN NOW() ELSE NULL END, NOW(), NOW())
     ");
 
     foreach ($hours as $day => $hour) {
         $is_closed = $hour['is_closed'] ? 1 : 0;
         $opens_at = $is_closed ? null : $hour['opens_at'];
         $closes_at = $is_closed ? null : $hour['closes_at'];
-        $insert_stmt->bind_param("iississ", $location_id, $day, $opens_at, $closes_at, $is_closed, $source, $source);
+        $verified = $is_checkin_ready_source ? 1 : 0;
+        $insert_stmt->bind_param("iissisi", $location_id, $day, $opens_at, $closes_at, $is_closed, $source, $verified);
         $insert_stmt->execute();
     }
 
-    if ($source === 'business_owner') {
+    if ($is_checkin_ready_source) {
         $enable_stmt = $conn->prepare("
             UPDATE locations
             SET checkin_verification_enabled=TRUE,
@@ -64,9 +92,9 @@ function craftcrawl_save_location_hours($conn, $location_id, $hours, $source = '
 }
 
 function craftcrawl_location_is_open_now($conn, $location_id) {
-    $today = (int) date('w');
+    $now = new DateTimeImmutable('now');
+    $today = (int) $now->format('w');
     $yesterday = ($today + 6) % 7;
-    $now = date('H:i:s');
 
     $stmt = $conn->prepare("
         SELECT day_of_week, opens_at, closes_at, is_closed
@@ -76,28 +104,12 @@ function craftcrawl_location_is_open_now($conn, $location_id) {
     $stmt->bind_param("iii", $location_id, $today, $yesterday);
     $stmt->execute();
     $result = $stmt->get_result();
+    $rows = [];
 
     while ($row = $result->fetch_assoc()) {
-        if (!empty($row['is_closed']) || empty($row['opens_at']) || empty($row['closes_at'])) {
-            continue;
-        }
-
-        $opens = $row['opens_at'];
-        $closes = $row['closes_at'];
-        $day = (int) $row['day_of_week'];
-
-        if ($opens <= $closes) {
-            if ($day === $today && $now >= $opens && $now <= $closes) {
-                return true;
-            }
-            continue;
-        }
-
-        if (($day === $today && $now >= $opens) || ($day === $yesterday && $now <= $closes)) {
-            return true;
-        }
+        $rows[] = $row;
     }
 
-    return false;
+    return craftcrawl_location_hours_rows_are_open_now($rows, $now);
 }
 ?>

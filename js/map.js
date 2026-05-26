@@ -837,6 +837,8 @@ function centerMapOnUserLocation() {
     map.easeTo({
         center: [userLocation.longitude, userLocation.latitude],
         zoom: Math.max(map.getZoom(), 11.5),
+        bearing: 0,
+        pitch: 0,
         duration: 900
     });
 }

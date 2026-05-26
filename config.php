@@ -2,6 +2,8 @@
 require_once __DIR__ . '/lib/env.php';
 
 $MAPBOX_ACCESS_TOKEN = craftcrawl_env('MAPBOX_ACCESS_TOKEN');
+$GOOGLE_PLACES_API_KEY = craftcrawl_env('GOOGLE_PLACES_API_KEY');
+$GOOGLE_MAPS_BROWSER_API_KEY = craftcrawl_env('GOOGLE_MAPS_BROWSER_API_KEY') ?: $GOOGLE_PLACES_API_KEY;
 
 $CLOUDINARY_CLOUD_NAME = craftcrawl_env('CLOUDINARY_CLOUD_NAME');
 $CLOUDINARY_API_KEY = craftcrawl_env('CLOUDINARY_API_KEY');
