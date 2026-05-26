@@ -58,6 +58,27 @@ function google_import_operation_payload($conn, $operation_id = null) {
     ];
 }
 
+function google_import_operation_try_work($conn, $api_key, $operation_id) {
+    $lock_name = 'craftcrawl_google_import_' . substr(hash('sha256', $operation_id), 0, 48);
+    $lock_stmt = $conn->prepare("SELECT GET_LOCK(?, 0) AS lock_acquired");
+    $lock_stmt->bind_param('s', $lock_name);
+    $lock_stmt->execute();
+    $lock_row = $lock_stmt->get_result()->fetch_assoc();
+    if ((int) ($lock_row['lock_acquired'] ?? 0) !== 1) {
+        return false;
+    }
+
+    try {
+        craftcrawl_process_google_import_operation_step($conn, $api_key, $operation_id, 1);
+    } finally {
+        $release_stmt = $conn->prepare("SELECT RELEASE_LOCK(?)");
+        $release_stmt->bind_param('s', $lock_name);
+        $release_stmt->execute();
+    }
+
+    return true;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
     $state = strtoupper(trim((string) ($_POST['google_state'] ?? '')));
@@ -101,7 +122,7 @@ if ($work && $operation_id !== '') {
     if (trim((string) $GOOGLE_PLACES_API_KEY) === '') {
         google_import_operation_response(['ok' => false, 'message' => 'GOOGLE_PLACES_API_KEY is missing.'], 400);
     }
-    craftcrawl_process_google_import_operation_step($conn, $GOOGLE_PLACES_API_KEY, $operation_id, 1);
+    google_import_operation_try_work($conn, $GOOGLE_PLACES_API_KEY, $operation_id);
 }
 $operation = google_import_operation_payload($conn, $operation_id !== '' ? $operation_id : null);
 google_import_operation_response(['ok' => true, 'operation' => $operation]);

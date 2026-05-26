@@ -62,7 +62,7 @@ window.CraftCrawlInitGoogleImportTiles = function (root = document) {
                 }
 
                 if (operation.status === 'running' || operation.status === 'queued') {
-                    window.setTimeout(() => pollOperation(panel, endpoint, operation.operation_id, pollToken, true), 250);
+                    window.setTimeout(() => pollOperation(panel, endpoint, operation.operation_id, pollToken, true), 1200);
                 } else {
                     window.setTimeout(() => pollOperation(panel, endpoint, '', pollToken), 5000);
                 }

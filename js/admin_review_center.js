@@ -263,22 +263,32 @@ window.CraftCrawlInitAdminReviewCenter = function (root = document) {
             section.querySelector('h2')?.after(toolbar);
         }
 
+        function syncBatchSelectionState() {
+            const selectableItems = items.filter((candidate) => candidate.querySelector('[data-admin-batch-select]'));
+            const selectedItems = selectableItems.filter((candidate) => candidate.querySelector('[data-admin-batch-select]')?.checked);
+            selectAll.checked = selectableItems.length > 0 && selectedItems.length === selectableItems.length;
+            selectAll.indeterminate = selectedItems.length > 0 && selectedItems.length < selectableItems.length;
+            updateBatchToolbar(section);
+        }
+
         items.forEach((item) => {
             if (!item.matches('[data-admin-review-row]')) {
                 item.classList.add('admin-review-list-row');
             }
-            if (item.querySelector('[data-admin-batch-select]')) return;
-            const label = document.createElement('label');
-            label.className = 'admin-batch-row-select';
-            const input = document.createElement('input');
-            input.type = 'checkbox';
-            input.dataset.adminBatchSelect = 'true';
-            label.append(input);
-            item.prepend(label);
-            input.addEventListener('change', () => {
-                selectAll.checked = items.every((candidate) => candidate.querySelector('[data-admin-batch-select]')?.checked);
-                updateBatchToolbar(section);
-            });
+            let input = item.querySelector('[data-admin-batch-select]');
+            if (!input) {
+                const label = document.createElement('label');
+                label.className = 'admin-batch-row-select';
+                input = document.createElement('input');
+                input.type = 'checkbox';
+                input.dataset.adminBatchSelect = 'true';
+                label.append(input);
+                item.prepend(label);
+            }
+            if (input.dataset.adminBatchChangeReady !== 'true') {
+                input.dataset.adminBatchChangeReady = 'true';
+                input.addEventListener('change', syncBatchSelectionState);
+            }
         });
 
         section.querySelectorAll('.admin-review-list-row textarea[name="admin_notes"], [data-admin-review-row] textarea[name="admin_notes"]').forEach((textarea) => {
@@ -298,8 +308,10 @@ window.CraftCrawlInitAdminReviewCenter = function (root = document) {
                 const input = item.querySelector('[data-admin-batch-select]');
                 if (input) input.checked = selectAll.checked;
             });
+            selectAll.indeterminate = false;
             updateBatchToolbar(section);
         });
+        syncBatchSelectionState();
     }
 
     root.querySelectorAll('form[method="POST"]').forEach((form) => {
