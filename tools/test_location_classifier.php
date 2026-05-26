@@ -64,8 +64,18 @@ $cases = [
         'decision' => 'needs_review',
         'category' => 'winery',
     ],
+    'google brewery support score 95 auto-adds' => [
+        'candidate' => ['name' => 'Velum Fermentation', 'street_address' => '2120 Jane Street', 'latitude' => 40.1, 'longitude' => -79.9, 'primary_type' => 'brewery', 'types' => ['brewery', 'point_of_interest', 'food'], 'website' => 'https://example.com/brewery', 'phone' => '555', 'search_term' => 'brewery'],
+        'decision' => 'auto_add',
+        'category' => 'brewery',
+    ],
     'bar with brewery type reviews without producer name' => [
         'candidate' => ['name' => 'Bar Hygge', 'street_address' => '1720 Fairmount Avenue', 'latitude' => 40.1, 'longitude' => -75.1, 'primary_type' => 'bar', 'types' => ['bar', 'brewery'], 'website' => 'https://example.com/beer', 'phone' => '555', 'search_term' => 'brewery'],
+        'decision' => 'needs_review',
+        'category' => 'brewery',
+    ],
+    'social club with brewery support still reviews' => [
+        'candidate' => ['name' => 'Fermentation Social Club', 'street_address' => '9 Main St', 'latitude' => 40.1, 'longitude' => -79.9, 'primary_type' => 'brewery', 'types' => ['brewery', 'social_club'], 'website' => 'https://example.com/brewery', 'phone' => '555', 'search_term' => 'brewery'],
         'decision' => 'needs_review',
         'category' => 'brewery',
     ],

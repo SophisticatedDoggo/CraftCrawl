@@ -65,6 +65,7 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
     $hard_reject = false;
     $suggested_category = 'other';
     $has_strong_alcohol_identity = false;
+    $has_core_support_identity = false;
     $has_core_name_identity = false;
     $has_clear_drinking_venue_identity = false;
 
@@ -99,6 +100,7 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
             $score += $points;
             $has_strong_alcohol_identity = true;
             $has_core_name_identity = $has_core_name_identity || ($points === 95);
+            $has_core_support_identity = $has_core_support_identity || (!$name_match && in_array($suggested_category, ['brewery', 'winery', 'cidery', 'meadery', 'distillery'], true));
             $positive[] = '+' . $points . ' strong alcohol-first ' . ($name_match ? 'name' : 'support') . ' match: ' . ($name_match ?: ($support_match ?: ($type_match ?: $category)));
             break;
         }
@@ -218,6 +220,8 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
     if ($hard_reject) {
         $decision = 'reject';
     } elseif ($has_core_name_identity && $score >= 70 && in_array($suggested_category, $core_auto_categories, true) && !$mixed_restaurant && !$hard_reject) {
+        $decision = 'auto_add';
+    } elseif ($has_core_support_identity && $score >= 95 && in_array($suggested_category, $core_auto_categories, true) && !$mixed_restaurant && !$has_clear_drinking_venue_identity) {
         $decision = 'auto_add';
     } elseif ($has_core_name_identity && $score >= 50 && in_array($suggested_category, $core_auto_categories, true)) {
         $decision = 'needs_review';
