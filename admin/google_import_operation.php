@@ -58,24 +58,6 @@ function google_import_operation_payload($conn, $operation_id = null) {
     ];
 }
 
-function google_import_operation_php_cli() {
-    $candidates = array_filter([
-        craftcrawl_env('CRAFTCRAWL_PHP_CLI'),
-        PHP_BINDIR ? PHP_BINDIR . DIRECTORY_SEPARATOR . 'php' : '',
-        '/usr/bin/php',
-        '/usr/local/bin/php',
-        PHP_BINARY,
-    ]);
-
-    foreach (array_unique($candidates) as $candidate) {
-        if (is_file($candidate) && is_executable($candidate)) {
-            return $candidate;
-        }
-    }
-
-    return '';
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
     $state = strtoupper(trim((string) ($_POST['google_state'] ?? '')));
@@ -89,14 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (trim((string) $GOOGLE_PLACES_API_KEY) === '') {
         google_import_operation_response(['ok' => false, 'message' => 'GOOGLE_PLACES_API_KEY is missing.'], 400);
     }
-    $disabled_functions = array_map('trim', explode(',', (string) ini_get('disable_functions')));
-    if (!function_exists('exec') || in_array('exec', $disabled_functions, true)) {
-        google_import_operation_response(['ok' => false, 'message' => 'PHP exec() is disabled, so background imports cannot be started from the admin UI.'], 500);
-    }
-    $php_cli = google_import_operation_php_cli();
-    if ($php_cli === '') {
-        google_import_operation_response(['ok' => false, 'message' => 'Could not find an executable PHP CLI binary. Set CRAFTCRAWL_PHP_CLI in your local environment.'], 500);
-    }
 
     $operation_id = craftcrawl_google_import_operation_id();
     $tiles = array_slice($state_tiles, 0, $limit_tiles);
@@ -109,45 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         [],
         $tiles[0] ?? [],
         $terms[0] ?? [],
-        'running'
+        'queued'
     );
-
-    $tool = dirname(__DIR__) . '/tools/google_places_import.php';
-    $command = escapeshellarg($php_cli)
-        . ' ' . escapeshellarg($tool)
-        . ' --state=' . escapeshellarg($state)
-        . ' --limit-tiles=' . escapeshellarg((string) $limit_tiles)
-        . ' --operation-id=' . escapeshellarg($operation_id)
-        . ' --track-operation';
-    if ($dry_run) {
-        $command .= ' --dry-run';
-    }
-
-    $log_dir = dirname(__DIR__) . '/results/import_logs';
-    if (!is_dir($log_dir)) {
-        mkdir($log_dir, 0775, true);
-    }
-    if (!is_dir($log_dir) || !is_writable($log_dir)) {
-        $log_dir = sys_get_temp_dir();
-    }
-    $log_file = $log_dir . '/google_import_' . preg_replace('/[^a-zA-Z0-9_-]/', '', $operation_id) . '.log';
-    $launch_output = [];
-    $launch_exit_code = 0;
-    exec('nohup ' . $command . ' > ' . escapeshellarg($log_file) . ' 2>&1 & echo $!', $launch_output, $launch_exit_code);
-    $pid = trim((string) ($launch_output[0] ?? ''));
-    if ($launch_exit_code !== 0 || $pid === '') {
-        craftcrawl_update_google_import_operation_progress(
-            $conn,
-            $operation_id,
-            0,
-            ['error' => 1],
-            [],
-            [],
-            'failed',
-            'Unable to launch background import process. Check ' . $log_file
-        );
-        google_import_operation_response(['ok' => false, 'message' => 'Unable to launch background import process. Check ' . $log_file], 500);
-    }
 
     google_import_operation_response([
         'ok' => true,
@@ -156,6 +93,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $operation_id = trim((string) ($_GET['operation_id'] ?? ''));
+$work = isset($_GET['work']) && $_GET['work'] === '1';
+if ($work && $operation_id !== '') {
+    if (strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) !== 'xmlhttprequest') {
+        google_import_operation_response(['ok' => false, 'message' => 'Importer work requests must come from the admin UI.'], 400);
+    }
+    if (trim((string) $GOOGLE_PLACES_API_KEY) === '') {
+        google_import_operation_response(['ok' => false, 'message' => 'GOOGLE_PLACES_API_KEY is missing.'], 400);
+    }
+    craftcrawl_process_google_import_operation_step($conn, $GOOGLE_PLACES_API_KEY, $operation_id, 1);
+}
 $operation = google_import_operation_payload($conn, $operation_id !== '' ? $operation_id : null);
 google_import_operation_response(['ok' => true, 'operation' => $operation]);
 ?>

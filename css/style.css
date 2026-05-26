@@ -8044,6 +8044,16 @@ a.event-calendar-event:focus .event-calendar-event-name {
     margin-left: auto;
 }
 
+[data-admin-review-center] .admin-import-table-section .admin-batch-toolbar {
+    width: max-content;
+    margin: 14px 0 12px;
+    border-top: 1px solid var(--color-border);
+}
+
+[data-admin-review-center] .admin-import-table-section .admin-batch-actions {
+    margin-left: 0;
+}
+
 [data-admin-review-center] .admin-batch-actions button {
     padding: 8px 12px;
     min-height: 36px;
@@ -8078,8 +8088,8 @@ a.event-calendar-event:focus .event-calendar-event-name {
 }
 
 [data-admin-review-center] .admin-import-review-table {
-    width: max-content;
-    min-width: 3400px;
+    width: 4442px;
+    min-width: 4442px;
     border-collapse: collapse;
     table-layout: fixed;
     background: var(--color-surface);
@@ -8107,6 +8117,39 @@ a.event-calendar-event:focus .event-calendar-event-name {
     background: var(--color-surface-muted);
     font-size: 0.82rem;
     white-space: nowrap;
+}
+
+[data-admin-review-center] .admin-sort-header {
+    display: inline-flex;
+    width: 100%;
+    min-height: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    line-height: inherit;
+    text-align: left;
+    box-shadow: none;
+    cursor: pointer;
+}
+
+[data-admin-review-center] .admin-sort-header:hover,
+[data-admin-review-center] .admin-sort-header:focus {
+    color: var(--color-primary);
+    background: transparent;
+    box-shadow: none;
+}
+
+[data-admin-review-center] .admin-sort-indicator {
+    color: var(--color-muted);
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
 }
 
 [data-admin-review-center] .admin-import-review-table tbody tr:nth-child(even) {

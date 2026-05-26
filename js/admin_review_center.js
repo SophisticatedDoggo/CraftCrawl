@@ -122,6 +122,101 @@ window.CraftCrawlInitAdminReviewCenter = function (root = document) {
         return actions;
     }
 
+    function cellSortValue(row, columnIndex) {
+        const cell = row.cells[columnIndex];
+        if (!cell) return '';
+        const control = cell.querySelector('select, textarea, input:not([type="hidden"]):not([type="checkbox"])');
+        const rawValue = control ? control.value : cell.textContent;
+        return (rawValue || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function comparableNumber(value) {
+        const match = value.match(/-?\d+(?:\.\d+)?/);
+        return match ? Number(match[0]) : null;
+    }
+
+    function enhanceSortableTables(container) {
+        const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+        container.querySelectorAll('table').forEach((table) => {
+            if (table.dataset.adminSortableReady === 'true') return;
+            const headerRow = table.tHead?.rows?.[0];
+            const body = table.tBodies?.[0];
+            if (!headerRow || !body) return;
+
+            table.dataset.adminSortableReady = 'true';
+            const headers = [...headerRow.cells];
+
+            headers.forEach((header, columnIndex) => {
+                const label = header.textContent.replace(/\s+/g, ' ').trim();
+                if (label === '' || label === 'Select' || label === 'Actions') return;
+
+                header.setAttribute('aria-sort', 'none');
+                header.textContent = '';
+
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'admin-sort-header';
+                button.dataset.adminSortColumn = String(columnIndex);
+                button.setAttribute('aria-label', `Sort by ${label}`);
+
+                const labelSpan = document.createElement('span');
+                labelSpan.textContent = label;
+                const indicator = document.createElement('span');
+                indicator.className = 'admin-sort-indicator';
+                indicator.setAttribute('aria-hidden', 'true');
+                indicator.textContent = 'sort';
+
+                button.append(labelSpan, indicator);
+                header.appendChild(button);
+
+                button.addEventListener('click', () => {
+                    const nextDirection = table.dataset.adminSortColumn === String(columnIndex)
+                        && table.dataset.adminSortDirection === 'asc'
+                        ? 'desc'
+                        : 'asc';
+
+                    table.dataset.adminSortColumn = String(columnIndex);
+                    table.dataset.adminSortDirection = nextDirection;
+
+                    headers.forEach((candidate) => {
+                        candidate.setAttribute('aria-sort', candidate === header
+                            ? (nextDirection === 'asc' ? 'ascending' : 'descending')
+                            : 'none');
+                        const candidateIndicator = candidate.querySelector('.admin-sort-indicator');
+                        if (candidateIndicator) {
+                            candidateIndicator.textContent = candidate === header ? nextDirection : 'sort';
+                        }
+                    });
+
+                    const sortedRows = [...body.rows]
+                        .map((row, originalIndex) => ({ row, originalIndex }))
+                        .sort((left, right) => {
+                            const leftValue = cellSortValue(left.row, columnIndex);
+                            const rightValue = cellSortValue(right.row, columnIndex);
+                            const leftNumber = comparableNumber(leftValue);
+                            const rightNumber = comparableNumber(rightValue);
+                            let result;
+
+                            if (leftNumber !== null && rightNumber !== null) {
+                                result = leftNumber - rightNumber;
+                            } else {
+                                result = collator.compare(leftValue, rightValue);
+                            }
+
+                            if (result === 0) {
+                                result = left.originalIndex - right.originalIndex;
+                            }
+
+                            return nextDirection === 'asc' ? result : -result;
+                        })
+                        .map(({ row }) => row);
+
+                    body.append(...sortedRows);
+                });
+            });
+        });
+    }
+
     function enhanceSection(section) {
         if (section.dataset.adminBatchReady === 'true') return;
         const tableItems = [...section.querySelectorAll('[data-admin-review-row]')]
@@ -161,7 +256,12 @@ window.CraftCrawlInitAdminReviewCenter = function (root = document) {
         });
 
         toolbar.append(selectAllLabel, count, actionsWrap);
-        section.querySelector('h2')?.after(toolbar);
+        const searchForm = section.querySelector(':scope > form.admin-search-form');
+        if (searchForm) {
+            searchForm.after(toolbar);
+        } else {
+            section.querySelector('h2')?.after(toolbar);
+        }
 
         items.forEach((item) => {
             if (!item.matches('[data-admin-review-row]')) {
@@ -236,6 +336,7 @@ window.CraftCrawlInitAdminReviewCenter = function (root = document) {
     });
 
     reviewRoot.querySelectorAll('.admin-panel').forEach(enhanceSection);
+    enhanceSortableTables(reviewRoot);
 };
 
 window.CraftCrawlInitAdminReviewCenter();

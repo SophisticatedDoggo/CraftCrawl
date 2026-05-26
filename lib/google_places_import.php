@@ -371,6 +371,133 @@ function craftcrawl_fetch_google_import_operation($conn, $operation_id = null) {
     return $stmt->get_result()->fetch_assoc() ?: null;
 }
 
+function craftcrawl_google_import_operation_summary(array $operation) {
+    return [
+        'raw' => (int) ($operation['raw_result_count'] ?? 0),
+        'created' => (int) ($operation['created_count'] ?? 0),
+        'review' => (int) ($operation['review_count'] ?? 0),
+        'rejected' => (int) ($operation['rejected_count'] ?? 0),
+        'duplicate' => (int) ($operation['duplicate_count'] ?? 0),
+        'skipped' => (int) ($operation['skipped_count'] ?? 0),
+        'error' => (int) ($operation['error_count'] ?? 0),
+    ];
+}
+
+function craftcrawl_process_google_import_operation_step($conn, $api_key, $operation_id, $steps = 1) {
+    $operation = craftcrawl_fetch_google_import_operation($conn, $operation_id);
+    if (!$operation || !in_array($operation['status'], ['queued', 'running'], true)) {
+        return $operation ? craftcrawl_google_import_operation_summary($operation) : null;
+    }
+
+    $state = strtoupper((string) $operation['state']);
+    $limit_tiles = max(1, (int) $operation['limit_tiles']);
+    $dry_run = !empty($operation['dry_run']);
+    $tiles = array_slice(craftcrawl_state_search_tiles($state), 0, $limit_tiles);
+    $terms = craftcrawl_google_places_search_terms();
+    $total_steps = count($tiles) * count($terms);
+    $completed_steps = max(0, (int) $operation['completed_steps']);
+    $summary = craftcrawl_google_import_operation_summary($operation);
+
+    if ($total_steps === 0 || $completed_steps >= $total_steps) {
+        craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, [], [], $summary['error'] > 0 ? 'failed' : 'completed');
+        return $summary;
+    }
+
+    $chain_patterns = craftcrawl_active_chain_patterns($conn);
+    $steps = max(1, (int) $steps);
+    for ($processed = 0; $processed < $steps && $completed_steps < $total_steps; $processed++) {
+        $tile_index = intdiv($completed_steps, count($terms));
+        $term_index = $completed_steps % count($terms);
+        $tile = $tiles[$tile_index] ?? [];
+        $term = $terms[$term_index] ?? [];
+
+        craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile, $term, 'running');
+        $batch_id = $dry_run ? 0 : craftcrawl_insert_location_import_batch($conn, $operation_id, 'state', $state, $term, $tile);
+        $payload = craftcrawl_google_places_search($api_key, $term, $tile);
+
+        if (!empty($payload['error'])) {
+            $counts = ['raw' => 0, 'created' => 0, 'review' => 0, 'rejected' => 0, 'duplicate' => 0, 'skipped' => 0, 'error' => 1];
+            if (!$dry_run) {
+                craftcrawl_complete_location_import_batch($conn, $batch_id, $counts, 'failed', $payload['error']);
+            }
+            foreach ($counts as $key => $value) {
+                $summary[$key] += $value;
+            }
+            $completed_steps++;
+            craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile, $term, 'running', $payload['error']);
+            continue;
+        }
+
+        $counts = ['raw' => count($payload['places'] ?? []), 'created' => 0, 'review' => 0, 'rejected' => 0, 'duplicate' => 0, 'skipped' => 0, 'error' => 0];
+        $seen_place_ids = [];
+        $seen_candidate_keys = [];
+        foreach (($payload['places'] ?? []) as $place) {
+            $candidate = craftcrawl_normalize_google_place($place, $term['term'] ?? '');
+            if (!craftcrawl_google_candidate_in_tile($candidate, $tile)) {
+                $counts['skipped']++;
+                continue;
+            }
+
+            $place_id = $candidate['source_place_id'] ?? '';
+            if ($place_id !== '' && isset($seen_place_ids[$place_id])) {
+                $counts['duplicate']++;
+                continue;
+            }
+            if ($place_id !== '') {
+                $seen_place_ids[$place_id] = true;
+            }
+
+            $batch_keys = array_values(array_filter([
+                'name_address:' . craftcrawl_normalize_location_text(($candidate['name'] ?? '') . '|' . ($candidate['street_address'] ?? '') . '|' . ($candidate['city'] ?? '') . '|' . ($candidate['state'] ?? '')),
+                preg_replace('/\D+/', '', (string) ($candidate['phone'] ?? '')) !== '' ? 'phone:' . preg_replace('/\D+/', '', (string) ($candidate['phone'] ?? '')) : '',
+            ]));
+            $duplicate_batch_key = null;
+            foreach ($batch_keys as $batch_key) {
+                if (isset($seen_candidate_keys[$batch_key])) {
+                    $duplicate_batch_key = $batch_key;
+                    break;
+                }
+            }
+            if ($duplicate_batch_key !== null) {
+                $counts['duplicate']++;
+                continue;
+            }
+            foreach ($batch_keys as $batch_key) {
+                $seen_candidate_keys[$batch_key] = true;
+            }
+
+            if (($candidate['state'] ?? '') === '') {
+                $candidate['state'] = $state;
+            }
+            $result = craftcrawl_import_google_place($conn, $batch_id, $candidate, $chain_patterns, $dry_run);
+            if ($result['decision'] === 'auto_add') {
+                $counts['created']++;
+            } elseif ($result['decision'] === 'needs_review') {
+                $counts['review']++;
+            } elseif ($result['decision'] === 'duplicate') {
+                $counts['duplicate']++;
+            } else {
+                $counts['rejected']++;
+            }
+        }
+
+        foreach ($counts as $key => $value) {
+            $summary[$key] += $value;
+        }
+        if (!$dry_run) {
+            craftcrawl_complete_location_import_batch($conn, $batch_id, $counts);
+        }
+        $completed_steps++;
+        craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile, $term, 'running');
+    }
+
+    if ($completed_steps >= $total_steps) {
+        craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile ?? [], $term ?? [], $summary['error'] > 0 ? 'failed' : 'completed');
+    }
+
+    return $summary;
+}
+
 function craftcrawl_insert_location_import_batch($conn, $operation_id, $scope, $state, array $term, array $tile) {
     $stmt = $conn->prepare("INSERT INTO location_import_batches (operation_id,import_scope,state,search_term,google_search_mode,tile_label,tile_center_latitude,tile_center_longitude,tile_radius_meters) VALUES (?,?,?,?,?,?,?,?,?)");
     $mode = $term['mode'] ?? 'text';

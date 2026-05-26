@@ -31,15 +31,24 @@ window.CraftCrawlInitGoogleImportTiles = function (root = document) {
         error.textContent = operation.api_error || '';
     }
 
-    function pollOperation(panel, endpoint, operationId, pollToken) {
+    function pollOperation(panel, endpoint, operationId, pollToken, shouldWork = false) {
         const url = new URL(endpoint, window.location.href);
         if (operationId) {
             url.searchParams.set('operation_id', operationId);
         }
+        if (shouldWork && operationId) {
+            url.searchParams.set('work', '1');
+        }
 
         url.searchParams.set('_', String(Date.now()));
 
-        window.fetch(url, { credentials: 'same-origin', cache: 'no-store' })
+        window.fetch(url, {
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
             .then((response) => response.json())
             .then((payload) => {
                 const operation = payload.operation || null;
@@ -53,7 +62,7 @@ window.CraftCrawlInitGoogleImportTiles = function (root = document) {
                 }
 
                 if (operation.status === 'running' || operation.status === 'queued') {
-                    window.setTimeout(() => pollOperation(panel, endpoint, operation.operation_id, pollToken), 750);
+                    window.setTimeout(() => pollOperation(panel, endpoint, operation.operation_id, pollToken, true), 250);
                 } else {
                     window.setTimeout(() => pollOperation(panel, endpoint, '', pollToken), 5000);
                 }
@@ -62,7 +71,7 @@ window.CraftCrawlInitGoogleImportTiles = function (root = document) {
                 if (pollToken && panel.dataset.googleOperationPollToken !== pollToken) {
                     return;
                 }
-                window.setTimeout(() => pollOperation(panel, endpoint, operationId, pollToken), 2000);
+                window.setTimeout(() => pollOperation(panel, endpoint, operationId, pollToken, shouldWork), 2000);
             });
     }
 
@@ -143,7 +152,7 @@ window.CraftCrawlInitGoogleImportTiles = function (root = document) {
                     const pollToken = String(pollCounter);
                     panel.dataset.googleOperationPollToken = pollToken;
                     renderOperation(panel, payload.operation);
-                    pollOperation(panel, endpoint, payload.operation.operation_id, pollToken);
+                    pollOperation(panel, endpoint, payload.operation.operation_id, pollToken, true);
                 })
                 .catch((error) => {
                     const operationPanel = panel.querySelector('[data-google-current-operation]');
