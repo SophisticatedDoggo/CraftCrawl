@@ -18,6 +18,8 @@ window.CraftCrawlInitAdminReviewCenter = function (root = document) {
         'reject_import',
         'mark_import_duplicate',
         'enable_checkins',
+        'disable_location',
+        'reenable_location',
         'hide_location',
         'unhide_location',
         'restore_suggestion'
