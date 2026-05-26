@@ -261,6 +261,12 @@ function craftcrawl_normalize_google_place(array $place, $search_term = '') {
     ];
 }
 
+function craftcrawl_google_candidate_matches_import_state(array $candidate, $state) {
+    $candidate_state = strtoupper(trim((string) ($candidate['state'] ?? '')));
+    $import_state = strtoupper(trim((string) $state));
+    return $candidate_state === '' || $candidate_state === $import_state;
+}
+
 function craftcrawl_google_import_operation_id() {
     try {
         return bin2hex(random_bytes(8));
@@ -434,6 +440,10 @@ function craftcrawl_process_google_import_operation_step($conn, $api_key, $opera
         foreach (($payload['places'] ?? []) as $place) {
             $candidate = craftcrawl_normalize_google_place($place, $term['term'] ?? '');
             if (!craftcrawl_google_candidate_in_tile($candidate, $tile)) {
+                $counts['skipped']++;
+                continue;
+            }
+            if (!craftcrawl_google_candidate_matches_import_state($candidate, $state)) {
                 $counts['skipped']++;
                 continue;
             }
@@ -726,6 +736,15 @@ function craftcrawl_run_google_places_import($conn, $api_key, $state, array $opt
                         $distance = (isset($candidate['latitude'], $candidate['longitude'])) ? round(craftcrawl_distance_meters($tile['latitude'], $tile['longitude'], $candidate['latitude'], $candidate['longitude'])) : null;
                         $classification = craftcrawl_classify_location_candidate($candidate, $chain_patterns);
                         $classification['decision_reason'] = 'outside tile radius' . ($distance === null ? '' : ' (' . $distance . 'm from tile center)');
+                        $results['skipped'][] = craftcrawl_google_import_result_item($candidate, ['decision' => 'skipped', 'classification' => $classification], $tile, $term);
+                    }
+                    continue;
+                }
+                if (!craftcrawl_google_candidate_matches_import_state($candidate, $state)) {
+                    $counts['skipped']++;
+                    if ($include_results) {
+                        $classification = craftcrawl_classify_location_candidate($candidate, $chain_patterns);
+                        $classification['decision_reason'] = 'outside import state: ' . (($candidate['state'] ?? '') ?: 'unknown') . ' returned during ' . $state . ' import';
                         $results['skipped'][] = craftcrawl_google_import_result_item($candidate, ['decision' => 'skipped', 'classification' => $classification], $tile, $term);
                     }
                     continue;
