@@ -8526,8 +8526,15 @@ a.event-calendar-event:focus .event-calendar-event-name {
 }
 
 .admin-recovery-table-wrap {
+    width: 100%;
     max-width: 100%;
-    overflow-x: auto;
+    max-height: min(720px, 72vh);
+    overflow: auto;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .admin-recovery-table {
@@ -8550,6 +8557,9 @@ a.event-calendar-event:focus .event-calendar-event-name {
 }
 
 .admin-recovery-table th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
     color: var(--color-heading);
     background: var(--color-surface-muted);
     font-size: 0.82rem;
@@ -13271,8 +13281,15 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
 }
 
 .admin-reports-table-wrap {
+    width: 100%;
     max-width: 100%;
-    overflow-x: auto;
+    max-height: min(720px, 72vh);
+    overflow: auto;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .admin-reports-table {
