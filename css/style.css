@@ -6940,7 +6940,7 @@ a.mobile-context-back.feed-thread-back-link:focus {
     margin: 0 0 18px;
 }
 
-.business-phone-line a {
+.business-details-page .business-phone-line a {
     display: inline;
     min-height: 0;
     padding: 0;
@@ -6949,12 +6949,14 @@ a.mobile-context-back.feed-thread-back-link:focus {
     color: inherit;
     background: transparent;
     box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     font-weight: inherit;
     text-decoration: none;
 }
 
-.business-phone-line a:hover,
-.business-phone-line a:focus {
+.business-details-page .business-phone-line a:hover,
+.business-details-page .business-phone-line a:focus {
     text-decoration: underline;
     background: transparent;
     box-shadow: none;
@@ -6968,7 +6970,7 @@ a.mobile-context-back.feed-thread-back-link:focus {
     margin: 0 0 6px;
 }
 
-.business-claim-prompt a {
+.business-details-page .business-claim-prompt a {
     display: inline;
     min-height: 0;
     padding: 0;
@@ -6977,12 +6979,14 @@ a.mobile-context-back.feed-thread-back-link:focus {
     color: var(--color-primary);
     background: transparent;
     box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     font-weight: 800;
     text-decoration: none;
 }
 
-.business-claim-prompt a:hover,
-.business-claim-prompt a:focus {
+.business-details-page .business-claim-prompt a:hover,
+.business-details-page .business-claim-prompt a:focus {
     color: var(--color-primary-dark);
     text-decoration: underline;
     background: transparent;
@@ -13584,13 +13588,15 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
     margin-top: 12px;
 }
 
-.report-listing-toggle {
+.business-details-page .report-listing-toggle {
     min-height: 0;
     padding: 0;
     border: none;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     color: var(--color-text-muted);
     font-size: 0.82rem;
     font-weight: 400;
@@ -13599,8 +13605,8 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
     opacity: 0.6;
 }
 
-.report-listing-toggle:hover,
-.report-listing-toggle:focus {
+.business-details-page .report-listing-toggle:hover,
+.business-details-page .report-listing-toggle:focus {
     opacity: 1;
     background: transparent;
     box-shadow: none;
