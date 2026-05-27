@@ -22,7 +22,9 @@ window.CraftCrawlInitAdminReviewCenter = function (root = document) {
         'reenable_location',
         'hide_location',
         'unhide_location',
-        'restore_suggestion'
+        'restore_suggestion',
+        'review_report_hide_location',
+        'review_report_disable_location'
     ]);
 
     function currentScrollY() {

@@ -3,15 +3,18 @@ require 'login_check.php';
 include 'db.php';
 require_once 'lib/user_avatar.php';
 
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['user_id']) && !isset($_SESSION['admin_id'])) {
     craftcrawl_redirect('user_login.php');
 }
 
 $business_id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT);
-$user_id = (int) $_SESSION['user_id'];
+$is_admin_preview = isset($_SESSION['admin_id']) && !isset($_SESSION['user_id']);
+$user_id = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
 $message = $_GET['message'] ?? null;
-$xp_reward_popup = $_SESSION['craftcrawl_xp_reward_popup'] ?? null;
-unset($_SESSION['craftcrawl_xp_reward_popup']);
+$xp_reward_popup = $user_id > 0 ? ($_SESSION['craftcrawl_xp_reward_popup'] ?? null) : null;
+if ($user_id > 0) {
+    unset($_SESSION['craftcrawl_xp_reward_popup']);
+}
 
 function escape_output($value) {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
@@ -95,7 +98,7 @@ require_once 'lib/quests.php';
 require_once 'lib/location_hours.php';
 
 if (!$business_id) {
-    header('Location: user/portal.php');
+    header('Location: ' . ($is_admin_preview ? 'admin/review_center.php' : 'user/portal.php'));
     exit();
 }
 
@@ -113,18 +116,18 @@ $business_stmt = $conn->prepare("
     FROM locations l
     LEFT JOIN businesses b ON b.id = l.legacy_business_id
     WHERE (l.id=? OR b.id=?)
-      AND l.visibility_status IN ('public_unclaimed', 'public_claimed')
-      AND l.disabledAt IS NULL
+      AND (?=1 OR (l.visibility_status IN ('public_unclaimed', 'public_claimed') AND l.disabledAt IS NULL))
     ORDER BY (l.id = ?) DESC
     LIMIT 1
 ");
-$business_stmt->bind_param("iii", $business_id, $business_id, $business_id);
+$admin_can_view_nonpublic = $is_admin_preview ? 1 : 0;
+$business_stmt->bind_param("iiii", $business_id, $business_id, $admin_can_view_nonpublic, $business_id);
 $business_stmt->execute();
 $business_result = $business_stmt->get_result();
 $business = $business_result->fetch_assoc();
 
 if (!$business) {
-    header('Location: user/portal.php');
+    header('Location: ' . ($is_admin_preview ? 'admin/review_center.php' : 'user/portal.php'));
     exit();
 }
 
@@ -134,7 +137,7 @@ $is_claimed_location = $business['visibility_status'] === 'public_claimed';
 $business_phone_href = dialable_phone_number($business['bPhone'] ?? '');
 
 $show_social_club_disclaimer = true;
-if ($business['bType'] === 'social_club') {
+if ($business['bType'] === 'social_club' && $user_id > 0) {
     $disclaimer_pref_stmt = $conn->prepare("SELECT show_social_club_disclaimer FROM users WHERE id=? LIMIT 1");
     if ($disclaimer_pref_stmt) {
         $disclaimer_pref_stmt->bind_param("i", $user_id);
@@ -151,19 +154,24 @@ $business_hours_text = craftcrawl_business_hours_have_saved_hours($business_hour
     ? craftcrawl_format_business_hours($business_hours)
     : '';
 
-$review_eligibility_stmt = $conn->prepare("
-    SELECT
-        EXISTS(SELECT 1 FROM user_visits WHERE user_id=? AND location_id=? LIMIT 1) AS has_checked_in,
-        EXISTS(SELECT 1 FROM reviews WHERE user_id=? AND location_id=? LIMIT 1) AS has_reviewed
-");
-$review_eligibility_stmt->bind_param("iiii", $user_id, $location_id, $user_id, $location_id);
-$review_eligibility_stmt->execute();
-$review_eligibility = $review_eligibility_stmt->get_result()->fetch_assoc();
-$user_has_checked_in = !empty($review_eligibility['has_checked_in']);
-$user_has_reviewed = !empty($review_eligibility['has_reviewed']);
+$user_has_checked_in = false;
+$user_has_reviewed = false;
 $user_review = null;
 
-if ($user_has_reviewed) {
+if ($user_id > 0) {
+    $review_eligibility_stmt = $conn->prepare("
+        SELECT
+            EXISTS(SELECT 1 FROM user_visits WHERE user_id=? AND location_id=? LIMIT 1) AS has_checked_in,
+            EXISTS(SELECT 1 FROM reviews WHERE user_id=? AND location_id=? LIMIT 1) AS has_reviewed
+    ");
+    $review_eligibility_stmt->bind_param("iiii", $user_id, $location_id, $user_id, $location_id);
+    $review_eligibility_stmt->execute();
+    $review_eligibility = $review_eligibility_stmt->get_result()->fetch_assoc();
+    $user_has_checked_in = !empty($review_eligibility['has_checked_in']);
+    $user_has_reviewed = !empty($review_eligibility['has_reviewed']);
+}
+
+if ($user_id > 0 && $user_has_reviewed) {
     $user_review_stmt = $conn->prepare("SELECT id, rating, notes FROM reviews WHERE user_id=? AND location_id=? LIMIT 1");
     $user_review_stmt->bind_param("ii", $user_id, $location_id);
     $user_review_stmt->execute();
@@ -171,6 +179,11 @@ if ($user_has_reviewed) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($user_id <= 0) {
+        header('Location: admin/review_center.php');
+        exit();
+    }
+
     if (craftcrawl_request_exceeds_post_max_size()) {
         header("Location: business_details.php?id=" . $business_id . "&message=review_photo_server_limit_error");
         exit();
@@ -335,15 +348,20 @@ if (!empty($review_ids)) {
     }
 }
 
-$follow_stmt = $conn->prepare("SELECT id FROM liked_businesses WHERE user_id=? AND location_id=?");
-$follow_stmt->bind_param("ii", $user_id, $location_id);
-$follow_stmt->execute();
-$is_following = (bool) $follow_stmt->get_result()->fetch_assoc();
+$is_following = false;
+$is_want_to_go = false;
 
-$want_stmt = $conn->prepare("SELECT id FROM want_to_go_locations WHERE user_id=? AND location_id=?");
-$want_stmt->bind_param("ii", $user_id, $location_id);
-$want_stmt->execute();
-$is_want_to_go = (bool) $want_stmt->get_result()->fetch_assoc();
+if ($user_id > 0) {
+    $follow_stmt = $conn->prepare("SELECT id FROM liked_businesses WHERE user_id=? AND location_id=?");
+    $follow_stmt->bind_param("ii", $user_id, $location_id);
+    $follow_stmt->execute();
+    $is_following = (bool) $follow_stmt->get_result()->fetch_assoc();
+
+    $want_stmt = $conn->prepare("SELECT id FROM want_to_go_locations WHERE user_id=? AND location_id=?");
+    $want_stmt->bind_param("ii", $user_id, $location_id);
+    $want_stmt->execute();
+    $is_want_to_go = (bool) $want_stmt->get_result()->fetch_assoc();
+}
 
 require_once 'lib/business_post_render.php';
 
@@ -366,16 +384,19 @@ $has_more_posts = count($posts_raw) > 1;
 $posts_raw = array_slice($posts_raw, 0, 1);
 $posts = craftcrawl_load_posts_with_poll_data($conn, $user_id, $posts_raw);
 
-$friend_options_stmt = $conn->prepare("
-    SELECT u.id, u.fName, u.lName
-    FROM user_friends uf
-    INNER JOIN users u ON u.id = uf.friend_user_id
-    WHERE uf.user_id=? AND u.disabledAt IS NULL
-    ORDER BY u.fName, u.lName
-");
-$friend_options_stmt->bind_param("i", $user_id);
-$friend_options_stmt->execute();
-$friend_options = $friend_options_stmt->get_result();
+$friend_options = null;
+if ($user_id > 0) {
+    $friend_options_stmt = $conn->prepare("
+        SELECT u.id, u.fName, u.lName
+        FROM user_friends uf
+        INNER JOIN users u ON u.id = uf.friend_user_id
+        WHERE uf.user_id=? AND u.disabledAt IS NULL
+        ORDER BY u.fName, u.lName
+    ");
+    $friend_options_stmt->bind_param("i", $user_id);
+    $friend_options_stmt->execute();
+    $friend_options = $friend_options_stmt->get_result();
+}
 
 $business_photo_stmt = $conn->prepare("
     SELECT p.object_key, p.public_url, p.width, p.height, bp.photo_type, bp.sort_order
@@ -456,9 +477,12 @@ function format_event_time_range($event) {
             <strong data-refresh-label>Pull to refresh</strong>
         </div>
         <div class="details-nav">
-            <a href="user/portal.php" data-back-link>Back</a>
+            <a href="<?php echo $is_admin_preview ? 'admin/review_center.php' : 'user/portal.php'; ?>" data-back-link>Back</a>
             <div class="business-header-actions">
                 <button type="button" class="refresh-page-button" data-refresh-button>Refresh</button>
+                <?php if ($is_admin_preview) : ?>
+                    <a href="admin/review_center.php">Approval Center</a>
+                <?php else : ?>
                 <div class="mobile-actions-menu details-actions-menu" data-mobile-actions-menu>
                     <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
                         <span></span>
@@ -478,8 +502,13 @@ function format_event_time_range($event) {
                         </form>
                     </div>
                 </div>
+                <?php endif; ?>
             </div>
         </div>
+
+        <?php if ($is_admin_preview) : ?>
+            <p class="form-message">Admin preview: user actions are hidden. Listing status: <?php echo escape_output(ucwords(str_replace('_', ' ', $business['visibility_status']))); ?><?php echo !empty($business['disabledAt']) ? ' · disabled' : ''; ?>.</p>
+        <?php endif; ?>
 
         <?php if ($message === 'review_saved_xp') : ?>
             <p class="form-message form-message-success">Your review has been posted.</p>
@@ -597,6 +626,13 @@ function format_event_time_range($event) {
             <?php endif; ?>
 
             <div class="business-details-actions">
+                <?php if ($is_admin_preview) : ?>
+                    <a href="admin/location_hours.php?id=<?php echo escape_output($location_id); ?>">Edit Hours</a>
+                    <a href="admin/review_center.php">Review Reports</a>
+                    <?php if (!empty($business['bWebsite'])) : ?>
+                        <a href="<?php echo escape_output($business['bWebsite']); ?>" target="_blank" rel="noopener">Visit Website</a>
+                    <?php endif; ?>
+                <?php else : ?>
                 <form method="POST" action="check_in.php" class="check-in-form" data-check-in-form>
                     <?php echo craftcrawl_csrf_input(); ?>
                     <input type="hidden" name="business_id" value="<?php echo escape_output($legacy_business_id); ?>">
@@ -627,13 +663,16 @@ function format_event_time_range($event) {
                         <?php echo $is_want_to_go ? 'Remove from Want to Go' : 'Want to Go'; ?>
                     </button>
                 </form>
+                <?php endif; ?>
             </div>
 
+            <?php if (!$is_admin_preview) : ?>
             <div class="report-listing-section">
                 <button type="button" class="report-listing-toggle" data-report-toggle>Report this listing</button>
             </div>
+            <?php endif; ?>
 
-            <?php if ($user_has_checked_in && $friend_options->num_rows > 0) : ?>
+            <?php if (!$is_admin_preview && $user_has_checked_in && $friend_options && $friend_options->num_rows > 0) : ?>
                 <form method="POST" action="user/recommend_location.php" class="recommend-location-form">
                     <?php echo craftcrawl_csrf_input(); ?>
                     <input type="hidden" name="business_id" value="<?php echo escape_output($legacy_business_id); ?>">
@@ -650,7 +689,7 @@ function format_event_time_range($event) {
                         <button type="submit">Recommend</button>
                     </div>
                 </form>
-            <?php elseif (!$user_has_checked_in && $friend_options->num_rows > 0) : ?>
+            <?php elseif (!$is_admin_preview && !$user_has_checked_in && $friend_options && $friend_options->num_rows > 0) : ?>
                 <p class="form-message">Check in at this location to recommend it to friends.</p>
             <?php endif; ?>
             <p class="form-message" data-check-in-feedback hidden></p>
@@ -775,6 +814,7 @@ function format_event_time_range($event) {
         </section>
         <?php endif; ?>
 
+        <?php if (!$is_admin_preview) : ?>
         <section class="review-form-panel">
             <h2><?php echo $user_has_reviewed ? 'Edit Your Review' : 'Leave a Review'; ?></h2>
             <?php if (!$user_has_checked_in) : ?>
@@ -839,6 +879,7 @@ function format_event_time_range($event) {
                 </form>
             <?php endif; ?>
         </section>
+        <?php endif; ?>
 
         <section class="business-reviews-panel">
             <h2>User Reviews</h2>
@@ -908,6 +949,7 @@ function format_event_time_range($event) {
         <img class="photo-lightbox-image review-photo-lightbox-image" id="business-gallery-lightbox-image" alt="<?php echo escape_output($business['bName']); ?> photo">
         <button type="button" class="photo-lightbox-nav photo-lightbox-next review-photo-lightbox-nav review-photo-lightbox-next business-gallery-lightbox-nav" id="business-gallery-lightbox-next" aria-label="Next photo">&rsaquo;</button>
     </div>
+<?php if (!$is_admin_preview) : ?>
 <div
     class="welcome-modal report-listing-modal"
     data-report-modal
@@ -976,7 +1018,8 @@ function format_event_time_range($event) {
         </form>
     </div>
 </div>
-<?php if ($business['bType'] === 'social_club' && $show_social_club_disclaimer) : ?>
+<?php endif; ?>
+<?php if (!$is_admin_preview && $business['bType'] === 'social_club' && $show_social_club_disclaimer) : ?>
     <section
         class="welcome-modal"
         data-social-club-disclaimer
@@ -995,12 +1038,14 @@ function format_event_time_range($event) {
     </section>
 <?php endif; ?>
     </div>
+    <?php if (!$is_admin_preview) : ?>
     <?php
     $craftcrawl_portal_active = '';
     $craftcrawl_user_nav_prefix = '/user/';
     $craftcrawl_user_logout_action = '/logout.php';
     include __DIR__ . '/user/app_nav.php';
     ?>
+    <?php endif; ?>
 <script>
     window.MAPBOX_ACCESS_TOKEN = "<?php echo escape_output($MAPBOX_ACCESS_TOKEN); ?>";
     window.CRAFTCRAWL_XP_REWARD_POPUP = <?php echo json_encode($xp_reward_popup, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
