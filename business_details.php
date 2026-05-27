@@ -631,61 +631,6 @@ function format_event_time_range($event) {
 
             <div class="report-listing-section">
                 <button type="button" class="report-listing-toggle" data-report-toggle>Report this listing</button>
-                <form method="POST" action="user/report_location.php" class="report-listing-form" data-report-form hidden>
-                    <?php echo craftcrawl_csrf_input(); ?>
-                    <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
-                    <fieldset>
-                        <legend>What's the issue?</legend>
-                        <label>
-                            <input type="radio" name="report_type" value="incorrect_hours" required>
-                            Hours are incorrect
-                            <span class="report-type-hint">Which days or hours are wrong?</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="report_type" value="business_closed">
-                            Business is permanently closed
-                            <span class="report-type-hint">When did it close, if known?</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="report_type" value="wrong_type">
-                            Business type is incorrect
-                            <span class="report-type-hint">What type should it be?</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="report_type" value="doesnt_belong">
-                            Business doesn't belong on CraftCrawl
-                            <span class="report-type-hint">Why doesn't it fit the site?</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="report_type" value="wrong_address">
-                            Address or location is incorrect
-                            <span class="report-type-hint">What's the correct address?</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="report_type" value="duplicate_listing">
-                            This is a duplicate listing
-                            <span class="report-type-hint">Do you know the name of the original listing?</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="report_type" value="inappropriate_content">
-                            Photos or content are inappropriate
-                            <span class="report-type-hint">What content is the problem?</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="report_type" value="other">
-                            Other
-                            <span class="report-type-hint">Please describe the issue below.</span>
-                        </label>
-                    </fieldset>
-                    <div class="report-details-field" data-report-details-field hidden>
-                        <label for="report_details">Additional details <span data-report-details-optional>(optional)</span><span data-report-details-required hidden>(required)</span></label>
-                        <textarea id="report_details" name="details" maxlength="1000" rows="3" placeholder="Add any helpful details..."></textarea>
-                    </div>
-                    <div class="report-form-actions" data-report-form-actions hidden>
-                        <button type="submit">Submit Report</button>
-                        <button type="button" data-report-cancel>Cancel</button>
-                    </div>
-                </form>
             </div>
 
             <?php if ($user_has_checked_in && $friend_options->num_rows > 0) : ?>
@@ -963,6 +908,74 @@ function format_event_time_range($event) {
         <img class="photo-lightbox-image review-photo-lightbox-image" id="business-gallery-lightbox-image" alt="<?php echo escape_output($business['bName']); ?> photo">
         <button type="button" class="photo-lightbox-nav photo-lightbox-next review-photo-lightbox-nav review-photo-lightbox-next business-gallery-lightbox-nav" id="business-gallery-lightbox-next" aria-label="Next photo">&rsaquo;</button>
     </div>
+<div
+    class="welcome-modal report-listing-modal"
+    data-report-modal
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="report-modal-title"
+    hidden
+>
+    <div class="welcome-modal-backdrop" data-report-backdrop aria-hidden="true"></div>
+    <div class="welcome-modal-panel report-listing-modal-panel">
+        <h2 id="report-modal-title">Report this listing</h2>
+        <p class="report-modal-subtitle">Help us keep CraftCrawl accurate. What's the issue?</p>
+        <form method="POST" action="user/report_location.php" data-report-form>
+            <?php echo craftcrawl_csrf_input(); ?>
+            <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
+            <div class="report-type-list">
+                <label class="report-type-option">
+                    <input type="radio" name="report_type" value="incorrect_hours" required>
+                    <span class="report-type-label">Hours are incorrect</span>
+                    <span class="report-type-hint">Which days or hours are wrong?</span>
+                </label>
+                <label class="report-type-option">
+                    <input type="radio" name="report_type" value="business_closed">
+                    <span class="report-type-label">Business is permanently closed</span>
+                    <span class="report-type-hint">When did it close, if known?</span>
+                </label>
+                <label class="report-type-option">
+                    <input type="radio" name="report_type" value="wrong_type">
+                    <span class="report-type-label">Business type is incorrect</span>
+                    <span class="report-type-hint">What type should it be?</span>
+                </label>
+                <label class="report-type-option">
+                    <input type="radio" name="report_type" value="doesnt_belong">
+                    <span class="report-type-label">Business doesn't belong on CraftCrawl</span>
+                    <span class="report-type-hint">Why doesn't it fit the site?</span>
+                </label>
+                <label class="report-type-option">
+                    <input type="radio" name="report_type" value="wrong_address">
+                    <span class="report-type-label">Address or location is incorrect</span>
+                    <span class="report-type-hint">What's the correct address?</span>
+                </label>
+                <label class="report-type-option">
+                    <input type="radio" name="report_type" value="duplicate_listing">
+                    <span class="report-type-label">This is a duplicate listing</span>
+                    <span class="report-type-hint">Do you know the name of the original listing?</span>
+                </label>
+                <label class="report-type-option">
+                    <input type="radio" name="report_type" value="inappropriate_content">
+                    <span class="report-type-label">Photos or content are inappropriate</span>
+                    <span class="report-type-hint">What content is the problem?</span>
+                </label>
+                <label class="report-type-option">
+                    <input type="radio" name="report_type" value="other">
+                    <span class="report-type-label">Other</span>
+                    <span class="report-type-hint">Please describe the issue below.</span>
+                </label>
+            </div>
+            <div class="report-details-field" data-report-details-field hidden>
+                <label for="report_details">Additional details <span data-report-details-optional>(optional)</span><span data-report-details-required hidden>(required)</span></label>
+                <textarea id="report_details" name="details" maxlength="1000" rows="3" placeholder="Add any helpful details..."></textarea>
+            </div>
+            <div class="report-modal-actions">
+                <button type="submit" class="report-modal-submit" data-report-submit disabled>Submit Report</button>
+                <button type="button" class="report-modal-cancel" data-report-close>Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
 <?php if ($business['bType'] === 'social_club' && $show_social_club_disclaimer) : ?>
     <section
         class="welcome-modal"
@@ -1020,25 +1033,50 @@ function format_event_time_range($event) {
 <script src="js/social_club_disclaimer.js?v=<?php echo filemtime(__DIR__ . '/js/social_club_disclaimer.js'); ?>"></script>
 <script>
 (function () {
-    var toggle = document.querySelector('[data-report-toggle]');
-    var form = document.querySelector('[data-report-form]');
-    var cancel = document.querySelector('[data-report-cancel]');
-    var detailsField = document.querySelector('[data-report-details-field]');
-    var detailsTextarea = document.getElementById('report_details');
-    var optionalLabel = document.querySelector('[data-report-details-optional]');
-    var requiredLabel = document.querySelector('[data-report-details-required]');
-    var actions = document.querySelector('[data-report-form-actions]');
-    if (!toggle || !form) return;
-    toggle.addEventListener('click', function () { form.hidden = false; toggle.hidden = true; });
-    cancel.addEventListener('click', function () { form.hidden = true; toggle.hidden = false; });
-    form.addEventListener('change', function (e) {
+    var openBtn = document.querySelector('[data-report-toggle]');
+    var modal = document.querySelector('[data-report-modal]');
+    if (!openBtn || !modal) return;
+
+    var backdrop = modal.querySelector('[data-report-backdrop]');
+    var closeButtons = modal.querySelectorAll('[data-report-close]');
+    var detailsField = modal.querySelector('[data-report-details-field]');
+    var detailsTextarea = modal.querySelector('#report_details');
+    var optionalLabel = modal.querySelector('[data-report-details-optional]');
+    var requiredLabel = modal.querySelector('[data-report-details-required]');
+    var submitBtn = modal.querySelector('[data-report-submit]');
+
+    function openModal() {
+        modal.hidden = false;
+        document.body.classList.add('welcome-modal-open');
+        var firstRadio = modal.querySelector('input[type="radio"]');
+        if (firstRadio) firstRadio.focus();
+    }
+
+    function closeModal() {
+        modal.classList.add('is-closing');
+        document.body.classList.remove('welcome-modal-open');
+        window.setTimeout(function () {
+            modal.hidden = true;
+            modal.classList.remove('is-closing');
+        }, 180);
+    }
+
+    openBtn.addEventListener('click', openModal);
+    backdrop.addEventListener('click', closeModal);
+    closeButtons.forEach(function (btn) { btn.addEventListener('click', closeModal); });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !modal.hidden) closeModal();
+    });
+
+    modal.querySelector('[data-report-form]').addEventListener('change', function (e) {
         if (e.target.name !== 'report_type') return;
         var isOther = e.target.value === 'other';
         detailsField.hidden = false;
-        actions.hidden = false;
         detailsTextarea.required = isOther;
         optionalLabel.hidden = isOther;
         requiredLabel.hidden = !isOther;
+        submitBtn.disabled = false;
     });
 }());
 </script>

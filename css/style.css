@@ -13164,3 +13164,118 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
 :root[data-palette$="-dark"] .login-card input[type="password"] {
     background: #ffffff;
 }
+
+/* Report listing modal */
+
+.report-listing-section {
+    margin-top: 12px;
+}
+
+.report-listing-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.report-listing-toggle:hover {
+    color: var(--color-text);
+}
+
+.report-listing-modal-panel {
+    width: min(480px, 100%);
+}
+
+.report-listing-modal-panel h2 {
+    font-size: 1.1rem;
+}
+
+.report-modal-subtitle {
+    color: var(--color-text-muted);
+    font-size: 0.88rem;
+    margin: 0;
+}
+
+.report-type-list {
+    display: grid;
+    gap: 2px;
+}
+
+.report-type-option {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    column-gap: 10px;
+    align-items: start;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 120ms;
+}
+
+.report-type-option:hover {
+    background: var(--color-surface-raised);
+}
+
+.report-type-option input[type="radio"] {
+    grid-row: 1 / 3;
+    align-self: center;
+    margin: 0;
+    accent-color: var(--color-accent);
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.report-type-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+.report-type-hint {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    line-height: 1.3;
+}
+
+.report-details-field {
+    display: grid;
+    gap: 6px;
+    padding-top: 4px;
+}
+
+.report-details-field label {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.report-details-field textarea {
+    resize: vertical;
+    min-height: 72px;
+}
+
+.report-modal-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    padding-top: 4px;
+}
+
+.report-modal-cancel {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--color-text-muted);
+    font-size: 0.88rem;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.report-modal-cancel:hover {
+    color: var(--color-text);
+}
