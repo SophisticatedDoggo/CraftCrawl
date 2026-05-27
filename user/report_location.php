@@ -2,11 +2,21 @@
 require '../login_check.php';
 include '../db.php';
 
+$is_xhr = ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest';
+
+function report_json($ok, $message = '') {
+    header('Content-Type: application/json');
+    echo json_encode(['ok' => $ok, 'message' => $message]);
+    exit();
+}
+
 if (!isset($_SESSION['user_id'])) {
+    if ($is_xhr) report_json(false, 'not_logged_in');
     craftcrawl_redirect('user_login.php');
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    if ($is_xhr) report_json(false, 'invalid_method');
     craftcrawl_redirect('portal.php');
 }
 
@@ -33,6 +43,7 @@ if (!$location_id || !in_array($report_type, $valid_report_types, true)) {
 }
 
 if ($report_type === 'other' && $details === '') {
+    if ($is_xhr) report_json(false, 'details_required');
     craftcrawl_redirect('business_details.php?id=' . $location_id . '&message=report_details_required');
 }
 
@@ -48,6 +59,7 @@ $location_stmt = $conn->prepare("
 $location_stmt->bind_param('i', $location_id);
 $location_stmt->execute();
 if (!$location_stmt->get_result()->fetch_assoc()) {
+    if ($is_xhr) report_json(false, 'not_found');
     craftcrawl_redirect('portal.php');
 }
 
@@ -59,6 +71,7 @@ $existing_stmt = $conn->prepare("
 $existing_stmt->bind_param('ii', $user_id, $location_id);
 $existing_stmt->execute();
 if ($existing_stmt->get_result()->fetch_assoc()) {
+    if ($is_xhr) report_json(false, 'already_submitted');
     craftcrawl_redirect('business_details.php?id=' . $location_id . '&message=report_already_submitted');
 }
 
@@ -70,5 +83,6 @@ $insert_stmt = $conn->prepare("
 $insert_stmt->bind_param('iiss', $location_id, $user_id, $report_type, $details_value);
 $insert_stmt->execute();
 
+if ($is_xhr) report_json(true);
 craftcrawl_redirect('business_details.php?id=' . $location_id . '&message=report_submitted');
 ?>

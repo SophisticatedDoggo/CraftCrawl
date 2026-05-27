@@ -1037,6 +1037,7 @@ function format_event_time_range($event) {
     var modal = document.querySelector('[data-report-modal]');
     if (!openBtn || !modal) return;
 
+    var panel = modal.querySelector('.welcome-modal-panel');
     var backdrop = modal.querySelector('[data-report-backdrop]');
     var closeButtons = modal.querySelectorAll('[data-report-close]');
     var detailsField = modal.querySelector('[data-report-details-field]');
@@ -1044,6 +1045,7 @@ function format_event_time_range($event) {
     var optionalLabel = modal.querySelector('[data-report-details-optional]');
     var requiredLabel = modal.querySelector('[data-report-details-required]');
     var submitBtn = modal.querySelector('[data-report-submit]');
+    var form = modal.querySelector('[data-report-form]');
 
     function openModal() {
         modal.hidden = false;
@@ -1061,6 +1063,29 @@ function format_event_time_range($event) {
         }, 180);
     }
 
+    function showSuccess() {
+        panel.innerHTML =
+            '<h2 class="report-success-title">Report submitted</h2>' +
+            '<p class="report-success-body">Thanks for letting us know. We\'ll review this listing and make any needed corrections.</p>' +
+            '<button type="button" class="report-success-close" data-report-close>Close</button>';
+        panel.querySelector('[data-report-close]').addEventListener('click', closeModal);
+        panel.querySelector('[data-report-close]').focus();
+    }
+
+    function showError(msg) {
+        var existing = panel.querySelector('.report-error-msg');
+        if (existing) existing.remove();
+        var p = document.createElement('p');
+        p.className = 'report-error-msg form-message form-message-error';
+        var messages = {
+            already_submitted: 'You already have a pending report for this listing.',
+            details_required: 'Please describe the issue when selecting "Other".',
+        };
+        p.textContent = messages[msg] || 'Something went wrong. Please try again.';
+        form.insertBefore(p, form.firstChild);
+        submitBtn.disabled = false;
+    }
+
     openBtn.addEventListener('click', openModal);
     backdrop.addEventListener('click', closeModal);
     closeButtons.forEach(function (btn) { btn.addEventListener('click', closeModal); });
@@ -1069,7 +1094,7 @@ function format_event_time_range($event) {
         if (e.key === 'Escape' && !modal.hidden) closeModal();
     });
 
-    modal.querySelector('[data-report-form]').addEventListener('change', function (e) {
+    form.addEventListener('change', function (e) {
         if (e.target.name !== 'report_type') return;
         var isOther = e.target.value === 'other';
         detailsField.hidden = false;
@@ -1077,6 +1102,25 @@ function format_event_time_range($event) {
         optionalLabel.hidden = isOther;
         requiredLabel.hidden = !isOther;
         submitBtn.disabled = false;
+    });
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        submitBtn.disabled = true;
+        fetch(form.action, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: new FormData(form),
+        })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.ok) {
+                    showSuccess();
+                } else {
+                    showError(data.message);
+                }
+            })
+            .catch(function () { showError(''); });
     });
 }());
 </script>
