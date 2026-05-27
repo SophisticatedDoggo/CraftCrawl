@@ -225,6 +225,8 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         $decision = 'auto_add';
     } elseif ($has_core_name_identity && $score >= 50 && in_array($suggested_category, $core_auto_categories, true)) {
         $decision = 'needs_review';
+    } elseif ($has_clear_drinking_venue_identity && $suggested_category === 'bar' && $score >= 70 && empty($restaurant_name) && empty($chain_like) && !$restaurant_primary && !$hard_reject) {
+        $decision = 'auto_add';
     } elseif ($has_clear_drinking_venue_identity && $suggested_category === 'bar' && $score >= 30 && empty($restaurant_name) && empty($chain_like)) {
         $decision = 'needs_review';
     } elseif ($score < 55) {
