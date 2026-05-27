@@ -6946,16 +6946,15 @@ a.mobile-context-back.feed-thread-back-link:focus {
     padding: 0;
     border: 0;
     border-radius: 0;
-    color: var(--color-primary);
+    color: inherit;
     background: transparent;
     box-shadow: none;
-    font-weight: 700;
+    font-weight: inherit;
     text-decoration: none;
 }
 
 .business-phone-line a:hover,
 .business-phone-line a:focus {
-    color: var(--color-primary-dark);
     text-decoration: underline;
     background: transparent;
     box-shadow: none;
@@ -6963,10 +6962,6 @@ a.mobile-context-back.feed-thread-back-link:focus {
 
 .unclaimed-listing-notice {
     margin: 14px 0 18px;
-    padding: 14px 16px;
-    border: 1px solid color-mix(in srgb, var(--color-accent) 40%, var(--color-border));
-    border-radius: var(--radius-md);
-    background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface));
 }
 
 .business-claim-prompt {
@@ -13592,22 +13587,21 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
 .report-listing-toggle {
     min-height: 0;
     padding: 0;
-    border: 0;
-    border-radius: 0;
     border: none;
+    border-radius: 0;
     background: transparent;
     box-shadow: none;
-    color: var(--color-muted);
+    color: var(--color-text-muted);
     font-size: 0.82rem;
-    font-weight: 600;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+    font-weight: 400;
+    text-decoration: none;
     cursor: pointer;
+    opacity: 0.6;
 }
 
 .report-listing-toggle:hover,
 .report-listing-toggle:focus {
-    color: var(--color-primary);
+    opacity: 1;
     background: transparent;
     box-shadow: none;
 }
