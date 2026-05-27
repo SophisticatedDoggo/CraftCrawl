@@ -222,6 +222,13 @@ window.CraftCrawlInitAdminReviewCenter = function (root = document) {
     }
 
     function enhanceSection(section) {
+        if (
+            section.classList.contains('admin-reports-section')
+            || section.classList.contains('admin-readiness-section')
+            || section.classList.contains('admin-disabled-section')
+            || section.classList.contains('admin-recovery-section')
+            || section.classList.contains('admin-recovery-suggestions-section')
+        ) return;
         if (section.dataset.adminBatchReady === 'true') return;
         const tableItems = [...section.querySelectorAll('[data-admin-review-row]')]
             .filter((item) => item.querySelector('form[method="POST"]'));
