@@ -13171,3 +13171,16 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
         linear-gradient(145deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.06) 48%, rgba(255, 255, 255, 0.02)),
         color-mix(in srgb, var(--color-surface) 17%, transparent);
 }
+
+:root[data-palette$="-dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="file"]):not([type="range"]):not([type="color"]):not([type="hidden"]),
+:root[data-palette$="-dark"] select,
+:root[data-palette$="-dark"] textarea {
+    background: #ffffff;
+    color: #20231f;
+    border-color: #c8c8c8;
+}
+
+:root[data-palette$="-dark"] .login-card input[type="email"],
+:root[data-palette$="-dark"] .login-card input[type="password"] {
+    background: #ffffff;
+}
