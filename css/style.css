@@ -6947,8 +6947,8 @@ a.mobile-context-back.feed-thread-back-link:focus {
     border: 0;
     border-radius: 0;
     color: inherit;
-    background: transparent;
-    box-shadow: none;
+    background: transparent !important;
+    box-shadow: none !important;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     font-weight: inherit;
@@ -6977,8 +6977,8 @@ a.mobile-context-back.feed-thread-back-link:focus {
     border: 0;
     border-radius: 0;
     color: var(--color-primary);
-    background: transparent;
-    box-shadow: none;
+    background: transparent !important;
+    box-shadow: none !important;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     font-weight: 800;
@@ -12921,6 +12921,7 @@ a.mobile-context-back.feed-thread-back-link:focus {
         0 7px 16px rgba(0, 0, 0, 0.26);
 }
 
+
 :root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):hover,
 :root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):focus,
 :root[data-palette$="-dark"] button:hover,
@@ -13593,8 +13594,8 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
     padding: 0;
     border: none;
     border-radius: 0;
-    background: transparent;
-    box-shadow: none;
+    background: transparent !important;
+    box-shadow: none !important;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     color: var(--color-text-muted);
