@@ -5007,9 +5007,25 @@ a.mobile-context-back.feed-thread-back-link:focus {
 .business-details-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
     align-items: center;
-    margin-top: 14px;
+    margin-top: 18px;
+}
+
+.business-details-actions a,
+.business-details-actions button {
+    border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
+    background: color-mix(in srgb, var(--color-surface-muted) 72%, transparent);
+    box-shadow: none;
+}
+
+.business-details-actions a:hover,
+.business-details-actions a:focus,
+.business-details-actions button:hover,
+.business-details-actions button:focus {
+    border-color: color-mix(in srgb, var(--color-primary) 46%, var(--color-border));
+    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+    box-shadow: none;
 }
 
 .follow-button {
@@ -5045,15 +5061,17 @@ a.mobile-context-back.feed-thread-back-link:focus {
 }
 
 .business-hours {
-    margin: 12px 0;
-    padding: 12px;
+    margin: 20px 0;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--color-border) 76%, transparent);
     border-left: 3px solid var(--color-primary);
     border-radius: var(--radius-sm);
-    background: var(--color-surface-muted);
+    background: color-mix(in srgb, var(--color-surface-muted) 78%, transparent);
 }
 
 .business-hours p {
-    margin: 4px 0 0;
+    margin: 8px 0 0;
+    line-height: 1.55;
 }
 
 .business-details-actions a,
@@ -6883,12 +6901,101 @@ a.mobile-context-back.feed-thread-back-link:focus {
     margin: 0 0 12px;
 }
 
+.business-preview-type {
+    margin-bottom: 6px;
+    color: var(--color-primary);
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.business-review-summary,
+.business-about-text,
+.business-address-line,
+.business-phone-line,
+.business-claim-prompt,
+.business-claim-help {
+    max-width: 760px;
+}
+
+.business-review-summary {
+    margin: 14px 0 18px;
+    color: var(--color-muted);
+}
+
+.business-about-text {
+    margin: 0 0 18px;
+    color: var(--color-text);
+    line-height: 1.6;
+}
+
+.business-address-line {
+    margin: 18px 0 8px;
+    color: var(--color-text);
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+.business-phone-line {
+    margin: 0 0 18px;
+}
+
+.business-phone-line a {
+    display: inline;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    color: var(--color-primary);
+    background: transparent;
+    box-shadow: none;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.business-phone-line a:hover,
+.business-phone-line a:focus {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+    background: transparent;
+    box-shadow: none;
+}
+
 .unclaimed-listing-notice {
     margin: 14px 0 18px;
     padding: 14px 16px;
     border: 1px solid color-mix(in srgb, var(--color-accent) 40%, var(--color-border));
     border-radius: var(--radius-md);
     background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface));
+}
+
+.business-claim-prompt {
+    margin: 0 0 6px;
+}
+
+.business-claim-prompt a {
+    display: inline;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    color: var(--color-primary);
+    background: transparent;
+    box-shadow: none;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.business-claim-prompt a:hover,
+.business-claim-prompt a:focus {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+    background: transparent;
+    box-shadow: none;
+}
+
+.business-claim-help {
+    margin-top: 0;
 }
 
 .claimed-listing-notice {
@@ -13483,17 +13590,26 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
 }
 
 .report-listing-toggle {
-    background: none;
-    border: none;
+    min-height: 0;
     padding: 0;
-    color: var(--color-text-muted);
+    border: 0;
+    border-radius: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    color: var(--color-muted);
     font-size: 0.82rem;
+    font-weight: 600;
     text-decoration: underline;
+    text-underline-offset: 3px;
     cursor: pointer;
 }
 
-.report-listing-toggle:hover {
-    color: var(--color-text);
+.report-listing-toggle:hover,
+.report-listing-toggle:focus {
+    color: var(--color-primary);
+    background: transparent;
+    box-shadow: none;
 }
 
 .report-listing-modal-panel {

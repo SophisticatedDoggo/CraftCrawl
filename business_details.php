@@ -579,11 +579,11 @@ function format_event_time_range($event) {
                     <strong>Unclaimed Listing</strong>
                     <p>This page is maintained by Craft Crawl and is not currently managed by the business itself. Details may be incomplete or need confirmation.</p>
                 </div>
-                <p><a href="business_claim_start.php?location_id=<?php echo escape_output($location_id); ?>">Own or manage this business? Claim this listing.</a></p>
-                <p class="form-help">Claiming lets you update your profile, add photos, post updates, and respond to reviews after admin approval.</p>
+                <p class="business-claim-prompt"><a href="business_claim_start.php?location_id=<?php echo escape_output($location_id); ?>">Own or manage this business? Claim this listing.</a></p>
+                <p class="form-help business-claim-help">Claiming lets you update your profile, add photos, post updates, and respond to reviews after admin approval.</p>
             <?php endif; ?>
 
-            <p>
+            <p class="business-review-summary">
                 <?php if ((int) $rating_summary['review_count'] > 0) : ?>
                     <span class="rating-summary">
                         <?php echo render_star_rating($rating_summary['average_rating']); ?>
@@ -595,16 +595,16 @@ function format_event_time_range($event) {
             </p>
 
             <?php if (!empty($business['bAbout'])) : ?>
-                <p><?php echo nl2br(escape_output($business['bAbout'])); ?></p>
+                <p class="business-about-text"><?php echo nl2br(escape_output($business['bAbout'])); ?></p>
             <?php endif; ?>
 
-            <p>
+            <p class="business-address-line">
                 <?php echo escape_output($business['street_address']); ?><br>
                 <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?> <?php echo escape_output($business['zip']); ?>
             </p>
 
             <?php if (!empty($business['bPhone'])) : ?>
-                <p>
+                <p class="business-phone-line">
                     <?php if ($business_phone_href !== '') : ?>
                         <a href="tel:<?php echo escape_output($business_phone_href); ?>"><?php echo escape_output($business['bPhone']); ?></a>
                     <?php else : ?>
