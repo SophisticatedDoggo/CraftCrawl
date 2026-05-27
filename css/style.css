@@ -600,6 +600,9 @@ label {
     position: absolute;
     top: 50%;
     right: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 36px;
     height: 36px;
     min-height: 36px;
@@ -618,42 +621,19 @@ label {
 }
 
 .password-toggle-eye {
-    position: relative;
-    width: 22px;
-    height: 14px;
-    border: 2px solid currentColor;
-    border-radius: 999px 999px 999px 999px / 80% 80% 80% 80%;
-}
-
-.password-toggle-eye::before,
-.password-toggle-eye::after {
-    content: "";
-    position: absolute;
-}
-
-.password-toggle-eye::before {
-    top: 50%;
-    left: 50%;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-    transform: translate(-50%, -50%);
-}
-
-.password-toggle-eye::after {
-    top: 50%;
-    left: -2px;
-    display: none;
-    width: 26px;
-    height: 2px;
-    border-radius: 999px;
-    background: currentColor;
-    transform: rotate(-38deg);
-}
-
-.password-toggle.is-visible .password-toggle-eye::after {
     display: block;
+    width: 20px;
+    height: 20px;
+    background-color: currentColor;
+    -webkit-mask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/><circle cx='12' cy='12' r='3'/></svg>") no-repeat center / contain;
+    -webkit-mask-mode: alpha;
+    mask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/><circle cx='12' cy='12' r='3'/></svg>") no-repeat center / contain;
+    mask-mode: alpha;
+}
+
+.password-toggle.is-visible .password-toggle-eye {
+    -webkit-mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24'/><line x1='1' y1='1' x2='23' y2='23'/></svg>");
+    mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24'/><line x1='1' y1='1' x2='23' y2='23'/></svg>");
 }
 
 .password-requirements,
