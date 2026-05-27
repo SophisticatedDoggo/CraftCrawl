@@ -59,7 +59,7 @@ function google_import_operation_payload($conn, $operation_id = null) {
 }
 
 function google_import_operation_try_work($conn, $api_key, $operation_id) {
-    $lock_name = 'craftcrawl_google_import_' . substr(hash('sha256', $operation_id), 0, 48);
+    $lock_name = 'craftcrawl_gi_' . substr(hash('sha256', $operation_id), 0, 50);
     $lock_stmt = $conn->prepare("SELECT GET_LOCK(?, 0) AS lock_acquired");
     $lock_stmt->bind_param('s', $lock_name);
     $lock_stmt->execute();
