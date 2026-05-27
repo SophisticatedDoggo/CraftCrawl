@@ -8554,6 +8554,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     line-height: 1.32;
     text-align: left;
     vertical-align: top;
+    overflow-wrap: anywhere;
 }
 
 .admin-recovery-table th {
@@ -8615,6 +8616,17 @@ a.event-calendar-event:focus .event-calendar-event-name {
     min-height: 64px;
     margin-top: 6px;
     resize: vertical;
+}
+
+.admin-disabled-table .admin-recovery-review-actions {
+    display: grid;
+    gap: 8px;
+    justify-items: start;
+}
+
+.admin-disabled-table .admin-recovery-review-actions button {
+    max-width: 100%;
+    white-space: normal;
 }
 
 .admin-duplicate-summary {
