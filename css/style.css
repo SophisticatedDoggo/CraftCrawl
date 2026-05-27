@@ -8555,16 +8555,41 @@ a.event-calendar-event:focus .event-calendar-event-name {
     font-size: 0.82rem;
 }
 
-.admin-recovery-table th:nth-child(1),
-.admin-recovery-table td:nth-child(1) { width: 30%; }
-.admin-recovery-table th:nth-child(2),
-.admin-recovery-table td:nth-child(2) { width: 12%; }
-.admin-recovery-table th:nth-child(3),
-.admin-recovery-table td:nth-child(3) { width: 14%; }
-.admin-recovery-table th:nth-child(4),
-.admin-recovery-table td:nth-child(4) { width: 26%; }
-.admin-recovery-table th:nth-child(5),
-.admin-recovery-table td:nth-child(5) { width: 18%; }
+.admin-readiness-table th:nth-child(1),
+.admin-readiness-table td:nth-child(1),
+.admin-disabled-table th:nth-child(1),
+.admin-disabled-table td:nth-child(1),
+.admin-location-recovery-table th:nth-child(1),
+.admin-location-recovery-table td:nth-child(1) { width: 34%; }
+.admin-readiness-table th:nth-child(2),
+.admin-readiness-table td:nth-child(2),
+.admin-disabled-table th:nth-child(2),
+.admin-disabled-table td:nth-child(2),
+.admin-location-recovery-table th:nth-child(2),
+.admin-location-recovery-table td:nth-child(2) { width: 18%; }
+.admin-readiness-table th:nth-child(3),
+.admin-readiness-table td:nth-child(3),
+.admin-disabled-table th:nth-child(3),
+.admin-disabled-table td:nth-child(3),
+.admin-location-recovery-table th:nth-child(3),
+.admin-location-recovery-table td:nth-child(3) { width: 28%; }
+.admin-readiness-table th:nth-child(4),
+.admin-readiness-table td:nth-child(4),
+.admin-disabled-table th:nth-child(4),
+.admin-disabled-table td:nth-child(4),
+.admin-location-recovery-table th:nth-child(4),
+.admin-location-recovery-table td:nth-child(4) { width: 20%; }
+
+.admin-recovery-suggestions-section .admin-recovery-table th:nth-child(1),
+.admin-recovery-suggestions-section .admin-recovery-table td:nth-child(1) { width: 30%; }
+.admin-recovery-suggestions-section .admin-recovery-table th:nth-child(2),
+.admin-recovery-suggestions-section .admin-recovery-table td:nth-child(2) { width: 12%; }
+.admin-recovery-suggestions-section .admin-recovery-table th:nth-child(3),
+.admin-recovery-suggestions-section .admin-recovery-table td:nth-child(3) { width: 14%; }
+.admin-recovery-suggestions-section .admin-recovery-table th:nth-child(4),
+.admin-recovery-suggestions-section .admin-recovery-table td:nth-child(4) { width: 26%; }
+.admin-recovery-suggestions-section .admin-recovery-table th:nth-child(5),
+.admin-recovery-suggestions-section .admin-recovery-table td:nth-child(5) { width: 18%; }
 
 .admin-recovery-table td strong,
 .admin-recovery-table td span {
