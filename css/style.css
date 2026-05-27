@@ -11620,6 +11620,10 @@ a.event-calendar-event:focus .event-calendar-event-name {
     padding: 18px;
 }
 
+.welcome-modal[hidden] {
+    display: none;
+}
+
 .welcome-modal.is-closing {
     opacity: 0;
     transition: opacity 180ms ease;
