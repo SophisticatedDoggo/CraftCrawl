@@ -13256,8 +13256,18 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
 
 /* Admin location reports table */
 
-.admin-reports-section .admin-report-type-filters {
+.admin-reports-section .admin-report-counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: baseline;
     margin-bottom: 14px;
+    color: var(--color-muted);
+    font-size: 0.9rem;
+}
+
+.admin-reports-section .admin-report-counts strong {
+    color: var(--color-heading);
 }
 
 .admin-reports-table-wrap {
