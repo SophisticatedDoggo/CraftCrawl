@@ -7842,17 +7842,16 @@ a.event-calendar-event:focus .event-calendar-event-name {
 }
 
 [data-admin-review-center].business-portal {
-    width: max-content;
+    width: min(100%, 1400px);
     max-width: none;
-    min-width: 100vw;
-    margin: 0;
+    margin: 0 auto;
     padding: 24px 28px 80px;
 }
 
 [data-admin-review-center] .business-portal-header,
 [data-admin-review-center] .admin-panel {
-    width: max-content;
-    min-width: 100%;
+    width: 100%;
+    min-width: 0;
 }
 
 [data-admin-review-center] .admin-panel {
@@ -8063,8 +8062,9 @@ a.event-calendar-event:focus .event-calendar-event-name {
 }
 
 [data-admin-review-center] .admin-import-table-wrap {
-    width: max-content;
-    max-width: none;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
 }
 
 [data-admin-review-center] .admin-import-review-table {
@@ -13172,12 +13172,13 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
 }
 
 .admin-reports-table-wrap {
+    max-width: 100%;
     overflow-x: auto;
 }
 
 .admin-reports-table {
     width: 100%;
-    min-width: 860px;
+    min-width: 760px;
     border-collapse: collapse;
     table-layout: fixed;
     background: var(--color-surface);
@@ -13209,21 +13210,14 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
     background: var(--color-surface-raised);
 }
 
-/* Column widths */
 .admin-reports-table th:nth-child(1),
-.admin-reports-table td:nth-child(1) { width: 16%; }
+.admin-reports-table td:nth-child(1) { width: 32%; }
 .admin-reports-table th:nth-child(2),
-.admin-reports-table td:nth-child(2) { width: 9%; }
+.admin-reports-table td:nth-child(2) { width: 34%; }
 .admin-reports-table th:nth-child(3),
-.admin-reports-table td:nth-child(3) { width: 14%; }
+.admin-reports-table td:nth-child(3) { width: 17%; }
 .admin-reports-table th:nth-child(4),
-.admin-reports-table td:nth-child(4) { width: 11%; }
-.admin-reports-table th:nth-child(5),
-.admin-reports-table td:nth-child(5) { width: 22%; }
-.admin-reports-table th:nth-child(6),
-.admin-reports-table td:nth-child(6) { width: 12%; white-space: nowrap; }
-.admin-reports-table th:nth-child(7),
-.admin-reports-table td:nth-child(7) { width: 16%; }
+.admin-reports-table td:nth-child(4) { width: 17%; }
 
 .admin-reports-table td a {
     color: var(--color-primary);
@@ -13237,14 +13231,55 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
 
 .admin-reports-no-details {
     color: var(--color-muted);
-    opacity: 0.45;
+    opacity: 0.7;
 }
 
 .admin-reports-action-form {
     display: none;
 }
 
-.admin-reports-table td:nth-child(7) textarea {
+.admin-report-location,
+.admin-report-reporter {
+    display: grid;
+    gap: 4px;
+}
+
+.admin-report-location p,
+.admin-report-reporter span {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 0.82rem;
+}
+
+.admin-report-location-name,
+.admin-report-issue {
+    display: inline-block;
+    color: var(--color-heading);
+    font-weight: 800;
+}
+
+.admin-report-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.admin-report-links a {
+    font-size: 0.8rem;
+}
+
+.admin-report-details {
+    margin-top: 6px;
+    color: var(--color-muted);
+}
+
+.admin-report-reporter strong {
+    color: var(--color-heading);
+    font-size: 0.88rem;
+}
+
+.admin-reports-table td:nth-child(4) textarea {
     width: 100%;
     min-height: 52px;
     margin-bottom: 6px;
@@ -13261,6 +13296,50 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
 .admin-reports-actions button {
     font-size: 0.8rem;
     padding: 4px 10px;
+}
+
+@media (max-width: 760px) {
+    [data-admin-review-center].business-portal {
+        width: 100%;
+        padding: 18px 16px 96px;
+    }
+
+    .admin-reports-table {
+        min-width: 0;
+    }
+
+    .admin-reports-table,
+    .admin-reports-table thead,
+    .admin-reports-table tbody,
+    .admin-reports-table tr,
+    .admin-reports-table th,
+    .admin-reports-table td {
+        display: block;
+    }
+
+    .admin-reports-table thead {
+        display: none;
+    }
+
+    .admin-reports-table tr {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        margin-bottom: 12px;
+        background: var(--color-surface);
+        overflow: hidden;
+    }
+
+    .admin-reports-table th,
+    .admin-reports-table td,
+    .admin-reports-table th:nth-child(n),
+    .admin-reports-table td:nth-child(n) {
+        width: 100%;
+        border-width: 0 0 1px;
+    }
+
+    .admin-reports-table td:last-child {
+        border-bottom: 0;
+    }
 }
 
 /* Report listing modal */

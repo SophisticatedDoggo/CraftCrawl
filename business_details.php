@@ -524,7 +524,7 @@ function format_event_time_range($event) {
         <?php elseif ($message === 'report_already_submitted') : ?>
             <p class="form-message form-message-error">You already have a pending report for this location.</p>
         <?php elseif ($message === 'report_details_required') : ?>
-            <p class="form-message form-message-error">Please describe the issue when selecting "Other".</p>
+            <p class="form-message form-message-error">Please add a few details for that report type.</p>
         <?php endif; ?>
 
         <section class="business-details-hero">
@@ -1046,6 +1046,14 @@ function format_event_time_range($event) {
     var requiredLabel = modal.querySelector('[data-report-details-required]');
     var submitBtn = modal.querySelector('[data-report-submit]');
     var form = modal.querySelector('[data-report-form]');
+    var detailRequiredTypes = new Set([
+        'incorrect_hours',
+        'wrong_type',
+        'wrong_address',
+        'duplicate_listing',
+        'inappropriate_content',
+        'other'
+    ]);
 
     function openModal() {
         modal.hidden = false;
@@ -1079,7 +1087,7 @@ function format_event_time_range($event) {
         p.className = 'report-error-msg form-message form-message-error';
         var messages = {
             already_submitted: 'You already have a pending report for this listing.',
-            details_required: 'Please describe the issue when selecting "Other".',
+            details_required: 'Please add a few details for that report type.',
         };
         p.textContent = messages[msg] || 'Something went wrong. Please try again.';
         form.insertBefore(p, form.firstChild);
@@ -1096,11 +1104,11 @@ function format_event_time_range($event) {
 
     form.addEventListener('change', function (e) {
         if (e.target.name !== 'report_type') return;
-        var isOther = e.target.value === 'other';
+        var detailsRequired = detailRequiredTypes.has(e.target.value);
         detailsField.hidden = false;
-        detailsTextarea.required = isOther;
-        optionalLabel.hidden = isOther;
-        requiredLabel.hidden = !isOther;
+        detailsTextarea.required = detailsRequired;
+        optionalLabel.hidden = detailsRequired;
+        requiredLabel.hidden = !detailsRequired;
         submitBtn.disabled = false;
     });
 

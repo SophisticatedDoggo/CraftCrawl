@@ -39,10 +39,20 @@ $valid_report_types = [
 ];
 
 if (!$location_id || !in_array($report_type, $valid_report_types, true)) {
+    if ($is_xhr) report_json(false, 'invalid_report');
     craftcrawl_redirect('portal.php');
 }
 
-if ($report_type === 'other' && $details === '') {
+$detail_required_report_types = [
+    'incorrect_hours',
+    'wrong_type',
+    'wrong_address',
+    'duplicate_listing',
+    'inappropriate_content',
+    'other',
+];
+
+if (in_array($report_type, $detail_required_report_types, true) && $details === '') {
     if ($is_xhr) report_json(false, 'details_required');
     craftcrawl_redirect('business_details.php?id=' . $location_id . '&message=report_details_required');
 }
