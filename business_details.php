@@ -519,6 +519,12 @@ function format_event_time_range($event) {
             <p class="form-message form-message-error">That photo is too large to upload from this device. Try choosing fewer photos or a smaller image.</p>
         <?php elseif ($message === 'review_photo_error') : ?>
             <p class="form-message form-message-error">Your review photo could not be uploaded. Please try again with a JPEG, PNG, or WebP photo under 12 MB.</p>
+        <?php elseif ($message === 'report_submitted') : ?>
+            <p class="form-message form-message-success">Thank you — your report has been submitted.</p>
+        <?php elseif ($message === 'report_already_submitted') : ?>
+            <p class="form-message form-message-error">You already have a pending report for this location.</p>
+        <?php elseif ($message === 'report_details_required') : ?>
+            <p class="form-message form-message-error">Please describe the issue when selecting "Other".</p>
         <?php endif; ?>
 
         <section class="business-details-hero">
@@ -622,6 +628,66 @@ function format_event_time_range($event) {
                     </button>
                 </form>
             </div>
+
+            <div class="report-listing-section">
+                <button type="button" class="report-listing-toggle" data-report-toggle>Report this listing</button>
+                <form method="POST" action="user/report_location.php" class="report-listing-form" data-report-form hidden>
+                    <?php echo craftcrawl_csrf_input(); ?>
+                    <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
+                    <fieldset>
+                        <legend>What's the issue?</legend>
+                        <label>
+                            <input type="radio" name="report_type" value="incorrect_hours" required>
+                            Hours are incorrect
+                            <span class="report-type-hint">Which days or hours are wrong?</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="report_type" value="business_closed">
+                            Business is permanently closed
+                            <span class="report-type-hint">When did it close, if known?</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="report_type" value="wrong_type">
+                            Business type is incorrect
+                            <span class="report-type-hint">What type should it be?</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="report_type" value="doesnt_belong">
+                            Business doesn't belong on CraftCrawl
+                            <span class="report-type-hint">Why doesn't it fit the site?</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="report_type" value="wrong_address">
+                            Address or location is incorrect
+                            <span class="report-type-hint">What's the correct address?</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="report_type" value="duplicate_listing">
+                            This is a duplicate listing
+                            <span class="report-type-hint">Do you know the name of the original listing?</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="report_type" value="inappropriate_content">
+                            Photos or content are inappropriate
+                            <span class="report-type-hint">What content is the problem?</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="report_type" value="other">
+                            Other
+                            <span class="report-type-hint">Please describe the issue below.</span>
+                        </label>
+                    </fieldset>
+                    <div class="report-details-field" data-report-details-field hidden>
+                        <label for="report_details">Additional details <span data-report-details-optional>(optional)</span><span data-report-details-required hidden>(required)</span></label>
+                        <textarea id="report_details" name="details" maxlength="1000" rows="3" placeholder="Add any helpful details..."></textarea>
+                    </div>
+                    <div class="report-form-actions" data-report-form-actions hidden>
+                        <button type="submit">Submit Report</button>
+                        <button type="button" data-report-cancel>Cancel</button>
+                    </div>
+                </form>
+            </div>
+
             <?php if ($user_has_checked_in && $friend_options->num_rows > 0) : ?>
                 <form method="POST" action="user/recommend_location.php" class="recommend-location-form">
                     <?php echo craftcrawl_csrf_input(); ?>
@@ -952,5 +1018,29 @@ function format_event_time_range($event) {
 <script src="js/user_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/js/user_shell_navigation.js'); ?>"></script>
 <script src="js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/js/depth_animations.js'); ?>"></script>
 <script src="js/social_club_disclaimer.js?v=<?php echo filemtime(__DIR__ . '/js/social_club_disclaimer.js'); ?>"></script>
+<script>
+(function () {
+    var toggle = document.querySelector('[data-report-toggle]');
+    var form = document.querySelector('[data-report-form]');
+    var cancel = document.querySelector('[data-report-cancel]');
+    var detailsField = document.querySelector('[data-report-details-field]');
+    var detailsTextarea = document.getElementById('report_details');
+    var optionalLabel = document.querySelector('[data-report-details-optional]');
+    var requiredLabel = document.querySelector('[data-report-details-required]');
+    var actions = document.querySelector('[data-report-form-actions]');
+    if (!toggle || !form) return;
+    toggle.addEventListener('click', function () { form.hidden = false; toggle.hidden = true; });
+    cancel.addEventListener('click', function () { form.hidden = true; toggle.hidden = false; });
+    form.addEventListener('change', function (e) {
+        if (e.target.name !== 'report_type') return;
+        var isOther = e.target.value === 'other';
+        detailsField.hidden = false;
+        actions.hidden = false;
+        detailsTextarea.required = isOther;
+        optionalLabel.hidden = isOther;
+        requiredLabel.hidden = !isOther;
+    });
+}());
+</script>
 </body>
 </html>

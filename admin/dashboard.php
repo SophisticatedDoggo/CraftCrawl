@@ -51,6 +51,7 @@ $counts = [
     'pending_imports' => (int) $conn->query("SELECT COUNT(*) FROM locations WHERE visibility_status='pending_import_review'")->fetch_row()[0],
     'users' => (int) $conn->query("SELECT COUNT(*) FROM users")->fetch_row()[0],
     'reviews' => (int) $conn->query("SELECT COUNT(*) FROM reviews")->fetch_row()[0],
+    'pending_reports' => (int) $conn->query("SELECT COUNT(*) FROM location_reports WHERE status='pending'")->fetch_row()[0],
 ];
 
 $location_sql = "
@@ -135,6 +136,7 @@ $locations = $stmt->get_result();
             <article><strong><?php echo craftcrawl_admin_escape($counts['pending_imports']); ?></strong><span>Imports</span></article>
             <article><strong><?php echo craftcrawl_admin_escape($counts['users']); ?></strong><span>User accounts</span></article>
             <article><strong><?php echo craftcrawl_admin_escape($counts['reviews']); ?></strong><span>Reviews</span></article>
+            <article><strong><?php echo craftcrawl_admin_escape($counts['pending_reports']); ?></strong><span>Reports</span></article>
         </section>
 
         <section class="admin-panel">
