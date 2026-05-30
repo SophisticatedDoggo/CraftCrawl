@@ -27,6 +27,8 @@ const mapClusterRingRadius = isMobileMapViewport ? [30, 35, 40] : [24, 28, 32];
 const mapClusterTextSize = isMobileMapViewport ? 16 : 13;
 const mapMarkerHitboxRadius = isMobileMapViewport ? 34 : 24;
 const mapClusterHitboxRadius = isMobileMapViewport ? [38, 44, 50] : [28, 34, 40];
+const mapMarkerIconSize = isMobileMapViewport ? 0.85 : 0.65;
+const mapIconTypes = ['brewery', 'winery', 'cidery', 'distillery', 'meadery', 'bar', 'social_club'];
 const businessTypeFilters = ['brewery', 'winery', 'cidery', 'distillery', 'meadery', 'bar', 'social_club'];
 
 mapboxgl.accessToken = window.MAPBOX_ACCESS_TOKEN;
@@ -65,7 +67,14 @@ function createFallbackMap() {
 }
 
 function setupMapLayersAndInteractions() {
-map.on('load', function () {
+map.on('load', async function () {
+    await Promise.all(mapIconTypes.map(type => new Promise((resolve) => {
+        map.loadImage(`../images/map_icons/${type}.png`, (error, image) => {
+            if (!error) map.addImage(`icon-${type}`, image);
+            resolve();
+        });
+    })));
+
     updateMapZoomDebug();
 
     //place object we will add our events to
@@ -210,16 +219,20 @@ map.on('load', function () {
         source: 'places',
         filter: ['!', ['has', 'point_count']],
         layout: {
-            'text-field': ['get', 'listNumber'],
-            'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-            'text-size': mapMarkerTextSize,
-            'text-allow-overlap': true,
-            'text-ignore-placement': true
-        },
-        paint: {
-            'text-color': '#ffffff',
-            'text-halo-color': '#111827',
-            'text-halo-width': 1
+            'icon-image': [
+                'match', ['get', 'businessType'],
+                'brewery', 'icon-brewery',
+                'winery', 'icon-winery',
+                'cidery', 'icon-cidery',
+                'distillery', 'icon-distillery',
+                'meadery', 'icon-meadery',
+                'bar', 'icon-bar',
+                'social_club', 'icon-social_club',
+                ''
+            ],
+            'icon-size': mapMarkerIconSize,
+            'icon-allow-overlap': true,
+            'icon-ignore-placement': true
         }
     });
 
@@ -458,7 +471,7 @@ function getBusinessPopupHTML(properties, coordinates) {
 
     return `
         <strong>${escapeHtml(properties.title)}</strong>
-        <p>${escapeHtml(formatBusinessType(properties.businessType))} &middot; #${escapeHtml(properties.listNumber)} on map</p>
+        <p>${escapeHtml(formatBusinessType(properties.businessType))}</p>
         <p>
             ${escapeHtml(properties.streetAddress)}<br>
             ${escapeHtml(properties.city)}, ${escapeHtml(properties.state)} ${escapeHtml(properties.zip)}
@@ -992,7 +1005,7 @@ function renderBusinessList(features) {
         return `
             <li class="business-list-item" data-business-id="${escapeHtml(properties.id)}" data-business-type="${escapeHtml(properties.businessType)}" role="button" tabindex="0" aria-label="Show ${escapeHtml(properties.title)} on map">
                 <span class="business-list-number business-list-number-${properties.businessType}">
-                    ${properties.listNumber}
+                    ${mapIconTypes.includes(properties.businessType) ? `<img src="../images/map_icons/${escapeHtml(properties.businessType)}.png" class="business-list-icon" alt="">` : ''}
                 </span>
                 <div class="business-list-details">
                     <strong>${escapeHtml(properties.title)}</strong>

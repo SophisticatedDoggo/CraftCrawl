@@ -1671,15 +1671,19 @@ a.text-link:focus {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     width: 34px;
     height: 34px;
     border: 4px solid var(--color-surface);
     border-radius: 50%;
     background: var(--color-muted);
-    color: var(--color-surface);
-    font-weight: 700;
-    font-size: 15px;
     box-shadow: var(--shadow-sm);
+}
+
+.business-list-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
 }
 
 .business-list-number-brewery {
@@ -10318,8 +10322,11 @@ a.event-calendar-event:focus .event-calendar-event-name {
         justify-self: center;
         width: 44px;
         height: 44px;
-        font-size: 21px;
-        line-height: 1;
+    }
+
+    .business-list-icon {
+        width: 26px;
+        height: 26px;
     }
 
     .business-list-details {
