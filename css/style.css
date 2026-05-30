@@ -3055,13 +3055,6 @@ a.text-link:focus {
     box-shadow: none;
 }
 
-.mapboxgl-popup-content .map-action-button:hover,
-.mapboxgl-popup-content .map-action-button:focus {
-    border-color: var(--color-primary-dark);
-    color: var(--color-on-primary);
-    background: var(--color-primary-dark);
-}
-
 @media (hover: none), (pointer: coarse) {
     .map-action-button:hover,
     .map-action-button:focus,
@@ -12943,6 +12936,18 @@ a.mobile-context-back.feed-thread-back-link:focus {
         inset 0 1px 0 rgba(255, 255, 255, 0.31),
         inset 0 -1px 0 rgba(255, 255, 255, 0.065),
         0 8px 18px rgba(0, 0, 0, 0.3);
+}
+
+:root[data-palette$="-dark"] .mapboxgl-popup-content .map-action-button,
+:root[data-palette$="-dark"] .map-popup-actions .map-action-button,
+:root[data-palette$="-dark"] .mapboxgl-popup-content .map-action-button:hover,
+:root[data-palette$="-dark"] .mapboxgl-popup-content .map-action-button:focus,
+:root[data-palette$="-dark"] .map-popup-actions .map-action-button:hover,
+:root[data-palette$="-dark"] .map-popup-actions .map-action-button:focus {
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    box-shadow: none;
 }
 
 :root[data-palette$="-dark"] .leaderboard-mode-tabs a.is-active:not(.mapboxgl-ctrl-logo),
