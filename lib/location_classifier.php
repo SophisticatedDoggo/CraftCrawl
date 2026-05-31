@@ -31,6 +31,33 @@ function craftcrawl_classifier_type_has_any(array $types, array $needles) {
     return null;
 }
 
+function craftcrawl_classifier_google_label_category($value) {
+    $value = craftcrawl_classifier_normalize($value);
+    if ($value === '') {
+        return null;
+    }
+
+    $map = [
+        'brewery' => 'brewery',
+        'brewpub' => 'brewery',
+        'winery' => 'winery',
+        'vineyard' => 'winery',
+        'cidery' => 'cidery',
+        'distillery' => 'distillery',
+        'meadery' => 'meadery',
+        'bar' => 'bar',
+        'cocktail bar' => 'bar',
+        'wine bar' => 'bar',
+        'beer garden' => 'bar',
+        'pub' => 'bar',
+        'lounge' => 'bar',
+        'club' => 'social_club',
+        'social club' => 'social_club',
+    ];
+
+    return $map[$value] ?? null;
+}
+
 function craftcrawl_active_chain_patterns($conn) {
     $patterns = [];
     $result = $conn->query("SELECT pattern FROM chain_exclusion_patterns WHERE is_active=1");
@@ -49,6 +76,8 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
     $name = (string) ($candidate['name'] ?? '');
     $website = (string) ($candidate['website'] ?? '');
     $primary_type = strtolower((string) ($candidate['primary_type'] ?? ''));
+    $primary_type_display_name = (string) ($candidate['primary_type_display_name'] ?? $candidate['primary_type_display'] ?? '');
+    $has_google_display_label = trim($primary_type_display_name) !== '';
     $types = array_values(array_filter(array_map('strval', $candidate['types'] ?? [])));
     $types[] = $primary_type;
     $search_term = (string) ($candidate['search_term'] ?? '');
@@ -57,7 +86,9 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
     $phone = (string) ($candidate['phone'] ?? '');
     $lat = $candidate['latitude'] ?? null;
     $lng = $candidate['longitude'] ?? null;
-    $evidence_text = implode(' ', [$name, $website, $primary_type, implode(' ', $types)]);
+    $google_label_category = craftcrawl_classifier_google_label_category($primary_type_display_name)
+        ?: craftcrawl_classifier_google_label_category($primary_type);
+    $evidence_text = implode(' ', [$name, $website, $primary_type, $primary_type_display_name, implode(' ', $types)]);
 
     $score = 0;
     $positive = [];
@@ -68,16 +99,47 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
     $has_core_support_identity = false;
     $has_core_name_identity = false;
     $has_clear_drinking_venue_identity = false;
+    $has_google_primary_label_identity = false;
+    $explicit_name_category = null;
+
+    if ($google_label_category !== null) {
+        $suggested_category = $google_label_category;
+        $has_google_primary_label_identity = true;
+        if (in_array($google_label_category, ['brewery', 'winery', 'cidery', 'meadery', 'distillery'], true)) {
+            $score += 110;
+            $has_strong_alcohol_identity = true;
+            $has_core_support_identity = true;
+            $positive[] = '+110 Google primary label: ' . ($primary_type_display_name ?: $primary_type);
+        } elseif ($google_label_category === 'bar') {
+            $score += 95;
+            $has_clear_drinking_venue_identity = true;
+            $positive[] = '+95 Google primary label: ' . ($primary_type_display_name ?: $primary_type);
+        } elseif ($google_label_category === 'social_club') {
+            $score += 95;
+            $has_clear_drinking_venue_identity = true;
+            $positive[] = '+95 Google primary label: ' . ($primary_type_display_name ?: $primary_type);
+        }
+    }
 
     $strong_categories = [
         'brewery' => ['brewery', 'breweries', 'brewing', 'microbrewery', 'brewpub', 'brew works', 'brew house', 'brewhouse'],
         'winery' => ['winery', 'wineries', 'vineyard', 'wine tasting', 'wine co', 'wine company', 'cellar', 'cellars'],
         'distillery' => ['distillery', 'distilleries', 'distilling', 'spirits', 'barrelhouse', 'barrel house'],
-        'cidery' => ['cidery', 'cideries', 'cider house', 'hard cider', 'cider'],
+        'cidery' => ['cidery', 'cideries', 'cider house', 'hard cider', 'cider co', 'cider company', 'cider works'],
         'meadery' => ['meadery', 'meaderies', 'mead'],
         'taproom' => ['taproom', 'tap room'],
         'tasting_room' => ['tasting room'],
     ];
+
+    foreach ($strong_categories as $category => $keywords) {
+        if (in_array($category, ['taproom', 'tasting_room'], true)) {
+            continue;
+        }
+        if (craftcrawl_classifier_contains_any($name, $keywords)) {
+            $explicit_name_category = $category;
+            break;
+        }
+    }
 
     foreach ($strong_categories as $category => $keywords) {
         $name_match = craftcrawl_classifier_contains_any($name, $keywords);
@@ -95,7 +157,9 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
                 $context = $context ?: (craftcrawl_classifier_contains_any($evidence_text, ['beer', 'brewery', 'brewing']) ? 'brewery' : null);
                 $suggested_category = $context ?: 'bar';
             } else {
-                $suggested_category = $category === 'taproom' ? 'brewery' : $category;
+                if ($suggested_category === 'other' || !$has_google_primary_label_identity || in_array($google_label_category, ['bar'], true)) {
+                    $suggested_category = $category === 'taproom' ? 'brewery' : $category;
+                }
             }
             $score += $points;
             $has_strong_alcohol_identity = true;
@@ -114,12 +178,15 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         'pub' => ['pub'],
         'tavern' => ['tavern'],
         'bar' => ['sports bar', 'barroom', 'lounge'],
-        'social_club' => ['social club', 'clubhouse'],
+        'social_club' => ['social club', 'citizens club', 'private club', 'clubhouse', 'vfw', 'american legion'],
     ];
 
     foreach ($clear_bar_categories as $category => $keywords) {
         $match = craftcrawl_classifier_contains_any($name, $keywords);
         if ($match) {
+            if ($explicit_name_category === null) {
+                $explicit_name_category = $category === 'social_club' ? 'social_club' : 'bar';
+            }
             $score += 55;
             if ($suggested_category === 'other') {
                 $suggested_category = in_array($category, ['cocktail_bar', 'wine_bar', 'beer_garden', 'taproom', 'pub', 'tavern'], true) ? 'bar' : $category;
@@ -138,7 +205,7 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         $positive[] = '+45 Google bar type with drinking-venue name: ' . $name_drinking_match;
     }
 
-    $support_match = craftcrawl_classifier_contains_any($evidence_text, ['craft beer', 'wine', 'spirits', 'cocktails', 'tap list', 'flights', 'self pour', 'self-pour', 'taphouse', 'tap house', 'tapville', 'tasting', 'cellar', 'vineyard', 'brewery', 'brewing', 'distilling', 'cider', 'mead']);
+    $support_match = craftcrawl_classifier_contains_any($evidence_text, ['craft beer', 'wine', 'spirits', 'cocktails', 'tap list', 'flights', 'self pour', 'self-pour', 'taphouse', 'tap house', 'tapville', 'tasting', 'cellar', 'vineyard', 'brewery', 'brewing', 'distilling', 'hard cider', 'cidery', 'cider house', 'cider works', 'mead', 'club']);
     if ($support_match) {
         $score += 25;
         $positive[] = '+25 beverage program signal: ' . $support_match;
@@ -163,11 +230,18 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         }
     }
 
-    $hard_type = craftcrawl_classifier_type_has_any($types, ['fast_food_restaurant', 'gas_station', 'convenience_store', 'movie_theater', 'bowling_alley', 'casino', 'school', 'church']);
+    $hard_type = craftcrawl_classifier_type_has_any($types, ['fast_food_restaurant', 'gas_station', 'convenience_store', 'movie_theater', 'bowling_alley', 'casino', 'school', 'church', 'apartment_building', 'apartment_complex', 'real_estate_agency']);
     if ($hard_type) {
         $hard_reject = true;
         $score -= 80;
         $negative[] = 'hard reject: unrelated primary identity: ' . $hard_type;
+    }
+
+    $hard_name = craftcrawl_classifier_contains_any($name, ['apartments', 'apartment', 'condominiums', 'condominium', 'realty', 'property management']);
+    if ($hard_name && !$has_strong_alcohol_identity) {
+        $hard_reject = true;
+        $score -= 80;
+        $negative[] = 'hard reject: unrelated residential/business name: ' . $hard_name;
     }
 
     $soft_conflict_type = craftcrawl_classifier_type_has_any($types, ['grocery_store', 'hotel']);
@@ -196,7 +270,7 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         $negative[] = '-45 restaurant-heavy name: ' . $restaurant_name;
     }
 
-    $chain_like = craftcrawl_classifier_contains_any($name, ['grill & bar', 'bar and grill', 'sports bar and grill', 'restaurant & brewhouse', 'restaurant and brewhouse', 'ale house']);
+    $chain_like = craftcrawl_classifier_contains_any($name, ['grill & bar', 'grill + bar', 'bar and grill', 'bar & grill', 'sports bar and grill', 'sports bar & grill', 'restaurant & brewhouse', 'restaurant and brewhouse', 'ale house']);
     if ($chain_like) {
         $score -= 35;
         $negative[] = '-35 chain-like/mixed venue pattern: ' . $chain_like;
@@ -216,9 +290,33 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
     $core_auto_categories = ['brewery', 'winery', 'cidery', 'meadery', 'distillery'];
     $restaurant_primary = $primary_type === 'restaurant' || str_contains($primary_type, '_restaurant');
     $mixed_restaurant = !empty($restaurant_name) || !empty($chain_like) || ($restaurant_primary && !$has_strong_alcohol_identity);
+    $label_conflict = $has_google_primary_label_identity
+        && $has_google_display_label
+        && $explicit_name_category !== null
+        && $explicit_name_category !== $google_label_category
+        && in_array($google_label_category, ['brewery', 'winery', 'cidery', 'meadery', 'distillery', 'bar', 'social_club'], true)
+        && in_array($explicit_name_category, ['brewery', 'winery', 'cidery', 'meadery', 'distillery', 'bar', 'social_club'], true);
 
     if ($hard_reject) {
         $decision = 'reject';
+    } elseif ($label_conflict) {
+        $decision = 'needs_review';
+        $negative[] = 'needs review: Google primary label conflicts with producer/category signals';
+    } elseif ($explicit_name_category === 'social_club' && in_array($suggested_category, $core_auto_categories, true)) {
+        $decision = 'needs_review';
+        $negative[] = 'needs review: social club name conflicts with producer/category signals';
+    } elseif ($google_label_category === 'bar' && in_array($suggested_category, $core_auto_categories, true) && !$has_core_name_identity) {
+        $decision = 'needs_review';
+        $negative[] = 'needs review: Google bar label conflicts with producer support signals';
+    } elseif ($suggested_category === 'bar' && ($restaurant_primary || !empty($chain_like))) {
+        $decision = 'reject';
+        $negative[] = 'reject: mixed restaurant/bar pattern';
+    } elseif ($has_google_primary_label_identity && in_array($suggested_category, $core_auto_categories, true) && $score >= 90 && !$mixed_restaurant) {
+        $decision = 'auto_add';
+    } elseif ($has_google_primary_label_identity && $suggested_category === 'social_club' && $score >= 90 && !$restaurant_primary) {
+        $decision = 'auto_add';
+    } elseif ($has_google_primary_label_identity && $suggested_category === 'bar' && $score >= 90 && empty($restaurant_name) && empty($chain_like) && !$restaurant_primary) {
+        $decision = 'auto_add';
     } elseif ($has_core_name_identity && $score >= 70 && in_array($suggested_category, $core_auto_categories, true) && !$mixed_restaurant && !$hard_reject) {
         $decision = 'auto_add';
     } elseif ($has_core_support_identity && $score >= 95 && in_array($suggested_category, $core_auto_categories, true) && !$mixed_restaurant && !$has_clear_drinking_venue_identity) {
@@ -227,8 +325,10 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         $decision = 'needs_review';
     } elseif ($has_clear_drinking_venue_identity && $suggested_category === 'bar' && $score >= 70 && empty($restaurant_name) && empty($chain_like) && !$restaurant_primary && !$hard_reject) {
         $decision = 'auto_add';
+    } elseif ($has_clear_drinking_venue_identity && $suggested_category === 'social_club' && $score >= 70 && !$restaurant_primary) {
+        $decision = 'auto_add';
     } elseif ($has_clear_drinking_venue_identity && $suggested_category === 'bar' && $score >= 30 && empty($restaurant_name) && empty($chain_like)) {
-        $decision = 'needs_review';
+        $decision = $restaurant_primary ? 'reject' : 'needs_review';
     } elseif ($score < 55) {
         $decision = 'reject';
     } else {

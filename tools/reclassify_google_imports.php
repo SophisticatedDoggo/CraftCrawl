@@ -36,6 +36,7 @@ while ($row = $result->fetch_assoc()) {
         'phone' => $row['phone'],
         'website' => $row['website'],
         'primary_type' => $raw['primaryType'] ?? '',
+        'primary_type_display_name' => $raw['primaryTypeDisplayName']['text'] ?? '',
         'types' => $raw['types'] ?? [],
         'business_status' => $raw['businessStatus'] ?? '',
         'search_term' => $row['search_term'],

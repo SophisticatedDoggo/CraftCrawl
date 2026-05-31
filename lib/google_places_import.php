@@ -24,6 +24,10 @@ function craftcrawl_google_places_search_terms() {
         ['term' => 'pub', 'mode' => 'text'],
         ['term' => 'tavern', 'mode' => 'text'],
         ['term' => 'speakeasy', 'mode' => 'text'],
+        ['term' => 'social club', 'mode' => 'text'],
+        ['term' => 'citizens club', 'mode' => 'text'],
+        ['term' => 'american legion', 'mode' => 'text'],
+        ['term' => 'vfw', 'mode' => 'text'],
     ];
 }
 
@@ -59,7 +63,7 @@ function craftcrawl_google_places_request($api_key, $endpoint, array $body) {
             CURLOPT_HTTPHEADER => [
                 'Content-Type: application/json',
                 'X-Goog-Api-Key: ' . $api_key,
-                'X-Goog-FieldMask: places.id,places.displayName,places.formattedAddress,places.addressComponents,places.location,places.businessStatus,places.primaryType,places.types,places.websiteUri,places.nationalPhoneNumber,places.googleMapsUri,places.regularOpeningHours',
+                'X-Goog-FieldMask: places.id,places.displayName,places.formattedAddress,places.addressComponents,places.location,places.businessStatus,places.primaryType,places.primaryTypeDisplayName,places.types,places.websiteUri,places.nationalPhoneNumber,places.googleMapsUri,places.regularOpeningHours',
             ],
             CURLOPT_POSTFIELDS => json_encode($body),
         ]);
@@ -251,6 +255,7 @@ function craftcrawl_normalize_google_place(array $place, $search_term = '') {
         'phone' => $place['nationalPhoneNumber'] ?? '',
         'website' => $place['websiteUri'] ?? '',
         'primary_type' => $place['primaryType'] ?? '',
+        'primary_type_display_name' => $place['primaryTypeDisplayName']['text'] ?? '',
         'types' => $place['types'] ?? [],
         'business_status' => $place['businessStatus'] ?? '',
         'google_maps_uri' => $place['googleMapsUri'] ?? '',
@@ -528,6 +533,11 @@ function craftcrawl_record_google_place_import($conn, $batch_id, array $candidat
     $raw = json_encode($candidate['raw_place'] ?? []);
     $positive = json_encode($classification['positive_signals'] ?? []);
     $negative = json_encode($classification['negative_signals'] ?? []);
+    $google_primary_type = trim((string) ($candidate['primary_type'] ?? ''));
+    $google_primary_label = trim((string) ($candidate['primary_type_display_name'] ?? ''));
+    if ($google_primary_label !== '' && $google_primary_label !== $google_primary_type) {
+        $google_primary_type = trim($google_primary_type . ' / ' . $google_primary_label, ' /');
+    }
     $stmt = $conn->prepare("
         INSERT INTO google_place_imports
         (batch_id,location_id,source_place_id,state,search_term,google_primary_type,google_types,raw_place_json,fit_score,suggested_category,decision,positive_signals,negative_signals,decision_reason)
@@ -549,7 +559,7 @@ function craftcrawl_record_google_place_import($conn, $batch_id, array $candidat
         $candidate['source_place_id'],
         $candidate['state'],
         $candidate['search_term'],
-        $candidate['primary_type'],
+        $google_primary_type,
         $google_types,
         $raw,
         $classification['score'],
