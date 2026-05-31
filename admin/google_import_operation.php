@@ -73,7 +73,12 @@ function google_import_operation_try_work($conn, $api_key, $operation_id) {
     }
 
     try {
-        craftcrawl_process_google_import_operation_step($conn, $api_key, $operation_id, 4);
+        $operation = craftcrawl_fetch_google_import_operation($conn, $operation_id);
+        $updated_at = isset($operation['updatedAt']) ? strtotime((string) $operation['updatedAt']) : 0;
+        if ($updated_at > 0 && time() - $updated_at < 2) {
+            return false;
+        }
+        craftcrawl_process_google_import_operation_step($conn, $api_key, $operation_id, 1);
     } finally {
         $release_stmt = $conn->prepare("SELECT RELEASE_LOCK(?)");
         $release_stmt->bind_param('s', $lock_name);

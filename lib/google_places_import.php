@@ -27,17 +27,17 @@ function craftcrawl_google_places_search_terms() {
         ['term' => 'club', 'mode' => 'text'],
         ['term' => 'social club', 'mode' => 'text'],
         ['term' => 'citizens club', 'mode' => 'text'],
-        ['term' => 'fire department club', 'mode' => 'text'],
-        ['term' => 'firemen club', 'mode' => 'text'],
-        ['term' => 'polish falcon', 'mode' => 'text'],
-        ['term' => 'slovak club', 'mode' => 'text'],
-        ['term' => 'sokol club', 'mode' => 'text'],
-        ['term' => 'falcon club', 'mode' => 'text'],
-        ['term' => 'moose lodge', 'mode' => 'text'],
-        ['term' => 'elks lodge', 'mode' => 'text'],
-        ['term' => 'eagles club', 'mode' => 'text'],
-        ['term' => 'american legion', 'mode' => 'text'],
-        ['term' => 'vfw', 'mode' => 'text'],
+        ['term' => 'fire department club', 'mode' => 'text', 'area_mode' => 'bias'],
+        ['term' => 'firemen club', 'mode' => 'text', 'area_mode' => 'bias'],
+        ['term' => 'polish falcon', 'mode' => 'text', 'area_mode' => 'bias'],
+        ['term' => 'slovak club', 'mode' => 'text', 'area_mode' => 'bias'],
+        ['term' => 'sokol club', 'mode' => 'text', 'area_mode' => 'bias'],
+        ['term' => 'falcon club', 'mode' => 'text', 'area_mode' => 'bias'],
+        ['term' => 'moose lodge', 'mode' => 'text', 'area_mode' => 'bias'],
+        ['term' => 'elks lodge', 'mode' => 'text', 'area_mode' => 'bias'],
+        ['term' => 'eagles club', 'mode' => 'text', 'area_mode' => 'bias'],
+        ['term' => 'american legion', 'mode' => 'text', 'area_mode' => 'bias'],
+        ['term' => 'vfw', 'mode' => 'text', 'area_mode' => 'bias'],
     ];
 }
 
@@ -46,12 +46,30 @@ function craftcrawl_google_places_should_retry($status, $curl_error = '') {
         return true;
     }
 
-    return in_array((int) $status, [408, 429, 500, 502, 503, 504], true);
+    return in_array((int) $status, [408, 500, 502, 503, 504], true);
 }
 
 function craftcrawl_google_places_retry_delay_us($attempt) {
-    $delays = [300000, 900000, 1800000];
-    return $delays[max(0, min(count($delays) - 1, (int) $attempt - 1))];
+    $delays = [1000000, 5000000, 15000000];
+    $delay = $delays[max(0, min(count($delays) - 1, (int) $attempt - 1))];
+    return $delay + random_int(0, (int) floor($delay * 0.2));
+}
+
+function craftcrawl_google_places_error_message($status, $curl_error, $response) {
+    if (trim((string) $curl_error) !== '') {
+        return (string) $curl_error;
+    }
+
+    $payload = json_decode((string) $response, true);
+    if (is_array($payload) && !empty($payload['error']['message'])) {
+        return 'Google Places HTTP ' . (int) $status . ': ' . $payload['error']['message'];
+    }
+
+    return 'Google Places HTTP ' . (int) $status;
+}
+
+function craftcrawl_google_places_fatal_status($status) {
+    return in_array((int) $status, [403, 429], true);
 }
 
 function craftcrawl_google_places_request($api_key, $endpoint, array $body) {
@@ -99,12 +117,17 @@ function craftcrawl_google_places_request($api_key, $endpoint, array $body) {
         break;
     }
 
-    $message = $last_error ?: ('Google Places HTTP ' . $last_status);
+    $message = craftcrawl_google_places_error_message($last_status, $last_error, $last_response);
     if (craftcrawl_google_places_should_retry($last_status, $last_error)) {
         $message .= ' after ' . $max_attempts . ' attempts';
     }
 
-    return ['error' => $message, 'raw' => $last_response];
+    return [
+        'error' => $message,
+        'http_status' => $last_status,
+        'fatal' => craftcrawl_google_places_fatal_status($last_status),
+        'raw' => $last_response,
+    ];
 }
 
 function craftcrawl_google_tile_viewport(array $tile, $radius_meters) {
@@ -147,13 +170,28 @@ function craftcrawl_google_places_search($api_key, array $term, array $tile) {
     }
 
     $text_query = trim((string) ($term['term'] ?? ''));
-    return craftcrawl_google_places_request($api_key, 'searchText', [
+    $body = [
         'textQuery' => $text_query,
         'pageSize' => 20,
-        'locationRestriction' => [
+    ];
+
+    if (($term['area_mode'] ?? 'restriction') === 'bias') {
+        $body['locationBias'] = [
+            'circle' => [
+                'center' => [
+                    'latitude' => (float) $tile['latitude'],
+                    'longitude' => (float) $tile['longitude'],
+                ],
+                'radius' => (float) $radius_meters,
+            ],
+        ];
+    } else {
+        $body['locationRestriction'] = [
             'rectangle' => craftcrawl_google_tile_viewport($tile, $radius_meters),
-        ],
-    ]);
+        ];
+    }
+
+    return craftcrawl_google_places_request($api_key, 'searchText', $body);
 }
 
 function craftcrawl_google_address_component(array $place, $type, $short = false) {
@@ -498,6 +536,7 @@ function craftcrawl_process_google_import_operation_step($conn, $api_key, $opera
 
         if (!empty($payload['error'])) {
             $counts = ['raw' => 0, 'created' => 0, 'review' => 0, 'rejected' => 0, 'duplicate' => 0, 'skipped' => 0, 'error' => 1];
+            $fatal_api_error = !empty($payload['fatal']);
             if (!$dry_run) {
                 craftcrawl_complete_location_import_batch($conn, $batch_id, $counts, 'failed', $payload['error']);
             }
@@ -505,7 +544,10 @@ function craftcrawl_process_google_import_operation_step($conn, $api_key, $opera
                 $summary[$key] += $value;
             }
             $completed_steps++;
-            craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile, $term, 'running', $payload['error']);
+            craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile, $term, $fatal_api_error ? 'failed' : 'running', $payload['error']);
+            if ($fatal_api_error) {
+                return $summary;
+            }
             continue;
         }
 
