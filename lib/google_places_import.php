@@ -544,7 +544,7 @@ function craftcrawl_record_google_place_import($conn, $batch_id, array $candidat
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         ON DUPLICATE KEY UPDATE
             batch_id=VALUES(batch_id),
-            location_id=COALESCE(VALUES(location_id), location_id),
+            location_id=IF(VALUES(decision)='reject', VALUES(location_id), COALESCE(VALUES(location_id), location_id)),
             fit_score=IF(decision IN ('auto_add','needs_review') AND VALUES(decision)='duplicate', fit_score, VALUES(fit_score)),
             suggested_category=IF(decision IN ('auto_add','needs_review') AND VALUES(decision)='duplicate', suggested_category, VALUES(suggested_category)),
             decision=IF(decision IN ('auto_add','needs_review') AND VALUES(decision)='duplicate', decision, VALUES(decision)),
@@ -616,8 +616,67 @@ function craftcrawl_create_google_location($conn, array $candidate, array $class
     return $location_id;
 }
 
+function craftcrawl_fetch_google_location_by_place_id($conn, $source_place_id) {
+    $source_place_id = trim((string) $source_place_id);
+    if ($source_place_id === '') {
+        return null;
+    }
+
+    $stmt = $conn->prepare("SELECT * FROM locations WHERE source_provider='google' AND source_place_id=? LIMIT 1");
+    $stmt->bind_param('s', $source_place_id);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_assoc() ?: null;
+}
+
+function craftcrawl_delete_pending_google_location($conn, $location_id) {
+    $location_id = (int) $location_id;
+    if ($location_id <= 0) {
+        return 0;
+    }
+
+    $import = $conn->prepare("UPDATE google_place_imports SET location_id=NULL WHERE location_id=?");
+    $import->bind_param('i', $location_id);
+    $import->execute();
+
+    $hours = $conn->prepare("DELETE FROM location_hours WHERE location_id=?");
+    $hours->bind_param('i', $location_id);
+    $hours->execute();
+
+    $location = $conn->prepare("DELETE FROM locations WHERE id=? AND visibility_status='pending_import_review'");
+    $location->bind_param('i', $location_id);
+    $location->execute();
+    return $conn->affected_rows;
+}
+
 function craftcrawl_import_google_place($conn, $batch_id, array $candidate, array $chain_patterns, $dry_run = false) {
     $classification = craftcrawl_classify_location_candidate($candidate, $chain_patterns);
+    $existing_google_location = craftcrawl_fetch_google_location_by_place_id($conn, $candidate['source_place_id'] ?? '');
+    if ($existing_google_location && ($existing_google_location['visibility_status'] ?? '') === 'pending_import_review') {
+        $decision = $classification['decision'];
+        $location_id = (int) $existing_google_location['id'];
+
+        if (!$dry_run) {
+            if ($decision === 'auto_add') {
+                $visibility_status = 'public_unclaimed';
+                $notes = trim((string) ($existing_google_location['adminNotes'] ?? '') . "\nReclassified Google import score: " . $classification['score'] . "\nDecision: auto_add");
+                $update = $conn->prepare("UPDATE locations SET location_type=?,visibility_status=?,adminNotes=?,approvedAt=NOW() WHERE id=? AND visibility_status='pending_import_review'");
+                $update->bind_param('sssi', $classification['suggested_category'], $visibility_status, $notes, $location_id);
+                $update->execute();
+            } elseif ($decision === 'reject') {
+                $deleted = craftcrawl_delete_pending_google_location($conn, $location_id);
+                $location_id = $deleted > 0 ? null : $location_id;
+            } else {
+                $update = $conn->prepare("UPDATE locations SET location_type=? WHERE id=? AND visibility_status='pending_import_review'");
+                $update->bind_param('si', $classification['suggested_category'], $location_id);
+                $update->execute();
+            }
+
+            craftcrawl_record_google_place_import($conn, $batch_id, $candidate, $classification, $decision, $location_id);
+        }
+
+        return ['decision' => $decision, 'location_id' => $location_id, 'classification' => $classification];
+    }
+
     $dupes = craftcrawl_location_duplicate_summary(craftcrawl_location_duplicate_candidates($conn, [
         'name' => $candidate['name'],
         'address' => $candidate['street_address'],
