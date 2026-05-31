@@ -1,6 +1,11 @@
 window.CraftCrawlInitGoogleImportTiles = function (root = document) {
     function formatSummary(summary = {}) {
-        return `Raw ${summary.raw || 0} · Created ${summary.created || 0} · Review ${summary.review || 0} · Rejected ${summary.rejected || 0} · Duplicates ${summary.duplicate || 0} · Skipped ${summary.skipped || 0} · Errors ${summary.error || 0}`;
+        const pending = Number(summary.pending_review || 0);
+        const review = Number(summary.review || 0);
+        const reviewText = pending && pending !== review
+            ? `Review ${review} (${pending} pending)`
+            : `Review ${review}`;
+        return `Raw ${summary.raw || 0} · Created ${summary.created || 0} · ${reviewText} · Rejected ${summary.rejected || 0} · Duplicates ${summary.duplicate || 0} · Skipped ${summary.skipped || 0} · Errors ${summary.error || 0}`;
     }
 
     function renderOperation(panel, operation) {

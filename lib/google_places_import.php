@@ -24,8 +24,14 @@ function craftcrawl_google_places_search_terms() {
         ['term' => 'pub', 'mode' => 'text'],
         ['term' => 'tavern', 'mode' => 'text'],
         ['term' => 'speakeasy', 'mode' => 'text'],
+        ['term' => 'club', 'mode' => 'text'],
+        ['term' => 'private club', 'mode' => 'text'],
         ['term' => 'social club', 'mode' => 'text'],
         ['term' => 'citizens club', 'mode' => 'text'],
+        ['term' => 'fire department club', 'mode' => 'text'],
+        ['term' => 'polish club', 'mode' => 'text'],
+        ['term' => 'slovak club', 'mode' => 'text'],
+        ['term' => 'falcon club', 'mode' => 'text'],
         ['term' => 'american legion', 'mode' => 'text'],
         ['term' => 'vfw', 'mode' => 'text'],
     ];
@@ -394,6 +400,45 @@ function craftcrawl_google_import_operation_summary(array $operation) {
     ];
 }
 
+function craftcrawl_google_place_seen_in_operation($conn, $operation_id, $source_place_id) {
+    $operation_id = trim((string) $operation_id);
+    $source_place_id = trim((string) $source_place_id);
+    if ($operation_id === '' || $source_place_id === '') {
+        return false;
+    }
+
+    $stmt = $conn->prepare("
+        SELECT 1
+        FROM google_place_imports gpi
+        INNER JOIN location_import_batches lib ON lib.id=gpi.batch_id
+        WHERE lib.operation_id=? AND gpi.source_place_id=?
+        LIMIT 1
+    ");
+    $stmt->bind_param('ss', $operation_id, $source_place_id);
+    $stmt->execute();
+    return (bool) $stmt->get_result()->fetch_assoc();
+}
+
+function craftcrawl_google_import_operation_live_review_count($conn, $operation_id) {
+    $operation_id = trim((string) $operation_id);
+    if ($operation_id === '') {
+        return 0;
+    }
+
+    $stmt = $conn->prepare("
+        SELECT COUNT(*) AS pending_count
+        FROM locations l
+        INNER JOIN google_place_imports gpi ON gpi.location_id=l.id
+        INNER JOIN location_import_batches lib ON lib.id=gpi.batch_id
+        WHERE lib.operation_id=?
+          AND l.visibility_status='pending_import_review'
+          AND gpi.decision='needs_review'
+    ");
+    $stmt->bind_param('s', $operation_id);
+    $stmt->execute();
+    return (int) ($stmt->get_result()->fetch_assoc()['pending_count'] ?? 0);
+}
+
 function craftcrawl_process_google_import_operation_step($conn, $api_key, $operation_id, $steps = 1) {
     $operation = craftcrawl_fetch_google_import_operation($conn, $operation_id);
     if (!$operation || !in_array($operation['status'], ['queued', 'running'], true)) {
@@ -454,6 +499,10 @@ function craftcrawl_process_google_import_operation_step($conn, $api_key, $opera
             }
 
             $place_id = $candidate['source_place_id'] ?? '';
+            if (!$dry_run && craftcrawl_google_place_seen_in_operation($conn, $operation_id, $place_id)) {
+                $counts['duplicate']++;
+                continue;
+            }
             if ($place_id !== '' && isset($seen_place_ids[$place_id])) {
                 $counts['duplicate']++;
                 continue;

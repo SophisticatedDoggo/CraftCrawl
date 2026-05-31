@@ -28,6 +28,9 @@ function google_import_operation_payload($conn, $operation_id = null) {
     if (in_array(($operation['status'] ?? ''), ['queued', 'running', 'completed'], true) && $summary_error_count === 0) {
         $api_error = '';
     }
+    $pending_review_count = !empty($operation['dry_run'])
+        ? 0
+        : craftcrawl_google_import_operation_live_review_count($conn, $operation['operation_id']);
 
     return [
         'operation_id' => $operation['operation_id'],
@@ -46,6 +49,7 @@ function google_import_operation_payload($conn, $operation_id = null) {
             'raw' => (int) $operation['raw_result_count'],
             'created' => (int) $operation['created_count'],
             'review' => (int) $operation['review_count'],
+            'pending_review' => $pending_review_count,
             'rejected' => (int) $operation['rejected_count'],
             'duplicate' => (int) $operation['duplicate_count'],
             'skipped' => (int) $operation['skipped_count'],

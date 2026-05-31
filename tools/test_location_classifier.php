@@ -94,6 +94,16 @@ $cases = [
         'decision' => 'reject',
         'category' => 'distillery',
     ],
+    'fine wine good spirits rejects' => [
+        'candidate' => ['name' => 'Fine Wine & Good Spirits', 'street_address' => '100 State Store Rd', 'latitude' => 40.1, 'longitude' => -79.9, 'primary_type' => 'liquor_store', 'primary_type_display_name' => 'Liquor store', 'types' => ['liquor_store', 'store'], 'website' => 'https://example.com', 'phone' => '555', 'search_term' => 'distillery'],
+        'decision' => 'reject',
+        'category' => 'other',
+    ],
+    'wine and spirits store rejects' => [
+        'candidate' => ['name' => 'Downtown Wine and Spirits', 'street_address' => '101 Store Rd', 'latitude' => 40.1, 'longitude' => -79.9, 'primary_type' => 'store', 'types' => ['store'], 'website' => 'https://example.com', 'phone' => '555', 'search_term' => 'distillery'],
+        'decision' => 'reject',
+        'category' => 'other',
+    ],
     'barrelhouse name auto-adds as distillery' => [
         'candidate' => ['name' => 'Maggie\'s Farm Strip District Barrelhouse', 'street_address' => '3212a Smallman Street', 'latitude' => 40.1, 'longitude' => -79.9, 'primary_type' => 'bar', 'types' => ['bar'], 'website' => '', 'phone' => '555', 'search_term' => 'distillery'],
         'decision' => 'auto_add',

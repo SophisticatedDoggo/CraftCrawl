@@ -58,6 +58,30 @@ function craftcrawl_classifier_google_label_category($value) {
     return $map[$value] ?? null;
 }
 
+function craftcrawl_classifier_category_label($category) {
+    $labels = [
+        'brewery' => 'Brewery',
+        'winery' => 'Winery',
+        'cidery' => 'Cidery',
+        'distillery' => 'Distillery',
+        'meadery' => 'Meadery',
+        'bar' => 'Bar',
+        'social_club' => 'Social Club',
+        'other' => 'Other',
+    ];
+
+    return $labels[$category] ?? ucwords(str_replace('_', ' ', (string) $category));
+}
+
+function craftcrawl_classifier_signal_summary(array $signals) {
+    if (empty($signals)) {
+        return '';
+    }
+
+    $summary = preg_replace('/^[+-]?\d+\s*/', '', (string) $signals[0]);
+    return trim($summary);
+}
+
 function craftcrawl_classifier_veterans_post_has_number($name) {
     $name = craftcrawl_classifier_normalize($name);
     if ($name === '') {
@@ -258,10 +282,11 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         }
     }
 
-    $hard_type = craftcrawl_classifier_type_has_any($types, ['fast_food_restaurant', 'gas_station', 'convenience_store', 'movie_theater', 'bowling_alley', 'casino', 'school', 'church', 'apartment_building', 'apartment_complex', 'real_estate_agency']);
+    $hard_type = craftcrawl_classifier_type_has_any($types, ['fast_food_restaurant', 'gas_station', 'convenience_store', 'liquor_store', 'wine_store', 'grocery_store', 'movie_theater', 'bowling_alley', 'casino', 'school', 'church', 'apartment_building', 'apartment_complex', 'real_estate_agency']);
     if ($hard_type) {
         $hard_reject = true;
         $score -= 80;
+        $suggested_category = 'other';
         $negative[] = 'hard reject: unrelated primary identity: ' . $hard_type;
     }
 
@@ -272,6 +297,14 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         $negative[] = 'hard reject: unrelated residential/business name: ' . $hard_name;
     }
 
+    $retail_alcohol_name = craftcrawl_classifier_contains_any($name, ['fine wine & good spirits', 'fine wine good spirits', 'fine wine and good spirits', 'wine and spirits', 'liquor store', 'bottle shop', 'beer distributor', 'state store']);
+    if ($retail_alcohol_name) {
+        $hard_reject = true;
+        $score -= 100;
+        $suggested_category = 'other';
+        $negative[] = 'hard reject: retail/state alcohol store: ' . $retail_alcohol_name;
+    }
+
     if ($veterans_club_match !== null && !$has_veterans_post_number) {
         $hard_reject = true;
         $score -= 80;
@@ -279,7 +312,7 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         $negative[] = 'hard reject: veterans organization without post number: ' . $veterans_club_match;
     }
 
-    $soft_conflict_type = craftcrawl_classifier_type_has_any($types, ['grocery_store', 'hotel']);
+    $soft_conflict_type = craftcrawl_classifier_type_has_any($types, ['hotel']);
     if ($soft_conflict_type) {
         if ($has_core_name_identity) {
             $score -= 55;
@@ -331,6 +364,9 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         && $explicit_name_category !== $google_label_category
         && in_array($google_label_category, ['brewery', 'winery', 'cidery', 'meadery', 'distillery', 'bar', 'social_club'], true)
         && in_array($explicit_name_category, ['brewery', 'winery', 'cidery', 'meadery', 'distillery', 'bar', 'social_club'], true);
+    $conflict_categories = $label_conflict ? array_values(array_filter([$google_label_category, $explicit_name_category])) : [];
+    $craft_only_conflict = count($conflict_categories) === 2
+        && count(array_intersect($conflict_categories, $core_auto_categories)) === 2;
 
     if ($hard_reject) {
         $decision = 'reject';
@@ -342,9 +378,6 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         $decision = 'reject';
         $negative[] = 'reject: social club name conflicts with Google producer/category label';
     } elseif ($label_conflict) {
-        $conflict_categories = array_values(array_filter([$google_label_category, $explicit_name_category]));
-        $craft_only_conflict = count($conflict_categories) === 2
-            && count(array_intersect($conflict_categories, $core_auto_categories)) === 2;
         $decision = $craft_only_conflict ? 'needs_review' : 'reject';
         $negative[] = ($craft_only_conflict ? 'needs review' : 'reject') . ': Google primary label conflicts with producer/category signals';
     } elseif ($explicit_name_category === 'social_club' && in_array($suggested_category, $core_auto_categories, true)) {
@@ -380,13 +413,50 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         $decision = in_array($suggested_category, $core_auto_categories, true) ? 'needs_review' : 'reject';
     }
 
+    $suggested_label = craftcrawl_classifier_category_label($suggested_category);
+    $google_label = $google_label_category !== null ? craftcrawl_classifier_category_label($google_label_category) : '';
+    $name_label = $explicit_name_category !== null ? craftcrawl_classifier_category_label($explicit_name_category) : '';
+    $google_label_text = trim($primary_type_display_name) !== '' ? trim($primary_type_display_name) : $primary_type;
+    $positive_summary = craftcrawl_classifier_signal_summary($positive);
+    $negative_summary = craftcrawl_classifier_signal_summary($negative);
+
+    if ($decision === 'needs_review') {
+        if ($label_conflict && $craft_only_conflict) {
+            $decision_reason = 'Needs review: Google label says ' . $google_label . ', but the name/signals suggest ' . $name_label . '. Choose the correct craft type. Suggested ' . $suggested_label . '; score ' . $score . '.';
+        } elseif ($has_core_name_identity) {
+            $decision_reason = 'Needs review: the name looks like a ' . $suggested_label . ', but confidence was below the auto-add threshold. Check whether the craft type is correct. Score ' . $score . '.';
+        } elseif ($has_core_support_identity) {
+            $decision_reason = 'Needs review: Google/supporting data points to a ' . $suggested_label . ', but the name is not clear enough to auto-add. Check the craft type. Score ' . $score . '.';
+        } else {
+            $decision_reason = 'Needs review: craft alcohol signals are present, but the importer is not confident enough to auto-add. Suggested ' . $suggested_label . '; score ' . $score . '.';
+        }
+    } elseif ($decision === 'auto_add') {
+        if ($has_veterans_post_number) {
+            $decision_reason = 'Auto-add: American Legion/VFW post number treated as Social Club. Score ' . $score . '.';
+        } elseif ($google_label !== '') {
+            $decision_reason = 'Auto-add: Google label says ' . $google_label . ($google_label_text !== '' ? ' (' . $google_label_text . ')' : '') . '. Suggested ' . $suggested_label . '; score ' . $score . '.';
+        } elseif ($positive_summary !== '') {
+            $decision_reason = 'Auto-add: ' . $positive_summary . '. Suggested ' . $suggested_label . '; score ' . $score . '.';
+        } else {
+            $decision_reason = 'Auto-add: importer confidence met threshold. Suggested ' . $suggested_label . '; score ' . $score . '.';
+        }
+    } else {
+        if ($negative_summary !== '') {
+            $decision_reason = 'Reject: ' . $negative_summary . '. Suggested ' . $suggested_label . '; score ' . $score . '.';
+        } elseif ($label_conflict) {
+            $decision_reason = 'Reject: Google label says ' . $google_label . ', but the name/signals suggest ' . $name_label . '. Non-craft conflicts are rejected instead of sent to review. Score ' . $score . '.';
+        } else {
+            $decision_reason = 'Reject: importer confidence did not meet listing criteria. Suggested ' . $suggested_label . '; score ' . $score . '.';
+        }
+    }
+
     return [
         'score' => $score,
         'decision' => $decision,
         'suggested_category' => $suggested_category,
         'positive_signals' => $positive,
         'negative_signals' => $negative,
-        'decision_reason' => $decision . ' at score ' . $score,
+        'decision_reason' => $decision_reason,
         'hard_reject' => $hard_reject,
     ];
 }
