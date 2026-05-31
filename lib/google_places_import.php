@@ -24,26 +24,26 @@ function craftcrawl_google_places_search_terms() {
         ['term' => 'pub', 'mode' => 'text'],
         ['term' => 'tavern', 'mode' => 'text'],
         ['term' => 'speakeasy', 'mode' => 'text'],
-        ['term' => 'club', 'mode' => 'text'],
-        ['term' => 'private club', 'mode' => 'text'],
-        ['term' => 'social club', 'mode' => 'text'],
-        ['term' => 'ethnic club', 'mode' => 'text'],
-        ['term' => 'fraternal club', 'mode' => 'text'],
-        ['term' => 'citizens club', 'mode' => 'text'],
-        ['term' => 'fire department club', 'mode' => 'text'],
-        ['term' => 'firemen club', 'mode' => 'text'],
-        ['term' => 'volunteer fire club', 'mode' => 'text'],
-        ['term' => 'polish club', 'mode' => 'text'],
-        ['term' => 'polish falcon', 'mode' => 'text'],
-        ['term' => 'slovak club', 'mode' => 'text'],
-        ['term' => 'slavic club', 'mode' => 'text'],
-        ['term' => 'sokol club', 'mode' => 'text'],
-        ['term' => 'falcon club', 'mode' => 'text'],
-        ['term' => 'moose lodge', 'mode' => 'text'],
-        ['term' => 'elks lodge', 'mode' => 'text'],
-        ['term' => 'eagles club', 'mode' => 'text'],
-        ['term' => 'american legion', 'mode' => 'text'],
-        ['term' => 'vfw', 'mode' => 'text'],
+        ['term' => 'club', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'private club', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'social club', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'ethnic club', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'fraternal club', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'citizens club', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'fire department club', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'firemen club', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'volunteer fire club', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'polish club', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'polish falcon', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'slovak club', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'slavic club', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'sokol club', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'falcon club', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'moose lodge', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'elks lodge', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'eagles club', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'american legion', 'mode' => 'text', 'pages' => 3],
+        ['term' => 'vfw', 'mode' => 'text', 'pages' => 3],
     ];
 }
 
@@ -113,6 +113,55 @@ function craftcrawl_google_places_request($api_key, $endpoint, array $body) {
     return ['error' => $message, 'raw' => $last_response];
 }
 
+function craftcrawl_google_tile_viewport(array $tile, $radius_meters) {
+    $lat = (float) ($tile['latitude'] ?? 0);
+    $lng = (float) ($tile['longitude'] ?? 0);
+    $radius_meters = max(1, (float) $radius_meters);
+    $lat_delta = $radius_meters / 111320;
+    $lng_scale = max(0.01, cos(deg2rad($lat)));
+    $lng_delta = $radius_meters / (111320 * $lng_scale);
+
+    return [
+        'low' => [
+            'latitude' => max(-90, $lat - $lat_delta),
+            'longitude' => max(-180, $lng - $lng_delta),
+        ],
+        'high' => [
+            'latitude' => min(90, $lat + $lat_delta),
+            'longitude' => min(180, $lng + $lng_delta),
+        ],
+    ];
+}
+
+function craftcrawl_google_places_text_search($api_key, array $body, $pages = 1) {
+    $pages = max(1, min(3, (int) $pages));
+    $combined = ['places' => []];
+    $page_token = '';
+
+    for ($page = 0; $page < $pages; $page++) {
+        $page_body = $body;
+        if ($page_token !== '') {
+            $page_body['pageToken'] = $page_token;
+        }
+
+        $payload = craftcrawl_google_places_request($api_key, 'searchText', $page_body);
+        if (!empty($payload['error'])) {
+            return empty($combined['places']) ? $payload : $combined;
+        }
+
+        foreach (($payload['places'] ?? []) as $place) {
+            $combined['places'][] = $place;
+        }
+
+        $page_token = trim((string) ($payload['nextPageToken'] ?? ''));
+        if ($page_token === '') {
+            break;
+        }
+    }
+
+    return $combined;
+}
+
 function craftcrawl_google_places_search($api_key, array $term, array $tile) {
     $radius_meters = max(1, min(50000, (int) ($tile['radius_meters'] ?? 30000)));
 
@@ -134,19 +183,13 @@ function craftcrawl_google_places_search($api_key, array $term, array $tile) {
 
     $text_query = trim((string) ($term['term'] ?? ''));
 
-    return craftcrawl_google_places_request($api_key, 'searchText', [
+    return craftcrawl_google_places_text_search($api_key, [
         'textQuery' => $text_query,
-        'maxResultCount' => 20,
+        'pageSize' => 20,
         'locationRestriction' => [
-            'circle' => [
-                'center' => [
-                    'latitude' => (float) $tile['latitude'],
-                    'longitude' => (float) $tile['longitude'],
-                ],
-                'radius' => (float) $radius_meters,
-            ],
+            'rectangle' => craftcrawl_google_tile_viewport($tile, $radius_meters),
         ],
-    ]);
+    ], $term['pages'] ?? 1);
 }
 
 function craftcrawl_google_address_component(array $place, $type, $short = false) {
