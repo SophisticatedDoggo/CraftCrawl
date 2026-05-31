@@ -117,14 +117,16 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
     $business_status = strtoupper((string) ($candidate['business_status'] ?? ''));
     $address = (string) ($candidate['street_address'] ?? $candidate['address'] ?? '');
     $phone = (string) ($candidate['phone'] ?? '');
+    $description = (string) ($candidate['description'] ?? $candidate['editorial_summary'] ?? $candidate['summary'] ?? '');
     $lat = $candidate['latitude'] ?? null;
     $lng = $candidate['longitude'] ?? null;
     $google_label_category = craftcrawl_classifier_google_label_category($primary_type_display_name)
         ?: craftcrawl_classifier_google_label_category($primary_type);
-    $evidence_text = implode(' ', [$name, $website, $primary_type, $primary_type_display_name, implode(' ', $types)]);
+    $evidence_text = implode(' ', [$name, $website, $description, $primary_type, $primary_type_display_name, implode(' ', $types)]);
     $veterans_club_match = craftcrawl_classifier_contains_any($name, ['american legion', 'vfw']);
     $has_veterans_post_number = $veterans_club_match !== null && craftcrawl_classifier_veterans_post_has_number($name);
     $has_club_name = craftcrawl_classifier_contains_any($name, ['club', 'vfw', 'american legion']) !== null;
+    $taproom_name_match = craftcrawl_classifier_contains_any($name, ['taproom', 'tap room', 'taphouse', 'tap house']);
 
     $score = 0;
     $positive = [];
@@ -177,12 +179,11 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         'distillery' => ['distillery', 'distilleries', 'distilling', 'spirits', 'barrelhouse', 'barrel house'],
         'cidery' => ['cidery', 'cideries', 'cider house', 'hard cider', 'cider co', 'cider company', 'cider works'],
         'meadery' => ['meadery', 'meaderies', 'mead'],
-        'taproom' => ['taproom', 'tap room'],
         'tasting_room' => ['tasting room'],
     ];
 
     foreach ($strong_categories as $category => $keywords) {
-        if (in_array($category, ['taproom', 'tasting_room'], true)) {
+        if ($category === 'tasting_room') {
             continue;
         }
         if (craftcrawl_classifier_contains_any($name, $keywords)) {
@@ -196,7 +197,7 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         $support_match = craftcrawl_classifier_contains_any(implode(' ', [$website, $primary_type, implode(' ', $types)]), $keywords);
         $type_match = craftcrawl_classifier_type_has_any($types, $keywords);
         if ($name_match || $support_match || $type_match) {
-            $points = $name_match && !in_array($category, ['taproom', 'tasting_room'], true) ? 95 : 70;
+            $points = $name_match && $category !== 'tasting_room' ? 95 : 70;
             if ($category === 'distillery' && $name_match === 'spirits') {
                 $points = 70;
             }
@@ -208,7 +209,7 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
                 $suggested_category = $context ?: 'bar';
             } else {
                 if ($suggested_category === 'other' || !$has_google_primary_label_identity || in_array($google_label_category, ['bar'], true)) {
-                    $suggested_category = $category === 'taproom' ? 'brewery' : $category;
+                    $suggested_category = $category;
                 }
             }
             $score += $points;
@@ -257,7 +258,7 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         $positive[] = '+45 Google bar type with drinking-venue name: ' . $name_drinking_match;
     }
 
-    $support_match = craftcrawl_classifier_contains_any($evidence_text, ['craft beer', 'wine', 'spirits', 'cocktails', 'tap list', 'flights', 'self pour', 'self-pour', 'taphouse', 'tap house', 'tapville', 'tasting', 'cellar', 'vineyard', 'brewery', 'brewing', 'distilling', 'hard cider', 'cidery', 'cider house', 'cider works', 'mead', 'club']);
+    $support_match = craftcrawl_classifier_contains_any($evidence_text, ['craft beer', 'wine', 'spirits', 'cocktails', 'tap list', 'rotating tap', 'bottle menu', 'draft beer', 'beer menu', 'flights', 'self pour', 'self-pour', 'taproom', 'tap room', 'taphouse', 'tap house', 'tapville', 'tasting', 'cellar', 'vineyard', 'brewery', 'brewing', 'distilling', 'hard cider', 'cidery', 'cider house', 'cider works', 'mead', 'club']);
     if ($support_match) {
         $score += 25;
         $positive[] = '+25 beverage program signal: ' . $support_match;

@@ -726,6 +726,14 @@ function craftcrawl_import_google_place($conn, $batch_id, array $candidate, arra
         return ['decision' => $decision, 'location_id' => $location_id, 'classification' => $classification];
     }
 
+    if ($classification['decision'] === 'reject') {
+        if (!$dry_run) {
+            craftcrawl_record_google_place_import($conn, $batch_id, $candidate, $classification, 'reject');
+        }
+
+        return ['decision' => 'reject', 'location_id' => null, 'classification' => $classification];
+    }
+
     $dupes = craftcrawl_location_duplicate_summary(craftcrawl_location_duplicate_candidates($conn, [
         'name' => $candidate['name'],
         'address' => $candidate['street_address'],

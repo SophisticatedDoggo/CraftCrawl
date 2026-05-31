@@ -49,6 +49,16 @@ $cases = [
         'decision' => 'auto_add',
         'category' => 'brewery',
     ],
+    'helltown google brewery label auto-adds' => [
+        'candidate' => ['name' => 'Helltown Brewing - Mt Pleasant Taproom', 'street_address' => '1 Main St', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => 'brewery', 'primary_type_display_name' => 'Brewery', 'types' => ['brewery'], 'website' => 'https://example.com', 'phone' => '555', 'search_term' => 'taproom'],
+        'decision' => 'auto_add',
+        'category' => 'brewery',
+    ],
+    'station taproom brunch restaurant rejects' => [
+        'candidate' => ['name' => 'Station Taproom', 'street_address' => '207 W Lancaster Ave', 'latitude' => 40.1, 'longitude' => -75.7, 'primary_type' => 'brunch_restaurant', 'primary_type_display_name' => 'Brunch restaurant', 'types' => ['brunch_restaurant', 'restaurant'], 'website' => 'https://stationtaproom.com', 'phone' => '555', 'search_term' => 'taproom'],
+        'decision' => 'reject',
+        'category' => 'bar',
+    ],
     'plain distillery auto-adds' => [
         'candidate' => ['name' => 'McLaughlin Distillery', 'street_address' => '3799 Blackburn Road', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => '', 'types' => [], 'website' => '', 'phone' => '555', 'search_term' => 'distillery'],
         'decision' => 'auto_add',

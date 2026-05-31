@@ -73,7 +73,7 @@ function google_import_operation_try_work($conn, $api_key, $operation_id) {
     }
 
     try {
-        craftcrawl_process_google_import_operation_step($conn, $api_key, $operation_id, 1);
+        craftcrawl_process_google_import_operation_step($conn, $api_key, $operation_id, 4);
     } finally {
         $release_stmt = $conn->prepare("SELECT RELEASE_LOCK(?)");
         $release_stmt->bind_param('s', $lock_name);
