@@ -169,6 +169,31 @@ $cases = [
         'decision' => 'auto_add',
         'category' => 'social_club',
     ],
+    'slovak club with google bar auto-adds social club' => [
+        'candidate' => ['name' => 'Slovak Club', 'street_address' => '807 W Smithfield St', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => 'bar', 'primary_type_display_name' => 'Bar', 'types' => ['bar'], 'website' => '', 'phone' => '555'],
+        'decision' => 'auto_add',
+        'category' => 'social_club',
+    ],
+    'polish falcon club with nonprofit label auto-adds social club' => [
+        'candidate' => ['name' => 'Polish Falcon Club', 'street_address' => '33 Rumbaugh Ave', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => 'non_profit_organization', 'primary_type_display_name' => 'Non-profit organization', 'types' => ['non_profit_organization'], 'website' => '', 'phone' => '555'],
+        'decision' => 'auto_add',
+        'category' => 'social_club',
+    ],
+    'generic ethnic club with nonprofit label auto-adds social club' => [
+        'candidate' => ['name' => 'Croatian Club', 'street_address' => '40 Main St', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => 'non_profit_organization', 'primary_type_display_name' => 'Non-profit organization', 'types' => ['non_profit_organization'], 'website' => '', 'phone' => '555'],
+        'decision' => 'auto_add',
+        'category' => 'social_club',
+    ],
+    'moose lodge with nonprofit label auto-adds social club' => [
+        'candidate' => ['name' => 'Moose Lodge 123', 'street_address' => '50 Main St', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => 'non_profit_organization', 'primary_type_display_name' => 'Non-profit organization', 'types' => ['non_profit_organization'], 'website' => '', 'phone' => '555'],
+        'decision' => 'auto_add',
+        'category' => 'social_club',
+    ],
+    'fire department club with club label auto-adds social club' => [
+        'candidate' => ['name' => 'Mt Pleasant Fire Department Club Rm', 'street_address' => '622 W Smithfield St', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => 'club', 'primary_type_display_name' => 'Club', 'types' => ['club'], 'website' => '', 'phone' => '555'],
+        'decision' => 'auto_add',
+        'category' => 'social_club',
+    ],
     'google winery label auto-adds winery' => [
         'candidate' => ['name' => 'Bella Terra Vineyards', 'street_address' => '33 Vineyard Ln', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => 'winery', 'primary_type_display_name' => 'Winery', 'types' => ['winery'], 'website' => 'https://example.com', 'phone' => '555'],
         'decision' => 'auto_add',

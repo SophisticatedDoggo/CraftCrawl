@@ -27,11 +27,21 @@ function craftcrawl_google_places_search_terms() {
         ['term' => 'club', 'mode' => 'text'],
         ['term' => 'private club', 'mode' => 'text'],
         ['term' => 'social club', 'mode' => 'text'],
+        ['term' => 'ethnic club', 'mode' => 'text'],
+        ['term' => 'fraternal club', 'mode' => 'text'],
         ['term' => 'citizens club', 'mode' => 'text'],
         ['term' => 'fire department club', 'mode' => 'text'],
+        ['term' => 'firemen club', 'mode' => 'text'],
+        ['term' => 'volunteer fire club', 'mode' => 'text'],
         ['term' => 'polish club', 'mode' => 'text'],
+        ['term' => 'polish falcon', 'mode' => 'text'],
         ['term' => 'slovak club', 'mode' => 'text'],
+        ['term' => 'slavic club', 'mode' => 'text'],
+        ['term' => 'sokol club', 'mode' => 'text'],
         ['term' => 'falcon club', 'mode' => 'text'],
+        ['term' => 'moose lodge', 'mode' => 'text'],
+        ['term' => 'elks lodge', 'mode' => 'text'],
+        ['term' => 'eagles club', 'mode' => 'text'],
         ['term' => 'american legion', 'mode' => 'text'],
         ['term' => 'vfw', 'mode' => 'text'],
     ];
@@ -122,10 +132,12 @@ function craftcrawl_google_places_search($api_key, array $term, array $tile) {
         ]);
     }
 
+    $text_query = trim((string) ($term['term'] ?? ''));
+
     return craftcrawl_google_places_request($api_key, 'searchText', [
-        'textQuery' => $term['term'] . ' in ' . ($tile['label'] ?? 'United States'),
+        'textQuery' => $text_query,
         'maxResultCount' => 20,
-        'locationBias' => [
+        'locationRestriction' => [
             'circle' => [
                 'center' => [
                     'latitude' => (float) $tile['latitude'],

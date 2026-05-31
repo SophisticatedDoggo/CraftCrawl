@@ -91,6 +91,57 @@ function craftcrawl_classifier_veterans_post_has_number($name) {
     return (bool) preg_match('/\b(?:post|vfw)\s*(?:no\.?|number|#)?\s*\d+\b/', $name);
 }
 
+function craftcrawl_classifier_fraternal_social_club_match($name) {
+    $name = craftcrawl_classifier_normalize($name);
+    if ($name === '') {
+        return null;
+    }
+
+    $has_club_word = preg_match('/\b(?:club|lodge|aerie|nest)\b/', $name);
+    $fraternal_match = craftcrawl_classifier_contains_any($name, [
+        'slovak',
+        'slavic',
+        'polish',
+        'falcon',
+        'sokol',
+        'croatian',
+        'serbian',
+        'ukrainian',
+        'italian',
+        'german',
+        'germania',
+        'greek',
+        'irish',
+        'hungarian',
+        'lithuanian',
+        'czech',
+        'romanian',
+        'russian',
+        'moose',
+        'elks',
+        'eagles',
+        'eagle aerie',
+        'owls',
+        'beneficial association',
+        'athletic association',
+        'fire department',
+        'fire dept',
+        'firemen',
+        'firemen\'s',
+        'volunteer fire',
+    ]);
+
+    if ($has_club_word && $fraternal_match !== null) {
+        return $fraternal_match;
+    }
+
+    if (preg_match('/\b(?:moose|elks|eagles|owls)\s+(?:lodge|club|aerie|nest)\b/', $name, $match)) {
+        return $match[0];
+    }
+
+    return null;
+}
+
 function craftcrawl_active_chain_patterns($conn) {
     $patterns = [];
     $result = $conn->query("SELECT pattern FROM chain_exclusion_patterns WHERE is_active=1");
@@ -127,6 +178,7 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
     $has_veterans_post_number = $veterans_club_match !== null && craftcrawl_classifier_veterans_post_has_number($name);
     $has_club_name = craftcrawl_classifier_contains_any($name, ['club', 'vfw', 'american legion']) !== null;
     $taproom_name_match = craftcrawl_classifier_contains_any($name, ['taproom', 'tap room', 'taphouse', 'tap house']);
+    $fraternal_social_club_match = craftcrawl_classifier_fraternal_social_club_match($name);
 
     $score = 0;
     $positive = [];
@@ -171,6 +223,14 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         $score += 80;
         $has_clear_drinking_venue_identity = true;
         $positive[] = '+80 club name overrides Google bar label';
+    }
+
+    if ($fraternal_social_club_match !== null && !$has_veterans_post_number) {
+        $suggested_category = 'social_club';
+        $explicit_name_category = 'social_club';
+        $score += 85;
+        $has_clear_drinking_venue_identity = true;
+        $positive[] = '+85 fraternal/ethnic social club name: ' . $fraternal_social_club_match;
     }
 
     $strong_categories = [
@@ -229,7 +289,7 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         'pub' => ['pub'],
         'tavern' => ['tavern'],
         'bar' => ['sports bar', 'barroom', 'lounge'],
-        'social_club' => ['social club', 'citizens club', 'private club', 'clubhouse', 'vfw', 'american legion'],
+        'social_club' => ['social club', 'citizens club', 'private club', 'fraternal club', 'ethnic club', 'slovak club', 'slavic club', 'polish club', 'polish falcon', 'falcon club', 'sokol club', 'croatian club', 'serbian club', 'ukrainian club', 'italian club', 'german club', 'greek club', 'irish club', 'fire department club', 'fire dept club', 'firemen club', 'firemen\'s club', 'moose lodge', 'elks lodge', 'eagles club', 'eagle aerie', 'clubhouse', 'vfw', 'american legion'],
     ];
 
     foreach ($clear_bar_categories as $category => $keywords) {
