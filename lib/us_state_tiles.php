@@ -55,7 +55,7 @@ function craftcrawl_us_state_bounds() {
     ];
 }
 
-function craftcrawl_state_seed_tiles($state, $radius_meters = 30000) {
+function craftcrawl_state_seed_tiles($state, $radius_meters = 35000) {
     $seeds = [
         'AK' => [
             ['Anchorage', 61.218056, -149.900278],
@@ -176,7 +176,7 @@ function craftcrawl_tile_distance_meters($lat1, $lng1, $lat2, $lng2) {
     return $earth_radius * 2 * asin(min(1, sqrt($a)));
 }
 
-function craftcrawl_state_search_tiles($state, $max_grid_tiles = 72, $radius_meters = 30000) {
+function craftcrawl_state_search_tiles($state, $max_grid_tiles = 72, $radius_meters = 35000) {
     $bounds = craftcrawl_us_state_bounds()[strtoupper($state)] ?? null;
     if (!$bounds) {
         return [];
