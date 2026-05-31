@@ -59,9 +59,9 @@ $cases = [
         'decision' => 'auto_add',
         'category' => 'distillery',
     ],
-    'winery with hotel type reviews' => [
+    'winery with hotel type rejects' => [
         'candidate' => ['name' => 'The Inn at Grace Winery', 'street_address' => '50 Sweetwater Road', 'latitude' => 40.1, 'longitude' => -75.1, 'primary_type' => 'hotel', 'types' => ['hotel', 'winery'], 'website' => 'https://example.com/wine', 'phone' => '555', 'search_term' => 'winery'],
-        'decision' => 'needs_review',
+        'decision' => 'reject',
         'category' => 'winery',
     ],
     'google brewery support score 95 auto-adds' => [
@@ -69,15 +69,15 @@ $cases = [
         'decision' => 'auto_add',
         'category' => 'brewery',
     ],
-    'bar with brewery type reviews without producer name' => [
+    'bar with brewery type rejects without producer name' => [
         'candidate' => ['name' => 'Bar Hygge', 'street_address' => '1720 Fairmount Avenue', 'latitude' => 40.1, 'longitude' => -75.1, 'primary_type' => 'bar', 'types' => ['bar', 'brewery'], 'website' => 'https://example.com/beer', 'phone' => '555', 'search_term' => 'brewery'],
-        'decision' => 'needs_review',
+        'decision' => 'reject',
         'category' => 'brewery',
     ],
-    'social club with brewery support still reviews' => [
+    'social club with brewery support rejects' => [
         'candidate' => ['name' => 'Fermentation Social Club', 'street_address' => '9 Main St', 'latitude' => 40.1, 'longitude' => -79.9, 'primary_type' => 'brewery', 'types' => ['brewery', 'social_club'], 'website' => 'https://example.com/brewery', 'phone' => '555', 'search_term' => 'brewery'],
-        'decision' => 'needs_review',
-        'category' => 'brewery',
+        'decision' => 'reject',
+        'category' => 'social_club',
     ],
     'brew house name auto-adds as brewery' => [
         'candidate' => ['name' => 'Hazelwood Brew House', 'street_address' => '5007 Lytle Street', 'latitude' => 40.1, 'longitude' => -79.9, 'primary_type' => '', 'types' => [], 'website' => '', 'phone' => '555', 'search_term' => 'brewery'],
@@ -89,9 +89,9 @@ $cases = [
         'decision' => 'auto_add',
         'category' => 'winery',
     ],
-    'spirits tasting room becomes distillery review' => [
+    'spirits tasting room with bar type rejects' => [
         'candidate' => ['name' => 'Big Spring Spirits Tasting Room at the Scholar Hotel', 'street_address' => '201 East Beaver Avenue', 'latitude' => 40.1, 'longitude' => -77.8, 'primary_type' => 'bar', 'types' => ['bar'], 'website' => 'https://example.com/spirits', 'phone' => '555', 'search_term' => 'brewery'],
-        'decision' => 'needs_review',
+        'decision' => 'reject',
         'category' => 'distillery',
     ],
     'barrelhouse name auto-adds as distillery' => [
@@ -124,6 +124,31 @@ $cases = [
         'decision' => 'auto_add',
         'category' => 'social_club',
     ],
+    'american legion post number auto-adds social club' => [
+        'candidate' => ['name' => 'American Legion Post 712, Pleasant Hills, PA', 'street_address' => '610 Old Clairton Rd', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => 'non_profit_organization', 'primary_type_display_name' => 'Non-profit organization', 'types' => ['non_profit_organization'], 'website' => 'https://alpost712pa.org', 'phone' => '555'],
+        'decision' => 'auto_add',
+        'category' => 'social_club',
+    ],
+    'american legion without post number rejects' => [
+        'candidate' => ['name' => 'Dravosburg American Legion', 'street_address' => '1 Legion Way', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => 'veterans_organization', 'primary_type_display_name' => 'Veterans organization', 'types' => ['veterans_organization'], 'website' => 'https://example.com', 'phone' => '555'],
+        'decision' => 'reject',
+        'category' => 'other',
+    ],
+    'vfw post number auto-adds social club' => [
+        'candidate' => ['name' => 'VFW Post 249', 'street_address' => '249 Main St', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => 'non_profit_organization', 'primary_type_display_name' => 'Non-profit organization', 'types' => ['non_profit_organization'], 'website' => 'https://example.com', 'phone' => '555'],
+        'decision' => 'auto_add',
+        'category' => 'social_club',
+    ],
+    'vfw without post number rejects' => [
+        'candidate' => ['name' => 'VFW', 'street_address' => '1 Main St', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => 'veterans_organization', 'primary_type_display_name' => 'Veterans organization', 'types' => ['veterans_organization'], 'website' => 'https://example.com', 'phone' => '555'],
+        'decision' => 'reject',
+        'category' => 'other',
+    ],
+    'club name with google bar auto-adds social club' => [
+        'candidate' => ['name' => 'Homestead Slavs Social Club', 'street_address' => '815 Ann St', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => 'bar', 'primary_type_display_name' => 'Bar', 'types' => ['bar'], 'website' => 'https://example.com', 'phone' => '555'],
+        'decision' => 'auto_add',
+        'category' => 'social_club',
+    ],
     'google winery label auto-adds winery' => [
         'candidate' => ['name' => 'Bella Terra Vineyards', 'street_address' => '33 Vineyard Ln', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => 'winery', 'primary_type_display_name' => 'Winery', 'types' => ['winery'], 'website' => 'https://example.com', 'phone' => '555'],
         'decision' => 'auto_add',
@@ -149,14 +174,14 @@ $cases = [
         'decision' => 'auto_add',
         'category' => 'cidery',
     ],
-    'brewhouse grill reviews as brewery' => [
+    'brewhouse grill rejects as mixed restaurant' => [
         'candidate' => ['name' => 'Brewhouse Grille', 'street_address' => '2050 State Road', 'latitude' => 40.1, 'longitude' => -77.1, 'primary_type' => 'restaurant', 'types' => ['restaurant'], 'website' => 'https://example.com', 'phone' => '555', 'search_term' => 'brewpub'],
-        'decision' => 'needs_review',
+        'decision' => 'reject',
         'category' => 'brewery',
     ],
-    'restaurant brewhouse chain-like reviews as brewery' => [
+    'restaurant brewhouse chain-like rejects as brewery' => [
         'candidate' => ['name' => 'BJ\'s Restaurant & Brewhouse', 'street_address' => '1819 Washington Road', 'latitude' => 40.1, 'longitude' => -79.9, 'primary_type' => 'restaurant', 'types' => ['restaurant', 'brewery'], 'website' => 'https://example.com', 'phone' => '555', 'search_term' => 'brewery'],
-        'decision' => 'needs_review',
+        'decision' => 'reject',
         'category' => 'brewery',
     ],
     'taproom search alone does not rescue restaurant' => [

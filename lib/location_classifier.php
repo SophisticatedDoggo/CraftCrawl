@@ -58,6 +58,15 @@ function craftcrawl_classifier_google_label_category($value) {
     return $map[$value] ?? null;
 }
 
+function craftcrawl_classifier_veterans_post_has_number($name) {
+    $name = craftcrawl_classifier_normalize($name);
+    if ($name === '') {
+        return false;
+    }
+
+    return (bool) preg_match('/\b(?:post|vfw)\s*(?:no\.?|number|#)?\s*\d+\b/', $name);
+}
+
 function craftcrawl_active_chain_patterns($conn) {
     $patterns = [];
     $result = $conn->query("SELECT pattern FROM chain_exclusion_patterns WHERE is_active=1");
@@ -89,6 +98,9 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
     $google_label_category = craftcrawl_classifier_google_label_category($primary_type_display_name)
         ?: craftcrawl_classifier_google_label_category($primary_type);
     $evidence_text = implode(' ', [$name, $website, $primary_type, $primary_type_display_name, implode(' ', $types)]);
+    $veterans_club_match = craftcrawl_classifier_contains_any($name, ['american legion', 'vfw']);
+    $has_veterans_post_number = $veterans_club_match !== null && craftcrawl_classifier_veterans_post_has_number($name);
+    $has_club_name = craftcrawl_classifier_contains_any($name, ['club', 'vfw', 'american legion']) !== null;
 
     $score = 0;
     $positive = [];
@@ -119,6 +131,20 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
             $has_clear_drinking_venue_identity = true;
             $positive[] = '+95 Google primary label: ' . ($primary_type_display_name ?: $primary_type);
         }
+    }
+
+    if ($has_veterans_post_number) {
+        $suggested_category = 'social_club';
+        $explicit_name_category = 'social_club';
+        $score += 120;
+        $has_clear_drinking_venue_identity = true;
+        $positive[] = '+120 veterans post number social club: ' . $veterans_club_match;
+    } elseif ($google_label_category === 'bar' && $has_club_name) {
+        $suggested_category = 'social_club';
+        $explicit_name_category = 'social_club';
+        $score += 80;
+        $has_clear_drinking_venue_identity = true;
+        $positive[] = '+80 club name overrides Google bar label';
     }
 
     $strong_categories = [
@@ -188,7 +214,9 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
                 $explicit_name_category = $category === 'social_club' ? 'social_club' : 'bar';
             }
             $score += 55;
-            if ($suggested_category === 'other') {
+            if ($category === 'social_club') {
+                $suggested_category = 'social_club';
+            } elseif ($suggested_category === 'other') {
                 $suggested_category = in_array($category, ['cocktail_bar', 'wine_bar', 'beer_garden', 'taproom', 'pub', 'tavern'], true) ? 'bar' : $category;
             }
             $has_clear_drinking_venue_identity = true;
@@ -242,6 +270,13 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         $hard_reject = true;
         $score -= 80;
         $negative[] = 'hard reject: unrelated residential/business name: ' . $hard_name;
+    }
+
+    if ($veterans_club_match !== null && !$has_veterans_post_number) {
+        $hard_reject = true;
+        $score -= 80;
+        $suggested_category = 'other';
+        $negative[] = 'hard reject: veterans organization without post number: ' . $veterans_club_match;
     }
 
     $soft_conflict_type = craftcrawl_classifier_type_has_any($types, ['grocery_store', 'hotel']);
@@ -299,15 +334,25 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
 
     if ($hard_reject) {
         $decision = 'reject';
+    } elseif ($has_veterans_post_number) {
+        $decision = 'auto_add';
+    } elseif ($google_label_category === 'bar' && $explicit_name_category === 'social_club' && $score >= 90) {
+        $decision = 'auto_add';
+    } elseif (in_array($google_label_category, $core_auto_categories, true) && $explicit_name_category === 'social_club') {
+        $decision = 'reject';
+        $negative[] = 'reject: social club name conflicts with Google producer/category label';
     } elseif ($label_conflict) {
-        $decision = 'needs_review';
-        $negative[] = 'needs review: Google primary label conflicts with producer/category signals';
+        $conflict_categories = array_values(array_filter([$google_label_category, $explicit_name_category]));
+        $craft_only_conflict = count($conflict_categories) === 2
+            && count(array_intersect($conflict_categories, $core_auto_categories)) === 2;
+        $decision = $craft_only_conflict ? 'needs_review' : 'reject';
+        $negative[] = ($craft_only_conflict ? 'needs review' : 'reject') . ': Google primary label conflicts with producer/category signals';
     } elseif ($explicit_name_category === 'social_club' && in_array($suggested_category, $core_auto_categories, true)) {
-        $decision = 'needs_review';
-        $negative[] = 'needs review: social club name conflicts with producer/category signals';
+        $decision = 'reject';
+        $negative[] = 'reject: social club name conflicts with producer/category signals';
     } elseif ($google_label_category === 'bar' && in_array($suggested_category, $core_auto_categories, true) && !$has_core_name_identity) {
-        $decision = 'needs_review';
-        $negative[] = 'needs review: Google bar label conflicts with producer support signals';
+        $decision = 'reject';
+        $negative[] = 'reject: Google bar label conflicts with producer support signals';
     } elseif ($suggested_category === 'bar' && ($restaurant_primary || !empty($chain_like))) {
         $decision = 'reject';
         $negative[] = 'reject: mixed restaurant/bar pattern';
@@ -322,17 +367,17 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
     } elseif ($has_core_support_identity && $score >= 95 && in_array($suggested_category, $core_auto_categories, true) && !$mixed_restaurant && !$has_clear_drinking_venue_identity) {
         $decision = 'auto_add';
     } elseif ($has_core_name_identity && $score >= 50 && in_array($suggested_category, $core_auto_categories, true)) {
-        $decision = 'needs_review';
+        $decision = $mixed_restaurant || !empty($soft_conflict_type) ? 'reject' : 'needs_review';
     } elseif ($has_clear_drinking_venue_identity && $suggested_category === 'bar' && $score >= 70 && empty($restaurant_name) && empty($chain_like) && !$restaurant_primary && !$hard_reject) {
         $decision = 'auto_add';
     } elseif ($has_clear_drinking_venue_identity && $suggested_category === 'social_club' && $score >= 70 && !$restaurant_primary) {
         $decision = 'auto_add';
     } elseif ($has_clear_drinking_venue_identity && $suggested_category === 'bar' && $score >= 30 && empty($restaurant_name) && empty($chain_like)) {
-        $decision = $restaurant_primary ? 'reject' : 'needs_review';
+        $decision = 'reject';
     } elseif ($score < 55) {
         $decision = 'reject';
     } else {
-        $decision = 'needs_review';
+        $decision = in_array($suggested_category, $core_auto_categories, true) ? 'needs_review' : 'reject';
     }
 
     return [
