@@ -5,6 +5,20 @@ require_once __DIR__ . '/location_duplicates.php';
 require_once __DIR__ . '/location_hours.php';
 require_once __DIR__ . '/us_state_tiles.php';
 
+function craftcrawl_google_places_import_field_mask() {
+    return implode(',', [
+        'places.id',
+        'places.displayName',
+        'places.formattedAddress',
+        'places.addressComponents',
+        'places.location',
+        'places.businessStatus',
+        'places.primaryType',
+        'places.types',
+        'places.googleMapsUri',
+    ]);
+}
+
 function craftcrawl_google_places_search_terms() {
     return [
         ['term' => 'bar', 'mode' => 'nearby', 'included_types' => ['bar']],
@@ -62,10 +76,21 @@ function craftcrawl_google_places_error_message($status, $curl_error, $response)
 
     $payload = json_decode((string) $response, true);
     if (is_array($payload) && !empty($payload['error']['message'])) {
-        return 'Google Places HTTP ' . (int) $status . ': ' . $payload['error']['message'];
+        $message = 'Google Places HTTP ' . (int) $status . ': ' . $payload['error']['message'];
+        if (!empty($payload['error']['status'])) {
+            $message .= ' (' . $payload['error']['status'] . ')';
+        }
+        if ((int) $status === 403) {
+            $message .= '. Check that the server-side GOOGLE_PLACES_API_KEY can call Places API (New), that billing is active, and that API key restrictions allow this server/IP and the Places API.';
+        }
+        return $message;
     }
 
-    return 'Google Places HTTP ' . (int) $status;
+    $message = 'Google Places HTTP ' . (int) $status;
+    if ((int) $status === 403) {
+        $message .= ': permission denied. Check that the server-side GOOGLE_PLACES_API_KEY can call Places API (New), that billing is active, and that API key restrictions allow this server/IP and the Places API.';
+    }
+    return $message;
 }
 
 function craftcrawl_google_places_fatal_status($status) {
@@ -91,7 +116,7 @@ function craftcrawl_google_places_request($api_key, $endpoint, array $body) {
             CURLOPT_HTTPHEADER => [
                 'Content-Type: application/json',
                 'X-Goog-Api-Key: ' . $api_key,
-                'X-Goog-FieldMask: places.id,places.displayName,places.formattedAddress,places.addressComponents,places.location,places.businessStatus,places.primaryType,places.primaryTypeDisplayName,places.types,places.websiteUri,places.nationalPhoneNumber,places.googleMapsUri,places.regularOpeningHours',
+                'X-Goog-FieldMask: ' . craftcrawl_google_places_import_field_mask(),
             ],
             CURLOPT_POSTFIELDS => json_encode($body),
         ]);
@@ -295,6 +320,15 @@ function craftcrawl_google_places_hours_from_regular_opening_hours(array $openin
     return craftcrawl_validate_business_hours($hours) === null ? $hours : null;
 }
 
+function craftcrawl_google_places_type_display_name($type) {
+    $type = trim((string) $type);
+    if ($type === '') {
+        return '';
+    }
+
+    return ucfirst(strtolower(str_replace('_', ' ', $type)));
+}
+
 function craftcrawl_normalize_google_place(array $place, $search_term = '') {
     $name = $place['displayName']['text'] ?? '';
     $street_number = craftcrawl_google_address_component($place, 'street_number');
@@ -318,7 +352,7 @@ function craftcrawl_normalize_google_place(array $place, $search_term = '') {
         'phone' => $place['nationalPhoneNumber'] ?? '',
         'website' => $place['websiteUri'] ?? '',
         'primary_type' => $place['primaryType'] ?? '',
-        'primary_type_display_name' => $place['primaryTypeDisplayName']['text'] ?? '',
+        'primary_type_display_name' => $place['primaryTypeDisplayName']['text'] ?? craftcrawl_google_places_type_display_name($place['primaryType'] ?? ''),
         'types' => $place['types'] ?? [],
         'business_status' => $place['businessStatus'] ?? '',
         'google_maps_uri' => $place['googleMapsUri'] ?? '',
