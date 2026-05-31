@@ -81,14 +81,14 @@ function craftcrawl_google_places_error_message($status, $curl_error, $response)
             $message .= ' (' . $payload['error']['status'] . ')';
         }
         if ((int) $status === 403) {
-            $message .= '. Check that the server-side GOOGLE_PLACES_API_KEY can call Places API (New), that billing is active, and that API key restrictions allow this server/IP and the Places API.';
+            $message .= '. The configured GOOGLE_PLACES_API_KEY must be allowed to make server-side Places API (New) requests. Check that billing is active, Places API (New) is enabled, and key restrictions allow this server/IP plus the Places API. If this same key is browser/referrer-restricted, add GOOGLE_PLACES_SERVER_API_KEY for batch imports and keep the browser key separate.';
         }
         return $message;
     }
 
     $message = 'Google Places HTTP ' . (int) $status;
     if ((int) $status === 403) {
-        $message .= ': permission denied. Check that the server-side GOOGLE_PLACES_API_KEY can call Places API (New), that billing is active, and that API key restrictions allow this server/IP and the Places API.';
+        $message .= ': permission denied. The configured GOOGLE_PLACES_API_KEY must be allowed to make server-side Places API (New) requests. Check that billing is active, Places API (New) is enabled, and key restrictions allow this server/IP plus the Places API. If this same key is browser/referrer-restricted, add GOOGLE_PLACES_SERVER_API_KEY for batch imports and keep the browser key separate.';
     }
     return $message;
 }
