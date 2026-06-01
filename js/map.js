@@ -1175,11 +1175,12 @@ function updateMapZoomDebug() {
 function updateBusinessListForSort(sortValue, options = {}) {
     const reference = getListReferencePoint(sortValue, options.useMapCenter);
     const features = getMapRelevantBusinessFeatures(sortValue);
-    const orderedFeatures = sortFeaturesForList(features, sortValue, reference).slice(0, businessListMaxItems);
+    const orderedFeatures = sortFeaturesForList(features, sortValue, reference);
     const numberedFeatures = numberFeatures(orderedFeatures);
+    const listedFeatures = numberedFeatures.slice(0, businessListMaxItems);
 
     updateMapBusinessNumbers(numberedFeatures);
-    renderBusinessList(numberedFeatures);
+    renderBusinessList(listedFeatures);
 }
 
 function updateExpandedMapForSort() {
