@@ -10,6 +10,7 @@ function craftcrawl_us_state_bounds() {
         'CO' => [36.993, -109.060, 41.003, -102.042],
         'CT' => [40.980, -73.727, 42.050, -71.787],
         'DE' => [38.451, -75.789, 39.839, -75.049],
+        'DC' => [38.791600, -77.119800, 38.995500, -76.909400],
         'FL' => [24.396, -87.635, 31.001, -79.974],
         'GA' => [30.357, -85.605, 35.000, -80.840],
         'HI' => [18.910, -160.248, 22.235, -154.806],
@@ -110,6 +111,9 @@ function craftcrawl_state_seed_tiles($state, $radius_meters = 35000) {
             ['Newark', 39.683723, -75.749657],
             ['Dover', 39.158168, -75.524368],
             ['Rehoboth Beach', 38.720946, -75.076014],
+        ],
+        'DC' => [
+            ['Washington DC', 38.907192, -77.036871],
         ],
         'MD' => [
             ['Baltimore', 39.290385, -76.612189],
@@ -259,6 +263,7 @@ function craftcrawl_state_tile_profiles() {
         'CO' => ['max_grid_tiles' => 40],
         'CT' => ['max_grid_tiles' => 18],
         'DE' => ['max_grid_tiles' => 8],
+        'DC' => ['max_grid_tiles' => 0],
         'FL' => ['max_grid_tiles' => 58],
         'GA' => ['max_grid_tiles' => 46],
         'HI' => ['max_grid_tiles' => 12],

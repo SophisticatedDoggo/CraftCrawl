@@ -166,7 +166,7 @@ $locations = $stmt->get_result();
                 </div>
                 <div class="admin-field">
                     <label for="state">State</label>
-                    <input id="state" name="state" maxlength="2" value="<?php echo craftcrawl_admin_escape($state); ?>" placeholder="PA">
+                    <input id="state" name="state" maxlength="2" value="<?php echo craftcrawl_admin_escape($state); ?>" placeholder="PA/DC">
                 </div>
                 <div class="admin-field">
                     <label for="status">Status</label>
