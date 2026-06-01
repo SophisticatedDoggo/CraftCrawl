@@ -93,6 +93,32 @@ function craftcrawl_state_seed_tiles($state, $radius_meters = 35000) {
             ['Rockford', 42.271131, -89.093995],
             ['Champaign', 40.116420, -88.243383],
         ],
+        'DE' => [
+            ['Wilmington', 39.739072, -75.539788],
+            ['Newark', 39.683723, -75.749657],
+            ['Dover', 39.158168, -75.524368],
+            ['Rehoboth Beach', 38.720946, -75.076014],
+        ],
+        'MD' => [
+            ['Baltimore', 39.290385, -76.612189],
+            ['Annapolis', 38.978445, -76.492183],
+            ['Frederick', 39.414269, -77.410540],
+            ['Hagerstown', 39.641762, -77.719993],
+            ['Cumberland', 39.652865, -78.762518],
+            ['Rockville', 39.083997, -77.152758],
+            ['Columbia', 39.203714, -76.861046],
+            ['Bel Air', 39.535941, -76.348293],
+            ['Salisbury', 38.360674, -75.599369],
+            ['Ocean City', 38.336503, -75.084906],
+        ],
+        'MA' => [
+            ['Boston', 42.360083, -71.058880],
+            ['Worcester', 42.262593, -71.802293],
+            ['Springfield', 42.101483, -72.589811],
+            ['Lowell', 42.633425, -71.316172],
+            ['Plymouth', 41.958446, -70.667262],
+            ['Cape Cod', 41.668789, -70.296241],
+        ],
         'MI' => [
             ['Detroit', 42.331427, -83.045754],
             ['Grand Rapids', 42.963360, -85.668086],
@@ -107,6 +133,15 @@ function craftcrawl_state_seed_tiles($state, $radius_meters = 35000) {
             ['Syracuse', 43.048122, -76.147424],
             ['Albany', 42.652580, -73.756232],
             ['Ithaca', 42.443961, -76.501881],
+        ],
+        'NJ' => [
+            ['Newark', 40.735657, -74.172367],
+            ['Jersey City', 40.717754, -74.043143],
+            ['Trenton', 40.220582, -74.759717],
+            ['Princeton', 40.357298, -74.667223],
+            ['Asbury Park', 40.220391, -74.012082],
+            ['Atlantic City', 39.364283, -74.422927],
+            ['Cape May', 38.935113, -74.906005],
         ],
         'OH' => [
             ['Columbus', 39.961176, -82.998794],
@@ -132,6 +167,11 @@ function craftcrawl_state_seed_tiles($state, $radius_meters = 35000) {
             ['State College', 40.793395, -77.860001],
             ['Lancaster', 40.037876, -76.305514],
         ],
+        'RI' => [
+            ['Providence', 41.824000, -71.412834],
+            ['Newport', 41.490102, -71.312829],
+            ['Westerly', 41.377599, -71.827287],
+        ],
         'TX' => [
             ['Houston', 29.760427, -95.369803],
             ['San Antonio', 29.424122, -98.493628],
@@ -144,12 +184,33 @@ function craftcrawl_state_seed_tiles($state, $radius_meters = 35000) {
             ['Waco', 31.549333, -97.146670],
             ['McAllen', 26.203407, -98.230012],
         ],
+        'VA' => [
+            ['Richmond', 37.540725, -77.436048],
+            ['Virginia Beach', 36.852926, -75.977985],
+            ['Norfolk', 36.850769, -76.285873],
+            ['Alexandria', 38.804836, -77.046921],
+            ['Charlottesville', 38.029306, -78.476678],
+            ['Roanoke', 37.270970, -79.941427],
+            ['Lynchburg', 37.413754, -79.142246],
+            ['Winchester', 39.185660, -78.163334],
+            ['Abingdon', 36.709833, -81.977348],
+        ],
         'WA' => [
             ['Seattle', 47.606209, -122.332071],
             ['Spokane', 47.658780, -117.426047],
             ['Tacoma', 47.252877, -122.444291],
             ['Vancouver', 45.638728, -122.661486],
             ['Yakima', 46.602071, -120.505899],
+        ],
+        'WV' => [
+            ['Charleston', 38.349820, -81.632623],
+            ['Huntington', 38.419250, -82.445154],
+            ['Morgantown', 39.629526, -79.955897],
+            ['Wheeling', 40.063961, -80.720915],
+            ['Parkersburg', 39.266742, -81.561513],
+            ['Martinsburg', 39.456209, -77.963887],
+            ['Beckley', 37.778170, -81.188156],
+            ['Lewisburg', 37.801788, -80.445630],
         ],
     ];
 
@@ -176,10 +237,79 @@ function craftcrawl_tile_distance_meters($lat1, $lng1, $lat2, $lng2) {
     return $earth_radius * 2 * asin(min(1, sqrt($a)));
 }
 
+function craftcrawl_state_tile_profiles() {
+    return [
+        'CT' => ['max_grid_tiles' => 18],
+        'DE' => ['max_grid_tiles' => 8],
+        'MD' => ['max_grid_tiles' => 28],
+        'MA' => ['max_grid_tiles' => 34],
+        'NJ' => ['max_grid_tiles' => 30],
+        'RI' => ['max_grid_tiles' => 8],
+        'VA' => ['max_grid_tiles' => 48],
+        'WV' => ['max_grid_tiles' => 34],
+    ];
+}
+
+function craftcrawl_state_tile_masks() {
+    return [
+        'DE' => [
+            [38.45, -75.80, 39.85, -75.00],
+        ],
+        'MD' => [
+            [39.18, -79.49, 39.73, -77.35],
+            [38.62, -77.55, 39.73, -75.05],
+            [37.88, -77.35, 38.85, -75.75],
+            [37.88, -76.35, 39.73, -75.05],
+        ],
+        'MA' => [
+            [41.45, -73.52, 42.90, -70.55],
+            [41.20, -71.40, 42.10, -69.90],
+        ],
+        'NJ' => [
+            [38.90, -75.58, 41.38, -73.88],
+        ],
+        'RI' => [
+            [41.14, -71.88, 42.03, -71.10],
+        ],
+        'VA' => [
+            [36.54, -83.68, 37.75, -80.00],
+            [36.54, -80.20, 39.48, -75.20],
+            [37.70, -79.80, 39.48, -77.00],
+        ],
+        'WV' => [
+            [37.20, -82.65, 39.05, -79.00],
+            [38.15, -81.80, 40.65, -77.70],
+            [39.00, -82.65, 40.65, -79.50],
+        ],
+    ];
+}
+
+function craftcrawl_state_tile_center_allowed($state, $latitude, $longitude) {
+    $masks = craftcrawl_state_tile_masks()[strtoupper($state)] ?? [];
+    if (empty($masks)) {
+        return true;
+    }
+
+    foreach ($masks as $mask) {
+        [$south, $west, $north, $east] = $mask;
+        if ($latitude >= $south && $latitude <= $north && $longitude >= $west && $longitude <= $east) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function craftcrawl_state_search_tiles($state, $max_grid_tiles = 72, $radius_meters = 35000) {
-    $bounds = craftcrawl_us_state_bounds()[strtoupper($state)] ?? null;
+    $state = strtoupper($state);
+    $bounds = craftcrawl_us_state_bounds()[$state] ?? null;
     if (!$bounds) {
         return [];
+    }
+
+    $profile = craftcrawl_state_tile_profiles()[$state] ?? [];
+    if ((int) $max_grid_tiles === 72 && isset($profile['max_grid_tiles'])) {
+        $max_grid_tiles = (int) $profile['max_grid_tiles'];
     }
 
     [$south, $west, $north, $east] = $bounds;
@@ -197,6 +327,9 @@ function craftcrawl_state_search_tiles($state, $max_grid_tiles = 72, $radius_met
         for ($col = 0; $col < $cols; $col++) {
             $tile_latitude = round($south + ($lat_step * ($row + 0.5)), 6);
             $tile_longitude = round($west + ($lng_step * ($col + 0.5)), 6);
+            if (!craftcrawl_state_tile_center_allowed($state, $tile_latitude, $tile_longitude)) {
+                continue;
+            }
             foreach ($tiles as $existing_tile) {
                 if (craftcrawl_tile_distance_meters($tile_latitude, $tile_longitude, $existing_tile['latitude'], $existing_tile['longitude']) < ($radius_meters * 0.6)) {
                     continue 2;

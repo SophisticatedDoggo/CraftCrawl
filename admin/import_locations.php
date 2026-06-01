@@ -263,7 +263,7 @@ $recent_google_operations = $conn->query("
                 <button type="submit">Run Google Import</button>
                 <a href="review_center.php?import_provider=google">Review Google imports</a>
             </form>
-            <p id="google_tile_count_info"><?php echo import_escape($google_state); ?> has <?php echo import_escape(count($google_tiles)); ?> import tile<?php echo count($google_tiles) === 1 ? '' : 's'; ?>, starting with priority city/metro seeds followed by a capped coarse grid. Tile limit runs from the first tile through that number.</p>
+            <p id="google_tile_count_info"><?php echo import_escape($google_state); ?> has <?php echo import_escape(count($google_tiles)); ?> import tile<?php echo count($google_tiles) === 1 ? '' : 's'; ?>, starting with priority city/metro seeds followed by a shape-filtered coarse grid. Tile limit runs from the first tile through that number.</p>
             <p class="form-help">Imports run as a server background worker when PHP exec() is available. If background launch is unavailable, this page falls back to small browser work requests and can resume queued or running operations when you return.</p>
             <p class="form-help">
                 Google Places batch key source: <?php echo import_escape($google_places_key_source ?: 'not configured'); ?>.
@@ -279,7 +279,7 @@ $recent_google_operations = $conn->query("
                         <article class="admin-list-item">
                             <div>
                                 <h3>Tile <?php echo import_escape($index + 1); ?> · <?php echo import_escape($tile['label']); ?></h3>
-                                <p><?php echo import_escape(($tile['tile_kind'] ?? 'coarse_grid') === 'priority_seed' ? 'Priority city/metro seed' : 'Coarse coverage grid'); ?> · Center: <?php echo import_escape($tile['latitude']); ?>, <?php echo import_escape($tile['longitude']); ?> · Radius: <?php echo import_escape($tile['radius_meters']); ?> meters</p>
+                                <p><?php echo import_escape(($tile['tile_kind'] ?? 'coarse_grid') === 'priority_seed' ? 'Priority city/metro seed' : 'Shape-filtered coarse grid'); ?> · Center: <?php echo import_escape($tile['latitude']); ?>, <?php echo import_escape($tile['longitude']); ?> · Radius: <?php echo import_escape($tile['radius_meters']); ?> meters</p>
                                 <p><a href="https://www.google.com/maps/search/?api=1&query=<?php echo rawurlencode($tile['latitude'] . ',' . $tile['longitude']); ?>" target="_blank" rel="noopener">Open center in Google Maps</a></p>
                             </div>
                         </article>

@@ -118,7 +118,7 @@ window.CraftCrawlInitGoogleImportTiles = function (root = document) {
             const tiles = tileCatalog[state] || [];
             const tileWord = tiles.length === 1 ? 'tile' : 'tiles';
             limitInput.max = String(Math.max(1, tiles.length));
-            countInfo.textContent = `${state} has ${tiles.length} import ${tileWord}, starting with priority city/metro seeds followed by a capped coarse grid. Tile limit runs from the first tile through that number.`;
+            countInfo.textContent = `${state} has ${tiles.length} import ${tileWord}, starting with priority city/metro seeds followed by a shape-filtered coarse grid. Tile limit runs from the first tile through that number.`;
             summary.textContent = `Preview ${state} tiles`;
             list.replaceChildren();
 
@@ -132,7 +132,7 @@ window.CraftCrawlInitGoogleImportTiles = function (root = document) {
                 const link = document.createElement('a');
 
                 heading.textContent = `Tile ${index + 1} · ${tile.label}`;
-                details.textContent = `${tile.tile_kind === 'priority_seed' ? 'Priority city/metro seed' : 'Coarse coverage grid'} · Center: ${tile.latitude}, ${tile.longitude} · Radius: ${tile.radius_meters} meters`;
+                details.textContent = `${tile.tile_kind === 'priority_seed' ? 'Priority city/metro seed' : 'Shape-filtered coarse grid'} · Center: ${tile.latitude}, ${tile.longitude} · Radius: ${tile.radius_meters} meters`;
                 link.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${tile.latitude},${tile.longitude}`)}`;
                 link.target = '_blank';
                 link.rel = 'noopener';
