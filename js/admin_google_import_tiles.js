@@ -15,6 +15,7 @@ window.CraftCrawlInitGoogleImportTiles = function (root = document) {
         const detail = panel.querySelector('[data-google-operation-detail]');
         const summary = panel.querySelector('[data-google-operation-summary]');
         const error = panel.querySelector('[data-google-operation-error]');
+        const stopButton = panel.querySelector('[data-google-operation-stop]');
 
         if (!operationPanel || !status || !progress || !detail || !summary || !error) {
             return;
@@ -27,11 +28,16 @@ window.CraftCrawlInitGoogleImportTiles = function (root = document) {
 
         operationPanel.hidden = false;
         progress.value = operation.percent || 0;
+        operationPanel.dataset.operationId = operation.operation_id || '';
         status.textContent = `${operation.status} · ${operation.state} · ${operation.dry_run ? 'dry run' : 'import'} · ${operation.completed_steps}/${operation.total_steps} searches`;
         detail.textContent = operation.status === 'completed'
             ? `Completed ${operation.completed_at || ''}${operation.dry_run ? ' · Dry run totals only; no import batch rows or locations were written.' : ''}`.trim()
             : `Current: ${operation.current_tile_label || 'starting'}${operation.current_search_term ? ` · ${operation.current_search_term}` : ''}${operation.updated_at ? ` · Updated ${operation.updated_at}` : ''}`;
         summary.textContent = formatSummary(operation.summary);
+        if (stopButton) {
+            stopButton.hidden = !(operation.status === 'running' || operation.status === 'queued');
+            stopButton.disabled = false;
+        }
         error.hidden = !operation.api_error;
         error.textContent = operation.api_error || '';
     }
@@ -67,7 +73,7 @@ window.CraftCrawlInitGoogleImportTiles = function (root = document) {
                 }
 
                 if (operation.status === 'running' || operation.status === 'queued') {
-                    window.setTimeout(() => pollOperation(panel, endpoint, operation.operation_id, pollToken, true), 2500);
+                    window.setTimeout(() => pollOperation(panel, endpoint, operation.operation_id, pollToken, true), 100);
                 } else {
                     window.setTimeout(() => pollOperation(panel, endpoint, '', pollToken), 5000);
                 }
@@ -170,6 +176,48 @@ window.CraftCrawlInitGoogleImportTiles = function (root = document) {
                 })
                 .finally(() => {
                     if (submitButton) submitButton.disabled = false;
+                });
+        });
+
+        panel.querySelector('[data-google-operation-stop]')?.addEventListener('click', (event) => {
+            const stopButton = event.currentTarget;
+            const operationPanel = panel.querySelector('[data-google-current-operation]');
+            const operationId = operationPanel?.dataset.operationId || '';
+            if (!operationId) {
+                return;
+            }
+            stopButton.disabled = true;
+
+            const formData = new FormData();
+            formData.set('form_action', 'stop_google_import');
+            formData.set('operation_id', operationId);
+            const csrf = form?.querySelector('input[name="csrf_token"]');
+            if (csrf) {
+                formData.set('csrf_token', csrf.value);
+            }
+
+            window.fetch(endpoint, {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: formData
+            })
+                .then((response) => response.json())
+                .then((payload) => {
+                    if (!payload.ok || !payload.operation) {
+                        throw new Error(payload.message || 'Google import could not be stopped.');
+                    }
+                    pollCounter += 1;
+                    const pollToken = String(pollCounter);
+                    panel.dataset.googleOperationPollToken = pollToken;
+                    renderOperation(panel, payload.operation);
+                })
+                .catch((error) => {
+                    stopButton.disabled = false;
+                    const errorMessage = panel.querySelector('[data-google-operation-error]');
+                    if (errorMessage) {
+                        errorMessage.hidden = false;
+                        errorMessage.textContent = error.message;
+                    }
                 });
         });
 

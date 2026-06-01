@@ -73,12 +73,7 @@ function google_import_operation_try_work($conn, $api_key, $operation_id) {
     }
 
     try {
-        $operation = craftcrawl_fetch_google_import_operation($conn, $operation_id);
-        $updated_at = isset($operation['updatedAt']) ? strtotime((string) $operation['updatedAt']) : 0;
-        if ($updated_at > 0 && time() - $updated_at < 2) {
-            return false;
-        }
-        craftcrawl_process_google_import_operation_step($conn, $api_key, $operation_id, 1);
+        craftcrawl_process_google_import_operation_step($conn, $api_key, $operation_id, 2);
     } finally {
         $release_stmt = $conn->prepare("SELECT RELEASE_LOCK(?)");
         $release_stmt->bind_param('s', $lock_name);
@@ -90,6 +85,36 @@ function google_import_operation_try_work($conn, $api_key, $operation_id) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
+    $form_action = $_POST['form_action'] ?? '';
+
+    if ($form_action === 'stop_google_import') {
+        $operation_id = trim((string) ($_POST['operation_id'] ?? ''));
+        if ($operation_id === '') {
+            google_import_operation_response(['ok' => false, 'message' => 'Missing operation id.'], 400);
+        }
+        $operation = craftcrawl_fetch_google_import_operation($conn, $operation_id);
+        if (!$operation) {
+            google_import_operation_response(['ok' => false, 'message' => 'Operation not found.'], 404);
+        }
+        if (in_array($operation['status'], ['queued', 'running'], true)) {
+            craftcrawl_update_google_import_operation_progress(
+                $conn,
+                $operation_id,
+                (int) ($operation['completed_steps'] ?? 0),
+                craftcrawl_google_import_operation_summary($operation),
+                ['label' => $operation['current_tile_label'] ?? ''],
+                ['term' => $operation['current_search_term'] ?? ''],
+                'failed',
+                'Stopped by admin.'
+            );
+        }
+
+        google_import_operation_response([
+            'ok' => true,
+            'operation' => google_import_operation_payload($conn, $operation_id),
+        ]);
+    }
+
     $state = strtoupper(trim((string) ($_POST['google_state'] ?? '')));
     $dry_run = isset($_POST['google_dry_run']);
 

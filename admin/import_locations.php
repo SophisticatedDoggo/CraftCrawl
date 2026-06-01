@@ -17,6 +17,8 @@ $google_tile_count = count(craftcrawl_state_search_tiles($google_state_for_tiles
 $google_limit_tiles = max(1, min(max(1, $google_tile_count), (int) ($_POST['google_limit_tiles'] ?? $_GET['google_limit_tiles'] ?? 1)));
 $google_dry_run = $_SERVER['REQUEST_METHOD'] === 'POST' ? isset($_POST['google_dry_run']) : true;
 $google_tiles = craftcrawl_state_search_tiles($google_state_for_tiles);
+$google_places_key_source = $GOOGLE_PLACES_API_KEY_SOURCE ?? ($GOOGLE_PLACES_API_KEY ? 'GOOGLE_PLACES_API_KEY' : '');
+$google_server_address_hint = $_SERVER['SERVER_ADDR'] ?? '';
 $google_tile_catalog = [];
 foreach (array_keys(craftcrawl_us_state_bounds()) as $state_code) {
     $google_tile_catalog[$state_code] = array_map(function ($tile) {
@@ -263,6 +265,13 @@ $recent_google_operations = $conn->query("
             </form>
             <p id="google_tile_count_info"><?php echo import_escape($google_state); ?> has <?php echo import_escape(count($google_tiles)); ?> import tile<?php echo count($google_tiles) === 1 ? '' : 's'; ?>, starting with priority city/metro seeds followed by a capped coarse grid. Tile limit runs from the first tile through that number.</p>
             <p class="form-help">Imports run in small web requests from this page, so hosts with PHP exec() disabled can still process batches. If you leave this page, return here to resume a queued or running operation.</p>
+            <p class="form-help">
+                Google Places batch key source: <?php echo import_escape($google_places_key_source ?: 'not configured'); ?>.
+                <?php if ($google_server_address_hint !== '') : ?>
+                    PHP server address hint: <?php echo import_escape($google_server_address_hint); ?>.
+                <?php endif; ?>
+                For Google API key IP restrictions, use the server's public outbound IP.
+            </p>
             <details>
                 <summary id="google_tile_preview_summary">Preview <?php echo import_escape($google_state); ?> tiles</summary>
                 <div id="google_tile_preview_list">
@@ -284,6 +293,7 @@ $recent_google_operations = $conn->query("
                     <progress data-google-operation-progress value="0" max="100"></progress>
                     <p data-google-operation-detail></p>
                     <p data-google-operation-summary></p>
+                    <button type="button" data-google-operation-stop hidden>Stop operation</button>
                     <p data-google-operation-error class="form-message form-message-error" hidden></p>
                 </div>
             </section>
