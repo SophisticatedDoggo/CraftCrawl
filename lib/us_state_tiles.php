@@ -63,6 +63,11 @@ function craftcrawl_state_seed_tiles($state, $radius_meters = 35000) {
             ['Juneau', 58.301944, -134.419722],
             ['Wasilla', 61.580900, -149.441500],
             ['Sitka', 57.053056, -135.330000],
+            ['Ketchikan', 55.342222, -131.646111],
+            ['Soldotna', 60.487778, -151.058333],
+            ['Homer', 59.642500, -151.548333],
+            ['Kodiak', 57.790000, -152.407222],
+            ['Palmer', 61.599722, -149.112778],
         ],
         'CA' => [
             ['Los Angeles', 34.052235, -118.243683],
@@ -85,6 +90,13 @@ function craftcrawl_state_seed_tiles($state, $radius_meters = 35000) {
             ['Jacksonville', 30.332184, -81.655651],
             ['Tallahassee', 30.438256, -84.280733],
             ['Fort Myers', 26.640628, -81.872308],
+        ],
+        'HI' => [
+            ['Honolulu', 21.306944, -157.858333],
+            ['Hilo', 19.707373, -155.088486],
+            ['Kailua-Kona', 19.639994, -155.996933],
+            ['Kahului', 20.889335, -156.472947],
+            ['Lihue', 21.981111, -159.371111],
         ],
         'IL' => [
             ['Chicago', 41.878114, -87.629798],
@@ -239,14 +251,56 @@ function craftcrawl_tile_distance_meters($lat1, $lng1, $lat2, $lng2) {
 
 function craftcrawl_state_tile_profiles() {
     return [
+        'AL' => ['max_grid_tiles' => 36],
+        'AK' => ['max_grid_tiles' => 0],
+        'AZ' => ['max_grid_tiles' => 42],
+        'AR' => ['max_grid_tiles' => 32],
+        'CA' => ['max_grid_tiles' => 72],
+        'CO' => ['max_grid_tiles' => 40],
         'CT' => ['max_grid_tiles' => 18],
         'DE' => ['max_grid_tiles' => 8],
+        'FL' => ['max_grid_tiles' => 58],
+        'GA' => ['max_grid_tiles' => 46],
+        'HI' => ['max_grid_tiles' => 12],
+        'ID' => ['max_grid_tiles' => 28],
+        'IL' => ['max_grid_tiles' => 44],
+        'IN' => ['max_grid_tiles' => 34],
+        'IA' => ['max_grid_tiles' => 30],
+        'KS' => ['max_grid_tiles' => 28],
+        'KY' => ['max_grid_tiles' => 34],
+        'LA' => ['max_grid_tiles' => 34],
+        'ME' => ['max_grid_tiles' => 22],
         'MD' => ['max_grid_tiles' => 28],
         'MA' => ['max_grid_tiles' => 34],
+        'MI' => ['max_grid_tiles' => 52],
+        'MN' => ['max_grid_tiles' => 40],
+        'MS' => ['max_grid_tiles' => 30],
+        'MO' => ['max_grid_tiles' => 40],
+        'MT' => ['max_grid_tiles' => 26],
+        'NE' => ['max_grid_tiles' => 24],
+        'NV' => ['max_grid_tiles' => 24],
+        'NH' => ['max_grid_tiles' => 14],
         'NJ' => ['max_grid_tiles' => 30],
+        'NM' => ['max_grid_tiles' => 28],
+        'NY' => ['max_grid_tiles' => 58],
+        'NC' => ['max_grid_tiles' => 46],
+        'ND' => ['max_grid_tiles' => 20],
+        'OH' => ['max_grid_tiles' => 46],
+        'OK' => ['max_grid_tiles' => 32],
+        'OR' => ['max_grid_tiles' => 34],
+        'PA' => ['max_grid_tiles' => 72],
         'RI' => ['max_grid_tiles' => 8],
+        'SC' => ['max_grid_tiles' => 34],
+        'SD' => ['max_grid_tiles' => 20],
+        'TN' => ['max_grid_tiles' => 40],
+        'TX' => ['max_grid_tiles' => 72],
+        'UT' => ['max_grid_tiles' => 28],
+        'VT' => ['max_grid_tiles' => 12],
         'VA' => ['max_grid_tiles' => 48],
+        'WA' => ['max_grid_tiles' => 44],
         'WV' => ['max_grid_tiles' => 34],
+        'WI' => ['max_grid_tiles' => 38],
+        'WY' => ['max_grid_tiles' => 18],
     ];
 }
 
@@ -317,14 +371,21 @@ function craftcrawl_state_search_tiles($state, $max_grid_tiles = 72, $radius_met
 
     $lat_span = max(0.1, $north - $south);
     $lng_span = max(0.1, $east - $west);
-    $grid_target = max(1, (int) $max_grid_tiles);
+    $grid_target = max(0, (int) $max_grid_tiles);
+    if ($grid_target === 0) {
+        return $tiles;
+    }
     $rows = max(1, (int) round(sqrt($grid_target * ($lat_span / $lng_span))));
     $cols = max(1, (int) ceil($grid_target / $rows));
     $lat_step = $lat_span / $rows;
     $lng_step = $lng_span / $cols;
+    $coarse_tiles_added = 0;
 
     for ($row = 0; $row < $rows; $row++) {
         for ($col = 0; $col < $cols; $col++) {
+            if ($coarse_tiles_added >= $grid_target) {
+                break 2;
+            }
             $tile_latitude = round($south + ($lat_step * ($row + 0.5)), 6);
             $tile_longitude = round($west + ($lng_step * ($col + 0.5)), 6);
             if (!craftcrawl_state_tile_center_allowed($state, $tile_latitude, $tile_longitude)) {
@@ -343,6 +404,7 @@ function craftcrawl_state_search_tiles($state, $max_grid_tiles = 72, $radius_met
                 'radius_meters' => $radius_meters,
                 'tile_kind' => 'coarse_grid',
             ];
+            $coarse_tiles_added++;
         }
     }
 
