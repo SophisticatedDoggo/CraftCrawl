@@ -328,18 +328,10 @@ map.on('load', async function () {
         const coordinates = e.features[0].geometry.coordinates.slice();
         const properties = e.features[0].properties;
 
-        const openPopup = () => {
-            new mapboxgl.Popup()
-                .setLngLat(coordinates)
-                .setHTML(getBusinessPopupHTML(properties, coordinates))
-                .addTo(map);
-        };
-
-        if (properties.businessType === 'social_club') {
-            showSocialClubDisclaimerIfNeeded(openPopup);
-        } else {
-            openPopup();
-        }
+        new mapboxgl.Popup()
+            .setLngLat(coordinates)
+            .setHTML(getBusinessPopupHTML(properties, coordinates))
+            .addTo(map);
     };
 
     map.on('click', 'clusters', zoomToCluster);
@@ -463,11 +455,14 @@ function showSocialClubDisclaimerIfNeeded(callback) {
     });
 }
 
+window.CraftCrawlShowSocialClubDisclaimerIfNeeded = showSocialClubDisclaimerIfNeeded;
+
 function getBusinessPopupHTML(properties, coordinates) {
     const address = `${properties.streetAddress}, ${properties.city}, ${properties.state} ${properties.zip}`;
     const latitude = coordinates[1];
     const longitude = coordinates[0];
     const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${latitude},${longitude}`)}`;
+    const directionsDisclaimerAttribute = properties.businessType === 'social_club' ? ' data-social-club-directions="true"' : '';
 
     return `
         <strong>${escapeHtml(properties.title)}</strong>
@@ -478,7 +473,7 @@ function getBusinessPopupHTML(properties, coordinates) {
         </p>
         <div class="map-popup-actions">
             <a class="map-action-button" href="../business_details.php?id=${encodeURIComponent(properties.id)}">Open details</a>
-            <a class="map-action-button" href="${directionsUrl}" data-directions-address="${escapeHtml(address)}" data-directions-latitude="${escapeHtml(latitude)}" data-directions-longitude="${escapeHtml(longitude)}" target="_blank" rel="noopener">Get Directions</a>
+            <a class="map-action-button" href="${directionsUrl}" data-directions-address="${escapeHtml(address)}" data-directions-latitude="${escapeHtml(latitude)}" data-directions-longitude="${escapeHtml(longitude)}"${directionsDisclaimerAttribute} target="_blank" rel="noopener">Get Directions</a>
         </div>
     `;
 }
@@ -874,11 +869,7 @@ function setupBusinessSearch() {
 
         if (matches.length) {
             const match = matches[0];
-            if (match.properties.businessType === 'social_club') {
-                showSocialClubDisclaimerIfNeeded(() => openBusinessDetails(match.properties.id));
-            } else {
-                openBusinessDetails(match.properties.id);
-            }
+            openBusinessDetails(match.properties.id);
         }
     });
 
@@ -952,14 +943,6 @@ function renderBusinessSearchResults(matches) {
         name.textContent = properties.title;
         meta.textContent = `${formatBusinessType(properties.businessType)} · ${properties.city}, ${properties.state}`;
 
-        if (properties.businessType === 'social_club') {
-            link.addEventListener('click', (event) => {
-                event.preventDefault();
-                searchResults.hidden = true;
-                showSocialClubDisclaimerIfNeeded(() => openBusinessDetails(properties.id));
-            });
-        }
-
         link.append(name, meta);
         searchResults.appendChild(link);
     });
@@ -1026,22 +1009,12 @@ function setupBusinessListMapLinks(listContainer) {
             const clickedLink = event.target instanceof Element ? event.target.closest('a') : null;
 
             if (clickedLink) {
-                if (item.dataset.businessType === 'social_club') {
-                    event.preventDefault();
-                    showSocialClubDisclaimerIfNeeded(() => {
-                        window.location.href = clickedLink.href;
-                    });
-                }
                 return;
             }
 
             item.blur();
 
-            if (item.dataset.businessType === 'social_club') {
-                showSocialClubDisclaimerIfNeeded(() => focusBusinessOnMap(item.dataset.businessId));
-            } else {
-                focusBusinessOnMap(item.dataset.businessId);
-            }
+            focusBusinessOnMap(item.dataset.businessId);
         });
 
         item.addEventListener('keydown', (event) => {
@@ -1053,11 +1026,7 @@ function setupBusinessListMapLinks(listContainer) {
 
             event.preventDefault();
 
-            if (item.dataset.businessType === 'social_club') {
-                showSocialClubDisclaimerIfNeeded(() => focusBusinessOnMap(item.dataset.businessId));
-            } else {
-                focusBusinessOnMap(item.dataset.businessId);
-            }
+            focusBusinessOnMap(item.dataset.businessId);
         });
     });
 }
@@ -1186,10 +1155,6 @@ function updateBusinessListForCurrentMapArea(useMapCenter = false) {
 
     const sortSelect = document.getElementById('business-list-sort');
     const sortValue = sortSelect ? sortSelect.value : 'map';
-
-    if (sortValue !== 'map' && sortValue !== 'nearby') {
-        return;
-    }
 
     updateBusinessListForSort(sortValue, { useMapCenter: sortValue === 'map' && useMapCenter });
 }

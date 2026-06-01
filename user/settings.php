@@ -430,7 +430,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="checkbox" name="show_social_club_disclaimer" value="1" <?php echo $show_social_club_disclaimer ? 'checked' : ''; ?>>
                     <span>
                         <strong>Social Club Membership Reminders</strong>
-                        <small>Show a heads-up when viewing social clubs that may require a membership for entry.</small>
+                        <small>Show a heads-up when viewing social clubs or getting directions to clubs that may require a membership for entry.</small>
                     </span>
                 </label>
                 <button type="submit">Save Privacy Settings</button>

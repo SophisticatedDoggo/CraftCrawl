@@ -13,6 +13,38 @@ function google_import_operation_response($payload, $status = 200) {
     exit;
 }
 
+function google_import_operation_php_cli() {
+    $candidates = array_filter([
+        craftcrawl_env('CRAFTCRAWL_PHP_CLI'),
+        PHP_BINDIR ? PHP_BINDIR . DIRECTORY_SEPARATOR . 'php' : '',
+        '/usr/bin/php',
+        '/usr/local/bin/php',
+        PHP_BINARY,
+    ]);
+
+    foreach (array_unique($candidates) as $candidate) {
+        if (is_file($candidate) && is_executable($candidate)) {
+            return $candidate;
+        }
+    }
+
+    return '';
+}
+
+function google_import_operation_background_capability() {
+    $disabled_functions = array_map('trim', explode(',', (string) ini_get('disable_functions')));
+    if (!function_exists('exec') || in_array('exec', $disabled_functions, true)) {
+        return ['available' => false, 'php_cli' => '', 'reason' => 'PHP exec() is disabled.'];
+    }
+
+    $php_cli = google_import_operation_php_cli();
+    if ($php_cli === '') {
+        return ['available' => false, 'php_cli' => '', 'reason' => 'Could not find an executable PHP CLI binary.'];
+    }
+
+    return ['available' => true, 'php_cli' => $php_cli, 'reason' => ''];
+}
+
 function google_import_operation_payload($conn, $operation_id = null) {
     $operation = craftcrawl_fetch_google_import_operation($conn, $operation_id);
     if (!$operation) {
@@ -31,11 +63,14 @@ function google_import_operation_payload($conn, $operation_id = null) {
     $pending_review_count = !empty($operation['dry_run'])
         ? 0
         : craftcrawl_google_import_operation_live_review_count($conn, $operation['operation_id']);
+    $background = google_import_operation_background_capability();
 
     return [
         'operation_id' => $operation['operation_id'],
         'state' => $operation['state'],
         'status' => $operation['status'],
+        'worker_mode' => $background['available'] ? 'background' : 'browser',
+        'worker_message' => $background['available'] ? 'Server background worker available.' : $background['reason'],
         'dry_run' => (bool) $operation['dry_run'],
         'limit_tiles' => (int) $operation['limit_tiles'],
         'total_tiles' => (int) $operation['total_tiles'],
@@ -78,6 +113,48 @@ function google_import_operation_try_work($conn, $api_key, $operation_id) {
         $release_stmt = $conn->prepare("SELECT RELEASE_LOCK(?)");
         $release_stmt->bind_param('s', $lock_name);
         $release_stmt->execute();
+    }
+
+    return true;
+}
+
+function google_import_operation_launch_background($conn, $operation_id, $state, $limit_tiles, $dry_run, $php_cli) {
+    $tool = dirname(__DIR__) . '/tools/google_places_import.php';
+    $command = escapeshellarg($php_cli)
+        . ' ' . escapeshellarg($tool)
+        . ' --state=' . escapeshellarg($state)
+        . ' --limit-tiles=' . escapeshellarg((string) $limit_tiles)
+        . ' --operation-id=' . escapeshellarg($operation_id)
+        . ' --track-operation';
+    if ($dry_run) {
+        $command .= ' --dry-run';
+    }
+
+    $log_dir = dirname(__DIR__) . '/results/import_logs';
+    if (!is_dir($log_dir)) {
+        mkdir($log_dir, 0775, true);
+    }
+    if (!is_dir($log_dir) || !is_writable($log_dir)) {
+        $log_dir = sys_get_temp_dir();
+    }
+
+    $log_file = $log_dir . '/google_import_' . preg_replace('/[^a-zA-Z0-9_-]/', '', $operation_id) . '.log';
+    $launch_output = [];
+    $launch_exit_code = 0;
+    exec('nohup ' . $command . ' > ' . escapeshellarg($log_file) . ' 2>&1 & echo $!', $launch_output, $launch_exit_code);
+    $pid = trim((string) ($launch_output[0] ?? ''));
+    if ($launch_exit_code !== 0 || $pid === '') {
+        craftcrawl_update_google_import_operation_progress(
+            $conn,
+            $operation_id,
+            0,
+            ['error' => 1],
+            [],
+            [],
+            'failed',
+            'Unable to launch background import process. Browser fallback can be used by refreshing and starting a new operation. Check ' . $log_file
+        );
+        return false;
     }
 
     return true;
@@ -131,15 +208,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tiles = array_slice($state_tiles, 0, $limit_tiles);
     $terms = craftcrawl_google_places_search_terms();
     craftcrawl_create_google_import_operation($conn, $operation_id, $state, $limit_tiles, $dry_run, count($tiles), count($terms));
-    craftcrawl_update_google_import_operation_progress(
-        $conn,
-        $operation_id,
-        0,
-        [],
-        $tiles[0] ?? [],
-        $terms[0] ?? [],
-        'queued'
-    );
+    $background = google_import_operation_background_capability();
+    $status = $background['available'] ? 'running' : 'queued';
+    craftcrawl_update_google_import_operation_progress($conn, $operation_id, 0, [], $tiles[0] ?? [], $terms[0] ?? [], $status);
+
+    if ($background['available']) {
+        google_import_operation_launch_background($conn, $operation_id, $state, $limit_tiles, $dry_run, $background['php_cli']);
+    }
 
     google_import_operation_response([
         'ok' => true,

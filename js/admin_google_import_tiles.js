@@ -29,7 +29,9 @@ window.CraftCrawlInitGoogleImportTiles = function (root = document) {
         operationPanel.hidden = false;
         progress.value = operation.percent || 0;
         operationPanel.dataset.operationId = operation.operation_id || '';
-        status.textContent = `${operation.status} · ${operation.state} · ${operation.dry_run ? 'dry run' : 'import'} · ${operation.completed_steps}/${operation.total_steps} searches`;
+        operationPanel.dataset.workerMode = operation.worker_mode || 'browser';
+        const workerText = operation.worker_mode === 'background' ? 'server worker' : 'browser worker';
+        status.textContent = `${operation.status} · ${operation.state} · ${operation.dry_run ? 'dry run' : 'import'} · ${workerText} · ${operation.completed_steps}/${operation.total_steps} searches`;
         detail.textContent = operation.status === 'completed'
             ? `Completed ${operation.completed_at || ''}${operation.dry_run ? ' · Dry run totals only; no import batch rows or locations were written.' : ''}`.trim()
             : `Current: ${operation.current_tile_label || 'starting'}${operation.current_search_term ? ` · ${operation.current_search_term}` : ''}${operation.updated_at ? ` · Updated ${operation.updated_at}` : ''}`;
@@ -73,7 +75,8 @@ window.CraftCrawlInitGoogleImportTiles = function (root = document) {
                 }
 
                 if (operation.status === 'running' || operation.status === 'queued') {
-                    window.setTimeout(() => pollOperation(panel, endpoint, operation.operation_id, pollToken, true), 100);
+                    const shouldWorkNext = operation.worker_mode !== 'background';
+                    window.setTimeout(() => pollOperation(panel, endpoint, operation.operation_id, pollToken, shouldWorkNext), 100);
                 } else {
                     window.setTimeout(() => pollOperation(panel, endpoint, '', pollToken), 5000);
                 }

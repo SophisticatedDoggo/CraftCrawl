@@ -35,10 +35,14 @@
         return `geo:0,0?q=${encodedAddress}`;
     }
 
+    function navigateToDirections(link, url) {
+        window.location.href = url;
+    }
+
     document.addEventListener('click', function (event) {
         const link = event.target.closest('[data-directions-address]');
 
-        if (!link || !isMobileDevice()) {
+        if (!link) {
             return;
         }
 
@@ -46,7 +50,22 @@
             return;
         }
 
-        event.preventDefault();
-        window.location.href = mobileDirectionsUrl(link);
+        const shouldShowSocialClubDisclaimer = link.getAttribute('data-social-club-directions') === 'true'
+            && window.CRAFTCRAWL_SHOW_SOCIAL_CLUB_DISCLAIMER !== false
+            && typeof window.CraftCrawlShowSocialClubDisclaimerIfNeeded === 'function';
+        const directionsUrl = isMobileDevice() ? mobileDirectionsUrl(link) : link.href;
+
+        if (shouldShowSocialClubDisclaimer) {
+            event.preventDefault();
+            window.CraftCrawlShowSocialClubDisclaimerIfNeeded(() => {
+                navigateToDirections(link, directionsUrl);
+            });
+            return;
+        }
+
+        if (isMobileDevice()) {
+            event.preventDefault();
+            window.location.href = directionsUrl;
+        }
     });
 }());

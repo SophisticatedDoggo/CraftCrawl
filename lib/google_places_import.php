@@ -1018,12 +1018,20 @@ function craftcrawl_run_google_places_import($conn, $api_key, $state, array $opt
     $enforce_tile_radius = $options['enforce_tile_radius'] ?? true;
     $track_operation = !empty($options['track_operation']);
     $completed_steps = 0;
+    $operation_stopped = false;
     if ($track_operation) {
         craftcrawl_mark_google_import_operation_running($conn, $operation_id, $state, $limit_tiles, $dry_run, count($tiles), count($terms));
     }
 
     foreach ($tiles as $tile) {
         foreach ($terms as $term) {
+            if ($track_operation) {
+                $latest_operation = craftcrawl_fetch_google_import_operation($conn, $operation_id);
+                if (!$latest_operation || !in_array($latest_operation['status'], ['queued', 'running'], true)) {
+                    $operation_stopped = true;
+                    break 2;
+                }
+            }
             if ($track_operation) {
                 craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile, $term);
             }
@@ -1142,7 +1150,7 @@ function craftcrawl_run_google_places_import($conn, $api_key, $state, array $opt
         }
     }
 
-    if ($track_operation) {
+    if ($track_operation && !$operation_stopped) {
         $final_status = $summary['error'] > 0 ? 'failed' : 'completed';
         craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile ?? [], $term ?? [], $final_status);
     }

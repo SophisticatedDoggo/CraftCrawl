@@ -264,7 +264,7 @@ $recent_google_operations = $conn->query("
                 <a href="review_center.php?import_provider=google">Review Google imports</a>
             </form>
             <p id="google_tile_count_info"><?php echo import_escape($google_state); ?> has <?php echo import_escape(count($google_tiles)); ?> import tile<?php echo count($google_tiles) === 1 ? '' : 's'; ?>, starting with priority city/metro seeds followed by a capped coarse grid. Tile limit runs from the first tile through that number.</p>
-            <p class="form-help">Imports run in small web requests from this page, so hosts with PHP exec() disabled can still process batches. If you leave this page, return here to resume a queued or running operation.</p>
+            <p class="form-help">Imports run as a server background worker when PHP exec() is available. If background launch is unavailable, this page falls back to small browser work requests and can resume queued or running operations when you return.</p>
             <p class="form-help">
                 Google Places batch key source: <?php echo import_escape($google_places_key_source ?: 'not configured'); ?>.
                 <?php if ($google_server_address_hint !== '') : ?>
