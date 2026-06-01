@@ -194,6 +194,11 @@ $cases = [
         'decision' => 'auto_add',
         'category' => 'social_club',
     ],
+    'sportsman club with club label auto-adds social club' => [
+        'candidate' => ['name' => 'Hecla Sportman Club', 'street_address' => '1 Hecla Rd', 'latitude' => 40.201822, 'longitude' => -79.521233, 'primary_type' => 'club', 'primary_type_display_name' => 'Club', 'types' => ['club'], 'website' => '', 'phone' => '555', 'search_term' => 'sportsman club'],
+        'decision' => 'auto_add',
+        'category' => 'social_club',
+    ],
     'google winery label auto-adds winery' => [
         'candidate' => ['name' => 'Bella Terra Vineyards', 'street_address' => '33 Vineyard Ln', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => 'winery', 'primary_type_display_name' => 'Winery', 'types' => ['winery'], 'website' => 'https://example.com', 'phone' => '555'],
         'decision' => 'auto_add',

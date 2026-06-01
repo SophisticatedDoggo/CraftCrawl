@@ -41,6 +41,9 @@ function craftcrawl_google_places_search_terms() {
         ['term' => 'club', 'mode' => 'text'],
         ['term' => 'social club', 'mode' => 'text'],
         ['term' => 'citizens club', 'mode' => 'text'],
+        ['term' => 'sportsman club', 'mode' => 'text', 'area_mode' => 'bias'],
+        ['term' => 'sportsmen club', 'mode' => 'text', 'area_mode' => 'bias'],
+        ['term' => 'sportman club', 'mode' => 'text', 'area_mode' => 'bias'],
         ['term' => 'fire department club', 'mode' => 'text', 'area_mode' => 'bias'],
         ['term' => 'firemen club', 'mode' => 'text', 'area_mode' => 'bias'],
         ['term' => 'polish falcon', 'mode' => 'text', 'area_mode' => 'bias'],
@@ -153,6 +156,84 @@ function craftcrawl_google_places_request($api_key, $endpoint, array $body) {
         'fatal' => craftcrawl_google_places_fatal_status($last_status),
         'raw' => $last_response,
     ];
+}
+
+function craftcrawl_google_place_details_request($api_key, $place_id) {
+    $place_id = trim((string) $place_id);
+    if (trim((string) $api_key) === '' || $place_id === '') {
+        return [];
+    }
+
+    $max_attempts = 4;
+    $last_response = null;
+    $last_status = 0;
+    $last_error = '';
+    $url = 'https://places.googleapis.com/v1/places/' . rawurlencode($place_id);
+
+    for ($attempt = 1; $attempt <= $max_attempts; $attempt++) {
+        $curl = curl_init($url);
+        curl_setopt_array($curl, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 20,
+            CURLOPT_HTTPHEADER => [
+                'X-Goog-Api-Key: ' . $api_key,
+                'X-Goog-FieldMask: id,websiteUri,nationalPhoneNumber,regularOpeningHours',
+            ],
+        ]);
+        $response = curl_exec($curl);
+        $status = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $error = curl_error($curl);
+        curl_close($curl);
+
+        $last_response = $response;
+        $last_status = $status;
+        $last_error = $error;
+
+        if ($response !== false && $status >= 200 && $status < 300) {
+            $payload = json_decode($response, true);
+            return is_array($payload) ? $payload : [];
+        }
+
+        if ($attempt < $max_attempts && craftcrawl_google_places_should_retry($status, $error)) {
+            usleep(craftcrawl_google_places_retry_delay_us($attempt));
+            continue;
+        }
+
+        break;
+    }
+
+    return [
+        'error' => craftcrawl_google_places_error_message($last_status, $last_error, $last_response),
+        'http_status' => $last_status,
+        'fatal' => craftcrawl_google_places_fatal_status($last_status),
+    ];
+}
+
+function craftcrawl_enrich_google_candidate_details($api_key, array $candidate) {
+    if (!empty($candidate['has_opening_hours']) || trim((string) ($candidate['source_place_id'] ?? '')) === '') {
+        return $candidate;
+    }
+
+    $details = craftcrawl_google_place_details_request($api_key, $candidate['source_place_id']);
+    if (!empty($details['error'])) {
+        $candidate['details_error'] = $details['error'];
+        return $candidate;
+    }
+
+    if (empty($candidate['phone']) && !empty($details['nationalPhoneNumber'])) {
+        $candidate['phone'] = $details['nationalPhoneNumber'];
+    }
+    if (empty($candidate['website']) && !empty($details['websiteUri'])) {
+        $candidate['website'] = $details['websiteUri'];
+    }
+
+    $opening_hours = craftcrawl_google_places_hours_from_regular_opening_hours($details['regularOpeningHours'] ?? []);
+    if (is_array($opening_hours)) {
+        $candidate['opening_hours'] = $opening_hours;
+        $candidate['has_opening_hours'] = true;
+    }
+
+    return $candidate;
 }
 
 function craftcrawl_google_tile_viewport(array $tile, $radius_meters) {
@@ -635,7 +716,7 @@ function craftcrawl_process_google_import_operation_step($conn, $api_key, $opera
             if (($candidate['state'] ?? '') === '') {
                 $candidate['state'] = $state;
             }
-            $result = craftcrawl_import_google_place($conn, $batch_id, $candidate, $chain_patterns, $dry_run);
+            $result = craftcrawl_import_google_place($conn, $batch_id, $candidate, $chain_patterns, $dry_run, $api_key);
             if ($result['decision'] === 'auto_add') {
                 $counts['created']++;
             } elseif ($result['decision'] === 'needs_review') {
@@ -799,8 +880,11 @@ function craftcrawl_delete_pending_google_location($conn, $location_id) {
     return $conn->affected_rows;
 }
 
-function craftcrawl_import_google_place($conn, $batch_id, array $candidate, array $chain_patterns, $dry_run = false) {
+function craftcrawl_import_google_place($conn, $batch_id, array &$candidate, array $chain_patterns, $dry_run = false, $api_key = '') {
     $classification = craftcrawl_classify_location_candidate($candidate, $chain_patterns);
+    if (!$dry_run && in_array($classification['decision'], ['auto_add', 'needs_review'], true)) {
+        $candidate = craftcrawl_enrich_google_candidate_details($api_key, $candidate);
+    }
     $existing_google_location = craftcrawl_fetch_google_location_by_place_id($conn, $candidate['source_place_id'] ?? '');
     if ($existing_google_location && ($existing_google_location['visibility_status'] ?? '') === 'pending_import_review') {
         $decision = $classification['decision'];
@@ -820,6 +904,9 @@ function craftcrawl_import_google_place($conn, $batch_id, array $candidate, arra
                 $update = $conn->prepare("UPDATE locations SET location_type=? WHERE id=? AND visibility_status='pending_import_review'");
                 $update->bind_param('si', $classification['suggested_category'], $location_id);
                 $update->execute();
+            }
+            if ($location_id && !empty($candidate['opening_hours']) && craftcrawl_validate_business_hours($candidate['opening_hours']) === null) {
+                craftcrawl_save_location_hours($conn, $location_id, $candidate['opening_hours'], 'provider_import');
             }
 
             craftcrawl_record_google_place_import($conn, $batch_id, $candidate, $classification, $decision, $location_id);
@@ -1018,7 +1105,7 @@ function craftcrawl_run_google_places_import($conn, $api_key, $state, array $opt
                 if (($candidate['state'] ?? '') === '') {
                     $candidate['state'] = $state;
                 }
-                $result = craftcrawl_import_google_place($conn, $batch_id, $candidate, $chain_patterns, $dry_run);
+                $result = craftcrawl_import_google_place($conn, $batch_id, $candidate, $chain_patterns, $dry_run, $api_key);
                 if ($result['decision'] === 'auto_add') {
                     $counts['created']++;
                     if ($include_results) {

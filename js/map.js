@@ -1225,14 +1225,14 @@ function updateExpandedMapForSort() {
 
     const sortSelect = document.getElementById('business-list-sort');
     const sortValue = sortSelect ? sortSelect.value : 'all_types';
-    const features = getMapRelevantBusinessFeatures();
+    const features = getMapRelevantBusinessFeatures(sortValue);
     const orderedFeatures = sortFeaturesForExpandedMap(features, sortValue);
 
     updateMapBusinessNumbers(orderedFeatures);
 }
 
 function getSortedBusinessFeatures(sortValue) {
-    const features = [...allBusinessFeatures];
+    const features = getBusinessFeaturesForSort(sortValue);
 
     if (sortValue === 'name') {
         return features.sort(compareBusinessTitles);
@@ -1257,9 +1257,9 @@ function getSortedBusinessFeatures(sortValue) {
 }
 
 function sortFeaturesForExpandedMap(features, sortValue) {
-    if (sortValue === 'all_types') {
-        const reference = getMapCenterReference();
+    const reference = getMapCenterReference();
 
+    if (sortValue === 'all_types') {
         return [...features].sort((a, b) => {
             return distanceFromFeatureToReference(a, reference) - distanceFromFeatureToReference(b, reference);
         });
@@ -1268,7 +1268,9 @@ function sortFeaturesForExpandedMap(features, sortValue) {
     if (isBusinessTypeFilter(sortValue)) {
         return [...features]
             .filter((feature) => feature.properties.businessType === sortValue)
-            .sort(compareBusinessTitles);
+            .sort((a, b) => {
+                return distanceFromFeatureToReference(a, reference) - distanceFromFeatureToReference(b, reference);
+            });
     }
 
     return [];
@@ -1276,11 +1278,16 @@ function sortFeaturesForExpandedMap(features, sortValue) {
 
 function sortFeaturesForList(features, sortValue, reference) {
     const sortedFeatures = [...features];
+    const proximitySort = (a, b) => {
+        if (!reference) {
+            return compareBusinessTitles(a, b);
+        }
+
+        return distanceFromFeatureToReference(a, reference) - distanceFromFeatureToReference(b, reference);
+    };
 
     if ((sortValue === 'map' || sortValue === 'nearby') && reference) {
-        return sortedFeatures.sort((a, b) => {
-            return distanceFromFeatureToReference(a, reference) - distanceFromFeatureToReference(b, reference);
-        });
+        return sortedFeatures.sort(proximitySort);
     }
 
     if (sortValue === 'map' || sortValue === 'nearby') {
@@ -1288,29 +1295,39 @@ function sortFeaturesForList(features, sortValue, reference) {
     }
 
     if (sortValue === 'name') {
-        return sortedFeatures.sort(compareBusinessTitles);
+        return sortedFeatures.sort(proximitySort);
     }
 
     if (isBusinessTypeFilter(sortValue)) {
         return sortedFeatures
             .filter((feature) => feature.properties.businessType === sortValue)
-            .sort(compareBusinessTitles);
+            .sort(proximitySort);
     }
 
-    return sortedFeatures.sort(compareBusinessTitles);
+    return sortedFeatures.sort(proximitySort);
 }
 
-function getMapRelevantBusinessFeatures() {
+function getMapRelevantBusinessFeatures(sortValue = null) {
     const center = getMapCenterReference();
+    const features = getBusinessFeaturesForSort(sortValue);
+
     if (map.getZoom() >= mapRadiusModeMinZoom) {
-        return sortFeaturesByReference(getBusinessFeaturesWithinMapRadius(), center);
+        return sortFeaturesByReference(getBusinessFeaturesWithinMapRadius(features), center);
     }
 
-    return sortFeaturesByReference(getVisibleBusinessFeatures(), center);
+    return sortFeaturesByReference(getVisibleBusinessFeatures(features), center);
 }
 
 function isBusinessTypeFilter(sortValue) {
     return businessTypeFilters.includes(sortValue);
+}
+
+function getBusinessFeaturesForSort(sortValue) {
+    const shouldIncludeSocialClubs = sortValue === 'social_club';
+
+    return allBusinessFeatures.filter((feature) => {
+        return shouldIncludeSocialClubs || feature.properties.businessType !== 'social_club';
+    });
 }
 
 function updateRenderedMapItemCount() {
@@ -1338,11 +1355,11 @@ function updateRenderedMapItemCount() {
     updateMapZoomDebug();
 }
 
-function getBusinessFeaturesWithinMapRadius() {
+function getBusinessFeaturesWithinMapRadius(features = allBusinessFeatures) {
     const reference = getMapCenterReference();
     const mapRadiusMeters = getSelectedMapRadiusMiles() * milesToMeters;
 
-    return allBusinessFeatures.filter((feature) => {
+    return features.filter((feature) => {
         return distanceFromFeatureToReference(feature, reference) <= mapRadiusMeters;
     });
 }
@@ -1354,16 +1371,16 @@ function getSelectedMapRadiusMiles() {
     return [50, 25, 10, 5].includes(radiusMiles) ? radiusMiles : defaultMapRadiusMiles;
 }
 
-function getVisibleBusinessFeatures() {
+function getVisibleBusinessFeatures(features = allBusinessFeatures) {
     const bounds = map.getBounds();
 
-    return allBusinessFeatures.filter((feature) => {
+    return features.filter((feature) => {
         return bounds.contains(feature.geometry.coordinates);
     });
 }
 
 function getListReferencePoint(sortValue, useMapCenter = false) {
-    if (!useMapCenter && sortValue === 'nearby' && userLocation) {
+    if (!useMapCenter && sortValue !== 'map' && userLocation) {
         return userLocation;
     }
 
