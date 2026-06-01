@@ -1208,9 +1208,7 @@ function updateMapZoomDebug() {
 
 function updateBusinessListForSort(sortValue, options = {}) {
     const reference = getListReferencePoint(sortValue, options.useMapCenter);
-    const features = sortValue === 'map' || sortValue === 'nearby'
-        ? getMapRelevantBusinessFeatures()
-        : getSortedBusinessFeatures(sortValue);
+    const features = getMapRelevantBusinessFeatures(sortValue);
     const orderedFeatures = sortFeaturesForList(features, sortValue, reference);
     const numberedFeatures = numberFeatures(orderedFeatures);
 
@@ -1229,31 +1227,6 @@ function updateExpandedMapForSort() {
     const orderedFeatures = sortFeaturesForExpandedMap(features, sortValue);
 
     updateMapBusinessNumbers(orderedFeatures);
-}
-
-function getSortedBusinessFeatures(sortValue) {
-    const features = getBusinessFeaturesForSort(sortValue);
-
-    if (sortValue === 'name') {
-        return features.sort(compareBusinessTitles);
-    }
-
-    if (sortValue === 'nearby' && userLocation) {
-        return features.sort((a, b) => {
-            const distanceA = distanceMeters(userLocation.latitude, userLocation.longitude, a.geometry.coordinates[1], a.geometry.coordinates[0]);
-            const distanceB = distanceMeters(userLocation.latitude, userLocation.longitude, b.geometry.coordinates[1], b.geometry.coordinates[0]);
-
-            return distanceA - distanceB;
-        });
-    }
-
-    if (isBusinessTypeFilter(sortValue)) {
-        return features
-            .filter((feature) => feature.properties.businessType === sortValue)
-            .sort(compareBusinessTitles);
-    }
-
-    return features.sort(compareBusinessTitles);
 }
 
 function sortFeaturesForExpandedMap(features, sortValue) {

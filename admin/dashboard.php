@@ -6,6 +6,7 @@ include '../db.php';
 
 $admin_id = (int) $_SESSION['admin_id'];
 $search = trim($_GET['q'] ?? '');
+$state = strtoupper(trim($_GET['state'] ?? ''));
 $status = $_GET['status'] ?? 'all';
 $allowed_statuses = ['all', 'pending', 'public_unclaimed', 'public_claimed', 'rejected', 'hidden', 'disabled'];
 if (!in_array($status, $allowed_statuses, true)) {
@@ -65,9 +66,15 @@ $types = '';
 
 if ($search !== '') {
     $like = '%' . $search . '%';
-    $location_sql .= " AND (l.name LIKE ? OR l.city LIKE ? OR l.street_address LIKE ? OR l.location_type LIKE ?)";
-    $params = [$like, $like, $like, $like];
-    $types .= 'ssss';
+    $location_sql .= " AND (l.name LIKE ? OR l.city LIKE ? OR l.state LIKE ? OR l.street_address LIKE ? OR l.location_type LIKE ?)";
+    $params = [$like, $like, $like, $like, $like];
+    $types .= 'sssss';
+}
+
+if (preg_match('/^[A-Z]{2}$/', $state)) {
+    $location_sql .= " AND l.state=?";
+    $params[] = $state;
+    $types .= 's';
 }
 
 if ($status === 'disabled') {
@@ -152,10 +159,14 @@ $locations = $stmt->get_result();
 
         <section class="admin-panel">
             <div class="business-section-header"><h2>Location Search</h2></div>
-            <form method="GET" class="admin-search-form admin-business-search-form">
+            <form method="GET" class="admin-search-form admin-location-search-form">
                 <div class="admin-field admin-field-wide">
                     <label for="q">Search</label>
                     <input id="q" name="q" value="<?php echo craftcrawl_admin_escape($search); ?>" placeholder="Name, address, type, or city">
+                </div>
+                <div class="admin-field">
+                    <label for="state">State</label>
+                    <input id="state" name="state" maxlength="2" value="<?php echo craftcrawl_admin_escape($state); ?>" placeholder="PA">
                 </div>
                 <div class="admin-field">
                     <label for="status">Status</label>

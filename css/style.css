@@ -8766,6 +8766,10 @@ a.event-calendar-event:focus .event-calendar-event-name {
     grid-template-columns: minmax(280px, 1fr) minmax(160px, 220px) auto;
 }
 
+.admin-location-search-form {
+    grid-template-columns: minmax(280px, 1fr) minmax(110px, 140px) minmax(160px, 220px) auto;
+}
+
 .admin-review-search-form {
     grid-template-columns: minmax(280px, 1fr) auto;
 }
