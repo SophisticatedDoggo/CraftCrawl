@@ -28,6 +28,7 @@ const mapClusterTextSize = isMobileMapViewport ? 16 : 13;
 const mapMarkerHitboxRadius = isMobileMapViewport ? 34 : 24;
 const mapClusterHitboxRadius = isMobileMapViewport ? [38, 44, 50] : [28, 34, 40];
 const mapMarkerIconSize = isMobileMapViewport ? 0.85 : 0.65;
+const businessListMaxItems = 100;
 const mapIconTypes = ['brewery', 'winery', 'cidery', 'distillery', 'meadery', 'bar', 'social_club'];
 const businessTypeFilters = ['brewery', 'winery', 'cidery', 'distillery', 'meadery', 'bar', 'social_club'];
 
@@ -1174,7 +1175,7 @@ function updateMapZoomDebug() {
 function updateBusinessListForSort(sortValue, options = {}) {
     const reference = getListReferencePoint(sortValue, options.useMapCenter);
     const features = getMapRelevantBusinessFeatures(sortValue);
-    const orderedFeatures = sortFeaturesForList(features, sortValue, reference);
+    const orderedFeatures = sortFeaturesForList(features, sortValue, reference).slice(0, businessListMaxItems);
     const numberedFeatures = numberFeatures(orderedFeatures);
 
     updateMapBusinessNumbers(numberedFeatures);
