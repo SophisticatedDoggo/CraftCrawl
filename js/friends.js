@@ -586,7 +586,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     <div class="friend-search-summary">
                         <strong>${escapeHtml(user.name)}</strong>
                         <span class="friend-search-meta">Level ${escapeHtml(user.level || 1)}${user.title ? ` &middot; ${escapeHtml(user.title)}` : ''}</span>
-                        <span class="friend-search-email">${escapeHtml(user.email)}</span>
+                        <span class="friend-search-username">@${escapeHtml(user.username || '')}</span>
                         ${statusMarkup}
                     </div>
                     <button type="button" data-friend-id="${user.id}" data-request-id="${user.received_request_id || user.sent_request_id || ''}" data-friend-action="${action}" ${disabled}>
@@ -707,7 +707,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 ${renderAvatar(request.actor, request.name)}
                 <div>
                     <strong>${escapeHtml(request.name)}</strong>
-                    <span>${escapeHtml(request.email)}</span>
+                    <span>@${escapeHtml(request.username || '')}</span>
                 </div>
                 <div>
                     <button type="button" data-request-id="${request.id}" data-response="accepted">Approve</button>
@@ -783,7 +783,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 <div class="friend-search-summary">
                     <strong>${escapeHtml(request.name)}</strong>
                     <span class="friend-search-meta">Level ${escapeHtml(request.level || 1)}${request.title ? ` &middot; ${escapeHtml(request.title)}` : ''}</span>
-                    <span class="friend-search-email">${escapeHtml(request.email)}</span>
+                    <span class="friend-search-username">@${escapeHtml(request.username || '')}</span>
                     <span class="friend-search-status is-sent">✓ Invitation sent</span>
                 </div>
                 <button type="button" data-request-id="${request.id}" data-friend-action="cancel">Cancel Invite</button>
@@ -839,7 +839,11 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
         const query = (currentFriendsFilter?.value || '').trim().toLowerCase();
         const visibleFriends = query
-            ? friends.filter((friend) => String(friend.name || '').toLowerCase().includes(query))
+            ? friends.filter((friend) => {
+                const name = String(friend.name || '').toLowerCase();
+                const username = String(friend.username || '').toLowerCase();
+                return name.includes(query) || username.includes(query);
+            })
             : friends;
 
         if (!visibleFriends.length) {
@@ -856,6 +860,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                         ${friend.is_new ? '<span class="friend-current-new-badge">New</span>' : ''}
                     </div>
                     <p class="friend-current-meta">Level ${escapeHtml(friend.level || 1)}${friend.title ? ` &middot; ${escapeHtml(friend.title)}` : ''}</p>
+                    <p class="friend-current-meta">@${escapeHtml(friend.username || '')}</p>
                 </div>
                 <div class="friend-current-actions">
                     <a href="profile.php?id=${encodeURIComponent(friend.id)}">View Profile</a>

@@ -26,7 +26,7 @@ $stmt = $conn->prepare("
         u.id,
         u.fName,
         u.lName,
-        u.email,
+        u.username,
         " . craftcrawl_level_sql('u.total_xp') . " AS level,
         u.selected_title_index,
         u.selected_profile_frame, u.selected_profile_frame_style,
@@ -45,7 +45,7 @@ $stmt = $conn->prepare("
         ON received.requester_user_id=u.id AND received.addressee_user_id=? AND received.status='pending'
     WHERE u.id <> ?
         AND u.disabledAt IS NULL
-        AND (u.fName LIKE ? OR u.lName LIKE ? OR u.email LIKE ? OR CONCAT(u.fName, ' ', u.lName) LIKE ?)
+        AND (u.fName LIKE ? OR u.lName LIKE ? OR u.username LIKE ? OR CONCAT(u.fName, ' ', u.lName) LIKE ?)
     ORDER BY is_friend ASC, u.fName ASC, u.lName ASC
     LIMIT 10
 ");
@@ -63,7 +63,7 @@ while ($user = $result->fetch_assoc()) {
     $users[] = [
         'id' => (int) $user['id'],
         'name' => trim($user['fName'] . ' ' . $user['lName']),
-        'email' => $user['email'],
+        'username' => $user['username'],
         'level' => $level,
         'title' => craftcrawl_user_effective_title($level, $selected_title_index),
         'actor' => [

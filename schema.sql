@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     fName VARCHAR(50) NOT NULL,
     lName VARCHAR(50) NOT NULL,
+    username VARCHAR(24) NOT NULL,
+    usernameChangedAt DATETIME,
     email VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     password_auth_enabled BOOL NOT NULL DEFAULT TRUE,
@@ -32,8 +34,10 @@ CREATE TABLE IF NOT EXISTS users (
     emailVerifiedAt DATETIME,
     disabledAt DATETIME,
     UNIQUE KEY unique_user_email (email),
+    UNIQUE KEY unique_user_username (username),
     UNIQUE KEY unique_user_google_sub (google_sub),
     UNIQUE KEY unique_user_apple_sub (apple_sub),
+    KEY idx_users_username_changed_at (usernameChangedAt),
     KEY idx_users_profile_photo_id (profile_photo_id)
 );
 

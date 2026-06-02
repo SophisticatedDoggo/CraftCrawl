@@ -101,6 +101,7 @@ $suggested_friend_stmt = $conn->prepare("
         u.id,
         u.fName,
         u.lName,
+        u.username,
         u.total_xp,
         " . craftcrawl_level_sql('u.total_xp') . " AS level,
         u.selected_title_index,
@@ -133,6 +134,7 @@ $suggested_friend_stmt = $conn->prepare("
         u.id,
         u.fName,
         u.lName,
+        u.username,
         u.total_xp,
         u.selected_title_index,
         u.selected_profile_frame,
@@ -153,6 +155,7 @@ $leaderboard_stmt = $conn->prepare("
         u.id,
         u.fName,
         u.lName,
+        u.username,
         u.total_xp,
         " . craftcrawl_level_sql('u.total_xp') . " AS level,
         " . craftcrawl_level_xp_sql('u.total_xp') . " AS level_xp,
@@ -344,6 +347,7 @@ if (!$viewer_in_top_ten && $viewer_leaderboard_row !== null) {
                         <?php echo craftcrawl_render_user_avatar($suggested_friend, 'medium', 'friend-suggestion-avatar'); ?>
                         <div>
                             <strong><?php echo escape_output($suggested_name); ?></strong>
+                            <span>@<?php echo escape_output($suggested_friend['username']); ?></span>
                             <span>Level <?php echo escape_output($suggested_level); ?><?php echo $suggested_title !== '' ? ' · ' . escape_output($suggested_title) : ''; ?></span>
                             <span><?php echo escape_output($mutual_friend_count); ?> mutual <?php echo $mutual_friend_count === 1 ? 'friend' : 'friends'; ?></span>
                         </div>
@@ -369,7 +373,7 @@ if (!$viewer_in_top_ten && $viewer_leaderboard_row !== null) {
             <form class="friends-search-form" id="friend-search-form" data-friends-search-form>
                 <label for="friend-search-input">Search friend accounts</label>
                 <div>
-                    <input type="search" id="friend-search-input" name="q" placeholder="Search by name or email" autocomplete="off">
+                    <input type="search" id="friend-search-input" name="q" placeholder="Search by name or username" autocomplete="off">
                 </div>
             </form>
             <div class="friends-search-results" data-sent-friend-requests></div>
@@ -380,7 +384,7 @@ if (!$viewer_in_top_ten && $viewer_leaderboard_row !== null) {
             <h2>Your Friends</h2>
             <label class="friends-list-filter" for="current-friend-filter">
                 <span>Search your friends</span>
-                <input type="search" id="current-friend-filter" data-current-friends-filter placeholder="Search by name" autocomplete="off">
+                <input type="search" id="current-friend-filter" data-current-friends-filter placeholder="Search by name or username" autocomplete="off">
             </label>
             <div class="friend-current-list" data-current-friends-list></div>
         </section>

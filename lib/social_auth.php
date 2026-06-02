@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/env.php';
+require_once __DIR__ . '/usernames.php';
 
 function craftcrawl_social_base64url_decode($value) {
     $remainder = strlen($value) % 4;
@@ -288,8 +289,10 @@ function craftcrawl_social_find_or_create_user($conn, $identity) {
         $profile_photo_url = filter_var($identity['profile_photo_url'] ?? '', FILTER_VALIDATE_URL) ? $identity['profile_photo_url'] : null;
         $profile_photo_source = $profile_photo_url !== null ? $identity['provider'] : null;
 
-        $stmt = $conn->prepare("INSERT INTO users (fName, lName, email, password_hash, password_auth_enabled, {$provider_column}, profile_photo_url, profile_photo_source, createdAt, emailVerifiedAt) VALUES (?, ?, ?, ?, FALSE, ?, ?, ?, ?, ?)");
-        $stmt->bind_param('sssssssss', $first_name, $last_name, $email, $password_hash, $provider_sub, $profile_photo_url, $profile_photo_source, $date, $date);
+        $username = craftcrawl_generate_unique_username($conn, strstr($email, '@', true) ?: $first_name);
+
+        $stmt = $conn->prepare("INSERT INTO users (fName, lName, username, email, password_hash, password_auth_enabled, {$provider_column}, profile_photo_url, profile_photo_source, createdAt, emailVerifiedAt) VALUES (?, ?, ?, ?, ?, FALSE, ?, ?, ?, ?, ?)");
+        $stmt->bind_param('ssssssssss', $first_name, $last_name, $username, $email, $password_hash, $provider_sub, $profile_photo_url, $profile_photo_source, $date, $date);
         $stmt->execute();
         $user = [
             'id' => $stmt->insert_id,

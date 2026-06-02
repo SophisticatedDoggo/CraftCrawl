@@ -1,13 +1,13 @@
 USE craft_crawl;
 
 -- Sample user password: Password1!
-INSERT INTO users (id, fName, lName, email, password_hash, total_xp, auto_accept_friend_invites, friendsSeenAt, createdAt, emailVerifiedAt) VALUES
-(1, 'Avery', 'Miller', 'avery@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 225, FALSE, '2026-05-09 09:00:00', '2026-05-01 09:00:00', '2026-05-01 09:05:00'),
-(2, 'Jordan', 'Parker', 'jordan@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 325, TRUE, NULL, '2026-05-01 09:10:00', '2026-05-01 09:15:00'),
-(3, 'Taylor', 'Reed', 'taylor@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 250, FALSE, NULL, '2026-05-01 09:20:00', '2026-05-01 09:25:00'),
-(4, 'Morgan', 'Chen', 'morgan@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 100, FALSE, NULL, '2026-05-01 09:30:00', '2026-05-01 09:35:00'),
-(5, 'Casey', 'Lopez', 'casey@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 0, TRUE, NULL, '2026-05-01 09:40:00', '2026-05-01 09:45:00'),
-(6, 'Riley', 'Brooks', 'riley@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 0, FALSE, NULL, '2026-05-01 09:50:00', '2026-05-01 09:55:00');
+INSERT INTO users (id, fName, lName, username, email, password_hash, total_xp, auto_accept_friend_invites, friendsSeenAt, createdAt, emailVerifiedAt) VALUES
+(1, 'Avery', 'Miller', 'avery_miller', 'avery@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 225, FALSE, '2026-05-09 09:00:00', '2026-05-01 09:00:00', '2026-05-01 09:05:00'),
+(2, 'Jordan', 'Parker', 'jordan_parker', 'jordan@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 325, TRUE, NULL, '2026-05-01 09:10:00', '2026-05-01 09:15:00'),
+(3, 'Taylor', 'Reed', 'taylor_reed', 'taylor@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 250, FALSE, NULL, '2026-05-01 09:20:00', '2026-05-01 09:25:00'),
+(4, 'Morgan', 'Chen', 'morgan_chen', 'morgan@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 100, FALSE, NULL, '2026-05-01 09:30:00', '2026-05-01 09:35:00'),
+(5, 'Casey', 'Lopez', 'casey_lopez', 'casey@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 0, TRUE, NULL, '2026-05-01 09:40:00', '2026-05-01 09:45:00'),
+(6, 'Riley', 'Brooks', 'riley_brooks', 'riley@example.com', '$2y$10$ySMFSLimwbmfB.OO4Ytv9OkVqummwncw17PVNXv8KtmoSy6iKgn5.', 0, FALSE, NULL, '2026-05-01 09:50:00', '2026-05-01 09:55:00');
 
 INSERT INTO businesses (
     id,

@@ -14,7 +14,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = (int) $_SESSION['user_id'];
 $stmt = $conn->prepare("
-    SELECT fr.id, fr.createdAt, u.fName, u.lName, u.email,
+    SELECT fr.id, fr.createdAt, u.fName, u.lName, u.username,
         u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
     FROM friend_requests fr
     INNER JOIN users u ON u.id = fr.requester_user_id
@@ -31,7 +31,7 @@ while ($request = $result->fetch_assoc()) {
     $requests[] = [
         'id' => (int) $request['id'],
         'name' => trim($request['fName'] . ' ' . $request['lName']),
-        'email' => $request['email'],
+        'username' => $request['username'],
         'actor' => [
             'name' => trim($request['fName'] . ' ' . $request['lName']),
             'initials' => craftcrawl_user_initials($request),
@@ -50,7 +50,7 @@ $sent_stmt = $conn->prepare("
         u.id AS user_id,
         u.fName,
         u.lName,
-        u.email,
+        u.username,
         " . craftcrawl_level_sql('u.total_xp') . " AS level,
         u.selected_title_index,
         u.selected_profile_frame,
@@ -78,7 +78,7 @@ while ($request = $sent_result->fetch_assoc()) {
         'id' => (int) $request['id'],
         'user_id' => (int) $request['user_id'],
         'name' => trim($request['fName'] . ' ' . $request['lName']),
-        'email' => $request['email'],
+        'username' => $request['username'],
         'level' => $level,
         'title' => craftcrawl_user_effective_title($level, $selected_title_index),
         'actor' => [

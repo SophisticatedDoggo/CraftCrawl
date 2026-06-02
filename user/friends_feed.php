@@ -30,6 +30,7 @@ $friend_stmt = $conn->prepare("
         u.id,
         u.fName,
         u.lName,
+        u.username,
         u.show_feed_activity,
         " . craftcrawl_level_sql('u.total_xp') . " AS level,
         u.selected_title_index,
@@ -58,6 +59,7 @@ while ($friend = $friend_result->fetch_assoc()) {
         'fName' => $friend['fName'],
         'lName' => $friend['lName'],
         'name' => trim($friend['fName'] . ' ' . $friend['lName']),
+        'username' => $friend['username'],
         'show_feed_activity' => !empty($friend['show_feed_activity']),
         'level' => $friend_level,
         'title' => craftcrawl_user_effective_title($friend_level, $selected_title_index),
@@ -829,6 +831,7 @@ if (!$before_dt) {
         $friend_list[] = [
             'id' => $id,
             'name' => $friend['name'],
+            'username' => $friend['username'],
             'level' => $friend['level'],
             'title' => $friend['title'],
             'actor' => craftcrawl_feed_person_payload($friend),

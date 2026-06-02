@@ -7,6 +7,7 @@ require_once '../lib/leveling.php';
 require_once '../lib/cloudinary_upload.php';
 require_once '../lib/user_avatar.php';
 require_once '../lib/user_account_deletion.php';
+require_once '../lib/usernames.php';
 include '../db.php';
 
 if (!isset($_SESSION['user_id'])) {
@@ -32,6 +33,8 @@ $settings_stmt = $conn->prepare("
         u.password_auth_enabled,
         u.fName,
         u.lName,
+        u.username,
+        u.usernameChangedAt,
         u.profile_photo_url,
         p.object_key AS profile_photo_object_key
     FROM users u
@@ -92,6 +95,19 @@ $user_level = (int) ($user_settings['level'] ?? 1);
 $selected_title_index = $user_settings['selected_title_index'] !== null ? (int) $user_settings['selected_title_index'] : null;
 $selected_profile_frame = $user_settings['selected_profile_frame'] ?? null;
 $selected_profile_frame_style = $user_settings['selected_profile_frame_style'] ?? 'solid';
+$current_username = $user_settings['username'] ?? '';
+$username_changed_at = $user_settings['usernameChangedAt'] ?? null;
+$username_can_change_at = null;
+$username_can_change = true;
+
+if (!empty($username_changed_at)) {
+    $changed_timestamp = strtotime($username_changed_at);
+    if ($changed_timestamp !== false) {
+        $username_can_change_timestamp = strtotime('+30 days', $changed_timestamp);
+        $username_can_change = time() >= $username_can_change_timestamp;
+        $username_can_change_at = date('F j, Y', $username_can_change_timestamp);
+    }
+}
 
 function escape_output($value) {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
@@ -139,6 +155,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         header('Location: settings.php?message=theme_saved');
         exit();
+    }
+
+    if ($form_action === 'change_username') {
+        $new_username = craftcrawl_normalize_username($_POST['username'] ?? '');
+
+        if (!$username_can_change) {
+            $message = 'username_wait';
+        } elseif ($new_username === $current_username) {
+            header('Location: settings.php?message=username_saved');
+            exit();
+        } elseif (($username_error = craftcrawl_username_available_message($conn, $new_username, $user_id)) !== null) {
+            $message = 'username_error';
+        } else {
+            $username_stmt = $conn->prepare("UPDATE users SET username=?, usernameChangedAt=NOW() WHERE id=?");
+            $username_stmt->bind_param("si", $new_username, $user_id);
+            $username_stmt->execute();
+            header('Location: settings.php?message=username_saved');
+            exit();
+        }
     }
 
     if ($form_action === 'disable_account') {
@@ -325,6 +360,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p class="form-message form-message-success">Privacy settings updated.</p>
         <?php elseif ($message === 'theme_saved') : ?>
             <p class="form-message form-message-success">Display theme updated.</p>
+        <?php elseif ($message === 'username_saved') : ?>
+            <p class="form-message form-message-success">Username updated.</p>
+        <?php elseif ($message === 'username_error') : ?>
+            <p class="form-message form-message-error">Username is not available. Please choose another.</p>
+        <?php elseif ($message === 'username_wait') : ?>
+            <p class="form-message form-message-error">You can change your username again<?php echo $username_can_change_at ? ' on ' . escape_output($username_can_change_at) : ' after 30 days'; ?>.</p>
         <?php elseif ($message === 'profile_photo_size_error') : ?>
             <p class="form-message form-message-error">Profile photo must be smaller than 12 MB.</p>
         <?php elseif ($message === 'profile_photo_error') : ?>
@@ -370,6 +411,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <p class="form-message" data-app-icon-status hidden></p>
             <p class="form-help">This changes the icon shown on this device.</p>
+        </section>
+
+        <section class="settings-panel">
+            <h2>Username</h2>
+            <form method="POST" action="" class="settings-form">
+                <?php echo craftcrawl_csrf_input(); ?>
+                <input type="hidden" name="form_action" value="change_username">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" autocomplete="username" aria-describedby="username_helper" data-username-field data-username-endpoint="../username_check.php" value="<?php echo escape_output($current_username); ?>" <?php echo $username_can_change ? '' : 'disabled'; ?>>
+                <p id="username_helper" class="username-helper" aria-live="polite">
+                    <?php if ($username_can_change) : ?>
+                        Username can use letters, numbers, and underscores.
+                    <?php else : ?>
+                        You can change your username again<?php echo $username_can_change_at ? ' on ' . escape_output($username_can_change_at) : ' after 30 days'; ?>.
+                    <?php endif; ?>
+                </p>
+                <button type="submit" <?php echo $username_can_change ? '' : 'disabled'; ?>>Update Username</button>
+            </form>
         </section>
 
         <section class="settings-panel">
@@ -499,6 +558,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="../js/profile_photo_crop.js?v=<?php echo filemtime(__DIR__ . '/../js/profile_photo_crop.js'); ?>"></script>
     <script src="../js/badge_showcase.js?v=<?php echo filemtime(__DIR__ . '/../js/badge_showcase.js'); ?>"></script>
     <script src="../js/feed_thread.js?v=<?php echo filemtime(__DIR__ . '/../js/feed_thread.js'); ?>"></script>
+    <script src="../js/username_availability.js?v=<?php echo filemtime(__DIR__ . '/../js/username_availability.js'); ?>"></script>
     <script src="../js/user_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/user_shell_navigation.js'); ?>"></script>
     <script src="../js/onesignal_push.js?v=<?php echo filemtime(__DIR__ . '/../js/onesignal_push.js'); ?>"></script>
 </body>

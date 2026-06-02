@@ -637,7 +637,8 @@ label {
 }
 
 .password-requirements,
-.password-match-helper {
+.password-match-helper,
+.username-helper {
     margin: 8px 0 18px;
     color: var(--color-muted);
     font-size: 14px;
@@ -652,13 +653,15 @@ label {
 }
 
 .password-requirements li,
-.password-match-helper {
+.password-match-helper,
+.username-helper {
     position: relative;
     padding-left: 22px;
 }
 
 .password-requirements li::before,
-.password-match-helper::before {
+.password-match-helper::before,
+.username-helper::before {
     content: "";
     position: absolute;
     top: 0.27em;
@@ -670,20 +673,27 @@ label {
 }
 
 .password-requirements .is-met,
-.password-match-helper.is-met {
+.password-match-helper.is-met,
+.username-helper.is-met {
     color: var(--color-success-text);
 }
 
 .password-requirements .is-unmet,
-.password-match-helper.is-unmet {
+.password-match-helper.is-unmet,
+.username-helper.is-unmet {
     color: var(--color-error-text);
 }
 
 .password-requirements .is-met::before,
-.password-match-helper.is-met::before {
+.password-match-helper.is-met::before,
+.username-helper.is-met::before {
     border-color: currentColor;
     background: currentColor;
     box-shadow: inset 0 0 0 3px var(--color-surface);
+}
+
+.username-helper.is-pending {
+    color: var(--color-muted);
 }
 
 .auth-body {

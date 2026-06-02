@@ -6,12 +6,14 @@ include 'db.php';
 include 'config.php';
 require_once 'lib/recaptcha.php';
 require_once 'lib/email_verification.php';
+require_once 'lib/usernames.php';
 
 $message = null;
 $success = null;
 $social_auth_enabled = !empty($GOOGLE_SIGN_IN_CLIENT_ID) || !empty($GOOGLE_IOS_CLIENT_ID) || !empty($APPLE_SIGN_IN_CLIENT_ID);
 
 $email = "";
+$username = "";
 $first_name = "";
 $last_name = "";
 
@@ -23,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
 
     $email = strtolower(trim($_POST['email'] ?? ''));
+    $username = craftcrawl_normalize_username($_POST['username'] ?? '');
     $first_name = clean_text($_POST['first_name'] ?? '');
     $last_name = clean_text($_POST['last_name'] ?? '');
     $password = (string) ($_POST['password'] ?? '');
@@ -40,6 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = "Please complete the reCAPTCHA challenge.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $message = "Please enter a valid email address.";
+    } elseif (($username_error = craftcrawl_username_available_message($conn, $username)) !== null) {
+        $message = $username_error;
     } else {
         $stmt = $conn->prepare("SELECT id FROM users WHERE email=?");
         $stmt->bind_param("s", $email);
@@ -66,8 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 else {
                     $hash = password_hash($password, PASSWORD_DEFAULT);
-                    $stmt = $conn->prepare("INSERT INTO users (fName, lName, email, password_hash, createdAt, emailVerifiedAt) VALUES (?, ?, ?, ?, ?, NULL)");
-                    $stmt->bind_param("sssss", $first_name, $last_name, $email, $hash, $date);
+                    $stmt = $conn->prepare("INSERT INTO users (fName, lName, username, email, password_hash, createdAt, emailVerifiedAt) VALUES (?, ?, ?, ?, ?, ?, NULL)");
+                    $stmt->bind_param("ssssss", $first_name, $last_name, $username, $email, $hash, $date);
                     $stmt->execute();
                     $user_id = $stmt->insert_id;
                     $email_sent = craftcrawl_issue_email_verification($conn, 'user', $user_id, $email);
@@ -142,6 +147,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <label for="email">Email:</label>
             <input type="email" id="email" name="email" required value="<?php echo escape_output($email) ?>"><br><br>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" autocomplete="username" aria-describedby="username_helper" data-username-field value="<?php echo escape_output($username) ?>"><br>
+            <p id="username_helper" class="username-helper" aria-live="polite">Username can use letters, numbers, and underscores.</p>
             <label for="first_name">First Name:</label>
             <input type="text" id="first_name" name="first_name" required value="<?php echo escape_output($first_name) ?>"><br><br>
             <label for="last_name">Last Name:</label>
@@ -197,5 +205,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
     <script src="js/password_visibility.js?v=<?php echo filemtime(__DIR__ . '/js/password_visibility.js'); ?>"></script>
     <script src="js/password_requirements.js?v=<?php echo filemtime(__DIR__ . '/js/password_requirements.js'); ?>"></script>
+    <script src="js/username_availability.js?v=<?php echo filemtime(__DIR__ . '/js/username_availability.js'); ?>"></script>
 </body>
 </html>
