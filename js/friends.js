@@ -1,6 +1,7 @@
 window.CraftCrawlInitFriends = function (scope = document) {
     const panel = scope.querySelector('[data-friends-panel]');
     const managerPage = scope.querySelector('[data-friends-manager-page]');
+    const profilePage = scope.querySelector('[data-profile-friends-page]');
     const root = managerPage || scope;
     const form = root.querySelector('[data-friends-search-form]');
     const input = root.querySelector('#friend-search-input');
@@ -11,6 +12,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     const currentFriendsFilter = root.querySelector('[data-current-friends-filter]');
     const recommendationButtons = root.querySelectorAll('[data-recommendation-id]');
     const suggestedFriendButtons = root.querySelectorAll('[data-suggested-friend-action]');
+    const profileFriendButtons = root.querySelectorAll('[data-profile-friend-action]');
     const feed = panel?.querySelector('[data-friends-feed]');
     const sentinel = feed?.querySelector('[data-feed-sentinel]');
     const status = root.querySelector('[data-friends-status]');
@@ -18,7 +20,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     const menuBadges = document.querySelectorAll('[data-friends-menu-badge]');
     const tabBadges = document.querySelectorAll('[data-friends-tab-badge]');
     const menuToggleBadges = document.querySelectorAll('[data-friends-menu-toggle-badge]');
-    const csrfToken = panel?.dataset.csrfToken || managerPage?.dataset.csrfToken || '';
+    const csrfToken = panel?.dataset.csrfToken || managerPage?.dataset.csrfToken || profilePage?.dataset.csrfToken || '';
     let currentStatus = {
         pendingInvites: 0,
         pendingRecommendations: 0,
@@ -171,7 +173,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
     installFeedReactionHandler();
 
-    if (!panel && !managerPage && !menuBadges.length && !tabBadges.length && !menuToggleBadges.length) {
+    if (!panel && !managerPage && !profileFriendButtons.length && !suggestedFriendButtons.length && !menuBadges.length && !tabBadges.length && !menuToggleBadges.length) {
         return;
     }
 
@@ -2021,7 +2023,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
     function refreshFriendsData() {
         loadRequests();
-        return loadFeed()
+        const feedRequest = feed ? loadFeed() : Promise.resolve();
+        return feedRequest
             .then(() => loadStatus())
             .then(() => {
                 if (managerPage && currentStatus.newFriends > 0) {
@@ -2119,7 +2122,14 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     if (data.xp_reward && window.craftcrawlShowXpReward) {
                         window.craftcrawlShowXpReward(data.xp_reward);
                     }
+                    const list = button.closest('[data-suggested-friends-list]');
                     button.closest('.friend-suggestion-card')?.remove();
+                    if (list && !list.querySelector('.friend-suggestion-card')) {
+                        const empty = list.querySelector('[data-suggested-friends-empty]');
+                        if (empty) {
+                            empty.hidden = false;
+                        }
+                    }
                     refreshFriendsData();
                 })
                 .catch(() => {
@@ -2127,6 +2137,62 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     button.disabled = false;
                     button.classList.remove('is-loading');
                     button.textContent = 'Invite';
+                });
+        });
+    });
+
+    profileFriendButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const action = button.dataset.profileFriendAction;
+            const originalText = button.textContent;
+            button.disabled = true;
+            button.classList.add('is-loading');
+            button.textContent = action === 'accept' ? 'Accepting...' : 'Sending...';
+
+            const request = action === 'accept'
+                ? postForm(userEndpoint('friend_respond.php'), {
+                    csrf_token: csrfToken,
+                    request_id: button.dataset.requestId,
+                    response: 'accepted'
+                })
+                : postForm(userEndpoint('friend_add.php'), {
+                    csrf_token: csrfToken,
+                    friend_id: button.dataset.friendId
+                });
+
+            request
+                .then((data) => {
+                    if (!data.ok) {
+                        showStatus(data.message || 'Friend invite could not be updated.', true);
+                        button.disabled = false;
+                        button.classList.remove('is-loading');
+                        button.textContent = originalText;
+                        return;
+                    }
+
+                    showStatus(data.message || 'Friend invite updated.', false);
+                    if (data.xp_reward && window.craftcrawlShowXpReward) {
+                        window.craftcrawlShowXpReward(data.xp_reward);
+                    }
+
+                    button.classList.remove('is-loading');
+                    if (action === 'accept' || data.status === 'friends') {
+                        const link = document.createElement('a');
+                        link.href = `profile.php?id=${encodeURIComponent(button.dataset.friendId)}`;
+                        link.textContent = 'View Profile';
+                        button.replaceWith(link);
+                    } else {
+                        button.textContent = 'Invite Sent';
+                        button.removeAttribute('data-profile-friend-action');
+                        button.disabled = true;
+                    }
+                    loadStatus();
+                })
+                .catch(() => {
+                    showStatus('Friend invite could not be updated. Please try again.', true);
+                    button.disabled = false;
+                    button.classList.remove('is-loading');
+                    button.textContent = originalText;
                 });
         });
     });

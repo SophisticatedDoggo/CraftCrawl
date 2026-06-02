@@ -199,6 +199,7 @@ if (!$profile) {
     $profile_frame = $profile['selected_profile_frame'] ?? null;
     $slot_count = craftcrawl_badge_showcase_slot_count($profile_level);
     $next_reward = $is_own_profile ? craftcrawl_next_reward_preview($profile_level) : null;
+    $suggested_friends = null;
 
     $showcase_stmt = $conn->prepare("
         SELECT ubs.slot_order, ubs.badge_key, ub.badge_name, ub.badge_description, ub.badge_tier
@@ -240,6 +241,61 @@ if (!$profile) {
     $stats_stmt->bind_param("iiii", $profile_id, $profile_id, $profile_id, $profile_id);
     $stats_stmt->execute();
     $profile_stats = $stats_stmt->get_result()->fetch_assoc();
+
+    if ($is_own_profile) {
+        $suggested_friend_stmt = $conn->prepare("
+            SELECT
+                u.id,
+                u.fName,
+                u.lName,
+                u.username,
+                u.total_xp,
+                " . craftcrawl_level_sql('u.total_xp') . " AS level,
+                u.selected_title_index,
+                u.selected_profile_frame, u.selected_profile_frame_style,
+                u.profile_photo_url,
+                p.object_key AS profile_photo_object_key,
+                COUNT(DISTINCT my_friends.friend_user_id) AS mutual_friend_count
+            FROM user_friends my_friends
+            INNER JOIN user_friends mutual_links
+                ON mutual_links.user_id = my_friends.friend_user_id
+            INNER JOIN users u
+                ON u.id = mutual_links.friend_user_id
+            LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+            LEFT JOIN user_friends existing_friend
+                ON existing_friend.user_id=? AND existing_friend.friend_user_id=u.id
+            LEFT JOIN user_friends reverse_existing_friend
+                ON reverse_existing_friend.user_id=u.id AND reverse_existing_friend.friend_user_id=?
+            LEFT JOIN friend_requests sent
+                ON sent.requester_user_id=? AND sent.addressee_user_id=u.id AND sent.status='pending'
+            LEFT JOIN friend_requests received
+                ON received.requester_user_id=u.id AND received.addressee_user_id=? AND received.status='pending'
+            WHERE my_friends.user_id=?
+                AND u.id <> ?
+                AND u.disabledAt IS NULL
+                AND existing_friend.id IS NULL
+                AND reverse_existing_friend.id IS NULL
+                AND sent.id IS NULL
+                AND received.id IS NULL
+            GROUP BY
+                u.id,
+                u.fName,
+                u.lName,
+                u.username,
+                u.total_xp,
+                u.selected_title_index,
+                u.selected_profile_frame,
+                u.selected_profile_frame_style,
+                u.profile_photo_url,
+                p.object_key
+            HAVING mutual_friend_count >= 2
+            ORDER BY mutual_friend_count DESC, u.fName ASC, u.lName ASC
+            LIMIT 8
+        ");
+        $suggested_friend_stmt->bind_param("iiiiii", $viewer_id, $viewer_id, $viewer_id, $viewer_id, $viewer_id, $viewer_id);
+        $suggested_friend_stmt->execute();
+        $suggested_friends = $suggested_friend_stmt->get_result();
+    }
 
     $past_checkins_stmt = $conn->prepare("
         SELECT uv.id, uv.visit_type, uv.xp_awarded, uv.checkedInAt, l.id AS business_id, l.name AS bName, l.location_type AS bType, l.city, l.state
@@ -291,16 +347,22 @@ if (!$profile) {
                 u.selected_profile_frame, u.selected_profile_frame_style,
                 u.profile_photo_url,
                 p.object_key AS profile_photo_object_key,
-                CASE WHEN viewer_friend.id IS NULL THEN 0 ELSE 1 END AS is_viewer_friend
+                CASE WHEN viewer_friend.id IS NULL THEN 0 ELSE 1 END AS is_viewer_friend,
+                sent.id AS sent_request_id,
+                received.id AS received_request_id
             FROM user_friends uf
             INNER JOIN users u ON u.id = uf.friend_user_id
             LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
             LEFT JOIN user_friends viewer_friend
                 ON viewer_friend.user_id=? AND viewer_friend.friend_user_id=u.id
+            LEFT JOIN friend_requests sent
+                ON sent.requester_user_id=? AND sent.addressee_user_id=u.id AND sent.status='pending'
+            LEFT JOIN friend_requests received
+                ON received.requester_user_id=u.id AND received.addressee_user_id=? AND received.status='pending'
             WHERE uf.user_id=? AND u.disabledAt IS NULL
             ORDER BY u.fName ASC, u.lName ASC
         ");
-        $profile_friends_stmt->bind_param("ii", $viewer_id, $profile_id);
+        $profile_friends_stmt->bind_param("iiii", $viewer_id, $viewer_id, $viewer_id, $profile_id);
         $profile_friends_stmt->execute();
         $profile_friends = $profile_friends_stmt->get_result();
 
@@ -346,7 +408,7 @@ if (!$profile) {
 </head>
 <body>
     <div data-user-page-content>
-    <main class="settings-page profile-page">
+    <main class="settings-page profile-page" data-profile-friends-page data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
         <header class="settings-header">
             <div>
                 <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
@@ -724,6 +786,38 @@ if (!$profile) {
                 </div>
             </section>
 
+            <?php if ($is_own_profile && $suggested_friends !== null) : ?>
+                <section class="settings-panel friends-manager-section">
+                    <h2>Suggested Friends</h2>
+                    <div class="friend-recommendation-list" data-suggested-friends-list>
+                        <?php if ($suggested_friends->num_rows === 0) : ?>
+                            <p data-suggested-friends-empty>No suggested friends yet.</p>
+                        <?php endif; ?>
+                        <?php while ($suggested_friend = $suggested_friends->fetch_assoc()) : ?>
+                            <?php
+                                $suggested_level = max(1, (int) ($suggested_friend['level'] ?? 1));
+                                $suggested_selected_idx = $suggested_friend['selected_title_index'] !== null ? (int) $suggested_friend['selected_title_index'] : null;
+                                $suggested_title = craftcrawl_user_effective_title($suggested_level, $suggested_selected_idx);
+                                $suggested_name = trim($suggested_friend['fName'] . ' ' . $suggested_friend['lName']);
+                                $mutual_friend_count = (int) $suggested_friend['mutual_friend_count'];
+                            ?>
+                            <article class="friend-recommendation-card friend-suggestion-card" data-suggested-friend-id="<?php echo escape_output($suggested_friend['id']); ?>">
+                                <?php echo craftcrawl_render_user_avatar($suggested_friend, 'medium', 'friend-suggestion-avatar'); ?>
+                                <div>
+                                    <strong><?php echo escape_output($suggested_name); ?></strong>
+                                    <span>@<?php echo escape_output($suggested_friend['username']); ?></span>
+                                    <span>Level <?php echo escape_output($suggested_level); ?><?php echo $suggested_title !== '' ? ' · ' . escape_output($suggested_title) : ''; ?></span>
+                                    <span><?php echo escape_output($mutual_friend_count); ?> mutual <?php echo $mutual_friend_count === 1 ? 'friend' : 'friends'; ?></span>
+                                </div>
+                                <div>
+                                    <button type="button" data-suggested-friend-action="invite" data-friend-id="<?php echo escape_output($suggested_friend['id']); ?>">Invite</button>
+                                </div>
+                            </article>
+                        <?php endwhile; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
+
             <?php if (!$is_own_profile) : ?>
                 <section class="settings-panel" data-profile-filter-list data-profile-page-size="10">
                     <div class="profile-list-header">
@@ -756,8 +850,12 @@ if (!$profile) {
                                 <div class="friend-current-actions">
                                     <?php if ($can_open_profile_friend) : ?>
                                         <a href="profile.php?id=<?php echo escape_output($profile_friend['id']); ?>">View Profile</a>
+                                    <?php elseif (!empty($profile_friend['received_request_id'])) : ?>
+                                        <button type="button" data-profile-friend-action="accept" data-request-id="<?php echo escape_output($profile_friend['received_request_id']); ?>" data-friend-id="<?php echo escape_output($profile_friend['id']); ?>">Accept Invite</button>
+                                    <?php elseif (!empty($profile_friend['sent_request_id'])) : ?>
+                                        <button type="button" disabled>Invite Sent</button>
                                     <?php else : ?>
-                                        <span class="profile-friend-private-label">Friend of friend</span>
+                                        <button type="button" data-profile-friend-action="invite" data-friend-id="<?php echo escape_output($profile_friend['id']); ?>">Add Friend</button>
                                     <?php endif; ?>
                                 </div>
                             </article>

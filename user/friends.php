@@ -331,9 +331,9 @@ if (!$viewer_in_top_ten && $viewer_leaderboard_row !== null) {
 
         <section class="settings-panel friends-manager-section">
             <h2>Suggested Friends</h2>
-            <div class="friend-recommendation-list">
+            <div class="friend-recommendation-list" data-suggested-friends-list>
                 <?php if ($suggested_friends->num_rows === 0) : ?>
-                    <p>No suggested friends yet.</p>
+                    <p data-suggested-friends-empty>No suggested friends yet.</p>
                 <?php endif; ?>
                 <?php while ($suggested_friend = $suggested_friends->fetch_assoc()) : ?>
                     <?php
@@ -352,7 +352,6 @@ if (!$viewer_in_top_ten && $viewer_leaderboard_row !== null) {
                             <span><?php echo escape_output($mutual_friend_count); ?> mutual <?php echo $mutual_friend_count === 1 ? 'friend' : 'friends'; ?></span>
                         </div>
                         <div>
-                            <a href="profile.php?id=<?php echo escape_output($suggested_friend['id']); ?>">View Profile</a>
                             <button type="button" data-suggested-friend-action="invite" data-friend-id="<?php echo escape_output($suggested_friend['id']); ?>">Invite</button>
                         </div>
                     </article>
