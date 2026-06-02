@@ -853,7 +853,7 @@ if (!$profile) {
                                     <?php elseif (!empty($profile_friend['received_request_id'])) : ?>
                                         <button type="button" data-profile-friend-action="accept" data-request-id="<?php echo escape_output($profile_friend['received_request_id']); ?>" data-friend-id="<?php echo escape_output($profile_friend['id']); ?>">Accept Invite</button>
                                     <?php elseif (!empty($profile_friend['sent_request_id'])) : ?>
-                                        <button type="button" disabled>Invite Sent</button>
+                                        <button type="button" disabled>Request Pending</button>
                                     <?php else : ?>
                                         <button type="button" data-profile-friend-action="invite" data-friend-id="<?php echo escape_output($profile_friend['id']); ?>">Add Friend</button>
                                     <?php endif; ?>

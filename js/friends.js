@@ -2023,7 +2023,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
     function refreshFriendsData() {
         loadRequests();
-        const feedRequest = feed ? loadFeed() : Promise.resolve();
+        const feedRequest = (feed || currentFriendsList || count) ? loadFeed() : Promise.resolve();
         return feedRequest
             .then(() => loadStatus())
             .then(() => {
@@ -2182,7 +2182,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                         link.textContent = 'View Profile';
                         button.replaceWith(link);
                     } else {
-                        button.textContent = 'Invite Sent';
+                        button.textContent = 'Request Pending';
                         button.removeAttribute('data-profile-friend-action');
                         button.disabled = true;
                     }
