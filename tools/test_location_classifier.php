@@ -14,6 +14,21 @@ $cases = [
         'decision' => 'auto_add',
         'category' => 'winery',
     ],
+    'limo company with google winery label rejects' => [
+        'candidate' => ['name' => 'A Black Tie Affair Limousine Service', 'street_address' => '2 Main St', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => 'winery', 'primary_type_display_name' => 'Winery', 'types' => ['winery'], 'website' => '', 'phone' => '555'],
+        'decision' => 'reject',
+        'category' => 'other',
+    ],
+    'winery limo name rejects as transportation' => [
+        'candidate' => ['name' => 'Long Island Winery Limo', 'street_address' => '2 Main St', 'latitude' => 40.1, 'longitude' => -73.5, 'primary_type' => 'winery', 'primary_type_display_name' => 'Winery', 'types' => ['winery'], 'website' => '', 'phone' => '555'],
+        'decision' => 'reject',
+        'category' => 'other',
+    ],
+    'limousine service google type rejects' => [
+        'candidate' => ['name' => 'Gold Star Transportation', 'street_address' => '2 Main St', 'latitude' => 40.1, 'longitude' => -73.5, 'primary_type' => 'limousine_service', 'primary_type_display_name' => 'Limousine service', 'types' => ['limousine_service', 'winery'], 'website' => '', 'phone' => '555'],
+        'decision' => 'reject',
+        'category' => 'other',
+    ],
     'meadery auto-adds' => [
         'candidate' => ['name' => 'Golden Hive Meadery', 'street_address' => '3 Main St', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => '', 'types' => [], 'website' => 'https://example.com', 'phone' => '555'],
         'decision' => 'auto_add',
@@ -54,6 +69,11 @@ $cases = [
         'decision' => 'auto_add',
         'category' => 'brewery',
     ],
+    'brewery warehouse rejects' => [
+        'candidate' => ['name' => 'City brewery', 'street_address' => '1001 Technology Drive', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => 'warehouse', 'primary_type_display_name' => 'Warehouse', 'types' => ['warehouse', 'brewery'], 'website' => '', 'phone' => '555', 'search_term' => 'brewery'],
+        'decision' => 'reject',
+        'category' => 'other',
+    ],
     'station taproom brunch restaurant rejects' => [
         'candidate' => ['name' => 'Station Taproom', 'street_address' => '207 W Lancaster Ave', 'latitude' => 40.1, 'longitude' => -75.7, 'primary_type' => 'brunch_restaurant', 'primary_type_display_name' => 'Brunch restaurant', 'types' => ['brunch_restaurant', 'restaurant'], 'website' => 'https://stationtaproom.com', 'phone' => '555', 'search_term' => 'taproom'],
         'decision' => 'reject',
@@ -61,6 +81,16 @@ $cases = [
     ],
     'plain distillery auto-adds' => [
         'candidate' => ['name' => 'McLaughlin Distillery', 'street_address' => '3799 Blackburn Road', 'latitude' => 40.1, 'longitude' => -79.1, 'primary_type' => '', 'types' => [], 'website' => '', 'phone' => '555', 'search_term' => 'distillery'],
+        'decision' => 'auto_add',
+        'category' => 'distillery',
+    ],
+    'distilling company without public venue reviews' => [
+        'candidate' => ['name' => 'Motherwell Distilling Co', 'street_address' => '877 S Pickett St', 'latitude' => 38.8, 'longitude' => -77.1, 'primary_type' => 'distillery', 'primary_type_display_name' => 'Distillery', 'types' => ['distillery'], 'website' => 'https://va.motherwelldistilling.co', 'phone' => '555', 'search_term' => 'distillery'],
+        'decision' => 'needs_review',
+        'category' => 'distillery',
+    ],
+    'distilling company tasting room auto-adds' => [
+        'candidate' => ['name' => 'Motherwell Distilling Co Tasting Room', 'street_address' => '877 S Pickett St', 'latitude' => 38.8, 'longitude' => -77.1, 'primary_type' => 'distillery', 'primary_type_display_name' => 'Distillery', 'types' => ['distillery'], 'website' => 'https://va.motherwelldistilling.co', 'phone' => '555', 'search_term' => 'distillery'],
         'decision' => 'auto_add',
         'category' => 'distillery',
     ],

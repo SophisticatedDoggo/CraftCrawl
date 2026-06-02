@@ -88,10 +88,6 @@ function import_duplicate_summary($conn, array $result, $source_provider = 'mapb
 }
 
 function import_result_suggested_type(array $result, $requested_type, $conn) {
-    if ($requested_type !== 'any') {
-        return $requested_type;
-    }
-
     $classification = craftcrawl_classify_location_candidate([
         'name' => $result['name'] ?? '',
         'street_address' => $result['street_address'] ?? '',
@@ -103,6 +99,14 @@ function import_result_suggested_type(array $result, $requested_type, $conn) {
         'types' => $result['types'] ?? [],
         'search_term' => $requested_type,
     ], craftcrawl_active_chain_patterns($conn));
+
+    if ($classification['decision'] === 'reject') {
+        return 'other';
+    }
+
+    if ($requested_type !== 'any' && $classification['suggested_category'] === 'other') {
+        return $requested_type;
+    }
 
     return $classification['suggested_category'] !== 'other' ? $classification['suggested_category'] : 'bar';
 }

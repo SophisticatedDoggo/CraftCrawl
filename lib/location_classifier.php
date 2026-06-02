@@ -182,6 +182,29 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
     $has_club_name = craftcrawl_classifier_contains_any($name, ['club', 'vfw', 'american legion']) !== null;
     $taproom_name_match = craftcrawl_classifier_contains_any($name, ['taproom', 'tap room', 'taphouse', 'tap house']);
     $fraternal_social_club_match = craftcrawl_classifier_fraternal_social_club_match($name);
+    $public_venue_match = craftcrawl_classifier_contains_any(implode(' ', [$name, $description, $website, $primary_type, implode(' ', $types)]), [
+        'taproom',
+        'tap room',
+        'taphouse',
+        'tap house',
+        'tasting room',
+        'wine tasting',
+        'tours',
+        'tour',
+        'pub',
+        'brewpub',
+        'bar',
+        'lounge',
+        'restaurant',
+        'kitchen',
+        'beer garden',
+        'cocktail',
+        'visitor center',
+    ]);
+    $distilling_company_name = (bool) preg_match(
+        '/\b(?:distilling|distillery|spirits)\s+(?:co|co\.|company|llc|inc|corp|corporation|manufacturing|production|producers?)\b/i',
+        $name
+    );
 
     $score = 0;
     $positive = [];
@@ -346,7 +369,7 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         }
     }
 
-    $hard_type = craftcrawl_classifier_type_has_any($types, ['fast_food_restaurant', 'gas_station', 'convenience_store', 'liquor_store', 'wine_store', 'grocery_store', 'movie_theater', 'bowling_alley', 'casino', 'school', 'church', 'apartment_building', 'apartment_complex', 'real_estate_agency']);
+    $hard_type = craftcrawl_classifier_type_has_any($types, ['fast_food_restaurant', 'gas_station', 'convenience_store', 'liquor_store', 'wine_store', 'grocery_store', 'movie_theater', 'bowling_alley', 'casino', 'school', 'church', 'apartment_building', 'apartment_complex', 'real_estate_agency', 'warehouse', 'storage', 'storage_facility', 'manufacturer', 'manufacturing', 'factory', 'industrial', 'industrial_building', 'corporate_office', 'distribution_service', 'distribution_center', 'wholesaler', 'food_products_supplier', 'limousine_service', 'transportation_service', 'taxi_service', 'chauffeur_service', 'airport_shuttle_service', 'bus_charter', 'car_rental', 'travel_agency']);
     if ($hard_type) {
         $hard_reject = true;
         $score -= 80;
@@ -367,6 +390,19 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
         $score -= 100;
         $suggested_category = 'other';
         $negative[] = 'hard reject: retail/state alcohol store: ' . $retail_alcohol_name;
+    }
+
+    $transportation_name = craftcrawl_classifier_contains_any($name, ['limousine', 'limo', 'chauffeur', 'car service', 'party bus', 'airport shuttle', 'shuttle service', 'taxi service', 'transportation service', 'charter bus']);
+    if ($transportation_name) {
+        $hard_reject = true;
+        $score -= 120;
+        $suggested_category = 'other';
+        $negative[] = 'hard reject: transportation/service business name: ' . $transportation_name;
+    }
+
+    if ($distilling_company_name && $public_venue_match === null) {
+        $score -= 65;
+        $negative[] = '-65 distilling company name without public venue signal';
     }
 
     if ($veterans_club_match !== null && !$has_veterans_post_number) {
@@ -434,6 +470,8 @@ function craftcrawl_classify_location_candidate(array $candidate, array $chain_p
 
     if ($hard_reject) {
         $decision = 'reject';
+    } elseif ($distilling_company_name && $public_venue_match === null && in_array($suggested_category, $core_auto_categories, true)) {
+        $decision = 'needs_review';
     } elseif ($has_veterans_post_number) {
         $decision = 'auto_add';
     } elseif ($google_label_category === 'bar' && $explicit_name_category === 'social_club' && $score >= 90) {
