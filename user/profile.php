@@ -3,6 +3,7 @@ require '../login_check.php';
 require_once '../lib/leveling.php';
 require_once '../lib/user_avatar.php';
 require_once '../lib/cloudinary_upload.php';
+require_once '../lib/usernames.php';
 include '../db.php';
 
 if (!isset($_SESSION['user_id'])) {
@@ -64,7 +65,7 @@ if (!$can_view_profile) {
     $profile = null;
 } else {
     $profile_stmt = $conn->prepare("
-        SELECT u.id, u.fName, u.lName, u.createdAt, u.show_liked_businesses, u.show_profile_rewards, " . craftcrawl_level_sql('u.total_xp') . " AS level, u.selected_title_index, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
+        SELECT u.id, u.fName, u.lName, u.username, u.usernameChangedAt, u.createdAt, u.show_liked_businesses, u.show_profile_rewards, " . craftcrawl_level_sql('u.total_xp') . " AS level, u.selected_title_index, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
         FROM users u
         LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
         WHERE u.id=? AND u.disabledAt IS NULL
@@ -72,6 +73,20 @@ if (!$can_view_profile) {
     $profile_stmt->bind_param("i", $profile_id);
     $profile_stmt->execute();
     $profile = $profile_stmt->get_result()->fetch_assoc();
+}
+
+$current_username = $profile['username'] ?? '';
+$username_changed_at = $profile['usernameChangedAt'] ?? null;
+$username_can_change_at = null;
+$username_can_change = true;
+
+if ($is_own_profile && !empty($username_changed_at)) {
+    $changed_timestamp = strtotime($username_changed_at);
+    if ($changed_timestamp !== false) {
+        $username_can_change_timestamp = strtotime('+30 days', $changed_timestamp);
+        $username_can_change = time() >= $username_can_change_timestamp;
+        $username_can_change_at = date('F j, Y', $username_can_change_timestamp);
+    }
 }
 
 if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['form_action'] ?? ''), ['unfollow_business', 'remove_want_to_go'], true)) {
@@ -98,6 +113,25 @@ if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST
 
 if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && craftcrawl_request_exceeds_post_max_size()) {
     craftcrawl_redirect('user/profile.php?message=profile_photo_size_error');
+}
+
+if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form_action'] ?? '') === 'change_username') {
+    craftcrawl_verify_csrf();
+
+    $new_username = craftcrawl_normalize_username($_POST['username'] ?? '');
+
+    if (!$username_can_change) {
+        $message = 'username_wait';
+    } elseif ($new_username === $current_username) {
+        craftcrawl_redirect('user/profile.php?message=username_saved');
+    } elseif (($username_error = craftcrawl_username_available_message($conn, $new_username, $viewer_id)) !== null) {
+        $message = 'username_error';
+    } else {
+        $username_stmt = $conn->prepare("UPDATE users SET username=?, usernameChangedAt=NOW() WHERE id=?");
+        $username_stmt->bind_param("si", $new_username, $viewer_id);
+        $username_stmt->execute();
+        craftcrawl_redirect('user/profile.php?message=username_saved');
+    }
 }
 
 if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form_action'] ?? '') === 'profile') {
@@ -437,6 +471,12 @@ if (!$profile) {
         <?php else : ?>
             <?php if ($is_own_profile && $message === 'profile_saved') : ?>
                 <p class="form-message form-message-success">Profile updated.</p>
+            <?php elseif ($is_own_profile && $message === 'username_saved') : ?>
+                <p class="form-message form-message-success">Username updated.</p>
+            <?php elseif ($is_own_profile && $message === 'username_error') : ?>
+                <p class="form-message form-message-error">Username is not available. Please choose another.</p>
+            <?php elseif ($is_own_profile && $message === 'username_wait') : ?>
+                <p class="form-message form-message-error">You can change your username again<?php echo $username_can_change_at ? ' on ' . escape_output($username_can_change_at) : ' after 30 days'; ?>.</p>
             <?php elseif ($is_own_profile && $message === 'profile_name_error') : ?>
                 <p class="form-message form-message-error">First and last name are required.</p>
             <?php elseif ($is_own_profile && $message === 'profile_photo_size_error') : ?>
@@ -450,7 +490,7 @@ if (!$profile) {
             <?php endif; ?>
             <section class="settings-panel profile-hero-panel">
                 <?php if ($is_own_profile) : ?>
-                    <details class="profile-edit-disclosure"<?php echo in_array($message, ['profile_name_error', 'profile_photo_error', 'profile_photo_size_error'], true) ? ' open' : ''; ?>>
+                    <details class="profile-edit-disclosure"<?php echo in_array($message, ['profile_name_error', 'profile_photo_error', 'profile_photo_size_error', 'username_error', 'username_wait', 'username_saved'], true) ? ' open' : ''; ?>>
                         <summary>
                             <span class="profile-edit-label-closed">Edit Profile</span>
                             <span class="profile-edit-label-open">Close Editor</span>
@@ -519,6 +559,20 @@ if (!$profile) {
                                 <p class="form-help">Profile frames unlock at Level 5.</p>
                             <?php endif; ?>
                             <button type="submit">Save Profile</button>
+                        </form>
+                        <form method="POST" action="" class="settings-form profile-username-form">
+                            <?php echo craftcrawl_csrf_input(); ?>
+                            <input type="hidden" name="form_action" value="change_username">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" autocomplete="username" aria-describedby="username_helper" data-username-field data-username-endpoint="../username_check.php" value="<?php echo escape_output($current_username); ?>" <?php echo $username_can_change ? '' : 'disabled'; ?>>
+                            <p id="username_helper" class="username-helper" aria-live="polite">
+                                <?php if ($username_can_change) : ?>
+                                    Username can use letters, numbers, and underscores.
+                                <?php else : ?>
+                                    You can change your username again<?php echo $username_can_change_at ? ' on ' . escape_output($username_can_change_at) : ' after 30 days'; ?>.
+                                <?php endif; ?>
+                            </p>
+                            <button type="submit" <?php echo $username_can_change ? '' : 'disabled'; ?>>Update Username</button>
                         </form>
                     </details>
                 <?php endif; ?>
@@ -915,6 +969,7 @@ if (!$profile) {
     <script src="../js/badge_showcase.js?v=<?php echo filemtime(__DIR__ . '/../js/badge_showcase.js'); ?>"></script>
     <script src="../js/profile_list_search.js?v=<?php echo filemtime(__DIR__ . '/../js/profile_list_search.js'); ?>"></script>
     <script src="../js/feed_thread.js?v=<?php echo filemtime(__DIR__ . '/../js/feed_thread.js'); ?>"></script>
+    <script src="../js/username_availability.js?v=<?php echo filemtime(__DIR__ . '/../js/username_availability.js'); ?>"></script>
     <script src="../js/user_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/user_shell_navigation.js'); ?>"></script>
     <script src="../js/onesignal_push.js?v=<?php echo filemtime(__DIR__ . '/../js/onesignal_push.js'); ?>"></script>
 </body>
