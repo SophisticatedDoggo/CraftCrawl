@@ -5,6 +5,7 @@ require_once __DIR__ . '/leveling.php';
 const CRAFTCRAWL_DAILY_QUEST_COUNT = 3;
 const CRAFTCRAWL_WEEKLY_QUEST_COUNT = 3;
 const CRAFTCRAWL_QUEST_RESET_HOUR = 3;
+const CRAFTCRAWL_QUEST_ROTATION_VERSION = 2;
 
 function craftcrawl_quest_pool() {
     return [
@@ -220,7 +221,7 @@ function craftcrawl_active_quest_definitions_for_period($period_type, $timestamp
     $period = craftcrawl_quest_period_bounds($period_type, $timestamp);
     $pool = array_filter(craftcrawl_quest_pool(), fn($quest) => ($quest['period_type'] ?? '') === $period_type);
     $count = $period_type === 'weekly' ? CRAFTCRAWL_WEEKLY_QUEST_COUNT : CRAFTCRAWL_DAILY_QUEST_COUNT;
-    $seed = $period_type . ':' . $period['start_at'];
+    $seed = $period_type . ':' . $period['start_at'] . ':v' . CRAFTCRAWL_QUEST_ROTATION_VERSION;
 
     uksort($pool, function ($left, $right) use ($seed) {
         $left_score = sprintf('%u', crc32($seed . ':' . $left));
