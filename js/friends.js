@@ -2057,6 +2057,10 @@ window.CraftCrawlInitFriends = function (scope = document) {
         return loadFeed();
     }
 
+    function hasRenderedFeedItems() {
+        return Boolean(feed?.querySelector('.friends-feed-item[data-feed-item-key]'));
+    }
+
     window.CraftCrawlRefreshFriendsFeed = refreshVisibleFeed;
 
     window.addEventListener('craftcrawl:event-want-updated', () => {
@@ -2066,6 +2070,10 @@ window.CraftCrawlInitFriends = function (scope = document) {
     window.addEventListener('craftcrawl:user-tab-changed', (event) => {
         if (event.detail?.tab === 'feed') {
             updateFocusRequestFromUrl(event.detail?.url || window.location.href);
+            if (!event.detail?.userInitiated && hasRenderedFeedItems()) {
+                playPendingThreadReturnAnchor();
+                return;
+            }
             refreshVisibleFeed()
                 .then(() => {
                     if (event.detail?.userInitiated) {
