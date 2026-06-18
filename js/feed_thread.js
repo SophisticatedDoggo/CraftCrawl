@@ -447,7 +447,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         clearComposeTarget();
         activeComposeTarget = target || null;
         activeComposeTarget?.classList.add('is-compose-target');
-        composerTargetSnapshot = !parentId && activeComposeTarget
+        composerTargetSnapshot = activeComposeTarget
             ? { element: activeComposeTarget, html: activeComposeTarget.innerHTML }
             : null;
 
