@@ -4799,18 +4799,48 @@ a.mobile-context-back.feed-thread-back-link:focus {
 }
 
 .feed-compose-reference .feed-compose-reference-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
     margin: 0;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
+    pointer-events: none;
     cursor: default;
 }
 
-.feed-compose-reference .feed-compose-reference-item:hover,
-.feed-compose-reference .feed-compose-reference-item:focus {
+.feed-compose-reference-avatar {
+    min-width: 48px;
+}
+
+.feed-compose-reference-avatar > * {
+    min-height: 0;
+    padding: 0;
+    border: 0;
     background: transparent;
+    box-shadow: none;
+}
+
+.feed-compose-reference-copy {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+}
+
+.feed-compose-reference-copy strong {
+    color: var(--color-heading);
+    font-size: 1.02rem;
+    line-height: 1.28;
+}
+
+.feed-compose-reference-copy span {
+    color: var(--color-muted);
+    font-size: 13px;
+}
+
+.feed-compose-reference-copy p {
+    margin: 3px 0 0;
+    color: var(--color-text);
+    line-height: 1.35;
 }
 
 .feed-compose-form > label,
@@ -4865,10 +4895,11 @@ a.mobile-context-back.feed-thread-back-link:focus {
     }
 
     .feed-compose-reference .feed-compose-reference-item {
-        --feed-avatar-track: 48px;
-        --feed-column-gap: 10px;
-        grid-template-columns: 48px minmax(0, 1fr);
         gap: 10px;
+    }
+
+    .feed-compose-reference-copy strong {
+        font-size: .95rem;
     }
 
     .feed-compose-form > label {

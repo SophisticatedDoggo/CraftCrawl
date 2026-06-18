@@ -309,46 +309,77 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         scheduleThreadScrollabilityUpdate();
     }
 
-    function composeReferenceSource(target, isReply) {
-        return isReply
+    function directChild(target, selector) {
+        if (!target) return null;
+        return Array.from(target.children || []).find((child) => child.matches?.(selector)) || null;
+    }
+
+    function normalizeText(text) {
+        return String(text || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function buildComposeReference(target, isReply) {
+        const source = isReply
             ? target
             : target?.matches?.('.feed-thread-post')
                 ? target
                 : target?.querySelector?.('.feed-thread-post') || target;
-    }
+        if (!source) return null;
 
-    function replaceLinksWithSpans(container) {
-        container.querySelectorAll('a').forEach((link) => {
-            const span = document.createElement('span');
-            span.className = link.className;
-            span.innerHTML = link.innerHTML;
-            link.replaceWith(span);
-        });
+        const content = directChild(source, 'div');
+        const title = isReply
+            ? normalizeText(directChild(source, 'div')?.querySelector('strong')?.textContent)
+            : normalizeText(content?.querySelector('strong')?.textContent);
+        const meta = isReply
+            ? normalizeText(directChild(source, 'div')?.querySelector('span')?.textContent)
+            : normalizeText(content?.querySelector('p:not(.feed-user-post-body)')?.textContent);
+        const body = isReply
+            ? normalizeText(directChild(source, 'p')?.textContent)
+            : normalizeText(content?.querySelector('.feed-user-post-body')?.textContent);
+        const avatar = directChild(source, '.feed-avatar-link, .user-avatar, .friends-feed-icon')?.cloneNode(true);
+
+        return { avatar, title, meta, body };
     }
 
     function updateComposeReference(target, isReply) {
         if (!composeReference) return;
         composeReference.replaceChildren();
 
-        const source = composeReferenceSource(target, isReply);
-        if (!source) return;
-
-        const clone = source.cloneNode(true);
-        clone.removeAttribute('id');
-        clone.classList.remove('is-compose-target', 'notification-focus-target', 'notification-focus-pending');
-        clone.classList.add('feed-compose-reference-item');
-        clone.querySelectorAll('button, form, input, textarea, select, .feed-action-row, .feed-detail-link-row, .feed-reaction-list, .feed-replies-toggle, .feed-reply-list').forEach((element) => {
-            element.remove();
-        });
-        replaceLinksWithSpans(clone);
-
-        if (isReply) {
-            clone.querySelectorAll('.feed-comment').forEach((comment) => {
-                if (comment !== clone) comment.remove();
-            });
+        const reference = buildComposeReference(target, isReply);
+        if (!reference || (!reference.title && !reference.meta && !reference.body && !reference.avatar)) {
+            return;
         }
 
-        composeReference.appendChild(clone);
+        const item = document.createElement('article');
+        item.className = 'feed-compose-reference-item';
+
+        const avatarWrap = document.createElement('div');
+        avatarWrap.className = 'feed-compose-reference-avatar';
+        if (reference.avatar) {
+            reference.avatar.querySelectorAll?.('a, button').forEach((element) => element.replaceWith(...element.childNodes));
+            avatarWrap.appendChild(reference.avatar);
+        }
+
+        const textWrap = document.createElement('div');
+        textWrap.className = 'feed-compose-reference-copy';
+        if (reference.title) {
+            const title = document.createElement('strong');
+            title.textContent = reference.title;
+            textWrap.appendChild(title);
+        }
+        if (reference.meta) {
+            const meta = document.createElement('span');
+            meta.textContent = reference.meta;
+            textWrap.appendChild(meta);
+        }
+        if (reference.body) {
+            const body = document.createElement('p');
+            body.textContent = reference.body;
+            textWrap.appendChild(body);
+        }
+
+        item.append(avatarWrap, textWrap);
+        composeReference.appendChild(item);
     }
 
     function openComposer(options = {}) {
@@ -357,7 +388,10 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         const parentId = options.parentId || '';
         const label = options.label || 'post';
         const targetSelector = options.target || '[data-compose-target]';
-        const target = targetSelector.startsWith('#') || targetSelector.startsWith('[')
+        const trigger = options.trigger || null;
+        const target = !parentId && trigger
+            ? trigger.closest('[data-compose-target]')
+            : targetSelector.startsWith('#') || targetSelector.startsWith('[')
             ? root.querySelector(targetSelector)
             : root.querySelector(`#${CSS.escape(targetSelector)}`);
 
@@ -401,7 +435,8 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             openComposer({
                 parentId: button.dataset.parentCommentId || '',
                 label: button.dataset.replyLabel || 'post',
-                target: button.dataset.replyTarget || '[data-compose-target]'
+                target: button.dataset.replyTarget || '[data-compose-target]',
+                trigger: button
             });
         });
     });
