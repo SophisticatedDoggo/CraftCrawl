@@ -633,26 +633,34 @@ function format_event_time_range($event) {
                         <a href="<?php echo escape_output($business['bWebsite']); ?>" target="_blank" rel="noopener">Visit Website</a>
                     <?php endif; ?>
                 <?php else : ?>
-                <form method="POST" action="check_in.php" class="check-in-form" data-check-in-form>
+                <form method="POST" action="check_in.php" class="check-in-form" data-check-in-form
+                      data-business-name="<?php echo escape_output($business['bName']); ?>"
+                      data-city="<?php echo escape_output($business['city'] ?? ''); ?>"
+                      data-state="<?php echo escape_output($business['state'] ?? ''); ?>">
                     <?php echo craftcrawl_csrf_input(); ?>
                     <input type="hidden" name="business_id" value="<?php echo escape_output($legacy_business_id); ?>">
                     <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
                     <input type="hidden" name="latitude" value="">
                     <input type="hidden" name="longitude" value="">
-                    <div class="checkin-photo-row">
-                        <label for="checkin-photo-<?php echo escape_output($location_id); ?>" class="checkin-photo-label">
-                            <span class="checkin-photo-icon" aria-hidden="true">📷</span>
-                            <span class="checkin-photo-text">Take a photo to check in</span>
-                        </label>
-                        <input type="file" id="checkin-photo-<?php echo escape_output($location_id); ?>"
-                               name="checkin_photo"
-                               accept="image/jpeg,image/png,image/webp"
-                               capture="environment"
-                               data-checkin-photo-input
-                               class="checkin-photo-input">
-                    </div>
+                    <input type="file" name="checkin_photo" accept="image/jpeg,image/png,image/webp"
+                           capture="environment" data-checkin-photo-input hidden>
                     <button type="submit">Check In</button>
                 </form>
+                <div class="checkin-preview" data-checkin-preview hidden>
+                    <div class="checkin-preview-card">
+                        <div class="checkin-preview-header">
+                            <strong data-checkin-preview-title></strong>
+                            <p data-checkin-preview-detail></p>
+                        </div>
+                        <div class="checkin-preview-photo">
+                            <img data-checkin-preview-img alt="Check-in photo preview">
+                        </div>
+                    </div>
+                    <div class="checkin-preview-actions">
+                        <button type="button" data-checkin-retake>Retake</button>
+                        <button type="button" data-checkin-confirm>Post Check-in</button>
+                    </div>
+                </div>
                 <?php if (!empty($business['bWebsite'])) : ?>
                     <a href="<?php echo escape_output($business['bWebsite']); ?>" target="_blank" rel="noopener">Visit Website</a>
                 <?php endif; ?>

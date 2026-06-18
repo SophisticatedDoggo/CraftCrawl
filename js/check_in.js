@@ -1,16 +1,26 @@
 window.CraftCrawlInitCheckIn = function (root = document) {
-    const form = root.querySelector('[data-check-in-form]');
+    var form = root.querySelector('[data-check-in-form]');
 
     if (!form || form.dataset.checkInReady === 'true') {
         return false;
     }
     form.dataset.checkInReady = 'true';
 
-    const button = form.querySelector('button[type="submit"]');
-    const feedback = root.querySelector('[data-check-in-feedback]');
-    const latitudeInput = form.querySelector('input[name="latitude"]');
-    const longitudeInput = form.querySelector('input[name="longitude"]');
-    const photoInput = form.querySelector('[data-checkin-photo-input]');
+    var button = form.querySelector('button[type="submit"]');
+    var feedback = root.querySelector('[data-check-in-feedback]');
+    var latitudeInput = form.querySelector('input[name="latitude"]');
+    var longitudeInput = form.querySelector('input[name="longitude"]');
+    var photoInput = form.querySelector('[data-checkin-photo-input]');
+
+    var preview = root.querySelector('[data-checkin-preview]');
+    var previewTitle = preview ? preview.querySelector('[data-checkin-preview-title]') : null;
+    var previewDetail = preview ? preview.querySelector('[data-checkin-preview-detail]') : null;
+    var previewImg = preview ? preview.querySelector('[data-checkin-preview-img]') : null;
+    var retakeButton = preview ? preview.querySelector('[data-checkin-retake]') : null;
+    var confirmButton = preview ? preview.querySelector('[data-checkin-confirm]') : null;
+
+    var verifyData = null;
+    var previewObjectUrl = null;
 
     function showFeedback(message, isError) {
         if (!feedback) {
@@ -21,6 +31,12 @@ window.CraftCrawlInitCheckIn = function (root = document) {
         feedback.classList.toggle('form-message-error', isError);
         feedback.classList.toggle('form-message-success', !isError);
         feedback.hidden = false;
+    }
+
+    function hideFeedback() {
+        if (feedback) {
+            feedback.hidden = true;
+        }
     }
 
     function locationErrorMessage(error) {
@@ -43,22 +59,155 @@ window.CraftCrawlInitCheckIn = function (root = document) {
         return 'Location permission is required to check in.';
     }
 
-    form.addEventListener('submit', function (event) {
-        event.preventDefault();
+    function resetButton(originalText) {
+        if (button) {
+            button.disabled = false;
+            button.classList.remove('is-loading');
+            button.textContent = originalText;
+        }
+    }
 
-        if (!photoInput || !photoInput.files || !photoInput.files.length) {
-            showFeedback('A photo is required to check in.', true);
+    function showPreview(data, photoFile) {
+        if (!preview || !previewImg) {
             return;
         }
 
-        const locationProvider = window.CraftCrawlLocation || null;
+        var visitLabel = data.visit_type === 'first_time' ? ' for the first time' : '';
+        previewTitle.textContent = 'Checked in at ' + data.business_name + visitLabel;
+        previewDetail.textContent = [data.city, data.state].filter(Boolean).join(', ');
+
+        if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl);
+        }
+        previewObjectUrl = URL.createObjectURL(photoFile);
+        previewImg.src = previewObjectUrl;
+
+        form.hidden = true;
+        hideFeedback();
+        preview.hidden = false;
+    }
+
+    function hidePreview() {
+        if (preview) {
+            preview.hidden = true;
+        }
+        form.hidden = false;
+        if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl);
+            previewObjectUrl = null;
+        }
+    }
+
+    function openCamera() {
+        if (photoInput) {
+            photoInput.value = '';
+            photoInput.click();
+        }
+    }
+
+    // Step 2: After photo is taken, show preview
+    if (photoInput) {
+        photoInput.addEventListener('change', function () {
+            if (!verifyData || !photoInput.files || !photoInput.files.length) {
+                return;
+            }
+            showPreview(verifyData, photoInput.files[0]);
+        });
+    }
+
+    // Retake button
+    if (retakeButton) {
+        retakeButton.addEventListener('click', function () {
+            openCamera();
+        });
+    }
+
+    // Confirm button — resize photo and submit
+    if (confirmButton) {
+        confirmButton.addEventListener('click', async function () {
+            if (!verifyData || !photoInput.files || !photoInput.files.length) {
+                return;
+            }
+
+            confirmButton.disabled = true;
+            confirmButton.classList.add('is-loading');
+            confirmButton.textContent = 'Posting...';
+
+            var formData = new FormData(form);
+
+            try {
+                var photo = photoInput.files[0];
+                if (window.CraftCrawlResizePhoto) {
+                    photo = await window.CraftCrawlResizePhoto(photo);
+                }
+                formData.set('checkin_photo', photo);
+            } catch (err) {
+                hidePreview();
+                showFeedback('Photo could not be processed. Please try again.', true);
+                confirmButton.disabled = false;
+                confirmButton.classList.remove('is-loading');
+                confirmButton.textContent = 'Post Check-in';
+                return;
+            }
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            })
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (data) {
+                    hidePreview();
+
+                    if (!data.ok) {
+                        showFeedback(data.message || 'Check-in failed.', true);
+                        return;
+                    }
+
+                    var badgeText = data.badges && data.badges.length
+                        ? ' Badges earned: ' + data.badges.join(', ') + '.'
+                        : '';
+                    var checkinMessageText = data.checkin_message
+                        ? ' ' + data.checkin_message
+                        : '';
+
+                    showFeedback(data.message + badgeText + checkinMessageText, false);
+                    window.CraftCrawlMarkQuestPanelStale?.();
+                    window.dispatchEvent(new CustomEvent('craftcrawl:quest-progress-changed', {
+                        detail: { source: 'check_in', questRewards: data.quest_rewards || [] }
+                    }));
+
+                    if (window.craftcrawlShowXpReward) {
+                        window.craftcrawlShowXpReward(data);
+                    }
+                })
+                .catch(function () {
+                    hidePreview();
+                    showFeedback('Check-in failed. Please try again.', true);
+                })
+                .finally(function () {
+                    confirmButton.disabled = false;
+                    confirmButton.classList.remove('is-loading');
+                    confirmButton.textContent = 'Post Check-in';
+                    verifyData = null;
+                });
+        });
+    }
+
+    // Step 1: Click "Check In" → verify proximity + hours
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        var locationProvider = window.CraftCrawlLocation || null;
 
         if (!locationProvider && !navigator.geolocation) {
             showFeedback('Your browser does not support location check-ins.', true);
             return;
         }
 
-        const originalText = button ? button.textContent : '';
+        var originalText = button ? button.textContent : '';
 
         if (button) {
             button.disabled = true;
@@ -66,7 +215,7 @@ window.CraftCrawlInitCheckIn = function (root = document) {
             button.textContent = 'Checking location...';
         }
 
-        let didStartLocationRequest = true;
+        var didStartLocationRequest = true;
 
         if (locationProvider) {
             didStartLocationRequest = locationProvider.getCurrentPosition(handlePosition, handleLocationError, {
@@ -84,90 +233,47 @@ window.CraftCrawlInitCheckIn = function (root = document) {
 
         if (!didStartLocationRequest) {
             showFeedback('Your browser does not support location check-ins.', true);
-
-            if (button) {
-                button.disabled = false;
-                button.classList.remove('is-loading');
-                button.textContent = originalText;
-            }
+            resetButton(originalText);
         }
 
-        async function handlePosition(position) {
+        function handlePosition(position) {
             latitudeInput.value = position.coords.latitude;
             longitudeInput.value = position.coords.longitude;
 
             if (button) {
-                button.textContent = 'Uploading photo...';
+                button.textContent = 'Verifying...';
             }
 
-            var formData = new FormData(form);
+            var verifyFormData = new FormData(form);
 
-            try {
-                if (window.CraftCrawlResizePhoto) {
-                    var resized = await window.CraftCrawlResizePhoto(photoInput.files[0]);
-                    formData.set('checkin_photo', resized);
-                }
-            } catch (err) {
-                showFeedback('Photo could not be processed. Please try again.', true);
-                if (button) {
-                    button.disabled = false;
-                    button.classList.remove('is-loading');
-                    button.textContent = originalText;
-                }
-                return;
-            }
-
-            fetch(form.action, {
+            fetch('check_in_verify.php', {
                 method: 'POST',
-                body: formData,
+                body: verifyFormData,
                 credentials: 'same-origin'
             })
                 .then(function (response) {
                     return response.json();
                 })
                 .then(function (data) {
+                    resetButton(originalText);
+
                     if (!data.ok) {
                         showFeedback(data.message || 'Check-in failed.', true);
                         return;
                     }
 
-                    const badgeText = data.badges && data.badges.length
-                        ? ` Badges earned: ${data.badges.join(', ')}.`
-                        : '';
-                    const checkinMessageText = data.checkin_message
-                        ? ` ${data.checkin_message}`
-                        : '';
-
-                    showFeedback(`${data.message}${badgeText}${checkinMessageText}`, false);
-                    window.CraftCrawlMarkQuestPanelStale?.();
-                    window.dispatchEvent(new CustomEvent('craftcrawl:quest-progress-changed', {
-                        detail: { source: 'check_in', questRewards: data.quest_rewards || [] }
-                    }));
-
-                    if (window.craftcrawlShowXpReward) {
-                        window.craftcrawlShowXpReward(data);
-                    }
+                    verifyData = data;
+                    openCamera();
                 })
                 .catch(function () {
+                    resetButton(originalText);
                     showFeedback('Check-in failed. Please try again.', true);
-                })
-                .finally(function () {
-                    if (button) {
-                        button.disabled = false;
-                        button.classList.remove('is-loading');
-                        button.textContent = originalText;
-                    }
                 });
         }
 
         function handleLocationError(error) {
             showFeedback(locationErrorMessage(error), true);
-
-            if (button) {
-                button.disabled = false;
-                button.classList.remove('is-loading');
-                button.textContent = originalText;
-            }
+            resetButton(originalText);
         }
     });
     return true;

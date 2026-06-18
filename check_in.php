@@ -1,8 +1,7 @@
 <?php
 require 'login_check.php';
 include 'db.php';
-require_once 'lib/leveling.php';
-require_once 'lib/location_hours.php';
+require_once 'lib/checkin_validate.php';
 require_once 'lib/quests.php';
 require_once 'lib/cloudinary_upload.php';
 
@@ -48,90 +47,21 @@ if ((!$business_id && !$location_id_input) || $user_latitude === false || $user_
     exit();
 }
 
-$business_stmt = $conn->prepare("
-    SELECT
-        b.id AS legacy_business_id,
-        l.id AS location_id,
-        l.name,
-        l.latitude,
-        l.longitude,
-        l.checkin_message,
-        l.visibility_status,
-        l.checkin_verification_enabled
-    FROM locations l
-    LEFT JOIN businesses b ON b.id = l.legacy_business_id
-    WHERE (l.id=? OR b.id=?)
-      AND l.visibility_status IN ('public_unclaimed', 'public_claimed')
-      AND l.disabledAt IS NULL
-");
-$business_stmt->bind_param("ii", $location_id_input, $business_id);
-$business_stmt->execute();
-$business = $business_stmt->get_result()->fetch_assoc();
+$validation = craftcrawl_validate_checkin($conn, $user_id, $location_id_input, $business_id, $user_latitude, $user_longitude);
 
-if (!$business) {
-    http_response_code(404);
-    echo json_encode(['ok' => false, 'message' => 'Business could not be found.']);
-    exit();
-}
-
-$distance_meters = craftcrawl_distance_meters(
-    (float) $user_latitude,
-    (float) $user_longitude,
-    (float) $business['latitude'],
-    (float) $business['longitude']
-);
-
-if ($distance_meters > CRAFTCRAWL_CHECKIN_RADIUS_METERS) {
-    echo json_encode([
-        'ok' => false,
-        'message' => 'You need to be closer to this location to check in.',
-        'distance_meters' => round($distance_meters)
-    ]);
-    exit();
-}
-
-$location_id = (int) $business['location_id'];
-$legacy_business_id = !empty($business['legacy_business_id']) ? (int) $business['legacy_business_id'] : null;
-
-if (!craftcrawl_location_checkins_are_available($conn, $location_id, $business['checkin_verification_enabled'])) {
-    echo json_encode([
-        'ok' => false,
-        'message' => 'Check-ins are not available for this location yet.'
-    ]);
-    exit();
-}
-
-if (!craftcrawl_location_is_open_now($conn, $location_id)) {
-    echo json_encode([
-        'ok' => false,
-        'message' => 'Visit XP is only available while this business is open.'
-    ]);
-    exit();
-}
-
-$visit_count_stmt = $conn->prepare("SELECT COUNT(*) AS total FROM user_visits WHERE user_id=? AND location_id=?");
-$visit_count_stmt->bind_param("ii", $user_id, $location_id);
-$visit_count_stmt->execute();
-$visit_count = (int) ($visit_count_stmt->get_result()->fetch_assoc()['total'] ?? 0);
-
-$visit_type = $visit_count > 0 ? 'repeat' : 'first_time';
-$is_verified_business = $business['visibility_status'] === 'public_claimed';
-$xp_awarded = craftcrawl_checkin_xp_amount($visit_type, $is_verified_business);
-
-if ($visit_type === 'repeat') {
-    $cooldown_stmt = $conn->prepare("SELECT checkedInAt FROM user_visits WHERE user_id=? AND location_id=? AND xp_awarded > 0 ORDER BY checkedInAt DESC LIMIT 1");
-    $cooldown_stmt->bind_param("ii", $user_id, $location_id);
-    $cooldown_stmt->execute();
-    $last_visit = $cooldown_stmt->get_result()->fetch_assoc();
-
-    if ($last_visit && strtotime($last_visit['checkedInAt']) > strtotime('-' . CRAFTCRAWL_REPEAT_VISIT_COOLDOWN_DAYS . ' days')) {
-        echo json_encode([
-            'ok' => false,
-            'message' => 'Repeat visit XP is available once per day for each location.'
-        ]);
-        exit();
+if (!$validation['ok']) {
+    if (!empty($validation['http_status'])) {
+        http_response_code($validation['http_status']);
     }
+    echo json_encode(['ok' => false, 'message' => $validation['message']]);
+    exit();
 }
+
+$location_id = $validation['location_id'];
+$legacy_business_id = $validation['legacy_business_id'];
+$visit_type = $validation['visit_type'];
+$xp_awarded = $validation['xp_awarded'];
+$distance_meters = $validation['distance_meters'];
 
 try {
     $conn->begin_transaction();
@@ -150,7 +80,7 @@ try {
 
     $source_type = $visit_type === 'first_time' ? 'first_time_visit' : 'repeat_visit';
     $source_id = $visit_type === 'first_time' ? (string) $location_id : (string) $visit_id;
-    craftcrawl_add_xp($conn, $user_id, $xp_awarded, $source_type, $source_id, $business['name']);
+    craftcrawl_add_xp($conn, $user_id, $xp_awarded, $source_type, $source_id, $validation['business_name']);
     $badges = craftcrawl_award_eligible_badges($conn, $user_id);
     $quest_rewards = craftcrawl_award_eligible_quest_rewards($conn, $user_id);
     $action_label = $visit_type === 'first_time' ? 'First-Time Check-In' : 'Repeat Check-In';
@@ -164,7 +94,7 @@ try {
 
     $conn->commit();
 
-    $checkin_message = !empty($business['checkin_message']) ? $business['checkin_message'] : null;
+    $checkin_message = $validation['checkin_message'];
 
     echo json_encode([
         'ok' => true,
