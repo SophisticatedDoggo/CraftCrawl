@@ -501,14 +501,14 @@ if ($feed_item) {
 
             <section class="settings-panel feed-thread-panel" data-compose-target data-compose-label="post">
                 <?php echo render_feed_thread_post($feed_item, render_feed_thread_reactions($conn, $user_id, $feed_item)); ?>
-                <button type="button" class="feed-reply-toggle feed-post-reply-toggle" data-reply-toggle data-parent-comment-id="" data-reply-label="post" data-reply-target="[data-compose-target]">Reply</button>
+                <button type="button" class="feed-reply-toggle feed-post-reply-toggle" data-reply-toggle data-parent-comment-id="" data-reply-label="post" data-reply-target="[data-compose-target]">Comment</button>
             </section>
 
             <section class="settings-panel feed-thread-panel">
                 <h2>Comments</h2>
-                <div class="feed-comment-list">
+                <div class="feed-comment-list<?php echo empty($comments) ? ' feed-comment-list-empty' : ''; ?>">
                     <?php if (empty($comments)) : ?>
-                        <p>No comments yet.</p>
+                        <p class="feed-empty-comments">No comments yet.</p>
                     <?php endif; ?>
                     <?php foreach ($comments as $comment) : ?>
                         <?php
