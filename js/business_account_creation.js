@@ -129,7 +129,11 @@ script.onload = function () {
             document.getElementById('zip').value = (context.postcode && context.postcode.name) || properties.postcode;
         }
 
+        const sourceProvider = document.getElementById('source_provider');
+        const sourcePlaceId = document.getElementById('source_place_id') || document.getElementById('mapbox_place_id');
         const providerHours = document.getElementById('provider_hours_json');
+        if (sourceProvider) sourceProvider.value = 'mapbox';
+        if (sourcePlaceId) sourcePlaceId.value = properties.mapbox_id || feature.id || '';
         if (providerHours) providerHours.value = '';
     });
 
@@ -141,7 +145,11 @@ script.onload = function () {
                 document.getElementById('city').value = '';
                 document.getElementById('state').value = '';
                 document.getElementById('zip').value = '';
+                const sourceProvider = document.getElementById('source_provider');
+                const sourcePlaceId = document.getElementById('source_place_id') || document.getElementById('mapbox_place_id');
                 const providerHours = document.getElementById('provider_hours_json');
+                if (sourceProvider) sourceProvider.value = 'manual';
+                if (sourcePlaceId) sourcePlaceId.value = '';
                 if (providerHours) providerHours.value = '';
             }
         });
