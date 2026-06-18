@@ -38,6 +38,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let hasMore = false;
     let loadingMore = false;
     let feedObserver = null;
+    const feedPageSize = 40;
     const reactionLabels = {
         cheers: '🍻',
         nice_find: '🔥',
@@ -1117,6 +1118,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 : '<p>Add friends to see level-ups and first-time visits here.</p>';
             hasMore = false;
             nextFeedCursor = { before: null, key: null };
+            updateFeedPagingDebug(0);
             updateFeedSentinel(false);
             return;
         }
@@ -1125,7 +1127,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
         focusFeedItemIfRequested();
         nextFeedCursor = feedCursorFromResponse(data, items);
-        hasMore = data.has_more === true;
+        hasMore = feedPageMayHaveMore(data, items);
+        updateFeedPagingDebug(items.length);
         updateFeedSentinel(hasMore);
         window.requestAnimationFrame(checkFeedNearBottom);
 
@@ -1654,7 +1657,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
                 focusFeedItemIfRequested();
                 nextFeedCursor = feedCursorFromResponse(data, data.feed);
-                hasMore = data.has_more === true;
+                hasMore = feedPageMayHaveMore(data, data.feed);
+                updateFeedPagingDebug(data.feed.length);
             })
             .catch((error) => {
                 console.warn('Friends feed pagination failed.', error);
@@ -1673,6 +1677,21 @@ window.CraftCrawlInitFriends = function (scope = document) {
             before: data.next_before || lastItem.created_at || null,
             key: data.next_before_key || lastItem.item_key || null
         };
+    }
+
+    function feedPageMayHaveMore(data, items) {
+        return data.has_more === true || items.length >= feedPageSize;
+    }
+
+    function updateFeedPagingDebug(pageItemCount) {
+        if (!feed) {
+            return;
+        }
+
+        feed.dataset.feedHasMore = hasMore ? 'true' : 'false';
+        feed.dataset.feedLastPageCount = String(pageItemCount);
+        feed.dataset.feedNextBefore = nextFeedCursor.before || '';
+        feed.dataset.feedNextBeforeKey = nextFeedCursor.key || '';
     }
 
     function ensureFeedObserver() {
