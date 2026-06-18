@@ -14,7 +14,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     const suggestedFriendButtons = root.querySelectorAll('[data-suggested-friend-action]');
     const profileFriendButtons = root.querySelectorAll('[data-profile-friend-action]');
     const feed = panel?.querySelector('[data-friends-feed]');
-    const sentinel = feed?.querySelector('[data-feed-sentinel]');
+    let feedSentinel = feed?.querySelector('[data-feed-sentinel]') || null;
     const status = root.querySelector('[data-friends-status]');
     const count = panel?.querySelector('[data-friends-count]');
     const menuBadges = document.querySelectorAll('[data-friends-menu-badge]');
@@ -37,6 +37,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let nextFeedCursor = null;
     let hasMore = false;
     let loadingMore = false;
+    let feedObserver = null;
     const reactionLabels = {
         cheers: '🍻',
         nice_find: '🔥',
@@ -1116,18 +1117,16 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 : '<p>Add friends to see level-ups and first-time visits here.</p>';
             hasMore = false;
             nextFeedCursor = null;
-            updateFeedPagingControls(false);
+            updateFeedSentinel(false);
             return;
         }
 
         feed.innerHTML = items.map(renderFeedItem).join('');
 
-        appendFeedPagingControls();
-
         focusFeedItemIfRequested();
         nextFeedCursor = data.next_before || items[items.length - 1]?.created_at || null;
         hasMore = data.has_more === true;
-        updateFeedPagingControls(hasMore);
+        updateFeedSentinel(hasMore);
         window.requestAnimationFrame(checkFeedNearBottom);
 
         playPendingThreadReturnAnchor();
@@ -1629,14 +1628,13 @@ window.CraftCrawlInitFriends = function (scope = document) {
         }
 
         loadingMore = true;
-        updateFeedPagingControls(hasMore);
+        updateFeedSentinel(false);
 
         fetch(`${userEndpoint('friends_feed.php')}?before=${encodeURIComponent(nextFeedCursor)}`, { credentials: 'same-origin', cache: 'no-store' })
             .then((r) => r.json())
             .then((data) => {
                 if (!data.ok || !data.feed || !data.feed.length) {
                     hasMore = false;
-                    updateFeedPagingControls(false);
                     return;
                 }
 
@@ -1645,58 +1643,72 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     div.innerHTML = renderFeedItem(item).trim();
                     const article = div.firstElementChild;
                     if (article) {
-                        if (sentinel && sentinel.parentNode === feed) {
-                            feed.insertBefore(article, sentinel);
-                        } else {
-                            feed.appendChild(article);
-                        }
+                        feed.appendChild(article);
                     }
                 });
 
                 focusFeedItemIfRequested();
                 nextFeedCursor = data.next_before || data.feed[data.feed.length - 1].created_at;
                 hasMore = data.has_more === true;
-                updateFeedPagingControls(hasMore);
             })
             .catch(() => {})
             .finally(() => {
                 loadingMore = false;
-                updateFeedPagingControls(hasMore);
+                updateFeedSentinel(hasMore);
                 checkFeedNearBottom();
             });
     }
 
-    function appendFeedPagingControls() {
-        if (sentinel) {
-            feed.appendChild(sentinel);
+    function ensureFeedObserver() {
+        if (feedObserver || !feed) {
+            return feedObserver;
         }
+
+        feedObserver = new IntersectionObserver((entries) => {
+            if (entries.some((entry) => entry.isIntersecting)) {
+                loadMore();
+            }
+        }, { rootMargin: '0px', threshold: 0 });
+
+        return feedObserver;
     }
 
-    function updateFeedPagingControls(show) {
-        appendFeedPagingControls();
-        if (sentinel) {
-            sentinel.hidden = !show;
-        }
-    }
-
-    function checkFeedNearBottom() {
-        if (!feed || !hasMore || loadingMore || !isFeedTabActive()) {
+    function removeFeedSentinel() {
+        if (!feedSentinel) {
             return;
         }
 
-        const feedRect = feed.getBoundingClientRect();
-        if (feedRect.bottom <= window.innerHeight + 260) {
+        feedObserver?.unobserve(feedSentinel);
+        feedSentinel.remove();
+        feedSentinel = null;
+    }
+
+    function updateFeedSentinel(show) {
+        removeFeedSentinel();
+
+        if (!show || !feed) {
+            return;
+        }
+
+        feedSentinel = document.createElement('div');
+        feedSentinel.setAttribute('data-feed-sentinel', '');
+        feedSentinel.setAttribute('aria-hidden', 'true');
+        feed.appendChild(feedSentinel);
+        ensureFeedObserver()?.observe(feedSentinel);
+    }
+
+    function checkFeedNearBottom() {
+        if (!feed || !feedSentinel || !hasMore || loadingMore || !isFeedTabActive()) {
+            return;
+        }
+
+        const sentinelRect = feedSentinel.getBoundingClientRect();
+        if (sentinelRect.top <= window.innerHeight && sentinelRect.bottom >= 0) {
             loadMore();
         }
     }
 
-    if (sentinel) {
-        const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting) {
-                loadMore();
-            }
-        }, { rootMargin: '260px 0px', threshold: 0 });
-        observer.observe(sentinel);
+    if (feed) {
         window.addEventListener('scroll', checkFeedNearBottom, { passive: true });
         window.addEventListener('resize', checkFeedNearBottom);
     }
