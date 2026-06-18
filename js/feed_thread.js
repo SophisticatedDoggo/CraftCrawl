@@ -359,14 +359,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         document.body.classList.add('feed-comment-composer-open');
         updateComposerSpace();
         window.requestAnimationFrame(() => {
-            const textarea = composeForm.querySelector('textarea');
-            if (textarea) {
-                try {
-                    textarea.focus({ preventScroll: true });
-                } catch (_) {
-                    textarea.focus();
-                }
-            }
+            composeForm.querySelector('textarea')?.focus();
             [80, 180, 360, 700].forEach((delay) => window.setTimeout(updateComposerSpace, delay));
         });
     }

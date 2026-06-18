@@ -4541,12 +4541,6 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
 
 .feed-thread-page.is-compose-open {
     padding-bottom: var(--feed-compose-offset);
-    min-height: calc(100vh + var(--feed-compose-offset) + var(--feed-compose-keyboard-offset, 0px));
-    min-height: calc(100svh + var(--feed-compose-offset) + var(--feed-compose-keyboard-offset, 0px));
-}
-
-.feed-thread-overlay .feed-thread-page.is-compose-open {
-    min-height: calc(100% + var(--feed-compose-offset) + var(--feed-compose-keyboard-offset, 0px));
 }
 
 body.feed-thread-overlay-open,
@@ -4904,9 +4898,9 @@ a.mobile-context-back.feed-thread-back-link:focus {
     gap: 10px;
 }
 
-.feed-thread-page.is-compose-open .feed-comment-list-empty {
-    min-height: 240px;
-    min-height: min(36svh, 320px);
+.feed-comment-list-empty {
+    min-height: 320px;
+    min-height: min(48svh, 420px);
 }
 
 .feed-empty-comments {
