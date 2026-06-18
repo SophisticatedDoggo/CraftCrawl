@@ -20,7 +20,8 @@ $before_raw = $_GET['before'] ?? null;
 $before_dt = ($before_raw && strtotime($before_raw)) ? date('Y-m-d H:i:s', strtotime($before_raw)) : null;
 $before_key = isset($_GET['before_key']) ? trim((string) $_GET['before_key']) : '';
 $feed_page_size = 40;
-$business_post_fetch_limit = $feed_page_size + 1;
+$feed_source_fetch_limit = ($feed_page_size * 10) + 1;
+$business_post_fetch_limit = $feed_source_fetch_limit;
 
 $seen_stmt = $conn->prepare("SELECT friendsSeenAt, socialNotificationsSeenAt FROM users WHERE id=?");
 $seen_stmt->bind_param("i", $user_id);
@@ -157,8 +158,8 @@ $visit_sql = "
     INNER JOIN users u ON u.id = uv.user_id
     WHERE uv.visit_type='first_time' AND uv.user_id IN ($placeholders)
     $before_clause_checkin
-    ORDER BY uv.checkedInAt DESC
-    LIMIT 80
+    ORDER BY uv.checkedInAt DESC, uv.id DESC
+    LIMIT $feed_source_fetch_limit
 ";
 $visit_stmt = $conn->prepare($visit_sql);
 $before_dt
@@ -194,7 +195,7 @@ $xp_sql = "
         AND xl.level_after > xl.level_before
     $before_clause_created
     ORDER BY xl.createdAt DESC, xl.id DESC
-    LIMIT 80
+    LIMIT $feed_source_fetch_limit
 ";
 $xp_stmt = $conn->prepare($xp_sql);
 $before_dt
@@ -232,8 +233,8 @@ $event_want_sql = "
     INNER JOIN users u ON u.id = ew.user_id
     WHERE ew.user_id IN ($placeholders)
     $before_clause_ew
-    ORDER BY ew.createdAt DESC
-    LIMIT 80
+    ORDER BY ew.createdAt DESC, ew.id DESC
+    LIMIT $feed_source_fetch_limit
 ";
 $event_want_stmt = $conn->prepare($event_want_sql);
 $before_dt
@@ -273,8 +274,8 @@ $location_want_sql = "
     INNER JOIN users u ON u.id = wtg.user_id
     WHERE wtg.user_id IN ($placeholders) AND l.visibility_status IN ('public_unclaimed', 'public_claimed') AND wtg.visibility = 'friends_only'
     $before_clause_wtg
-    ORDER BY wtg.createdAt DESC
-    LIMIT 80
+    ORDER BY wtg.createdAt DESC, wtg.id DESC
+    LIMIT $feed_source_fetch_limit
 ";
 $location_want_stmt = $conn->prepare($location_want_sql);
 $before_dt
@@ -310,8 +311,8 @@ $badge_sql = "
     INNER JOIN users u ON u.id = ub.user_id
     WHERE ub.user_id IN ($placeholders)
     $before_clause_badge
-    ORDER BY ub.earnedAt DESC
-    LIMIT 80
+    ORDER BY ub.earnedAt DESC, ub.id DESC
+    LIMIT $feed_source_fetch_limit
 ";
 $badge_stmt = $conn->prepare($badge_sql);
 $before_dt
@@ -345,8 +346,8 @@ $quest_sql = "
     INNER JOIN users u ON u.id = uqc.user_id
     WHERE uqc.user_id IN ($placeholders)
     $before_clause_quest
-    ORDER BY uqc.completedAt DESC
-    LIMIT 80
+    ORDER BY uqc.completedAt DESC, uqc.id DESC
+    LIMIT $feed_source_fetch_limit
 ";
 $quest_stmt = $conn->prepare($quest_sql);
 $before_dt
@@ -386,8 +387,8 @@ $sweep_sql = "
     GROUP BY user_id, period_type, period_start
     HAVING quest_count >= CASE WHEN period_type='weekly' THEN ? ELSE ? END
     $before_clause_sweep
-    ORDER BY completedAt DESC
-    LIMIT 80
+    ORDER BY completedAt DESC, period_start DESC, user_id DESC
+    LIMIT $feed_source_fetch_limit
 ";
 $sweep_stmt = $conn->prepare($sweep_sql);
 if ($before_dt) {
@@ -442,7 +443,7 @@ $user_posts_sql = "
         AND actor.disabledAt IS NULL
     $before_clause_user_posts
     ORDER BY ufp.createdAt DESC, ufp.id DESC
-    LIMIT 80
+    LIMIT $feed_source_fetch_limit
 ";
 $user_posts_stmt = $conn->prepare($user_posts_sql);
 $before_dt
@@ -475,7 +476,7 @@ if ($before_dt) {
         INNER JOIN locations l ON l.id = bp.location_id AND l.visibility_status='public_claimed'
         INNER JOIN liked_businesses lb ON lb.location_id = bp.location_id AND lb.user_id=?
         WHERE bp.created_at <= ?
-        ORDER BY bp.created_at DESC
+        ORDER BY bp.created_at DESC, bp.id DESC
         LIMIT ?
     ");
     $post_feed_stmt->bind_param("isi", $user_id, $before_dt, $business_post_fetch_limit);
@@ -486,7 +487,7 @@ if ($before_dt) {
         FROM business_posts bp
         INNER JOIN locations l ON l.id = bp.location_id AND l.visibility_status='public_claimed'
         INNER JOIN liked_businesses lb ON lb.location_id = bp.location_id AND lb.user_id=?
-        ORDER BY bp.created_at DESC
+        ORDER BY bp.created_at DESC, bp.id DESC
         LIMIT ?
     ");
     $post_feed_stmt->bind_param("ii", $user_id, $business_post_fetch_limit);
