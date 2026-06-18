@@ -643,7 +643,7 @@ function format_event_time_range($event) {
                     <input type="hidden" name="latitude" value="">
                     <input type="hidden" name="longitude" value="">
                     <input type="file" name="checkin_photo" accept="image/jpeg,image/png,image/webp"
-                           capture="environment" data-checkin-photo-input hidden>
+                           capture data-checkin-photo-input class="visually-hidden">
                     <button type="submit">Check In</button>
                 </form>
                 <div class="checkin-modal" data-checkin-modal hidden>

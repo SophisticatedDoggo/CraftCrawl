@@ -164,7 +164,8 @@ window.CraftCrawlInitCheckIn = function (root = document) {
                 if (window.CraftCrawlResizePhoto) {
                     photo = await window.CraftCrawlResizePhoto(photo);
                 }
-                formData.set('checkin_photo', photo);
+                formData.delete('checkin_photo');
+                formData.append('checkin_photo', photo);
             } catch (err) {
                 hideModal();
                 showFeedback('Photo could not be processed. Please try again.', true);
