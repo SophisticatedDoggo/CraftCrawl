@@ -12,12 +12,15 @@ window.CraftCrawlInitCheckIn = function (root = document) {
     var longitudeInput = form.querySelector('input[name="longitude"]');
     var photoInput = form.querySelector('[data-checkin-photo-input]');
 
-    var preview = root.querySelector('[data-checkin-preview]');
-    var previewTitle = preview ? preview.querySelector('[data-checkin-preview-title]') : null;
-    var previewDetail = preview ? preview.querySelector('[data-checkin-preview-detail]') : null;
-    var previewImg = preview ? preview.querySelector('[data-checkin-preview-img]') : null;
-    var retakeButton = preview ? preview.querySelector('[data-checkin-retake]') : null;
-    var confirmButton = preview ? preview.querySelector('[data-checkin-confirm]') : null;
+    var modal = root.querySelector('[data-checkin-modal]');
+    var prompt = modal ? modal.querySelector('[data-checkin-prompt]') : null;
+    var takePhotoButton = modal ? modal.querySelector('[data-checkin-take-photo]') : null;
+    var preview = modal ? modal.querySelector('[data-checkin-preview]') : null;
+    var previewTitle = modal ? modal.querySelector('[data-checkin-preview-title]') : null;
+    var previewDetail = modal ? modal.querySelector('[data-checkin-preview-detail]') : null;
+    var previewImg = modal ? modal.querySelector('[data-checkin-preview-img]') : null;
+    var retakeButton = modal ? modal.querySelector('[data-checkin-retake]') : null;
+    var confirmButton = modal ? modal.querySelector('[data-checkin-confirm]') : null;
 
     var verifyData = null;
     var previewObjectUrl = null;
@@ -67,14 +70,29 @@ window.CraftCrawlInitCheckIn = function (root = document) {
         }
     }
 
-    function showPreview(data, photoFile) {
-        if (!preview || !previewImg) {
+    function showModal() {
+        if (!modal) {
+            return;
+        }
+        form.hidden = true;
+        hideFeedback();
+        if (prompt) {
+            prompt.hidden = false;
+        }
+        if (preview) {
+            preview.hidden = true;
+        }
+        modal.hidden = false;
+    }
+
+    function showPreview(photoFile) {
+        if (!preview || !previewImg || !verifyData) {
             return;
         }
 
-        var visitLabel = data.visit_type === 'first_time' ? ' for the first time' : '';
-        previewTitle.textContent = 'Checked in at ' + data.business_name + visitLabel;
-        previewDetail.textContent = [data.city, data.state].filter(Boolean).join(', ');
+        var visitLabel = verifyData.visit_type === 'first_time' ? ' for the first time' : '';
+        previewTitle.textContent = 'Checked in at ' + verifyData.business_name + visitLabel;
+        previewDetail.textContent = [verifyData.city, verifyData.state].filter(Boolean).join(', ');
 
         if (previewObjectUrl) {
             URL.revokeObjectURL(previewObjectUrl);
@@ -82,14 +100,15 @@ window.CraftCrawlInitCheckIn = function (root = document) {
         previewObjectUrl = URL.createObjectURL(photoFile);
         previewImg.src = previewObjectUrl;
 
-        form.hidden = true;
-        hideFeedback();
+        if (prompt) {
+            prompt.hidden = true;
+        }
         preview.hidden = false;
     }
 
-    function hidePreview() {
-        if (preview) {
-            preview.hidden = true;
+    function hideModal() {
+        if (modal) {
+            modal.hidden = true;
         }
         form.hidden = false;
         if (previewObjectUrl) {
@@ -98,27 +117,33 @@ window.CraftCrawlInitCheckIn = function (root = document) {
         }
     }
 
-    function openCamera() {
-        if (photoInput) {
-            photoInput.value = '';
-            photoInput.click();
-        }
+    // "Take Photo" button in the modal — opens camera from a user gesture
+    if (takePhotoButton) {
+        takePhotoButton.addEventListener('click', function () {
+            if (photoInput) {
+                photoInput.value = '';
+                photoInput.click();
+            }
+        });
     }
 
-    // Step 2: After photo is taken, show preview
+    // After photo is taken, switch from prompt to preview
     if (photoInput) {
         photoInput.addEventListener('change', function () {
             if (!verifyData || !photoInput.files || !photoInput.files.length) {
                 return;
             }
-            showPreview(verifyData, photoInput.files[0]);
+            showPreview(photoInput.files[0]);
         });
     }
 
     // Retake button
     if (retakeButton) {
         retakeButton.addEventListener('click', function () {
-            openCamera();
+            if (photoInput) {
+                photoInput.value = '';
+                photoInput.click();
+            }
         });
     }
 
@@ -142,7 +167,7 @@ window.CraftCrawlInitCheckIn = function (root = document) {
                 }
                 formData.set('checkin_photo', photo);
             } catch (err) {
-                hidePreview();
+                hideModal();
                 showFeedback('Photo could not be processed. Please try again.', true);
                 confirmButton.disabled = false;
                 confirmButton.classList.remove('is-loading');
@@ -159,7 +184,7 @@ window.CraftCrawlInitCheckIn = function (root = document) {
                     return response.json();
                 })
                 .then(function (data) {
-                    hidePreview();
+                    hideModal();
 
                     if (!data.ok) {
                         showFeedback(data.message || 'Check-in failed.', true);
@@ -184,7 +209,7 @@ window.CraftCrawlInitCheckIn = function (root = document) {
                     }
                 })
                 .catch(function () {
-                    hidePreview();
+                    hideModal();
                     showFeedback('Check-in failed. Please try again.', true);
                 })
                 .finally(function () {
@@ -196,7 +221,7 @@ window.CraftCrawlInitCheckIn = function (root = document) {
         });
     }
 
-    // Step 1: Click "Check In" → verify proximity + hours
+    // Step 1: Click "Check In" → verify proximity + hours → show modal
     form.addEventListener('submit', function (event) {
         event.preventDefault();
 
@@ -212,7 +237,7 @@ window.CraftCrawlInitCheckIn = function (root = document) {
         if (button) {
             button.disabled = true;
             button.classList.add('is-loading');
-            button.textContent = 'Checking location...';
+            button.textContent = 'Checking in...';
         }
 
         var didStartLocationRequest = true;
@@ -240,10 +265,6 @@ window.CraftCrawlInitCheckIn = function (root = document) {
             latitudeInput.value = position.coords.latitude;
             longitudeInput.value = position.coords.longitude;
 
-            if (button) {
-                button.textContent = 'Verifying...';
-            }
-
             var verifyFormData = new FormData(form);
 
             fetch('check_in_verify.php', {
@@ -263,7 +284,7 @@ window.CraftCrawlInitCheckIn = function (root = document) {
                     }
 
                     verifyData = data;
-                    openCamera();
+                    showModal();
                 })
                 .catch(function () {
                     resetButton(originalText);

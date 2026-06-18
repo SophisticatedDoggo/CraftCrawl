@@ -646,19 +646,25 @@ function format_event_time_range($event) {
                            capture="environment" data-checkin-photo-input hidden>
                     <button type="submit">Check In</button>
                 </form>
-                <div class="checkin-preview" data-checkin-preview hidden>
-                    <div class="checkin-preview-card">
-                        <div class="checkin-preview-header">
-                            <strong data-checkin-preview-title></strong>
-                            <p data-checkin-preview-detail></p>
-                        </div>
-                        <div class="checkin-preview-photo">
-                            <img data-checkin-preview-img alt="Check-in photo preview">
-                        </div>
+                <div class="checkin-modal" data-checkin-modal hidden>
+                    <div class="checkin-modal-prompt" data-checkin-prompt>
+                        <p>Take a photo to complete your check-in.</p>
+                        <button type="button" data-checkin-take-photo>Take Photo</button>
                     </div>
-                    <div class="checkin-preview-actions">
-                        <button type="button" data-checkin-retake>Retake</button>
-                        <button type="button" data-checkin-confirm>Post Check-in</button>
+                    <div class="checkin-preview" data-checkin-preview hidden>
+                        <div class="checkin-preview-card">
+                            <div class="checkin-preview-header">
+                                <strong data-checkin-preview-title></strong>
+                                <p data-checkin-preview-detail></p>
+                            </div>
+                            <div class="checkin-preview-photo">
+                                <img data-checkin-preview-img alt="Check-in photo preview">
+                            </div>
+                        </div>
+                        <div class="checkin-preview-actions">
+                            <button type="button" data-checkin-retake>Retake</button>
+                            <button type="button" data-checkin-confirm>Post Check-in</button>
+                        </div>
                     </div>
                 </div>
                 <?php if (!empty($business['bWebsite'])) : ?>
