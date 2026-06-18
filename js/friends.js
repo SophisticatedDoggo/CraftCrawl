@@ -1733,7 +1733,25 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     function checkFeedNearBottom() {
-        if (!feed || !feedSentinel || !hasMore || loadingMore || !isFeedTabActive()) {
+        if (!feed || !hasMore || loadingMore || !isFeedTabActive()) {
+            return;
+        }
+
+        const scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+        const documentHeight = Math.max(
+            document.body.scrollHeight,
+            document.documentElement.scrollHeight,
+            document.body.offsetHeight,
+            document.documentElement.offsetHeight
+        );
+
+        if (scrollTop + viewportHeight >= documentHeight - 160) {
+            loadMore();
+            return;
+        }
+
+        if (!feedSentinel) {
             return;
         }
 
