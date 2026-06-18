@@ -6,6 +6,7 @@ require_once '../lib/quests.php';
 require_once '../lib/user_avatar.php';
 
 header('Content-Type: application/json');
+header('Cache-Control: no-store');
 
 if (!isset($_SESSION['user_id'])) {
     http_response_code(403);
@@ -516,6 +517,7 @@ usort($feed, function ($a, $b) {
 
 $has_more = count($feed) > $feed_page_size;
 $feed = array_slice($feed, 0, $feed_page_size);
+$next_before = !empty($feed) ? ($feed[count($feed) - 1]['created_at'] ?? null) : null;
 
 // Batch-load poll options + user votes for poll-type business posts in this page
 $poll_feed_idx_to_post_id = [];
@@ -821,7 +823,8 @@ if (!empty($feed_item_keys)) {
 $response = [
     'ok' => true,
     'feed' => $feed,
-    'has_more' => $has_more
+    'has_more' => $has_more,
+    'next_before' => $has_more ? $next_before : null
 ];
 
 // Only send friends list on the initial load (no before cursor)

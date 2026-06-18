@@ -8,7 +8,7 @@ const CRAFTCRAWL_XP_REVIEW = 25;
 const CRAFTCRAWL_LEVEL_XP_BASE = 100;
 const CRAFTCRAWL_MAX_LEVEL = 100;
 const CRAFTCRAWL_REPEAT_VISIT_COOLDOWN_DAYS = 1;
-const CRAFTCRAWL_CHECKIN_RADIUS_METERS = 402;
+const CRAFTCRAWL_CHECKIN_RADIUS_METERS = 100;
 
 function craftcrawl_level_xp_required($level) {
     $level = max(1, min(CRAFTCRAWL_MAX_LEVEL, (int) $level));

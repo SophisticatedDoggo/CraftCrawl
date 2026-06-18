@@ -34,7 +34,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let currentFriendsCache = [];
     let friendSearchTimer = null;
     let friendSearchRequestId = 0;
-    let lastItemDate = null;
+    let nextFeedCursor = null;
     let hasMore = false;
     let loadingMore = false;
     const reactionLabels = {
@@ -1114,25 +1114,20 @@ window.CraftCrawlInitFriends = function (scope = document) {
             feed.innerHTML = friends.length
                 ? '<p>No friend activity yet.</p>'
                 : '<p>Add friends to see level-ups and first-time visits here.</p>';
-            if (sentinel) {
-                sentinel.hidden = true;
-                feed.appendChild(sentinel);
-            }
+            hasMore = false;
+            nextFeedCursor = null;
+            updateFeedPagingControls(false);
             return;
         }
 
         feed.innerHTML = items.map(renderFeedItem).join('');
 
-        if (sentinel) {
-            feed.appendChild(sentinel);
-        }
+        appendFeedPagingControls();
 
         focusFeedItemIfRequested();
-        lastItemDate = items[items.length - 1]?.created_at || null;
+        nextFeedCursor = data.next_before || items[items.length - 1]?.created_at || null;
         hasMore = data.has_more === true;
-        if (sentinel) {
-            sentinel.hidden = !hasMore;
-        }
+        updateFeedPagingControls(hasMore);
         window.requestAnimationFrame(checkFeedNearBottom);
 
         playPendingThreadReturnAnchor();
@@ -1629,20 +1624,19 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     function loadMore() {
-        if (!feed || !lastItemDate || !hasMore || loadingMore) {
+        if (!feed || !nextFeedCursor || !hasMore || loadingMore) {
             return;
         }
 
         loadingMore = true;
+        updateFeedPagingControls(hasMore);
 
-        fetch(`${userEndpoint('friends_feed.php')}?before=${encodeURIComponent(lastItemDate)}`, { credentials: 'same-origin' })
+        fetch(`${userEndpoint('friends_feed.php')}?before=${encodeURIComponent(nextFeedCursor)}`, { credentials: 'same-origin', cache: 'no-store' })
             .then((r) => r.json())
             .then((data) => {
                 if (!data.ok || !data.feed || !data.feed.length) {
                     hasMore = false;
-                    if (sentinel) {
-                        sentinel.hidden = true;
-                    }
+                    updateFeedPagingControls(false);
                     return;
                 }
 
@@ -1660,17 +1654,29 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 });
 
                 focusFeedItemIfRequested();
-                lastItemDate = data.feed[data.feed.length - 1].created_at;
+                nextFeedCursor = data.next_before || data.feed[data.feed.length - 1].created_at;
                 hasMore = data.has_more === true;
-                if (sentinel) {
-                    sentinel.hidden = !hasMore;
-                }
+                updateFeedPagingControls(hasMore);
             })
             .catch(() => {})
             .finally(() => {
                 loadingMore = false;
+                updateFeedPagingControls(hasMore);
                 checkFeedNearBottom();
             });
+    }
+
+    function appendFeedPagingControls() {
+        if (sentinel) {
+            feed.appendChild(sentinel);
+        }
+    }
+
+    function updateFeedPagingControls(show) {
+        appendFeedPagingControls();
+        if (sentinel) {
+            sentinel.hidden = !show;
+        }
     }
 
     function checkFeedNearBottom() {
@@ -1844,7 +1850,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     function loadFeed() {
-        return fetch(userEndpoint('friends_feed.php'), { credentials: 'same-origin' })
+        return fetch(userEndpoint('friends_feed.php'), { credentials: 'same-origin', cache: 'no-store' })
             .then((response) => response.json())
             .then((data) => {
                 if (!data.ok) {
