@@ -4773,6 +4773,36 @@ a.mobile-context-back.feed-thread-back-link:focus {
     line-height: 1;
 }
 
+.feed-compose-preview {
+    display: grid;
+    gap: 3px;
+    padding: 8px 10px;
+    border-left: 3px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--color-surface-muted) 80%, transparent);
+}
+
+.feed-compose-preview[hidden] {
+    display: none;
+}
+
+.feed-compose-preview span {
+    color: var(--color-heading);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.feed-compose-preview p {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    color: var(--color-muted);
+    font-size: 13px;
+    line-height: 1.25;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
 .feed-compose-form textarea {
     min-height: 92px;
 }
@@ -4789,6 +4819,37 @@ a.mobile-context-back.feed-thread-back-link:focus {
 
 .feed-thread-post {
     margin: 0;
+}
+
+@media (max-width: 700px) {
+    .feed-compose-form {
+        gap: 8px;
+        padding: 10px 14px max(10px, env(safe-area-inset-bottom));
+    }
+
+    .feed-compose-context {
+        gap: 8px;
+        font-size: 12px;
+    }
+
+    .feed-compose-preview {
+        padding: 7px 9px;
+    }
+
+    .feed-compose-preview p {
+        -webkit-line-clamp: 1;
+    }
+
+    .feed-compose-form textarea {
+        height: 76px;
+        min-height: 76px;
+    }
+
+    .feed-compose-form button[type="submit"] {
+        min-height: 36px;
+        padding-top: 7px;
+        padding-bottom: 7px;
+    }
 }
 
 @keyframes feedThreadPostSettleIn {

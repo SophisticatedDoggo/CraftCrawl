@@ -276,21 +276,29 @@ window.CraftCrawlInitFeedThread = function (root = document) {
     const composeForm = root.querySelector('#feed-compose-form');
     const composeParentInput = root.querySelector('[data-compose-parent-id]');
     const composeContext = root.querySelector('[data-compose-context]');
+    const composePreview = root.querySelector('[data-compose-preview]');
+    const composePreviewTitle = root.querySelector('[data-compose-preview-title]');
+    const composePreviewText = root.querySelector('[data-compose-preview-text]');
     const composeSubmit = root.querySelector('[data-compose-submit]');
     let activeComposeTarget = null;
     let composerKeyboardOffset = 0;
+    let composerLayoutHeight = 0;
 
     function updateComposerViewportOffset() {
         if (!composeForm || composeForm.hidden) {
             document.documentElement.style.removeProperty('--feed-compose-keyboard-offset');
+            composerLayoutHeight = 0;
             return 0;
         }
 
         const visualViewport = window.visualViewport;
-        const layoutHeight = Math.min(
+        const currentLayoutHeight = Math.max(
             window.innerHeight || 0,
-            document.documentElement.clientHeight || window.innerHeight || 0
+            document.documentElement.clientHeight || 0,
+            visualViewport ? visualViewport.height + visualViewport.offsetTop : 0
         ) || window.innerHeight || 0;
+        composerLayoutHeight = Math.max(composerLayoutHeight, currentLayoutHeight);
+        const layoutHeight = composerLayoutHeight || currentLayoutHeight;
         const rawKeyboardOffset = visualViewport
             ? Math.max(0, layoutHeight - visualViewport.height - visualViewport.offsetTop)
             : 0;
@@ -325,12 +333,49 @@ window.CraftCrawlInitFeedThread = function (root = document) {
     function closeComposer() {
         if (composeForm) composeForm.hidden = true;
         composerKeyboardOffset = 0;
+        composerLayoutHeight = 0;
         document.documentElement.style.removeProperty('--feed-compose-keyboard-offset');
         document.body.classList.remove('feed-comment-composer-open');
         threadPage?.classList.remove('is-compose-open');
         threadPage?.style.removeProperty('--feed-compose-offset');
         clearComposeTarget();
         scheduleThreadScrollabilityUpdate();
+    }
+
+    function directChildText(target, selector) {
+        if (!target) return '';
+        try {
+            return target.querySelector(`:scope > ${selector}`)?.textContent?.trim() || '';
+        } catch (_) {
+            return Array.from(target.children || [])
+                .find((child) => child.matches?.(selector))
+                ?.textContent
+                ?.trim() || '';
+        }
+    }
+
+    function clippedText(text, limit = 130) {
+        const normalized = String(text || '').replace(/\s+/g, ' ').trim();
+        return normalized.length > limit ? `${normalized.slice(0, limit - 1).trim()}...` : normalized;
+    }
+
+    function updateComposePreview(target, parentId, label) {
+        if (!composePreview) return;
+
+        const isReply = Boolean(parentId);
+        const postTitle = directChildText(target, 'div > strong');
+        const title = isReply
+            ? label || 'Comment'
+            : postTitle || 'This post';
+        const text = isReply
+            ? directChildText(target, 'p')
+            : [
+                directChildText(target, 'div > .feed-user-post-body') || directChildText(target, 'div > p')
+            ].filter(Boolean).join(' · ');
+
+        if (composePreviewTitle) composePreviewTitle.textContent = title;
+        if (composePreviewText) composePreviewText.textContent = clippedText(text);
+        composePreview.hidden = !text;
     }
 
     function openComposer(options = {}) {
@@ -354,6 +399,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         if (composeSubmit) {
             composeSubmit.textContent = parentId ? 'Post Reply' : 'Post Comment';
         }
+        updateComposePreview(activeComposeTarget, parentId, label);
 
         composeForm.hidden = false;
         document.body.classList.add('feed-comment-composer-open');
