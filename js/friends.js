@@ -34,7 +34,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let currentFriendsCache = [];
     let friendSearchTimer = null;
     let friendSearchRequestId = 0;
-    let nextFeedCursor = null;
+    let nextFeedCursor = { before: null, key: null };
     let hasMore = false;
     let loadingMore = false;
     let feedObserver = null;
@@ -1116,7 +1116,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 ? '<p>No friend activity yet.</p>'
                 : '<p>Add friends to see level-ups and first-time visits here.</p>';
             hasMore = false;
-            nextFeedCursor = null;
+            nextFeedCursor = { before: null, key: null };
             updateFeedSentinel(false);
             return;
         }
@@ -1124,7 +1124,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         feed.innerHTML = items.map(renderFeedItem).join('');
 
         focusFeedItemIfRequested();
-        nextFeedCursor = data.next_before || items[items.length - 1]?.created_at || null;
+        nextFeedCursor = feedCursorFromResponse(data, items);
         hasMore = data.has_more === true;
         updateFeedSentinel(hasMore);
         window.requestAnimationFrame(checkFeedNearBottom);
@@ -1623,14 +1623,19 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     function loadMore() {
-        if (!feed || !nextFeedCursor || !hasMore || loadingMore) {
+        if (!feed || !nextFeedCursor.before || !nextFeedCursor.key || !hasMore || loadingMore) {
             return;
         }
 
         loadingMore = true;
         updateFeedSentinel(false);
 
-        fetch(`${userEndpoint('friends_feed.php')}?before=${encodeURIComponent(nextFeedCursor)}`, { credentials: 'same-origin', cache: 'no-store' })
+        const params = new URLSearchParams({
+            before: nextFeedCursor.before,
+            before_key: nextFeedCursor.key
+        });
+
+        fetch(`${userEndpoint('friends_feed.php')}?${params.toString()}`, { credentials: 'same-origin', cache: 'no-store' })
             .then((r) => r.json())
             .then((data) => {
                 if (!data.ok || !data.feed || !data.feed.length) {
@@ -1648,15 +1653,26 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 });
 
                 focusFeedItemIfRequested();
-                nextFeedCursor = data.next_before || data.feed[data.feed.length - 1].created_at;
+                nextFeedCursor = feedCursorFromResponse(data, data.feed);
                 hasMore = data.has_more === true;
             })
-            .catch(() => {})
+            .catch((error) => {
+                console.warn('Friends feed pagination failed.', error);
+            })
             .finally(() => {
                 loadingMore = false;
                 updateFeedSentinel(hasMore);
                 checkFeedNearBottom();
             });
+    }
+
+    function feedCursorFromResponse(data, items) {
+        const lastItem = items[items.length - 1] || {};
+
+        return {
+            before: data.next_before || lastItem.created_at || null,
+            key: data.next_before_key || lastItem.item_key || null
+        };
     }
 
     function ensureFeedObserver() {

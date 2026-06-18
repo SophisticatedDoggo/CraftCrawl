@@ -18,6 +18,7 @@ $user_id = (int) $_SESSION['user_id'];
 
 $before_raw = $_GET['before'] ?? null;
 $before_dt = ($before_raw && strtotime($before_raw)) ? date('Y-m-d H:i:s', strtotime($before_raw)) : null;
+$before_key = isset($_GET['before_key']) ? trim((string) $_GET['before_key']) : '';
 $feed_page_size = 40;
 $business_post_fetch_limit = $feed_page_size + 1;
 
@@ -147,7 +148,7 @@ function craftcrawl_feed_person_payload($person) {
     ];
 }
 
-$before_clause_checkin = $before_dt ? ' AND uv.checkedInAt < ?' : '';
+$before_clause_checkin = $before_dt ? ' AND uv.checkedInAt <= ?' : '';
 $visit_sql = "
     SELECT uv.id, uv.user_id, uv.checkedInAt, l.id AS business_id, l.name AS bName, l.city, l.state,
         u.allow_post_interactions
@@ -184,7 +185,7 @@ while ($visit = $visit_result->fetch_assoc()) {
     ];
 }
 
-$before_clause_created = $before_dt ? ' AND createdAt < ?' : '';
+$before_clause_created = $before_dt ? ' AND createdAt <= ?' : '';
 $xp_sql = "
     SELECT xl.id, xl.user_id, xl.level_after, xl.createdAt, u.allow_post_interactions
     FROM xp_log xl
@@ -220,7 +221,7 @@ while ($xp = $xp_result->fetch_assoc()) {
     ];
 }
 
-$before_clause_ew = $before_dt ? ' AND ew.createdAt < ?' : '';
+$before_clause_ew = $before_dt ? ' AND ew.createdAt <= ?' : '';
 $event_want_sql = "
     SELECT ew.id, ew.user_id, ew.event_id, ew.occurrence_date, ew.createdAt,
         e.eName, e.startTime, l.id AS business_id, l.name AS bName, l.city, l.state,
@@ -263,7 +264,7 @@ while ($event_want = $event_want_result->fetch_assoc()) {
     ];
 }
 
-$before_clause_wtg = $before_dt ? ' AND wtg.createdAt < ?' : '';
+$before_clause_wtg = $before_dt ? ' AND wtg.createdAt <= ?' : '';
 $location_want_sql = "
     SELECT wtg.id, wtg.user_id, wtg.createdAt, l.id AS business_id, l.name AS bName, l.location_type AS bType, l.city, l.state,
         u.allow_post_interactions
@@ -301,7 +302,7 @@ while ($location_want = $location_want_result->fetch_assoc()) {
     ];
 }
 
-$before_clause_badge = $before_dt ? ' AND ub.earnedAt < ?' : '';
+$before_clause_badge = $before_dt ? ' AND ub.earnedAt <= ?' : '';
 $badge_sql = "
     SELECT ub.id, ub.user_id, ub.badge_name, ub.badge_description, ub.badge_tier, ub.earnedAt,
         u.allow_post_interactions
@@ -336,7 +337,7 @@ while ($badge = $badge_result->fetch_assoc()) {
     ];
 }
 
-$before_clause_quest = $before_dt ? ' AND uqc.completedAt < ?' : '';
+$before_clause_quest = $before_dt ? ' AND uqc.completedAt <= ?' : '';
 $quest_sql = "
     SELECT uqc.id, uqc.user_id, uqc.quest_key, uqc.period_type, uqc.xp_awarded, uqc.completedAt,
         u.allow_post_interactions
@@ -373,7 +374,7 @@ while ($quest = $quest_result->fetch_assoc()) {
 
 $daily_required = CRAFTCRAWL_DAILY_QUEST_COUNT;
 $weekly_required = CRAFTCRAWL_WEEKLY_QUEST_COUNT;
-$before_clause_sweep = $before_dt ? ' AND completedAt < ?' : '';
+$before_clause_sweep = $before_dt ? ' AND completedAt <= ?' : '';
 $sweep_sql = "
     SELECT user_id, period_type, period_start, MAX(completedAt) AS completedAt, SUM(xp_awarded) AS xp_awarded, COUNT(*) AS quest_count, MAX(allow_post_interactions) AS allow_post_interactions
     FROM (
@@ -430,7 +431,7 @@ while ($sweep = $sweep_result->fetch_assoc()) {
     ];
 }
 
-$before_clause_user_posts = $before_dt ? ' AND ufp.createdAt < ?' : '';
+$before_clause_user_posts = $before_dt ? ' AND ufp.createdAt <= ?' : '';
 $user_posts_sql = "
     SELECT ufp.id, ufp.user_id, ufp.body, ufp.createdAt, actor.allow_post_interactions
     FROM user_feed_posts ufp
@@ -473,7 +474,7 @@ if ($before_dt) {
         FROM business_posts bp
         INNER JOIN locations l ON l.id = bp.location_id AND l.visibility_status='public_claimed'
         INNER JOIN liked_businesses lb ON lb.location_id = bp.location_id AND lb.user_id=?
-        WHERE bp.created_at < ?
+        WHERE bp.created_at <= ?
         ORDER BY bp.created_at DESC
         LIMIT ?
     ");
@@ -512,12 +513,28 @@ while ($bpost = $post_feed_result->fetch_assoc()) {
 }
 
 usort($feed, function ($a, $b) {
-    return strtotime($b['created_at']) <=> strtotime($a['created_at']);
+    $time_compare = strtotime($b['created_at']) <=> strtotime($a['created_at']);
+    if ($time_compare !== 0) {
+        return $time_compare;
+    }
+
+    return strcmp($b['item_key'], $a['item_key']);
 });
+
+if ($before_dt && $before_key !== '') {
+    $before_ts = strtotime($before_dt);
+    $feed = array_values(array_filter($feed, function ($feed_item) use ($before_ts, $before_key) {
+        $item_ts = strtotime($feed_item['created_at']);
+
+        return $item_ts < $before_ts
+            || ($item_ts === $before_ts && strcmp($feed_item['item_key'], $before_key) < 0);
+    }));
+}
 
 $has_more = count($feed) > $feed_page_size;
 $feed = array_slice($feed, 0, $feed_page_size);
 $next_before = !empty($feed) ? ($feed[count($feed) - 1]['created_at'] ?? null) : null;
+$next_before_key = !empty($feed) ? ($feed[count($feed) - 1]['item_key'] ?? null) : null;
 
 // Batch-load poll options + user votes for poll-type business posts in this page
 $poll_feed_idx_to_post_id = [];
@@ -824,7 +841,8 @@ $response = [
     'ok' => true,
     'feed' => $feed,
     'has_more' => $has_more,
-    'next_before' => $has_more ? $next_before : null
+    'next_before' => $has_more ? $next_before : null,
+    'next_before_key' => $has_more ? $next_before_key : null
 ];
 
 // Only send friends list on the initial load (no before cursor)
