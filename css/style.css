@@ -4548,6 +4548,10 @@ body.event-detail-overlay-open {
     overflow: hidden;
 }
 
+body.feed-comment-composer-open {
+    overflow: hidden;
+}
+
 .feed-thread-overlay,
 .event-detail-overlay {
     position: fixed;
@@ -4722,10 +4726,7 @@ a.mobile-context-back.feed-thread-back-link:focus {
 }
 
 .feed-compose-panel {
-    position: sticky;
-    bottom: 0;
     z-index: 6;
-    display: block;
     padding: 0;
     border: 0;
     background: transparent;
@@ -4734,93 +4735,105 @@ a.mobile-context-back.feed-thread-back-link:focus {
 
 .feed-compose-form {
     position: fixed;
-    right: 0;
-    bottom: var(--feed-compose-keyboard-offset, 0px);
-    left: 0;
+    inset: 0;
     z-index: 1211;
     display: grid;
-    gap: 10px;
-    width: min(100%, 760px);
-    margin: 0 auto;
-    padding: 14px 14px max(14px, env(safe-area-inset-bottom));
-    border-top: 1px solid color-mix(in srgb, var(--color-border) 82%, var(--color-primary));
-    background: color-mix(in srgb, var(--color-bg) 96%, var(--color-surface));
-    box-shadow: 0 -16px 34px color-mix(in srgb, var(--color-text) 14%, transparent);
+    grid-template-columns: minmax(0, 760px);
+    align-content: start;
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+    max-height: 100vh;
+    margin: 0;
+    padding: max(18px, env(safe-area-inset-top)) 14px max(18px, env(safe-area-inset-bottom));
+    overflow-y: auto;
+    border: 0;
+    background: color-mix(in srgb, var(--color-bg) 96%, rgba(0, 0, 0, 0.76));
+    box-shadow: none;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .feed-compose-form[hidden] {
     display: none;
 }
 
-.feed-compose-context {
+.feed-compose-modal-header {
     display: flex;
     justify-content: space-between;
     gap: 12px;
     align-items: center;
+    width: min(100%, 760px);
+    margin: 0 auto;
     color: var(--color-muted);
     font-size: 13px;
     font-weight: 800;
 }
 
-.feed-compose-actions {
-    display: inline-flex;
+.feed-compose-modal-header button[data-compose-cancel] {
     flex: 0 0 auto;
-    gap: 8px;
-    align-items: center;
-}
-
-.feed-compose-actions button[data-compose-submit] {
-    min-height: 34px;
-    padding: 7px 12px;
-    font-size: 12px;
-    font-weight: 900;
-    white-space: nowrap;
-}
-
-.feed-compose-actions button[data-compose-cancel] {
-    min-height: 28px;
-    width: 32px;
+    min-height: 42px;
+    width: 42px;
     padding: 0;
     color: var(--color-muted);
-    background: transparent;
-    border: 0;
-    box-shadow: none;
+    border-radius: 50%;
     font-size: 1.35rem;
     line-height: 1;
 }
 
-.feed-compose-preview {
+.feed-compose-reference {
     display: grid;
-    gap: 3px;
-    padding: 8px 10px;
-    border-left: 3px solid var(--color-primary);
-    border-radius: var(--radius-sm);
-    background: color-mix(in srgb, var(--color-surface-muted) 80%, transparent);
+    width: min(100%, 760px);
+    margin: 0 auto;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
+    border-radius: var(--radius-md);
+    background:
+        var(--glass-surface),
+        var(--color-surface);
+    box-shadow: var(--glass-shadow);
 }
 
-.feed-compose-preview[hidden] {
+.feed-compose-reference:empty {
     display: none;
 }
 
-.feed-compose-preview span {
-    color: var(--color-heading);
-    font-size: 12px;
-    font-weight: 800;
+.feed-compose-reference .feed-compose-reference-item {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    cursor: default;
 }
 
-.feed-compose-preview p {
-    display: -webkit-box;
-    margin: 0;
-    overflow: hidden;
-    color: var(--color-muted);
-    font-size: 13px;
-    line-height: 1.25;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+.feed-compose-reference .feed-compose-reference-item:hover,
+.feed-compose-reference .feed-compose-reference-item:focus {
+    background: transparent;
+}
+
+.feed-compose-form > label,
+.feed-compose-form > textarea,
+.feed-compose-form > button[type="submit"] {
+    width: min(100%, 760px);
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.feed-compose-form > label {
+    color: var(--color-heading);
+    font-size: 1.15rem;
+    font-weight: 900;
 }
 
 .feed-compose-form textarea {
-    min-height: 92px;
+    min-height: 190px;
+    resize: vertical;
+}
+
+.feed-compose-form > button[type="submit"] {
+    justify-self: center;
 }
 
 .is-compose-target {
@@ -4839,47 +4852,36 @@ a.mobile-context-back.feed-thread-back-link:focus {
 
 @media (max-width: 700px) {
     .feed-compose-form {
-        gap: 8px;
-        padding: 10px 14px max(10px, env(safe-area-inset-bottom));
+        gap: 12px;
+        padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
     }
 
-    .feed-compose-context {
-        gap: 8px;
+    .feed-compose-modal-header {
         font-size: 12px;
     }
 
-    .feed-compose-actions {
-        gap: 6px;
+    .feed-compose-reference {
+        padding: 12px;
     }
 
-    .feed-compose-actions button[data-compose-submit] {
-        min-height: 32px;
-        padding: 6px 10px;
-        font-size: 11px;
+    .feed-compose-reference .feed-compose-reference-item {
+        --feed-avatar-track: 48px;
+        --feed-column-gap: 10px;
+        grid-template-columns: 48px minmax(0, 1fr);
+        gap: 10px;
     }
 
-    .feed-compose-actions button[data-compose-cancel] {
-        width: 30px;
-        min-height: 30px;
-    }
-
-    .feed-compose-preview {
-        padding: 7px 9px;
-    }
-
-    .feed-compose-preview p {
-        -webkit-line-clamp: 1;
+    .feed-compose-form > label {
+        font-size: 1rem;
     }
 
     .feed-compose-form textarea {
-        height: 76px;
-        min-height: 76px;
+        min-height: 150px;
     }
 
-    .feed-compose-form button[type="submit"] {
-        min-height: 36px;
-        padding-top: 7px;
-        padding-bottom: 7px;
+    .feed-compose-form > button[type="submit"] {
+        width: auto;
+        min-width: 148px;
     }
 }
 
@@ -5056,6 +5058,11 @@ a.mobile-context-back.feed-thread-back-link:focus {
     align-self: flex-start;
     width: auto;
     max-width: 100%;
+}
+
+.feed-compose-form > button[type="submit"] {
+    align-self: center;
+    justify-self: center;
 }
 
 .feed-reply-toggle {
@@ -6583,6 +6590,20 @@ a.mobile-context-back.feed-thread-back-link:focus {
 
 .settings-panel h2 {
     margin-top: 0;
+}
+
+.settings-panel.feed-compose-panel {
+    display: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.settings-panel.feed-compose-panel.is-compose-panel-open {
+    display: block;
 }
 
 .legal-page {

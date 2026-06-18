@@ -276,47 +276,15 @@ window.CraftCrawlInitFeedThread = function (root = document) {
     const composeForm = root.querySelector('#feed-compose-form');
     const composeParentInput = root.querySelector('[data-compose-parent-id]');
     const composeContext = root.querySelector('[data-compose-context]');
-    const composePreview = root.querySelector('[data-compose-preview]');
-    const composePreviewTitle = root.querySelector('[data-compose-preview-title]');
-    const composePreviewText = root.querySelector('[data-compose-preview-text]');
+    const composePanel = composeForm?.closest('.feed-compose-panel');
+    const composeReference = root.querySelector('[data-compose-reference]');
+    const composeLabel = root.querySelector('[data-compose-label]');
     const composeSubmit = root.querySelector('[data-compose-submit]');
     let activeComposeTarget = null;
-    let composerKeyboardOffset = 0;
-    let composerLayoutHeight = 0;
-
-    function updateComposerViewportOffset() {
-        if (!composeForm || composeForm.hidden) {
-            document.documentElement.style.removeProperty('--feed-compose-keyboard-offset');
-            composerLayoutHeight = 0;
-            return 0;
-        }
-
-        const visualViewport = window.visualViewport;
-        const currentLayoutHeight = Math.max(
-            window.innerHeight || 0,
-            document.documentElement.clientHeight || 0,
-            visualViewport ? visualViewport.height + visualViewport.offsetTop : 0
-        ) || window.innerHeight || 0;
-        composerLayoutHeight = Math.max(composerLayoutHeight, currentLayoutHeight);
-        const layoutHeight = composerLayoutHeight || currentLayoutHeight;
-        const rawKeyboardOffset = visualViewport
-            ? Math.max(0, layoutHeight - visualViewport.height - visualViewport.offsetTop)
-            : 0;
-        const maxKeyboardOffset = Math.min(430, Math.max(0, layoutHeight * 0.55));
-        const keyboardOffset = Math.min(rawKeyboardOffset, maxKeyboardOffset);
-        const textareaFocused = composeForm.contains(document.activeElement);
-        composerKeyboardOffset = textareaFocused
-            ? Math.max(composerKeyboardOffset, keyboardOffset)
-            : keyboardOffset;
-
-        document.documentElement.style.setProperty('--feed-compose-keyboard-offset', `${Math.ceil(composerKeyboardOffset)}px`);
-        return composerKeyboardOffset;
-    }
 
     function updateComposerSpace() {
         if (!composeForm || composeForm.hidden || !threadPage) return 0;
 
-        updateComposerViewportOffset();
         const composerHeight = Math.ceil(composeForm.getBoundingClientRect().height || 0);
         const offset = composerHeight + 28;
         threadPage.style.setProperty('--feed-compose-offset', `${offset}px`);
@@ -332,9 +300,8 @@ window.CraftCrawlInitFeedThread = function (root = document) {
 
     function closeComposer() {
         if (composeForm) composeForm.hidden = true;
-        composerKeyboardOffset = 0;
-        composerLayoutHeight = 0;
-        document.documentElement.style.removeProperty('--feed-compose-keyboard-offset');
+        composePanel?.classList.remove('is-compose-panel-open');
+        composeReference?.replaceChildren();
         document.body.classList.remove('feed-comment-composer-open');
         threadPage?.classList.remove('is-compose-open');
         threadPage?.style.removeProperty('--feed-compose-offset');
@@ -342,49 +309,46 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         scheduleThreadScrollabilityUpdate();
     }
 
-    function directChildText(target, selector) {
-        if (!target) return '';
-        try {
-            return target.querySelector(`:scope > ${selector}`)?.textContent?.trim() || '';
-        } catch (_) {
-            return Array.from(target.children || [])
-                .find((child) => child.matches?.(selector))
-                ?.textContent
-                ?.trim() || '';
-        }
-    }
-
-    function clippedText(text, limit = 130) {
-        const normalized = String(text || '').replace(/\s+/g, ' ').trim();
-        return normalized.length > limit ? `${normalized.slice(0, limit - 1).trim()}...` : normalized;
-    }
-
-    function updateComposePreview(target, parentId, label) {
-        if (!composePreview) return;
-
-        const isReply = Boolean(parentId);
-        const previewSource = isReply
+    function composeReferenceSource(target, isReply) {
+        return isReply
             ? target
             : target?.matches?.('.feed-thread-post')
                 ? target
                 : target?.querySelector?.('.feed-thread-post') || target;
-        const postTitle = directChildText(previewSource, 'div > strong');
-        const title = isReply
-            ? label || 'Comment'
-            : postTitle || 'This post';
-        const text = isReply
-            ? directChildText(previewSource, 'p')
-            : [
-                directChildText(previewSource, 'div > .feed-user-post-body') || directChildText(previewSource, 'div > p')
-            ].filter(Boolean).join(' · ');
-        const previewText = clippedText(text);
+    }
 
-        if (composePreviewTitle) composePreviewTitle.textContent = title;
-        if (composePreviewText) {
-            composePreviewText.textContent = previewText;
-            composePreviewText.hidden = !previewText;
+    function replaceLinksWithSpans(container) {
+        container.querySelectorAll('a').forEach((link) => {
+            const span = document.createElement('span');
+            span.className = link.className;
+            span.innerHTML = link.innerHTML;
+            link.replaceWith(span);
+        });
+    }
+
+    function updateComposeReference(target, isReply) {
+        if (!composeReference) return;
+        composeReference.replaceChildren();
+
+        const source = composeReferenceSource(target, isReply);
+        if (!source) return;
+
+        const clone = source.cloneNode(true);
+        clone.removeAttribute('id');
+        clone.classList.remove('is-compose-target', 'notification-focus-target', 'notification-focus-pending');
+        clone.classList.add('feed-compose-reference-item');
+        clone.querySelectorAll('button, form, input, textarea, select, .feed-action-row, .feed-detail-link-row, .feed-reaction-list, .feed-replies-toggle, .feed-reply-list').forEach((element) => {
+            element.remove();
+        });
+        replaceLinksWithSpans(clone);
+
+        if (isReply) {
+            clone.querySelectorAll('.feed-comment').forEach((comment) => {
+                if (comment !== clone) comment.remove();
+            });
         }
-        composePreview.hidden = !title && !previewText;
+
+        composeReference.appendChild(clone);
     }
 
     function openComposer(options = {}) {
@@ -405,28 +369,29 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         if (composeContext) {
             composeContext.textContent = parentId ? `Replying to ${label}` : 'Commenting on this post';
         }
+        if (composeLabel) {
+            composeLabel.textContent = parentId ? 'Reply' : 'Comment';
+        }
         if (composeSubmit) {
             composeSubmit.textContent = parentId ? 'Post Reply' : 'Post Comment';
         }
-        updateComposePreview(activeComposeTarget, parentId, label);
+        updateComposeReference(activeComposeTarget, Boolean(parentId));
 
         composeForm.hidden = false;
+        composePanel?.classList.add('is-compose-panel-open');
         document.body.classList.add('feed-comment-composer-open');
         updateComposerSpace();
         window.requestAnimationFrame(() => {
-            composeForm.querySelector('textarea')?.focus();
+            const textarea = composeForm.querySelector('textarea');
+            if (textarea) {
+                try {
+                    textarea.focus({ preventScroll: true });
+                } catch (_) {
+                    textarea.focus();
+                }
+            }
             [80, 180, 360, 700].forEach((delay) => window.setTimeout(updateComposerSpace, delay));
         });
-    }
-
-    if (window.visualViewport && threadPage && threadPage.dataset.composeViewportReady !== 'true') {
-        threadPage.dataset.composeViewportReady = 'true';
-        const syncComposerViewport = () => {
-            if (!composeForm || composeForm.hidden) return;
-            updateComposerSpace();
-        };
-        window.visualViewport.addEventListener('resize', syncComposerViewport);
-        window.visualViewport.addEventListener('scroll', syncComposerViewport);
     }
 
     root.querySelectorAll('[data-reply-toggle]').forEach((button) => {
