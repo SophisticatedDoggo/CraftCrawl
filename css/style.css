@@ -4098,11 +4098,35 @@ body:not(.feed-page-body) .feed-compose-fab {
 }
 
 [data-feed-sentinel] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
     min-height: 32px;
+    color: var(--color-muted);
+    font-size: 13px;
 }
 
 [data-feed-sentinel][hidden] {
     display: none;
+}
+
+[data-feed-sentinel].is-loading {
+    min-height: 76px;
+}
+
+[data-feed-sentinel].is-loading span {
+    width: 18px;
+    height: 18px;
+    border: 2px solid color-mix(in srgb, currentColor 38%, transparent);
+    border-top-color: currentColor;
+    border-radius: 999px;
+    animation: craftcrawl-loading-spin 760ms linear infinite;
+}
+
+[data-feed-sentinel].is-loading strong {
+    font-size: inherit;
+    font-weight: 700;
 }
 
 .pull-refresh-surface {

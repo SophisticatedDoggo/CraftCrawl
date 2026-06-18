@@ -40,6 +40,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let feedObserver = null;
     let feedPaginationFailed = false;
     const feedPageSize = 40;
+    const feedPaginationDelayMs = 1300;
     const reactionLabels = {
         cheers: '🍻',
         nice_find: '🔥',
@@ -1634,14 +1635,15 @@ window.CraftCrawlInitFriends = function (scope = document) {
         }
 
         loadingMore = true;
-        updateFeedSentinel(false);
+        showFeedSentinelLoading();
 
         const params = new URLSearchParams({
             before: nextFeedCursor.before,
             before_key: nextFeedCursor.key
         });
 
-        fetch(`${userEndpoint('friends_feed.php')}?${params.toString()}`, { credentials: 'same-origin', cache: 'no-store' })
+        window.setTimeout(() => {
+            fetch(`${userEndpoint('friends_feed.php')}?${params.toString()}`, { credentials: 'same-origin', cache: 'no-store' })
             .then((r) => r.json())
             .then((data) => {
                 if (!data.ok || !data.feed || !data.feed.length) {
@@ -1674,6 +1676,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 updateFeedSentinel(hasMore);
                 checkFeedNearBottom();
             });
+        }, feedPaginationDelayMs);
     }
 
     function feedCursorFromResponse(data, items) {
@@ -1722,6 +1725,16 @@ window.CraftCrawlInitFriends = function (scope = document) {
         feedObserver?.unobserve(feedSentinel);
         feedSentinel.remove();
         feedSentinel = null;
+    }
+
+    function showFeedSentinelLoading() {
+        if (!feedSentinel) {
+            return;
+        }
+
+        feedObserver?.unobserve(feedSentinel);
+        feedSentinel.classList.add('is-loading');
+        feedSentinel.innerHTML = '<span aria-hidden="true"></span><strong>Loading more posts</strong>';
     }
 
     function updateFeedSentinel(show) {
