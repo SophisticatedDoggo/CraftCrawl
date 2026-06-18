@@ -619,7 +619,7 @@ if ($feed_item) {
                 <p class="form-message form-message-error">Comments are not enabled on this post.</p>
             <?php endif; ?>
 
-            <section class="settings-panel feed-thread-panel" data-compose-target data-compose-label="post">
+            <section class="settings-panel feed-thread-panel" data-compose-target>
                 <?php echo render_feed_thread_post($feed_item, render_feed_thread_reactions($conn, $user_id, $feed_item)); ?>
                 <?php $post_reference = feed_thread_post_reference($feed_item); ?>
                 <button type="button" class="feed-reply-toggle feed-post-reply-toggle" data-reply-toggle data-parent-comment-id="" data-reply-label="post" data-reply-target="[data-compose-target]"<?php echo feed_thread_reference_attrs($post_reference['title'], $post_reference['meta'], $post_reference['body']); ?>>Comment</button>
