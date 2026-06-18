@@ -186,7 +186,7 @@ while ($visit = $visit_result->fetch_assoc()) {
     ];
 }
 
-$before_clause_created = $before_dt ? ' AND createdAt <= ?' : '';
+$before_clause_created = $before_dt ? ' AND xl.createdAt <= ?' : '';
 $xp_sql = "
     SELECT xl.id, xl.user_id, xl.level_after, xl.createdAt, u.allow_post_interactions
     FROM xp_log xl

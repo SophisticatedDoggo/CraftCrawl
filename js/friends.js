@@ -38,6 +38,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let hasMore = false;
     let loadingMore = false;
     let feedObserver = null;
+    let feedPaginationFailed = false;
     const feedPageSize = 40;
     const reactionLabels = {
         cheers: '🍻',
@@ -1118,6 +1119,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 : '<p>Add friends to see level-ups and first-time visits here.</p>';
             hasMore = false;
             nextFeedCursor = { before: null, key: null };
+            feedPaginationFailed = false;
             updateFeedPagingDebug(0);
             updateFeedSentinel(false);
             return;
@@ -1128,6 +1130,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         focusFeedItemIfRequested();
         nextFeedCursor = feedCursorFromResponse(data, items);
         hasMore = feedPageMayHaveMore(data, items);
+        feedPaginationFailed = false;
         updateFeedPagingDebug(items.length);
         updateFeedSentinel(hasMore);
         window.requestAnimationFrame(checkFeedNearBottom);
@@ -1626,7 +1629,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     function loadMore() {
-        if (!feed || !nextFeedCursor.before || !nextFeedCursor.key || !hasMore || loadingMore) {
+        if (!feed || !nextFeedCursor.before || !nextFeedCursor.key || !hasMore || loadingMore || feedPaginationFailed) {
             return;
         }
 
@@ -1658,9 +1661,12 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 focusFeedItemIfRequested();
                 nextFeedCursor = feedCursorFromResponse(data, data.feed);
                 hasMore = feedPageMayHaveMore(data, data.feed);
+                feedPaginationFailed = false;
                 updateFeedPagingDebug(data.feed.length);
             })
             .catch((error) => {
+                feedPaginationFailed = true;
+                hasMore = false;
                 console.warn('Friends feed pagination failed.', error);
             })
             .finally(() => {
@@ -1733,25 +1739,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     function checkFeedNearBottom() {
-        if (!feed || !hasMore || loadingMore || !isFeedTabActive()) {
-            return;
-        }
-
-        const scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
-        const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
-        const documentHeight = Math.max(
-            document.body.scrollHeight,
-            document.documentElement.scrollHeight,
-            document.body.offsetHeight,
-            document.documentElement.offsetHeight
-        );
-
-        if (scrollTop + viewportHeight >= documentHeight - 160) {
-            loadMore();
-            return;
-        }
-
-        if (!feedSentinel) {
+        if (!feed || !feedSentinel || !hasMore || loadingMore || !isFeedTabActive()) {
             return;
         }
 
