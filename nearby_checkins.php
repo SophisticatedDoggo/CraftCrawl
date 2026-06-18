@@ -72,11 +72,13 @@ while ($business = $businesses->fetch_assoc()) {
     $is_verified_business = $business['visibility_status'] === 'public_claimed';
     $xp_awarded = craftcrawl_checkin_xp_amount($visit_type, $is_verified_business);
 
-    if ($visit_type === 'repeat' && $last_xp_checkin && strtotime($last_xp_checkin) > strtotime('-' . CRAFTCRAWL_REPEAT_VISIT_COOLDOWN_DAYS . ' days')) {
-        $eligible = false;
-        $eligible_at = date('M j, Y', strtotime($last_xp_checkin . ' +' . CRAFTCRAWL_REPEAT_VISIT_COOLDOWN_DAYS . ' days'));
-        $unavailable_reason = $is_open ? 'Repeat XP available ' . $eligible_at : $unavailable_reason;
-        $xp_awarded = 0;
+    if ($visit_type === 'repeat' && $last_xp_checkin && $is_open) {
+        $session_start = craftcrawl_location_current_session_start($conn, $location_id);
+        if ($session_start !== null && strtotime($last_xp_checkin) >= strtotime($session_start)) {
+            $eligible = false;
+            $unavailable_reason = 'Already checked in this session';
+            $xp_awarded = 0;
+        }
     }
 
     if (!$is_open) {

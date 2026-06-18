@@ -66,13 +66,17 @@ function craftcrawl_validate_checkin($conn, $user_id, $location_id_input, $busin
     $xp_awarded = craftcrawl_checkin_xp_amount($visit_type, $is_verified_business);
 
     if ($visit_type === 'repeat') {
-        $cooldown_stmt = $conn->prepare("SELECT checkedInAt FROM user_visits WHERE user_id=? AND location_id=? AND xp_awarded > 0 ORDER BY checkedInAt DESC LIMIT 1");
-        $cooldown_stmt->bind_param("ii", $user_id, $location_id);
-        $cooldown_stmt->execute();
-        $last_visit = $cooldown_stmt->get_result()->fetch_assoc();
+        $session_start = craftcrawl_location_current_session_start($conn, $location_id);
 
-        if ($last_visit && strtotime($last_visit['checkedInAt']) > strtotime('-' . CRAFTCRAWL_REPEAT_VISIT_COOLDOWN_DAYS . ' days')) {
-            return ['ok' => false, 'message' => 'Repeat visit XP is available once per day for each location.'];
+        if ($session_start !== null) {
+            $cooldown_stmt = $conn->prepare("SELECT checkedInAt FROM user_visits WHERE user_id=? AND location_id=? AND xp_awarded > 0 AND checkedInAt >= ? LIMIT 1");
+            $cooldown_stmt->bind_param("iis", $user_id, $location_id, $session_start);
+            $cooldown_stmt->execute();
+            $already_visited = $cooldown_stmt->get_result()->fetch_assoc();
+
+            if ($already_visited) {
+                return ['ok' => false, 'message' => 'You\'ve already checked in during this session. Come back next time they\'re open!'];
+            }
         }
     }
 
