@@ -77,8 +77,6 @@
         if (!modal) {
             return;
         }
-        list.hidden = true;
-        feedback.hidden = true;
         if (prompt) {
             prompt.hidden = false;
         }
@@ -86,6 +84,7 @@
             preview.hidden = true;
         }
         modal.hidden = false;
+        document.body.style.overflow = 'hidden';
     }
 
     function showPreview(photoFile) {
@@ -114,7 +113,7 @@
         if (modal) {
             modal.hidden = true;
         }
-        list.hidden = false;
+        document.body.style.overflow = '';
         if (previewObjectUrl) {
             URL.revokeObjectURL(previewObjectUrl);
             previewObjectUrl = null;

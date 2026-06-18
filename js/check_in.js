@@ -74,8 +74,6 @@ window.CraftCrawlInitCheckIn = function (root = document) {
         if (!modal) {
             return;
         }
-        form.hidden = true;
-        hideFeedback();
         if (prompt) {
             prompt.hidden = false;
         }
@@ -83,6 +81,7 @@ window.CraftCrawlInitCheckIn = function (root = document) {
             preview.hidden = true;
         }
         modal.hidden = false;
+        document.body.style.overflow = 'hidden';
     }
 
     function showPreview(photoFile) {
@@ -110,7 +109,7 @@ window.CraftCrawlInitCheckIn = function (root = document) {
         if (modal) {
             modal.hidden = true;
         }
-        form.hidden = false;
+        document.body.style.overflow = '';
         if (previewObjectUrl) {
             URL.revokeObjectURL(previewObjectUrl);
             previewObjectUrl = null;
