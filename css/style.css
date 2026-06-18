@@ -4808,6 +4808,10 @@ a.mobile-context-back.feed-thread-back-link:focus {
     cursor: default;
 }
 
+.feed-compose-reference .feed-compose-reference-item-text-only {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 .feed-compose-reference-avatar {
     min-width: 48px;
 }

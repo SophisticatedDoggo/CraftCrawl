@@ -281,6 +281,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
     const composeLabel = root.querySelector('[data-compose-label]');
     const composeSubmit = root.querySelector('[data-compose-submit]');
     let activeComposeTarget = null;
+    let composerScrollRestore = null;
 
     function updateComposerSpace() {
         if (!composeForm || composeForm.hidden || !threadPage) return 0;
@@ -299,6 +300,9 @@ window.CraftCrawlInitFeedThread = function (root = document) {
     }
 
     function closeComposer() {
+        if (composeForm?.contains(document.activeElement)) {
+            document.activeElement.blur();
+        }
         if (composeForm) composeForm.hidden = true;
         composePanel?.classList.remove('is-compose-panel-open');
         composeReference?.replaceChildren();
@@ -306,6 +310,19 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         threadPage?.classList.remove('is-compose-open');
         threadPage?.style.removeProperty('--feed-compose-offset');
         clearComposeTarget();
+        if (composerScrollRestore) {
+            const { container, top, windowY } = composerScrollRestore;
+            const restoreScroll = () => {
+                if (container) {
+                    container.scrollTop = top;
+                } else {
+                    window.scrollTo(window.scrollX, windowY);
+                }
+            };
+            window.requestAnimationFrame(restoreScroll);
+            window.setTimeout(restoreScroll, 180);
+            composerScrollRestore = null;
+        }
         scheduleThreadScrollabilityUpdate();
     }
 
@@ -318,12 +335,22 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         return String(text || '').replace(/\s+/g, ' ').trim();
     }
 
-    function buildComposeReference(target, isReply) {
+    function buildComposeReference(target, isReply, referenceData = null) {
         const source = isReply
             ? target
             : target?.matches?.('.feed-thread-post')
                 ? target
                 : target?.querySelector?.('.feed-thread-post') || target;
+
+        if (referenceData && (referenceData.title || referenceData.meta || referenceData.body)) {
+            return {
+                avatar: directChild(source, '.feed-avatar-link, .user-avatar, .friends-feed-icon')?.cloneNode(true) || null,
+                title: referenceData.title,
+                meta: referenceData.meta,
+                body: referenceData.body
+            };
+        }
+
         if (!source) return null;
 
         const content = directChild(source, 'div');
@@ -341,11 +368,11 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         return { avatar, title, meta, body };
     }
 
-    function updateComposeReference(target, isReply) {
+    function updateComposeReference(target, isReply, referenceData = null) {
         if (!composeReference) return;
         composeReference.replaceChildren();
 
-        const reference = buildComposeReference(target, isReply);
+        const reference = buildComposeReference(target, isReply, referenceData);
         if (!reference || (!reference.title && !reference.meta && !reference.body && !reference.avatar)) {
             return;
         }
@@ -378,7 +405,12 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             textWrap.appendChild(body);
         }
 
-        item.append(avatarWrap, textWrap);
+        if (reference.avatar) {
+            item.appendChild(avatarWrap);
+        } else {
+            item.classList.add('feed-compose-reference-item-text-only');
+        }
+        item.appendChild(textWrap);
         composeReference.appendChild(item);
     }
 
@@ -389,6 +421,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         const label = options.label || 'post';
         const targetSelector = options.target || '[data-compose-target]';
         const trigger = options.trigger || null;
+        const referenceData = options.reference || null;
         const target = !parentId && trigger
             ? trigger.closest('[data-compose-target]')
             : targetSelector.startsWith('#') || targetSelector.startsWith('[')
@@ -409,8 +442,12 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         if (composeSubmit) {
             composeSubmit.textContent = parentId ? 'Post Reply' : 'Post Comment';
         }
-        updateComposeReference(activeComposeTarget, Boolean(parentId));
+        updateComposeReference(activeComposeTarget, Boolean(parentId), referenceData);
 
+        const scrollContainer = threadPage?.closest('[data-feed-thread-overlay-content]');
+        composerScrollRestore = scrollContainer
+            ? { container: scrollContainer, top: scrollContainer.scrollTop, windowY: window.scrollY }
+            : { container: null, top: 0, windowY: window.scrollY };
         composeForm.hidden = false;
         composePanel?.classList.add('is-compose-panel-open');
         document.body.classList.add('feed-comment-composer-open');
@@ -436,6 +473,11 @@ window.CraftCrawlInitFeedThread = function (root = document) {
                 parentId: button.dataset.parentCommentId || '',
                 label: button.dataset.replyLabel || 'post',
                 target: button.dataset.replyTarget || '[data-compose-target]',
+                reference: {
+                    title: button.dataset.referenceTitle || '',
+                    meta: button.dataset.referenceMeta || '',
+                    body: button.dataset.referenceBody || ''
+                },
                 trigger: button
             });
         });

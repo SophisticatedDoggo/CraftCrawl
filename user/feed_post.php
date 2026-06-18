@@ -46,6 +46,96 @@ function feed_thread_profile_avatar_link($profile_user_id, $avatar_html, $profil
     return '<a class="user-avatar-link feed-avatar-link" href="profile.php?id=' . escape_output($profile_user_id) . '" aria-label="' . escape_output($label) . '">' . $avatar_html . '</a>';
 }
 
+function feed_thread_reference_attrs($title, $meta = '', $body = '') {
+    return ' data-reference-title="' . escape_output($title) . '" data-reference-meta="' . escape_output($meta) . '" data-reference-body="' . escape_output($body) . '"';
+}
+
+function feed_thread_post_reference($item) {
+    $date = format_feed_date($item['created_at'] ?? '');
+    $actor_name = !empty($item['is_self']) ? 'You' : ($item['friend_name'] ?? 'A friend');
+    $want_phrase = !empty($item['is_self']) ? 'You want' : (($item['friend_name'] ?? 'A friend') . ' wants');
+    $type = $item['type'] ?? '';
+
+    if ($type === 'level_up') {
+        return [
+            'title' => $actor_name . ' reached Level ' . ($item['level'] ?? ''),
+            'meta' => trim(($item['title'] ?? '') . ($date ? ' · ' . $date : '')),
+            'body' => ''
+        ];
+    }
+
+    if ($type === 'badge_earned') {
+        return [
+            'title' => 'Earned ' . ($item['badge_name'] ?? ''),
+            'meta' => trim(($item['badge_description'] ?? '') . ($date ? ' · ' . $date : '')),
+            'body' => ''
+        ];
+    }
+
+    if ($type === 'event_want') {
+        return [
+            'title' => $want_phrase . ' to go to ' . ($item['event_name'] ?? ''),
+            'meta' => trim(($item['business_name'] ?? '') . ' · ' . ($item['city'] ?? '') . ', ' . ($item['state'] ?? '') . ($date ? ' · ' . $date : '')),
+            'body' => ''
+        ];
+    }
+
+    if ($type === 'event') {
+        return [
+            'title' => $item['event_name'] ?? '',
+            'meta' => trim(($item['business_name'] ?? '') . ' · ' . ($item['city'] ?? '') . ', ' . ($item['state'] ?? '') . ($date ? ' · ' . $date : '')),
+            'body' => $item['event_description'] ?? ''
+        ];
+    }
+
+    if ($type === 'location_want') {
+        return [
+            'title' => $want_phrase . ' to visit ' . ($item['business_name'] ?? ''),
+            'meta' => trim(($item['business_type'] ?? '') . ' · ' . ($item['city'] ?? '') . ', ' . ($item['state'] ?? '') . ($date ? ' · ' . $date : '')),
+            'body' => ''
+        ];
+    }
+
+    if ($type === 'business_post') {
+        return [
+            'title' => $item['business_name'] ?? '',
+            'meta' => trim(($item['title'] ?? '') . ($date ? ' · ' . $date : '')),
+            'body' => $item['body'] ?? ''
+        ];
+    }
+
+    if ($type === 'user_post') {
+        return [
+            'title' => $actor_name,
+            'meta' => $date,
+            'body' => $item['body'] ?? ''
+        ];
+    }
+
+    if ($type === 'quest_complete') {
+        return [
+            'title' => $actor_name . ' completed ' . ($item['quest_name'] ?? ''),
+            'meta' => trim(ucfirst($item['period_type'] ?? '') . ' quest · +' . ($item['xp_awarded'] ?? '') . ' XP' . ($date ? ' · ' . $date : '')),
+            'body' => ''
+        ];
+    }
+
+    if ($type === 'quest_sweep') {
+        $period_label = ($item['period_type'] ?? '') === 'weekly' ? 'weekly' : 'daily';
+        return [
+            'title' => $actor_name . ' completed all ' . $period_label . ' quests',
+            'meta' => trim(($item['quest_count'] ?? '') . ' quests cleared · +' . ($item['xp_awarded'] ?? '') . ' XP' . ($date ? ' · ' . $date : '')),
+            'body' => ''
+        ];
+    }
+
+    return [
+        'title' => $actor_name . ' visited ' . ($item['business_name'] ?? '') . ' for the first time',
+        'meta' => trim(($item['city'] ?? '') . ', ' . ($item['state'] ?? '') . ($date ? ' · ' . $date : '')),
+        'body' => ''
+    ];
+}
+
 function feed_thread_reaction_options($item) {
     $options_by_type = [
         'first_visit' => ['cheers', 'nice_find'],
@@ -501,7 +591,8 @@ if ($feed_item) {
 
             <section class="settings-panel feed-thread-panel" data-compose-target data-compose-label="post">
                 <?php echo render_feed_thread_post($feed_item, render_feed_thread_reactions($conn, $user_id, $feed_item)); ?>
-                <button type="button" class="feed-reply-toggle feed-post-reply-toggle" data-reply-toggle data-parent-comment-id="" data-reply-label="post" data-reply-target="[data-compose-target]">Comment</button>
+                <?php $post_reference = feed_thread_post_reference($feed_item); ?>
+                <button type="button" class="feed-reply-toggle feed-post-reply-toggle" data-reply-toggle data-parent-comment-id="" data-reply-label="post" data-reply-target="[data-compose-target]"<?php echo feed_thread_reference_attrs($post_reference['title'], $post_reference['meta'], $post_reference['body']); ?>>Comment</button>
             </section>
 
             <section class="settings-panel feed-thread-panel">
@@ -529,7 +620,7 @@ if ($feed_item) {
                                 <span><?php echo escape_output(format_feed_date($comment['createdAt'])); ?></span>
                             </div>
                             <p><?php echo nl2br(escape_output($comment['body'])); ?></p>
-                            <button type="button" class="feed-reply-toggle" data-reply-toggle data-parent-comment-id="<?php echo escape_output($comment['id']); ?>" data-reply-label="<?php echo escape_output($commenter_name); ?>" data-reply-target="comment-<?php echo escape_output($comment['id']); ?>">Reply</button>
+                            <button type="button" class="feed-reply-toggle" data-reply-toggle data-parent-comment-id="<?php echo escape_output($comment['id']); ?>" data-reply-label="<?php echo escape_output($commenter_name); ?>" data-reply-target="comment-<?php echo escape_output($comment['id']); ?>"<?php echo feed_thread_reference_attrs($commenter_name, format_feed_date($comment['createdAt']), $comment['body']); ?>>Reply</button>
                             <?php if (!empty($replies_by_comment[(int) $comment['id']])) : ?>
                                 <?php
                                     $comment_replies = $replies_by_comment[(int) $comment['id']];
@@ -561,7 +652,7 @@ if ($feed_item) {
                                                 <span><?php echo escape_output(format_feed_date($reply['createdAt'])); ?></span>
                                             </div>
                                             <p><?php echo nl2br(escape_output($reply['body'])); ?></p>
-                                            <button type="button" class="feed-reply-toggle" data-reply-toggle data-parent-comment-id="<?php echo escape_output($comment['id']); ?>" data-reply-label="<?php echo escape_output($replyer_name); ?>" data-reply-target="comment-<?php echo escape_output($reply['id']); ?>">Reply</button>
+                                            <button type="button" class="feed-reply-toggle" data-reply-toggle data-parent-comment-id="<?php echo escape_output($comment['id']); ?>" data-reply-label="<?php echo escape_output($replyer_name); ?>" data-reply-target="comment-<?php echo escape_output($reply['id']); ?>"<?php echo feed_thread_reference_attrs($replyer_name, format_feed_date($reply['createdAt']), $reply['body']); ?>>Reply</button>
                                         </article>
                                     <?php endforeach; ?>
                                 </div>
