@@ -363,19 +363,28 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         if (!composePreview) return;
 
         const isReply = Boolean(parentId);
-        const postTitle = directChildText(target, 'div > strong');
+        const previewSource = isReply
+            ? target
+            : target?.matches?.('.feed-thread-post')
+                ? target
+                : target?.querySelector?.('.feed-thread-post') || target;
+        const postTitle = directChildText(previewSource, 'div > strong');
         const title = isReply
             ? label || 'Comment'
             : postTitle || 'This post';
         const text = isReply
-            ? directChildText(target, 'p')
+            ? directChildText(previewSource, 'p')
             : [
-                directChildText(target, 'div > .feed-user-post-body') || directChildText(target, 'div > p')
+                directChildText(previewSource, 'div > .feed-user-post-body') || directChildText(previewSource, 'div > p')
             ].filter(Boolean).join(' · ');
+        const previewText = clippedText(text);
 
         if (composePreviewTitle) composePreviewTitle.textContent = title;
-        if (composePreviewText) composePreviewText.textContent = clippedText(text);
-        composePreview.hidden = !text;
+        if (composePreviewText) {
+            composePreviewText.textContent = previewText;
+            composePreviewText.hidden = !previewText;
+        }
+        composePreview.hidden = !title && !previewText;
     }
 
     function openComposer(options = {}) {

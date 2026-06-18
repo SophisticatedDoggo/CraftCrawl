@@ -578,7 +578,10 @@ if ($feed_item) {
                     <input type="hidden" name="parent_comment_id" value="" data-compose-parent-id>
                     <div class="feed-compose-context">
                         <span data-compose-context>Commenting on this post</span>
-                        <button type="button" data-compose-cancel aria-label="Close composer">&times;</button>
+                        <div class="feed-compose-actions">
+                            <button type="submit" data-compose-submit>Post Comment</button>
+                            <button type="button" data-compose-cancel aria-label="Close composer">&times;</button>
+                        </div>
                     </div>
                     <div class="feed-compose-preview" data-compose-preview hidden>
                         <span data-compose-preview-title></span>
@@ -586,7 +589,6 @@ if ($feed_item) {
                     </div>
                     <label for="feed-comment-body">Comment</label>
                     <textarea id="feed-comment-body" name="body" maxlength="500" rows="4" required placeholder="Join the conversation"></textarea>
-                    <button type="submit" data-compose-submit>Post Comment</button>
                 </form>
             </section>
         <?php endif; ?>

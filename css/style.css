@@ -4762,9 +4762,25 @@ a.mobile-context-back.feed-thread-back-link:focus {
     font-weight: 800;
 }
 
-.feed-compose-context button {
+.feed-compose-actions {
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: 8px;
+    align-items: center;
+}
+
+.feed-compose-actions button[data-compose-submit] {
+    min-height: 34px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.feed-compose-actions button[data-compose-cancel] {
     min-height: 28px;
-    padding: 0 8px;
+    width: 32px;
+    padding: 0;
     color: var(--color-muted);
     background: transparent;
     border: 0;
@@ -4830,6 +4846,21 @@ a.mobile-context-back.feed-thread-back-link:focus {
     .feed-compose-context {
         gap: 8px;
         font-size: 12px;
+    }
+
+    .feed-compose-actions {
+        gap: 6px;
+    }
+
+    .feed-compose-actions button[data-compose-submit] {
+        min-height: 32px;
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+
+    .feed-compose-actions button[data-compose-cancel] {
+        width: 30px;
+        min-height: 30px;
     }
 
     .feed-compose-preview {
