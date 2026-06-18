@@ -8,8 +8,10 @@
     const findButton = widget.querySelector('[data-find-checkins]');
     const list = widget.querySelector('[data-checkin-list]');
     const feedback = widget.querySelector('[data-checkin-status]');
+    const photoInput = widget.querySelector('[data-checkin-photo-input]');
     const csrfToken = widget.dataset.csrfToken || '';
     let currentPosition = null;
+    let pendingCheckinAction = null;
 
     function showStatus(message, isError) {
         feedback.textContent = message;
@@ -104,46 +106,9 @@
             action.disabled = !location.eligible;
 
             action.addEventListener('click', () => {
-                action.disabled = true;
-                action.classList.add('is-loading');
-                action.textContent = 'Checking in...';
-
-                postForm('../check_in.php', {
-                    csrf_token: csrfToken,
-                    location_id: location.id,
-                    latitude: currentPosition.latitude,
-                    longitude: currentPosition.longitude
-                })
-                    .then((data) => {
-                        if (!data.ok) {
-                            showStatus(data.message || 'Check-in failed.', true);
-                            action.disabled = false;
-                            action.classList.remove('is-loading');
-                            action.textContent = 'Check In';
-                            return;
-                        }
-
-                        const badgeText = data.badges && data.badges.length
-                            ? ` Badges earned: ${data.badges.join(', ')}.`
-                            : '';
-
-                        showStatus(`${data.message}${badgeText}`, false);
-                        window.CraftCrawlMarkQuestPanelStale?.();
-                        window.dispatchEvent(new CustomEvent('craftcrawl:quest-progress-changed', {
-                            detail: { source: 'check_in', questRewards: data.quest_rewards || [] }
-                        }));
-                        if (window.craftcrawlShowXpReward) {
-                            window.craftcrawlShowXpReward(data);
-                        }
-                        action.textContent = 'Checked In';
-                        action.classList.remove('is-loading');
-                    })
-                    .catch(() => {
-                        showStatus('Check-in failed. Please try again.', true);
-                        action.disabled = false;
-                        action.classList.remove('is-loading');
-                        action.textContent = 'Check In';
-                    });
+                pendingCheckinAction = { location: location, button: action };
+                photoInput.value = '';
+                photoInput.click();
             });
 
             details.append(title, meta);
@@ -153,6 +118,80 @@
 
         list.hidden = false;
     }
+
+    photoInput.addEventListener('change', async () => {
+        if (!pendingCheckinAction || !photoInput.files || !photoInput.files.length) {
+            return;
+        }
+
+        var pending = pendingCheckinAction;
+        pendingCheckinAction = null;
+        var action = pending.button;
+        var location = pending.location;
+
+        action.disabled = true;
+        action.classList.add('is-loading');
+        action.textContent = 'Uploading photo...';
+
+        var formData = new FormData();
+        formData.append('csrf_token', csrfToken);
+        formData.append('location_id', location.id);
+        formData.append('latitude', currentPosition.latitude);
+        formData.append('longitude', currentPosition.longitude);
+
+        try {
+            var photo = photoInput.files[0];
+            if (window.CraftCrawlResizePhoto) {
+                photo = await window.CraftCrawlResizePhoto(photo);
+            }
+            formData.append('checkin_photo', photo);
+        } catch (err) {
+            showStatus('Photo could not be processed. Please try again.', true);
+            action.disabled = false;
+            action.classList.remove('is-loading');
+            action.textContent = 'Check In';
+            return;
+        }
+
+        action.textContent = 'Checking in...';
+
+        fetch('../check_in.php', {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (!data.ok) {
+                    showStatus(data.message || 'Check-in failed.', true);
+                    action.disabled = false;
+                    action.classList.remove('is-loading');
+                    action.textContent = 'Check In';
+                    return;
+                }
+
+                var badgeText = data.badges && data.badges.length
+                    ? ' Badges earned: ' + data.badges.join(', ') + '.'
+                    : '';
+
+                showStatus(data.message + badgeText, false);
+                window.CraftCrawlMarkQuestPanelStale?.();
+                window.dispatchEvent(new CustomEvent('craftcrawl:quest-progress-changed', {
+                    detail: { source: 'check_in', questRewards: data.quest_rewards || [] }
+                }));
+                if (window.craftcrawlShowXpReward) {
+                    window.craftcrawlShowXpReward(data);
+                }
+                action.textContent = 'Checked In';
+                action.classList.remove('is-loading');
+            })
+            .catch(function () {
+                showStatus('Check-in failed. Please try again.', true);
+                action.disabled = false;
+                action.classList.remove('is-loading');
+                action.textContent = 'Check In';
+            });
+    });
 
     findButton.addEventListener('click', () => {
         const locationProvider = window.CraftCrawlLocation || null;

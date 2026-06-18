@@ -10,6 +10,7 @@ window.CraftCrawlInitCheckIn = function (root = document) {
     const feedback = root.querySelector('[data-check-in-feedback]');
     const latitudeInput = form.querySelector('input[name="latitude"]');
     const longitudeInput = form.querySelector('input[name="longitude"]');
+    const photoInput = form.querySelector('[data-checkin-photo-input]');
 
     function showFeedback(message, isError) {
         if (!feedback) {
@@ -44,6 +45,11 @@ window.CraftCrawlInitCheckIn = function (root = document) {
 
     form.addEventListener('submit', function (event) {
         event.preventDefault();
+
+        if (!photoInput || !photoInput.files || !photoInput.files.length) {
+            showFeedback('A photo is required to check in.', true);
+            return;
+        }
 
         const locationProvider = window.CraftCrawlLocation || null;
 
@@ -86,13 +92,34 @@ window.CraftCrawlInitCheckIn = function (root = document) {
             }
         }
 
-        function handlePosition(position) {
+        async function handlePosition(position) {
             latitudeInput.value = position.coords.latitude;
             longitudeInput.value = position.coords.longitude;
 
+            if (button) {
+                button.textContent = 'Uploading photo...';
+            }
+
+            var formData = new FormData(form);
+
+            try {
+                if (window.CraftCrawlResizePhoto) {
+                    var resized = await window.CraftCrawlResizePhoto(photoInput.files[0]);
+                    formData.set('checkin_photo', resized);
+                }
+            } catch (err) {
+                showFeedback('Photo could not be processed. Please try again.', true);
+                if (button) {
+                    button.disabled = false;
+                    button.classList.remove('is-loading');
+                    button.textContent = originalText;
+                }
+                return;
+            }
+
             fetch(form.action, {
                 method: 'POST',
-                body: new FormData(form),
+                body: formData,
                 credentials: 'same-origin'
             })
                 .then(function (response) {

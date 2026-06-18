@@ -4,6 +4,7 @@ include 'db.php';
 require_once 'lib/leveling.php';
 require_once 'lib/location_hours.php';
 require_once 'lib/quests.php';
+require_once 'lib/cloudinary_upload.php';
 
 header('Content-Type: application/json');
 
@@ -20,6 +21,20 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 craftcrawl_verify_csrf();
+
+$checkin_photo = $_FILES['checkin_photo'] ?? null;
+
+if (!$checkin_photo || ($checkin_photo['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+    echo json_encode(['ok' => false, 'message' => 'A photo is required to check in.']);
+    exit();
+}
+
+try {
+    craftcrawl_validate_photo_upload($checkin_photo);
+} catch (RuntimeException $e) {
+    echo json_encode(['ok' => false, 'message' => $e->getMessage()]);
+    exit();
+}
 
 $user_id = (int) $_SESSION['user_id'];
 $business_id = filter_var($_POST['business_id'] ?? null, FILTER_VALIDATE_INT);
@@ -126,6 +141,12 @@ try {
     $visit_stmt->bind_param("iiisiddd", $user_id, $legacy_business_id, $location_id, $visit_type, $xp_awarded, $user_latitude, $user_longitude, $distance_meters);
     $visit_stmt->execute();
     $visit_id = $visit_stmt->insert_id;
+
+    $upload_result = craftcrawl_upload_photo_to_cloudinary($checkin_photo, 'checkins', $user_id);
+    $photo_id = craftcrawl_insert_cloudinary_photo($conn, $upload_result, $user_id, null);
+    $photo_stmt = $conn->prepare("UPDATE user_visits SET photo_id=? WHERE id=?");
+    $photo_stmt->bind_param("ii", $photo_id, $visit_id);
+    $photo_stmt->execute();
 
     $source_type = $visit_type === 'first_time' ? 'first_time_visit' : 'repeat_visit';
     $source_id = $visit_type === 'first_time' ? (string) $location_id : (string) $visit_id;

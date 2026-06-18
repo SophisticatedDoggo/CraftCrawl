@@ -55,6 +55,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     };
     const reactionPageSize = 10;
     const reactionTypesByItemType = {
+        checkin: ['cheers', 'nice_find'],
         first_visit: ['cheers', 'nice_find'],
         level_up: ['cheers', 'nice_find', 'trophy'],
         event_want: ['cheers', 'nice_find'],
@@ -1085,6 +1086,26 @@ window.CraftCrawlInitFriends = function (scope = document) {
             `;
         }
 
+        if (item.type === 'checkin') {
+            const visitLabel = item.visit_type === 'first_time' ? ' for the first time' : '';
+            const photoHtml = item.photo_url
+                ? `<div class="feed-checkin-photo"><img src="${escapeHtml(item.photo_url)}" alt="Check-in photo at ${escapeHtml(item.business_name)}" loading="lazy"></div>`
+                : '';
+            return `
+                <article class="friends-feed-item feed-checkin-item" ${feedItemAttrs(item)}>
+                    ${renderAvatar(item.actor, item.friend_name)}
+                    <div class="feed-item-content">
+                        ${renderFeedMeta(actorName, date)}
+                        <strong class="feed-item-title">Checked in at ${escapeHtml(item.business_name)}${visitLabel}</strong>
+                        <p class="feed-item-detail">${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
+                        ${photoHtml}
+                        ${renderFeedDetailLinkRow(item)}
+                        ${actions}
+                    </div>
+                </article>
+            `;
+        }
+
         return `
             <article class="friends-feed-item" ${feedItemAttrs(item)}>
                 ${renderAvatar(item.actor, item.friend_name)}
@@ -1902,7 +1923,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             return `<a class="feed-detail-link" href="../event_details.php?id=${encodeURIComponent(item.event_id)}&date=${encodeURIComponent(item.event_date)}">View Event</a>`;
         }
 
-        if (item.type === 'first_visit' || item.type === 'location_want' || item.type === 'business_post') {
+        if (item.type === 'checkin' || item.type === 'first_visit' || item.type === 'location_want' || item.type === 'business_post') {
             return `<a class="feed-detail-link" href="../business_details.php?id=${encodeURIComponent(item.business_id)}">View Business</a>`;
         }
 

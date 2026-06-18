@@ -91,9 +91,7 @@ window.CraftCrawlInitReviewPhotoUploads = function (root = document) {
     }
 
     const MAX_PHOTOS = 3;
-    const MAX_DIMENSION = 1600;
-    const TARGET_BYTES = 1800000;
-    const MIN_QUALITY = 0.62;
+    const resizePhoto = window.CraftCrawlResizePhoto;
 
     function showStatus(status, message, isError = false) {
         if (!status) {
@@ -104,78 +102,6 @@ window.CraftCrawlInitReviewPhotoUploads = function (root = document) {
         status.textContent = message;
         status.classList.toggle('form-message-error', isError);
         status.classList.toggle('form-message-success', !isError && message !== '');
-    }
-
-    function loadImage(file) {
-        return new Promise((resolve, reject) => {
-            const url = URL.createObjectURL(file);
-            const image = new Image();
-
-            image.onload = () => {
-                URL.revokeObjectURL(url);
-                resolve(image);
-            };
-            image.onerror = () => {
-                URL.revokeObjectURL(url);
-                reject(new Error('Photo could not be read.'));
-            };
-            image.src = url;
-        });
-    }
-
-    function canvasToBlob(canvas, quality) {
-        return new Promise((resolve, reject) => {
-            canvas.toBlob((blob) => {
-                if (blob) {
-                    resolve(blob);
-                    return;
-                }
-
-                reject(new Error('Photo could not be compressed.'));
-            }, 'image/jpeg', quality);
-        });
-    }
-
-    async function resizePhoto(file) {
-        if (!file.type.startsWith('image/')) {
-            return file;
-        }
-
-        const image = await loadImage(file);
-        const ratio = Math.min(1, MAX_DIMENSION / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
-
-        if (ratio >= 1 && file.size <= TARGET_BYTES) {
-            return file;
-        }
-
-        const width = Math.max(1, Math.round((image.naturalWidth || image.width) * ratio));
-        const height = Math.max(1, Math.round((image.naturalHeight || image.height) * ratio));
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d', { alpha: false });
-
-        canvas.width = width;
-        canvas.height = height;
-        context.fillStyle = '#fff';
-        context.fillRect(0, 0, width, height);
-        context.drawImage(image, 0, 0, width, height);
-
-        let quality = 0.82;
-        let blob = await canvasToBlob(canvas, quality);
-
-        while (blob.size > TARGET_BYTES && quality > MIN_QUALITY) {
-            quality = Math.max(MIN_QUALITY, quality - 0.08);
-            blob = await canvasToBlob(canvas, quality);
-        }
-
-        if (blob.size >= file.size) {
-            return file;
-        }
-
-        const baseName = (file.name || 'review-photo').replace(/\.[^.]+$/, '');
-        return new File([blob], `${baseName}.jpg`, {
-            type: 'image/jpeg',
-            lastModified: Date.now()
-        });
     }
 
     async function preparePhotos(input, status, submitButton) {

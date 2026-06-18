@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
     show_profile_rewards BOOL NOT NULL DEFAULT TRUE,
     notify_social_activity BOOL NOT NULL DEFAULT TRUE,
     show_social_club_disclaimer BOOL NOT NULL DEFAULT TRUE,
+    checkin_visibility ENUM('friends_only', 'public') NOT NULL DEFAULT 'friends_only',
     display_palette VARCHAR(20) NOT NULL DEFAULT 'trail-map',
     profile_photo_id INT,
     profile_photo_url VARCHAR(2048),
@@ -632,16 +633,20 @@ CREATE TABLE IF NOT EXISTS user_visits (
     user_latitude DECIMAL(9,6) NOT NULL,
     user_longitude DECIMAL(9,6) NOT NULL,
     distance_meters DECIMAL(8,2) NOT NULL,
+    photo_id INT,
     checkedInAt DATETIME NOT NULL,
     KEY idx_user_visits_user_business (user_id, business_id),
     KEY idx_user_visits_user_location (user_id, location_id),
     KEY idx_user_visits_checked_in (checkedInAt),
+    KEY idx_user_visits_photo_id (photo_id),
     CONSTRAINT fk_user_visits_userId FOREIGN KEY (user_id)
     REFERENCES users(id),
     CONSTRAINT fk_user_visits_businessId FOREIGN KEY (business_id)
     REFERENCES businesses(id),
     CONSTRAINT fk_user_visits_locationId FOREIGN KEY (location_id)
-    REFERENCES locations(id)
+    REFERENCES locations(id),
+    CONSTRAINT fk_user_visits_photoId FOREIGN KEY (photo_id)
+    REFERENCES photos(id)
 );
 
 CREATE TABLE IF NOT EXISTS xp_log (

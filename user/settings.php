@@ -25,6 +25,7 @@ $settings_stmt = $conn->prepare("
         u.show_want_to_go,
         u.notify_social_activity,
         u.allow_post_interactions,
+        u.checkin_visibility,
         " . craftcrawl_level_sql('u.total_xp') . " AS level,
         u.selected_title_index,
         u.selected_profile_frame, u.selected_profile_frame_style,
@@ -77,6 +78,7 @@ $show_profile_rewards        = !isset($user_settings['show_profile_rewards'])   
 $show_want_to_go             = !isset($user_settings['show_want_to_go'])            || !empty($user_settings['show_want_to_go']);
 $notify_social_activity      = !isset($user_settings['notify_social_activity'])     || !empty($user_settings['notify_social_activity']);
 $allow_post_interactions     = !isset($user_settings['allow_post_interactions'])    || !empty($user_settings['allow_post_interactions']);
+$checkin_visibility          = $user_settings['checkin_visibility'] ?? 'friends_only';
 $show_social_club_disclaimer = true;
 $disclaimer_pref_stmt = $conn->prepare("SELECT show_social_club_disclaimer FROM users WHERE id=? LIMIT 1");
 if ($disclaimer_pref_stmt) {
@@ -202,12 +204,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $show_want_to_go_new             = isset($_POST['show_want_to_go'])                 ? 1 : 0;
         $notify_social_activity          = isset($_POST['notify_social_activity'])          ? 1 : 0;
         $allow_post_interactions_new     = isset($_POST['allow_post_interactions'])         ? 1 : 0;
+        $checkin_visibility_new          = in_array($_POST['checkin_visibility'] ?? '', ['friends_only', 'public'], true)
+            ? $_POST['checkin_visibility'] : 'friends_only';
         $show_social_club_disclaimer_new = isset($_POST['show_social_club_disclaimer'])     ? 1 : 0;
 
         $prev_show_wtg = !empty($user_settings['show_want_to_go']);
 
-        $privacy_stmt = $conn->prepare("UPDATE users SET auto_accept_friend_invites=?, show_feed_activity=?, show_liked_businesses=?, show_profile_rewards=?, show_want_to_go=?, notify_social_activity=?, allow_post_interactions=? WHERE id=?");
-        $privacy_stmt->bind_param("iiiiiiii",
+        $privacy_stmt = $conn->prepare("UPDATE users SET auto_accept_friend_invites=?, show_feed_activity=?, show_liked_businesses=?, show_profile_rewards=?, show_want_to_go=?, notify_social_activity=?, allow_post_interactions=?, checkin_visibility=? WHERE id=?");
+        $privacy_stmt->bind_param("iiiiiiisi",
             $auto_accept_friend_invites,
             $show_feed_activity,
             $show_liked_businesses,
@@ -215,6 +219,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $show_want_to_go_new,
             $notify_social_activity,
             $allow_post_interactions_new,
+            $checkin_visibility_new,
             $user_id
         );
         $privacy_stmt->execute();
@@ -391,6 +396,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <small>Allow friends to see your check-ins, level-ups, badge earnings, Want-to-Go saves, and event RSVPs.</small>
                     </span>
                 </label>
+                <fieldset class="settings-radio-group">
+                    <legend><strong>Check-in Visibility</strong></legend>
+                    <small>Choose who can see your check-in posts in their feed.</small>
+                    <label class="settings-toggle">
+                        <input type="radio" name="checkin_visibility" value="friends_only" <?php echo $checkin_visibility === 'friends_only' ? 'checked' : ''; ?>>
+                        <span>
+                            <strong>Friends Only</strong>
+                            <small>Only friends see your check-ins in their feed.</small>
+                        </span>
+                    </label>
+                    <label class="settings-toggle">
+                        <input type="radio" name="checkin_visibility" value="public" <?php echo $checkin_visibility === 'public' ? 'checked' : ''; ?>>
+                        <span>
+                            <strong>Public</strong>
+                            <small>Anyone who follows the same business can see your check-in.</small>
+                        </span>
+                    </label>
+                </fieldset>
                 <label class="settings-toggle">
                     <input type="checkbox" name="show_liked_businesses" value="1" <?php echo $show_liked_businesses ? 'checked' : ''; ?>>
                     <span>

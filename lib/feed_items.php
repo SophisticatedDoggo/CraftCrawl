@@ -3,6 +3,7 @@
 require_once __DIR__ . '/leveling.php';
 require_once __DIR__ . '/quests.php';
 require_once __DIR__ . '/user_avatar.php';
+require_once __DIR__ . '/cloudinary_upload.php';
 
 function craftcrawl_feed_actor_name($actor_id, $viewer_id, $first_name, $last_name) {
     if ((int) $actor_id === (int) $viewer_id) {
@@ -30,7 +31,38 @@ function craftcrawl_user_can_view_feed_actor($conn, $viewer_id, $actor_id) {
     return (bool) $stmt->get_result()->fetch_assoc();
 }
 
+function craftcrawl_viewer_can_see_checkin($conn, $viewer_id, $actor_id, $location_id) {
+    if ((int) $viewer_id === (int) $actor_id) {
+        return true;
+    }
+
+    if (craftcrawl_user_can_view_feed_actor($conn, $viewer_id, $actor_id)) {
+        return true;
+    }
+
+    $stmt = $conn->prepare("
+        SELECT u.checkin_visibility
+        FROM users u
+        INNER JOIN liked_businesses lb ON lb.location_id = ? AND lb.user_id = ?
+        WHERE u.id = ? AND u.checkin_visibility = 'public' AND u.disabledAt IS NULL
+        LIMIT 1
+    ");
+    $stmt->bind_param("iii", $location_id, $viewer_id, $actor_id);
+    $stmt->execute();
+    return (bool) $stmt->get_result()->fetch_assoc();
+}
+
 function craftcrawl_feed_item_owner_id($conn, $item_key) {
+    if (preg_match('/^checkin:(\d+)$/', $item_key, $matches)) {
+        $visit_id = (int) $matches[1];
+        $stmt = $conn->prepare("SELECT user_id FROM user_visits WHERE id=? LIMIT 1");
+        $stmt->bind_param("i", $visit_id);
+        $stmt->execute();
+        $visit = $stmt->get_result()->fetch_assoc();
+
+        return $visit ? (int) $visit['user_id'] : 0;
+    }
+
     if (preg_match('/^first_visit:(\d+)$/', $item_key, $matches)) {
         $visit_id = (int) $matches[1];
         $stmt = $conn->prepare("SELECT user_id FROM user_visits WHERE id=? LIMIT 1");
@@ -161,6 +193,56 @@ function craftcrawl_event_occurrence_is_valid($event, $occurrence_date) {
 }
 
 function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
+    if (preg_match('/^checkin:(\d+)$/', $item_key, $matches)) {
+        $visit_id = (int) $matches[1];
+        $stmt = $conn->prepare("
+            SELECT uv.id, uv.user_id, uv.visit_type, uv.checkedInAt,
+                l.id AS business_id, l.name AS bName, l.city, l.state,
+                u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, u.allow_post_interactions,
+                p.object_key AS profile_photo_object_key,
+                vp.object_key AS visit_photo_object_key
+            FROM user_visits uv
+            INNER JOIN locations l ON l.id = uv.location_id
+            INNER JOIN users u ON u.id = uv.user_id
+            LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+            LEFT JOIN photos vp ON vp.id = uv.photo_id AND vp.deletedAt IS NULL AND vp.status = 'approved'
+            WHERE uv.id=? AND uv.photo_id IS NOT NULL AND u.disabledAt IS NULL
+            LIMIT 1
+        ");
+        $stmt->bind_param("i", $visit_id);
+        $stmt->execute();
+        $visit = $stmt->get_result()->fetch_assoc();
+
+        if (!$visit) {
+            return null;
+        }
+
+        $actor_id = (int) $visit['user_id'];
+        $location_id = (int) $visit['business_id'];
+        if (!craftcrawl_viewer_can_see_checkin($conn, $viewer_id, $actor_id, $location_id)) {
+            return null;
+        }
+
+        $item = [
+            'item_key' => $item_key,
+            'type' => 'checkin',
+            'created_at' => $visit['checkedInAt'],
+            'friend_name' => craftcrawl_feed_actor_name($visit['user_id'], $viewer_id, $visit['fName'], $visit['lName']),
+            'actor' => craftcrawl_feed_actor_payload($visit),
+            'is_self' => $actor_id === (int) $viewer_id,
+            'allow_interactions' => (bool) $visit['allow_post_interactions'],
+            'business_id' => $location_id,
+            'business_name' => $visit['bName'],
+            'city' => $visit['city'],
+            'state' => $visit['state'],
+            'visit_type' => $visit['visit_type']
+        ];
+        if (!empty($visit['visit_photo_object_key'])) {
+            $item['photo_url'] = craftcrawl_cloudinary_delivery_url($visit['visit_photo_object_key'], 'f_auto,q_auto,c_limit,w_1080');
+        }
+        return $item;
+    }
+
     if (preg_match('/^first_visit:(\d+)$/', $item_key, $matches)) {
         $visit_id = (int) $matches[1];
         $stmt = $conn->prepare("

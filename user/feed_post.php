@@ -129,6 +129,15 @@ function feed_thread_post_reference($item) {
         ];
     }
 
+    if ($type === 'checkin') {
+        $visit_label = ($item['visit_type'] ?? 'first_time') === 'first_time' ? ' for the first time' : '';
+        return [
+            'title' => $actor_name . ' checked in at ' . ($item['business_name'] ?? '') . $visit_label,
+            'meta' => trim(($item['city'] ?? '') . ', ' . ($item['state'] ?? '') . ($date ? ' · ' . $date : '')),
+            'body' => ''
+        ];
+    }
+
     return [
         'title' => $actor_name . ' visited ' . ($item['business_name'] ?? '') . ' for the first time',
         'meta' => trim(($item['city'] ?? '') . ', ' . ($item['state'] ?? '') . ($date ? ' · ' . $date : '')),
@@ -138,6 +147,7 @@ function feed_thread_post_reference($item) {
 
 function feed_thread_reaction_options($item) {
     $options_by_type = [
+        'checkin' => ['cheers', 'nice_find'],
         'first_visit' => ['cheers', 'nice_find'],
         'level_up' => ['cheers', 'nice_find', 'trophy'],
         'event' => ['cheers', 'nice_find', 'want_to_go'],
@@ -242,7 +252,7 @@ function render_feed_thread_detail_link($item) {
         ';
     }
 
-    if (in_array($type, ['first_visit', 'location_want', 'business_post'], true) && !empty($item['business_id'])) {
+    if (in_array($type, ['checkin', 'first_visit', 'location_want', 'business_post'], true) && !empty($item['business_id'])) {
         return '
             <div class="feed-detail-link-row">
                 <a class="feed-detail-link" href="../business_details.php?id=' . escape_output($item['business_id']) . '">View Business</a>
@@ -388,6 +398,26 @@ function render_feed_thread_post($item, $actions_html = '') {
                 <div>
                     <strong>' . escape_output($actor_name) . ' completed all ' . escape_output($period_label) . ' quests</strong>
                     <p>' . escape_output($item['quest_count']) . ' quests cleared · +' . escape_output($item['xp_awarded']) . ' XP' . ($date ? ' · ' . escape_output($date) : '') . '</p>
+                    ' . $actions_html . '
+                </div>
+            </article>
+        ';
+    }
+
+    if (($item['type'] ?? '') === 'checkin') {
+        $visit_label = ($item['visit_type'] ?? 'first_time') === 'first_time' ? ' for the first time' : '';
+        $photo_html = '';
+        if (!empty($item['photo_url'])) {
+            $photo_html = '<div class="feed-checkin-photo"><img src="' . escape_output($item['photo_url']) . '" alt="Check-in photo at ' . escape_output($item['business_name']) . '" loading="lazy"></div>';
+        }
+        return '
+            <article class="friends-feed-item feed-thread-post feed-checkin-post" ' . feed_thread_attrs($item) . '>
+                ' . $avatar . '
+                <div>
+                    <strong>' . escape_output($actor_name) . ' checked in at ' . escape_output($item['business_name']) . $visit_label . '</strong>
+                    <p>' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
+                    ' . $photo_html . '
+                    ' . render_feed_thread_detail_link($item) . '
                     ' . $actions_html . '
                 </div>
             </article>

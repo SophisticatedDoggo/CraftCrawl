@@ -1283,6 +1283,57 @@ a.mobile-context-back {
     color: var(--color-muted);
 }
 
+.settings-radio-group {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+.settings-radio-group > legend {
+    margin-bottom: 4px;
+}
+
+.settings-radio-group > small {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--color-muted);
+}
+
+.settings-radio-group .settings-toggle {
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px 12px;
+}
+
+.settings-radio-group .settings-toggle + .settings-toggle {
+    margin-top: -1px;
+}
+
+.settings-toggle input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    min-width: 20px;
+    height: 20px;
+    min-height: 20px;
+    margin: 0;
+    border: 2px solid color-mix(in srgb, var(--color-border) 82%, var(--color-muted));
+    border-radius: 50%;
+    background: var(--color-surface);
+    cursor: pointer;
+    transition: border-color 160ms ease;
+}
+
+.settings-toggle input[type="radio"]:checked {
+    border-color: var(--color-primary);
+    border-width: 6px;
+}
+
+.settings-toggle input[type="radio"]:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+    outline-offset: 3px;
+}
+
 .auth-card br {
     display: none;
 }
@@ -3778,6 +3829,47 @@ body.map-expanded-open {
 .friends-feed-item .feed-action-row {
     width: calc(100% + var(--feed-avatar-track) + var(--feed-column-gap));
     margin-left: calc(-1 * (var(--feed-avatar-track) + var(--feed-column-gap)));
+}
+
+.feed-checkin-photo {
+    width: calc(100% + var(--feed-avatar-track) + var(--feed-column-gap));
+    margin: 10px 0 6px calc(-1 * (var(--feed-avatar-track) + var(--feed-column-gap)));
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--color-surface-muted);
+    line-height: 0;
+}
+
+.feed-checkin-photo img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 600px;
+    object-fit: cover;
+}
+
+.feed-thread-post .feed-checkin-photo {
+    width: 100%;
+    margin-left: 0;
+}
+
+.checkin-photo-row {
+    margin-bottom: 8px;
+}
+
+.checkin-photo-label {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 4px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.checkin-photo-input {
+    display: block;
+    width: 100%;
+    font-size: 14px;
 }
 
 .feed-detail-link-row {

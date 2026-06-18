@@ -4,6 +4,7 @@ include '../db.php';
 require_once '../lib/leveling.php';
 require_once '../lib/quests.php';
 require_once '../lib/user_avatar.php';
+require_once '../lib/cloudinary_upload.php';
 
 header('Content-Type: application/json');
 header('Cache-Control: no-store');
@@ -151,12 +152,14 @@ function craftcrawl_feed_person_payload($person) {
 
 $before_clause_checkin = $before_dt ? ' AND uv.checkedInAt <= ?' : '';
 $visit_sql = "
-    SELECT uv.id, uv.user_id, uv.checkedInAt, l.id AS business_id, l.name AS bName, l.city, l.state,
-        u.allow_post_interactions
+    SELECT uv.id, uv.user_id, uv.visit_type, uv.checkedInAt, l.id AS business_id, l.name AS bName, l.city, l.state,
+        u.allow_post_interactions,
+        vp.object_key AS visit_photo_object_key
     FROM user_visits uv
     INNER JOIN locations l ON l.id = uv.location_id
     INNER JOIN users u ON u.id = uv.user_id
-    WHERE uv.visit_type='first_time' AND uv.user_id IN ($placeholders)
+    LEFT JOIN photos vp ON vp.id = uv.photo_id AND vp.deletedAt IS NULL AND vp.status = 'approved'
+    WHERE (uv.photo_id IS NOT NULL OR uv.visit_type = 'first_time') AND uv.user_id IN ($placeholders)
     $before_clause_checkin
     ORDER BY uv.checkedInAt DESC, uv.id DESC
     LIMIT $feed_source_fetch_limit
@@ -170,9 +173,12 @@ $visit_result = $visit_stmt->get_result();
 
 while ($visit = $visit_result->fetch_assoc()) {
     $actor_id = (int) $visit['user_id'];
-    $feed[] = [
-        'item_key' => 'first_visit:' . (int) $visit['id'],
-        'type' => 'first_visit',
+    $has_photo = !empty($visit['visit_photo_object_key']);
+    $item_type = $has_photo ? 'checkin' : 'first_visit';
+    $item_key = $has_photo ? 'checkin:' . (int) $visit['id'] : 'first_visit:' . (int) $visit['id'];
+    $item = [
+        'item_key' => $item_key,
+        'type' => $item_type,
         'created_at' => $visit['checkedInAt'],
         'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
         'actor' => craftcrawl_feed_person_payload($people[$actor_id] ?? []),
@@ -184,6 +190,11 @@ while ($visit = $visit_result->fetch_assoc()) {
         'city' => $visit['city'],
         'state' => $visit['state']
     ];
+    if ($has_photo) {
+        $item['photo_url'] = craftcrawl_cloudinary_delivery_url($visit['visit_photo_object_key'], 'f_auto,q_auto,c_limit,w_1080');
+        $item['visit_type'] = $visit['visit_type'];
+    }
+    $feed[] = $item;
 }
 
 $before_clause_created = $before_dt ? ' AND xl.createdAt <= ?' : '';
@@ -510,6 +521,99 @@ while ($bpost = $post_feed_result->fetch_assoc()) {
         'city' => $bpost['city'],
         'state' => $bpost['state'],
         'ends_at' => $bpost['ends_at']
+    ];
+}
+
+// Public check-ins from followed businesses (non-friends with checkin_visibility='public')
+$exclude_user_ids = $feed_user_ids;
+$exclude_placeholders = implode(',', array_fill(0, count($exclude_user_ids), '?'));
+$exclude_types = str_repeat('i', count($exclude_user_ids));
+
+if ($before_dt) {
+    $public_checkin_sql = "
+        SELECT uv.id, uv.user_id, uv.visit_type, uv.checkedInAt,
+            l.id AS business_id, l.name AS bName, l.city, l.state,
+            u.fName, u.lName, u.allow_post_interactions,
+            u.selected_profile_frame, u.selected_profile_frame_style,
+            u.profile_photo_url,
+            pp.object_key AS profile_photo_object_key,
+            vp.object_key AS visit_photo_object_key
+        FROM user_visits uv
+        INNER JOIN locations l ON l.id = uv.location_id
+        INNER JOIN users u ON u.id = uv.user_id AND u.disabledAt IS NULL AND u.checkin_visibility = 'public'
+        INNER JOIN liked_businesses lb ON lb.location_id = uv.location_id AND lb.user_id = ?
+        INNER JOIN photos vp ON vp.id = uv.photo_id AND vp.deletedAt IS NULL AND vp.status = 'approved'
+        LEFT JOIN photos pp ON pp.id = u.profile_photo_id AND pp.deletedAt IS NULL AND pp.status = 'approved'
+        WHERE uv.photo_id IS NOT NULL
+          AND uv.user_id NOT IN ($exclude_placeholders)
+          AND uv.checkedInAt <= ?
+        ORDER BY uv.checkedInAt DESC, uv.id DESC
+        LIMIT $feed_source_fetch_limit
+    ";
+    $public_checkin_stmt = $conn->prepare($public_checkin_sql);
+    $public_bind_types = 'i' . $exclude_types . 's';
+    $public_bind_params = [$public_bind_types, $user_id];
+    foreach ($exclude_user_ids as $idx => $eid) {
+        $public_bind_params[] = &$exclude_user_ids[$idx];
+    }
+    $public_bind_params[] = &$before_dt;
+    call_user_func_array([$public_checkin_stmt, 'bind_param'], $public_bind_params);
+} else {
+    $public_checkin_sql = "
+        SELECT uv.id, uv.user_id, uv.visit_type, uv.checkedInAt,
+            l.id AS business_id, l.name AS bName, l.city, l.state,
+            u.fName, u.lName, u.allow_post_interactions,
+            u.selected_profile_frame, u.selected_profile_frame_style,
+            u.profile_photo_url,
+            pp.object_key AS profile_photo_object_key,
+            vp.object_key AS visit_photo_object_key
+        FROM user_visits uv
+        INNER JOIN locations l ON l.id = uv.location_id
+        INNER JOIN users u ON u.id = uv.user_id AND u.disabledAt IS NULL AND u.checkin_visibility = 'public'
+        INNER JOIN liked_businesses lb ON lb.location_id = uv.location_id AND lb.user_id = ?
+        INNER JOIN photos vp ON vp.id = uv.photo_id AND vp.deletedAt IS NULL AND vp.status = 'approved'
+        LEFT JOIN photos pp ON pp.id = u.profile_photo_id AND pp.deletedAt IS NULL AND pp.status = 'approved'
+        WHERE uv.photo_id IS NOT NULL
+          AND uv.user_id NOT IN ($exclude_placeholders)
+        ORDER BY uv.checkedInAt DESC, uv.id DESC
+        LIMIT $feed_source_fetch_limit
+    ";
+    $public_checkin_stmt = $conn->prepare($public_checkin_sql);
+    $public_bind_types = 'i' . $exclude_types;
+    $public_bind_params = [$public_bind_types, $user_id];
+    foreach ($exclude_user_ids as $idx => $eid) {
+        $public_bind_params[] = &$exclude_user_ids[$idx];
+    }
+    call_user_func_array([$public_checkin_stmt, 'bind_param'], $public_bind_params);
+}
+$public_checkin_stmt->execute();
+$public_checkin_result = $public_checkin_stmt->get_result();
+
+while ($pv = $public_checkin_result->fetch_assoc()) {
+    $actor_id = (int) $pv['user_id'];
+    $actor_payload = [
+        'id' => $actor_id,
+        'name' => trim($pv['fName'] . ' ' . $pv['lName']),
+        'initials' => craftcrawl_user_initials($pv),
+        'avatar_url' => craftcrawl_user_avatar_url($pv, 96),
+        'frame' => $pv['selected_profile_frame'] ?? null,
+        'frame_style' => $pv['selected_profile_frame_style'] ?? null
+    ];
+    $feed[] = [
+        'item_key' => 'checkin:' . (int) $pv['id'],
+        'type' => 'checkin',
+        'created_at' => $pv['checkedInAt'],
+        'friend_name' => trim($pv['fName'] . ' ' . $pv['lName']),
+        'actor' => $actor_payload,
+        'owner_user_id' => $actor_id,
+        'is_self' => false,
+        'allow_interactions' => (bool) $pv['allow_post_interactions'],
+        'business_id' => (int) $pv['business_id'],
+        'business_name' => $pv['bName'],
+        'city' => $pv['city'],
+        'state' => $pv['state'],
+        'photo_url' => craftcrawl_cloudinary_delivery_url($pv['visit_photo_object_key'], 'f_auto,q_auto,c_limit,w_1080'),
+        'visit_type' => $pv['visit_type']
     ];
 }
 

@@ -639,6 +639,18 @@ function format_event_time_range($event) {
                     <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
                     <input type="hidden" name="latitude" value="">
                     <input type="hidden" name="longitude" value="">
+                    <div class="checkin-photo-row">
+                        <label for="checkin-photo-<?php echo escape_output($location_id); ?>" class="checkin-photo-label">
+                            <span class="checkin-photo-icon" aria-hidden="true">📷</span>
+                            <span class="checkin-photo-text">Take a photo to check in</span>
+                        </label>
+                        <input type="file" id="checkin-photo-<?php echo escape_output($location_id); ?>"
+                               name="checkin_photo"
+                               accept="image/jpeg,image/png,image/webp"
+                               capture="environment"
+                               data-checkin-photo-input
+                               class="checkin-photo-input">
+                    </div>
                     <button type="submit">Check In</button>
                 </form>
                 <?php if (!empty($business['bWebsite'])) : ?>
@@ -1059,6 +1071,7 @@ function format_event_time_range($event) {
         window.craftcrawlShowXpReward(window.CRAFTCRAWL_XP_REWARD_POPUP);
     }
 </script>
+<script src="js/photo_resize.js?v=<?php echo filemtime(__DIR__ . '/js/photo_resize.js'); ?>"></script>
 <script src="js/check_in.js?v=<?php echo filemtime(__DIR__ . '/js/check_in.js'); ?>"></script>
 <script src="js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/js/business_posts.js'); ?>"></script>
 <script src="js/business_gallery.js?v=<?php echo filemtime(__DIR__ . '/js/business_gallery.js'); ?>"></script>

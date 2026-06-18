@@ -42,6 +42,7 @@ if (!function_exists('craftcrawl_render_portal_quest_card')) {
                 <p>Use your current location to find nearby CraftCrawl locations where you can earn visit XP.</p>
             </div>
             <button type="button" data-find-checkins>Find Nearby Check-ins</button>
+            <input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" data-checkin-photo-input class="checkin-photo-input" hidden>
             <p class="form-message" data-checkin-status hidden></p>
             <div class="dashboard-checkin-list" data-checkin-list hidden></div>
         </section>
