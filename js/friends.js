@@ -1133,6 +1133,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         if (sentinel) {
             sentinel.hidden = !hasMore;
         }
+        window.requestAnimationFrame(checkFeedNearBottom);
 
         playPendingThreadReturnAnchor();
     }
@@ -1668,7 +1669,19 @@ window.CraftCrawlInitFriends = function (scope = document) {
             .catch(() => {})
             .finally(() => {
                 loadingMore = false;
+                checkFeedNearBottom();
             });
+    }
+
+    function checkFeedNearBottom() {
+        if (!feed || !hasMore || loadingMore || !isFeedTabActive()) {
+            return;
+        }
+
+        const feedRect = feed.getBoundingClientRect();
+        if (feedRect.bottom <= window.innerHeight + 260) {
+            loadMore();
+        }
     }
 
     if (sentinel) {
@@ -1676,8 +1689,10 @@ window.CraftCrawlInitFriends = function (scope = document) {
             if (entries[0].isIntersecting) {
                 loadMore();
             }
-        }, { threshold: 0.1 });
+        }, { rootMargin: '260px 0px', threshold: 0 });
         observer.observe(sentinel);
+        window.addEventListener('scroll', checkFeedNearBottom, { passive: true });
+        window.addEventListener('resize', checkFeedNearBottom);
     }
 
     function renderFeedActions(item) {

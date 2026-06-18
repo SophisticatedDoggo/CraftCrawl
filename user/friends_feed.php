@@ -17,6 +17,8 @@ $user_id = (int) $_SESSION['user_id'];
 
 $before_raw = $_GET['before'] ?? null;
 $before_dt = ($before_raw && strtotime($before_raw)) ? date('Y-m-d H:i:s', strtotime($before_raw)) : null;
+$feed_page_size = 40;
+$business_post_fetch_limit = $feed_page_size + 1;
 
 $seen_stmt = $conn->prepare("SELECT friendsSeenAt, socialNotificationsSeenAt FROM users WHERE id=?");
 $seen_stmt->bind_param("i", $user_id);
@@ -472,9 +474,9 @@ if ($before_dt) {
         INNER JOIN liked_businesses lb ON lb.location_id = bp.location_id AND lb.user_id=?
         WHERE bp.created_at < ?
         ORDER BY bp.created_at DESC
-        LIMIT 40
+        LIMIT ?
     ");
-    $post_feed_stmt->bind_param("is", $user_id, $before_dt);
+    $post_feed_stmt->bind_param("isi", $user_id, $before_dt, $business_post_fetch_limit);
 } else {
     $post_feed_stmt = $conn->prepare("
         SELECT bp.id, l.id AS business_id, bp.post_type, bp.title, bp.body, bp.created_at, bp.ends_at,
@@ -483,9 +485,9 @@ if ($before_dt) {
         INNER JOIN locations l ON l.id = bp.location_id AND l.visibility_status='public_claimed'
         INNER JOIN liked_businesses lb ON lb.location_id = bp.location_id AND lb.user_id=?
         ORDER BY bp.created_at DESC
-        LIMIT 40
+        LIMIT ?
     ");
-    $post_feed_stmt->bind_param("i", $user_id);
+    $post_feed_stmt->bind_param("ii", $user_id, $business_post_fetch_limit);
 }
 $post_feed_stmt->execute();
 $post_feed_result = $post_feed_stmt->get_result();
@@ -512,8 +514,8 @@ usort($feed, function ($a, $b) {
     return strtotime($b['created_at']) <=> strtotime($a['created_at']);
 });
 
-$has_more = count($feed) > 40;
-$feed = array_slice($feed, 0, 40);
+$has_more = count($feed) > $feed_page_size;
+$feed = array_slice($feed, 0, $feed_page_size);
 
 // Batch-load poll options + user votes for poll-type business posts in this page
 $poll_feed_idx_to_post_id = [];

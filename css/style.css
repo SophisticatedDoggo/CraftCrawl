@@ -4097,6 +4097,14 @@ body:not(.feed-page-body) .feed-compose-fab {
     margin-bottom: 0;
 }
 
+[data-feed-sentinel] {
+    min-height: 32px;
+}
+
+[data-feed-sentinel][hidden] {
+    display: none;
+}
+
 .pull-refresh-surface {
     --pull-refresh-distance: 0px;
     position: relative;
