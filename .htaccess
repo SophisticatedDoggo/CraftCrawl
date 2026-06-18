@@ -1,8 +1,5 @@
 DirectoryIndex index.php index.html
 
-php_value upload_max_filesize 10M
-php_value post_max_size 12M
-
 <IfModule mod_headers.c>
     <FilesMatch "^OneSignalSDK(Updater)?Worker\.js$">
         Header set Service-Worker-Allowed "/"
