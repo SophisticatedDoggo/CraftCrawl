@@ -12,6 +12,7 @@ function craftcrawl_quest_pool() {
             'name' => 'Daily Stop',
             'description' => 'Check in at any CraftCrawl location today.',
             'period_type' => 'daily',
+            'group' => 'checkin_count',
             'metric' => 'checkins',
             'target' => 1,
             'xp' => 40,
@@ -20,6 +21,7 @@ function craftcrawl_quest_pool() {
             'name' => 'Second Stop',
             'description' => 'Complete two check-ins today.',
             'period_type' => 'daily',
+            'group' => 'checkin_count',
             'metric' => 'checkins',
             'target' => 2,
             'xp' => 65,
@@ -28,6 +30,7 @@ function craftcrawl_quest_pool() {
             'name' => 'Tasting Notes',
             'description' => 'Leave one review today.',
             'period_type' => 'daily',
+            'group' => 'review',
             'metric' => 'reviews',
             'target' => 1,
             'xp' => 30,
@@ -36,6 +39,7 @@ function craftcrawl_quest_pool() {
             'name' => 'Mark the Calendar',
             'description' => 'Mark one event as Want to Go today.',
             'period_type' => 'daily',
+            'group' => 'event_planning',
             'metric' => 'event_want_to_go',
             'target' => 1,
             'xp' => 30,
@@ -44,6 +48,7 @@ function craftcrawl_quest_pool() {
             'name' => 'Pick the Next Pour',
             'description' => 'Save one location to Want to Go today.',
             'period_type' => 'daily',
+            'group' => 'want_to_go',
             'metric' => 'want_to_go',
             'target' => 1,
             'xp' => 20,
@@ -52,14 +57,43 @@ function craftcrawl_quest_pool() {
             'name' => 'Try a Different Trail',
             'description' => 'Check in across two different location types today.',
             'period_type' => 'daily',
+            'group' => 'location_variety',
             'metric' => 'location_types',
             'target' => 2,
             'xp' => 70,
+        ],
+        'daily_discovery' => [
+            'name' => 'First Timer',
+            'description' => 'Check in at a location you\'ve never visited before.',
+            'period_type' => 'daily',
+            'group' => 'discovery',
+            'metric' => 'first_time_visits',
+            'target' => 1,
+            'xp' => 50,
+        ],
+        'daily_react' => [
+            'name' => 'Raise a Glass',
+            'description' => 'React to a friend\'s activity in the feed.',
+            'period_type' => 'daily',
+            'group' => 'social',
+            'metric' => 'reactions_given',
+            'target' => 1,
+            'xp' => 20,
+        ],
+        'daily_snapshot' => [
+            'name' => 'Snapshot',
+            'description' => 'Leave a review with a photo.',
+            'period_type' => 'daily',
+            'group' => 'photo_review',
+            'metric' => 'photo_reviews',
+            'target' => 1,
+            'xp' => 45,
         ],
         'weekly_crawl' => [
             'name' => 'Weekly Crawl',
             'description' => 'Complete three check-ins this week.',
             'period_type' => 'weekly',
+            'group' => 'checkin_count',
             'metric' => 'checkins',
             'target' => 3,
             'xp' => 120,
@@ -68,6 +102,7 @@ function craftcrawl_quest_pool() {
             'name' => 'Grand Crawl',
             'description' => 'Complete five check-ins this week.',
             'period_type' => 'weekly',
+            'group' => 'checkin_count',
             'metric' => 'checkins',
             'target' => 5,
             'xp' => 180,
@@ -76,6 +111,7 @@ function craftcrawl_quest_pool() {
             'name' => 'Craft Variety',
             'description' => 'Check in at two different location types this week.',
             'period_type' => 'weekly',
+            'group' => 'location_variety',
             'metric' => 'location_types',
             'target' => 2,
             'xp' => 100,
@@ -84,6 +120,7 @@ function craftcrawl_quest_pool() {
             'name' => 'Trail Sampler',
             'description' => 'Check in at three different location types this week.',
             'period_type' => 'weekly',
+            'group' => 'location_variety',
             'metric' => 'location_types',
             'target' => 3,
             'xp' => 160,
@@ -92,6 +129,7 @@ function craftcrawl_quest_pool() {
             'name' => 'Event Planner',
             'description' => 'Mark one event as Want to Go this week.',
             'period_type' => 'weekly',
+            'group' => 'event_planning',
             'metric' => 'event_want_to_go',
             'target' => 1,
             'xp' => 60,
@@ -100,6 +138,7 @@ function craftcrawl_quest_pool() {
             'name' => 'Calendar Builder',
             'description' => 'Mark two events as Want to Go this week.',
             'period_type' => 'weekly',
+            'group' => 'event_planning',
             'metric' => 'event_want_to_go',
             'target' => 2,
             'xp' => 110,
@@ -108,6 +147,7 @@ function craftcrawl_quest_pool() {
             'name' => 'Weekly Notes',
             'description' => 'Leave two reviews this week.',
             'period_type' => 'weekly',
+            'group' => 'review',
             'metric' => 'reviews',
             'target' => 2,
             'xp' => 90,
@@ -116,9 +156,55 @@ function craftcrawl_quest_pool() {
             'name' => 'Plan Ahead',
             'description' => 'Save three locations to Want to Go this week.',
             'period_type' => 'weekly',
+            'group' => 'want_to_go',
             'metric' => 'want_to_go',
             'target' => 3,
             'xp' => 90,
+        ],
+        'weekly_explorer' => [
+            'name' => 'Explorer',
+            'description' => 'Visit three locations you\'ve never been to this week.',
+            'period_type' => 'weekly',
+            'group' => 'discovery',
+            'metric' => 'first_time_visits',
+            'target' => 3,
+            'xp' => 150,
+        ],
+        'weekly_social' => [
+            'name' => 'Social Butterfly',
+            'description' => 'React to five feed items this week.',
+            'period_type' => 'weekly',
+            'group' => 'social',
+            'metric' => 'reactions_given',
+            'target' => 5,
+            'xp' => 80,
+        ],
+        'weekly_city_crawl' => [
+            'name' => 'City Crawl',
+            'description' => 'Check in at locations in two different cities this week.',
+            'period_type' => 'weekly',
+            'group' => 'city_diversity',
+            'metric' => 'distinct_cities',
+            'target' => 2,
+            'xp' => 120,
+        ],
+        'weekly_recommend' => [
+            'name' => 'Recommend a Spot',
+            'description' => 'Send a location recommendation to a friend.',
+            'period_type' => 'weekly',
+            'group' => 'recommend',
+            'metric' => 'recommendations_sent',
+            'target' => 1,
+            'xp' => 70,
+        ],
+        'weekly_photo_journal' => [
+            'name' => 'Photo Journal',
+            'description' => 'Leave two reviews with photos this week.',
+            'period_type' => 'weekly',
+            'group' => 'photo_review',
+            'metric' => 'photo_reviews',
+            'target' => 2,
+            'xp' => 110,
         ],
     ];
 }
@@ -147,7 +233,22 @@ function craftcrawl_active_quest_definitions_for_period($period_type, $timestamp
         return $left_score <=> $right_score;
     });
 
-    return array_slice($pool, 0, $count, true);
+    $selected = [];
+    $used_groups = [];
+
+    foreach ($pool as $key => $quest) {
+        $group = $quest['group'] ?? $key;
+        if (isset($used_groups[$group])) {
+            continue;
+        }
+        $selected[$key] = $quest;
+        $used_groups[$group] = true;
+        if (count($selected) >= $count) {
+            break;
+        }
+    }
+
+    return $selected;
 }
 
 function craftcrawl_quest_period_bounds($period_type, $timestamp = null) {
@@ -196,6 +297,31 @@ function craftcrawl_quest_metric_progress($conn, $user_id, $metric, $start_at, $
             INNER JOIN locations l ON l.id = uv.location_id
             WHERE uv.user_id=? AND uv.checkedInAt >= ? AND uv.checkedInAt < ?
         ");
+        $stmt->bind_param("iss", $user_id, $start_at, $end_at);
+    } elseif ($metric === 'first_time_visits') {
+        $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM user_visits WHERE user_id=? AND visit_type='first_time' AND checkedInAt >= ? AND checkedInAt < ?");
+        $stmt->bind_param("iss", $user_id, $start_at, $end_at);
+    } elseif ($metric === 'reactions_given') {
+        $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM feed_reactions WHERE user_id=? AND createdAt >= ? AND createdAt < ?");
+        $stmt->bind_param("iss", $user_id, $start_at, $end_at);
+    } elseif ($metric === 'photo_reviews') {
+        $stmt = $conn->prepare("
+            SELECT COUNT(DISTINCT r.id) AS total
+            FROM reviews r
+            INNER JOIN review_photos rp ON rp.review_id = r.id
+            WHERE r.user_id=? AND r.createdAt >= ? AND r.createdAt < ?
+        ");
+        $stmt->bind_param("iss", $user_id, $start_at, $end_at);
+    } elseif ($metric === 'distinct_cities') {
+        $stmt = $conn->prepare("
+            SELECT COUNT(DISTINCT l.city) AS total
+            FROM user_visits uv
+            INNER JOIN locations l ON l.id = uv.location_id
+            WHERE uv.user_id=? AND uv.checkedInAt >= ? AND uv.checkedInAt < ?
+        ");
+        $stmt->bind_param("iss", $user_id, $start_at, $end_at);
+    } elseif ($metric === 'recommendations_sent') {
+        $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM location_recommendations WHERE recommender_user_id=? AND createdAt >= ? AND createdAt < ?");
         $stmt->bind_param("iss", $user_id, $start_at, $end_at);
     } else {
         return 0;

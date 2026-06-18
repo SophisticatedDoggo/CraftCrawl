@@ -359,8 +359,14 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user
             $progress_before = craftcrawl_user_level_progress($conn, $user_id);
             $reaction_stage = 'award_badges';
             $badges = craftcrawl_award_eligible_badges($conn, $user_id);
+            $reaction_stage = 'award_quests';
+            $quest_rewards = craftcrawl_award_eligible_quest_rewards($conn, $user_id);
             $reaction_stage = 'build_reward_payload';
-            $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Feed Reaction', craftcrawl_badge_xp_items($badges));
+            $xp_items = array_values(array_filter(array_merge(
+                craftcrawl_badge_xp_items($badges),
+                craftcrawl_quest_xp_items($quest_rewards)
+            )));
+            $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Feed Reaction', $xp_items);
         } catch (Throwable $reward_error) {
             error_log(
                 'Feed reaction reward side effect failed at stage ' . $reaction_stage

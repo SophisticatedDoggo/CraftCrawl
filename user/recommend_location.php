@@ -2,6 +2,7 @@
 require '../login_check.php';
 include '../db.php';
 require_once '../lib/leveling.php';
+require_once '../lib/quests.php';
 
 if (!isset($_SESSION['user_id'])) {
     craftcrawl_redirect('user_login.php');
@@ -61,7 +62,12 @@ try {
     $stmt->bind_param("iiiiss", $user_id, $friend_id, $business_id, $location_id, $message, $pending);
     $stmt->execute();
     $badges = craftcrawl_award_eligible_badges($conn, $user_id);
-    $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Recommendation Sent', craftcrawl_badge_xp_items($badges));
+    $quest_rewards = craftcrawl_award_eligible_quest_rewards($conn, $user_id);
+    $xp_items = array_values(array_filter(array_merge(
+        craftcrawl_badge_xp_items($badges),
+        craftcrawl_quest_xp_items($quest_rewards)
+    )));
+    $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Recommendation Sent', $xp_items);
     $conn->commit();
 
     if ($reward_payload) {
