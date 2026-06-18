@@ -157,14 +157,18 @@ window.CraftCrawlInitCheckIn = function (root = document) {
             confirmButton.classList.add('is-loading');
             confirmButton.textContent = 'Posting...';
 
-            var formData = new FormData(form);
+            var formData = new FormData();
+            formData.append('csrf_token', form.querySelector('input[name="csrf_token"]').value);
+            formData.append('business_id', form.querySelector('input[name="business_id"]').value);
+            formData.append('location_id', form.querySelector('input[name="location_id"]').value);
+            formData.append('latitude', latitudeInput.value);
+            formData.append('longitude', longitudeInput.value);
 
             try {
                 var photo = photoInput.files[0];
                 if (window.CraftCrawlResizePhoto) {
                     photo = await window.CraftCrawlResizePhoto(photo);
                 }
-                formData.delete('checkin_photo');
                 formData.append('checkin_photo', photo);
             } catch (err) {
                 hideModal();
