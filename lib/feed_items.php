@@ -485,6 +485,7 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
             'actor' => craftcrawl_feed_actor_payload($quest),
             'is_self' => (int) $quest['user_id'] === (int) $viewer_id,
             'quest_name' => craftcrawl_quest_name($quest['quest_key']),
+            'quest_description' => craftcrawl_quest_description($quest['quest_key']),
             'period_type' => $quest['period_type'],
             'xp_awarded' => (int) $quest['xp_awarded'],
         ];

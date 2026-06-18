@@ -975,7 +975,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
-                        <strong class="feed-item-title">Earned ${escapeHtml(item.badge_name)}</strong>
+                        <strong class="feed-item-title">Earned the badge ${escapeHtml(item.badge_name)}</strong>
                         <p class="feed-item-detail">${escapeHtml(item.badge_description)}</p>
                         ${actions}
                     </div>
@@ -990,7 +990,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
                         <strong class="feed-item-title">Completed ${escapeHtml(item.quest_name)}</strong>
-                        <p class="feed-item-detail">${escapeHtml(capitalize(item.period_type))} quest · +${escapeHtml(item.xp_awarded)} XP</p>
+                        <p class="feed-item-detail">${escapeHtml(capitalize(item.period_type))} quest · ${escapeHtml(item.quest_description)} · +${escapeHtml(item.xp_awarded)} XP</p>
                         ${actions}
                     </div>
                 </article>

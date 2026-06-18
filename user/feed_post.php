@@ -66,7 +66,7 @@ function feed_thread_post_reference($item) {
 
     if ($type === 'badge_earned') {
         return [
-            'title' => 'Earned ' . ($item['badge_name'] ?? ''),
+            'title' => 'Earned the badge ' . ($item['badge_name'] ?? ''),
             'meta' => trim(($item['badge_description'] ?? '') . ($date ? ' · ' . $date : '')),
             'body' => ''
         ];
@@ -115,7 +115,7 @@ function feed_thread_post_reference($item) {
     if ($type === 'quest_complete') {
         return [
             'title' => $actor_name . ' completed ' . ($item['quest_name'] ?? ''),
-            'meta' => trim(ucfirst($item['period_type'] ?? '') . ' quest · +' . ($item['xp_awarded'] ?? '') . ' XP' . ($date ? ' · ' . $date : '')),
+            'meta' => trim(ucfirst($item['period_type'] ?? '') . ' quest · ' . ($item['quest_description'] ?? '') . ' · +' . ($item['xp_awarded'] ?? '') . ' XP' . ($date ? ' · ' . $date : '')),
             'body' => ''
         ];
     }
@@ -296,7 +296,7 @@ function render_feed_thread_post($item, $actions_html = '') {
             <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
                 ' . $avatar . '
                 <div>
-                    <strong>Earned ' . escape_output($item['badge_name']) . '</strong>
+                    <strong>Earned the badge ' . escape_output($item['badge_name']) . '</strong>
                     <p>' . escape_output($item['badge_description']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
                     ' . $actions_html . '
                 </div>
@@ -383,7 +383,7 @@ function render_feed_thread_post($item, $actions_html = '') {
                 ' . $avatar . '
                 <div>
                     <strong>' . escape_output($actor_name) . ' completed ' . escape_output($item['quest_name']) . '</strong>
-                    <p>' . escape_output(ucfirst($item['period_type'])) . ' quest · +' . escape_output($item['xp_awarded']) . ' XP' . ($date ? ' · ' . escape_output($date) : '') . '</p>
+                    <p>' . escape_output(ucfirst($item['period_type'])) . ' quest · ' . escape_output($item['quest_description'] ?? '') . ' · +' . escape_output($item['xp_awarded']) . ' XP' . ($date ? ' · ' . escape_output($date) : '') . '</p>
                     ' . $actions_html . '
                 </div>
             </article>

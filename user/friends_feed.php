@@ -379,6 +379,7 @@ while ($quest = $quest_result->fetch_assoc()) {
         'is_self' => $actor_id === $user_id,
         'allow_interactions' => (bool) $quest['allow_post_interactions'],
         'quest_name' => craftcrawl_quest_name($quest['quest_key']),
+        'quest_description' => craftcrawl_quest_description($quest['quest_key']),
         'period_type' => $quest['period_type'],
         'xp_awarded' => (int) $quest['xp_awarded'],
     ];

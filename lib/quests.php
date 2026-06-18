@@ -446,6 +446,11 @@ function craftcrawl_quest_name($quest_key) {
     return $pool[$quest_key]['name'] ?? 'Quest Complete';
 }
 
+function craftcrawl_quest_description($quest_key) {
+    $pool = craftcrawl_quest_pool();
+    return $pool[$quest_key]['description'] ?? '';
+}
+
 function craftcrawl_quest_xp_items($quests) {
     $items = [];
 
