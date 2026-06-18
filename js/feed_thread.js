@@ -280,8 +280,12 @@ window.CraftCrawlInitFeedThread = function (root = document) {
     const composeReference = root.querySelector('[data-compose-reference]');
     const composeLabel = root.querySelector('[data-compose-label]');
     const composeSubmit = root.querySelector('[data-compose-submit]');
+    const composeHome = composeForm
+        ? { parent: composeForm.parentNode, nextSibling: composeForm.nextSibling }
+        : null;
     let activeComposeTarget = null;
     let composerScrollRestore = null;
+    let composerTargetSnapshot = null;
 
     function updateComposerSpace() {
         if (!composeForm || composeForm.hidden || !threadPage) return 0;
@@ -300,23 +304,35 @@ window.CraftCrawlInitFeedThread = function (root = document) {
     }
 
     function closeComposer() {
+        const targetSnapshot = composerTargetSnapshot;
         if (composeForm?.contains(document.activeElement)) {
             document.activeElement.blur();
         }
         if (composeForm) composeForm.hidden = true;
+        if (composeForm && composeHome?.parent && composeForm.parentNode !== composeHome.parent) {
+            composeHome.parent.insertBefore(composeForm, composeHome.nextSibling);
+        }
         composePanel?.classList.remove('is-compose-panel-open');
         composeReference?.replaceChildren();
         document.body.classList.remove('feed-comment-composer-open');
         threadPage?.classList.remove('is-compose-open');
         threadPage?.style.removeProperty('--feed-compose-offset');
         clearComposeTarget();
+        if (targetSnapshot?.element?.isConnected && targetSnapshot.html) {
+            targetSnapshot.element.innerHTML = targetSnapshot.html;
+            window.CraftCrawlInitFeedThread?.(root);
+        }
+        composerTargetSnapshot = null;
         if (composerScrollRestore) {
             const { container, top, windowY } = composerScrollRestore;
             const restoreScroll = () => {
                 if (container) {
-                    container.scrollTop = top;
+                    container.scrollTop = targetSnapshot?.element?.offsetTop ?? top;
                 } else {
-                    window.scrollTo(window.scrollX, windowY);
+                    const targetTop = targetSnapshot?.element
+                        ? targetSnapshot.element.getBoundingClientRect().top + window.scrollY - 12
+                        : windowY;
+                    window.scrollTo(window.scrollX, Math.max(0, targetTop));
                 }
             };
             window.requestAnimationFrame(restoreScroll);
@@ -431,6 +447,9 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         clearComposeTarget();
         activeComposeTarget = target || null;
         activeComposeTarget?.classList.add('is-compose-target');
+        composerTargetSnapshot = !parentId && activeComposeTarget
+            ? { element: activeComposeTarget, html: activeComposeTarget.innerHTML }
+            : null;
 
         if (composeParentInput) composeParentInput.value = parentId;
         if (composeContext) {
@@ -448,6 +467,9 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         composerScrollRestore = scrollContainer
             ? { container: scrollContainer, top: scrollContainer.scrollTop, windowY: window.scrollY }
             : { container: null, top: 0, windowY: window.scrollY };
+        if (composeForm.parentNode !== document.body) {
+            document.body.appendChild(composeForm);
+        }
         composeForm.hidden = false;
         composePanel?.classList.add('is-compose-panel-open');
         document.body.classList.add('feed-comment-composer-open');
