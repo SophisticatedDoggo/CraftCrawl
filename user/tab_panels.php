@@ -49,7 +49,14 @@ if (!function_exists('craftcrawl_render_portal_quest_card')) {
                 <div class="checkin-modal-scrim"></div>
                 <div class="checkin-modal-body">
                     <div class="checkin-modal-prompt" data-checkin-prompt>
-                        <p>Take a photo to complete your check-in.</p>
+                        <button type="button" class="checkin-modal-close" data-checkin-close aria-label="Close">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M15 5L5 15M5 5l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        </button>
+                        <svg class="checkin-prompt-icon" width="48" height="48" viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.5"/></svg>
+                        <h3 data-checkin-prompt-name></h3>
+                        <p class="checkin-prompt-location" data-checkin-prompt-location></p>
+                        <div class="checkin-prompt-xp" data-checkin-prompt-xp></div>
+                        <p class="checkin-prompt-hint">Snap a photo to complete your check-in</p>
                         <button type="button" data-checkin-take-photo>Take Photo</button>
                     </div>
                     <div class="checkin-preview" data-checkin-preview hidden>

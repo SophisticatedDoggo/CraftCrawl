@@ -3892,24 +3892,109 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo) {
     max-width: 380px;
     max-height: calc(100vh - 48px);
     overflow-y: auto;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-lg);
     background: var(--color-bg);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    animation: checkin-modal-enter 200ms ease-out;
+}
+
+@keyframes checkin-modal-enter {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.checkin-modal-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    color: var(--color-muted);
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    cursor: pointer;
+}
+
+.checkin-modal-close:hover,
+.checkin-modal-close:focus {
+    color: var(--color-text);
+    background: var(--color-surface-muted);
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 .checkin-modal-prompt {
-    padding: 28px 20px;
+    position: relative;
+    padding: 36px 24px 28px;
     text-align: center;
 }
 
-.checkin-modal-prompt p {
-    margin: 0 0 16px;
-    font-size: 1rem;
-    color: var(--color-heading);
+.checkin-prompt-icon {
+    display: block;
+    margin: 0 auto 16px;
+    color: var(--color-primary);
+    opacity: 0.85;
 }
 
-.checkin-modal-prompt button {
-    min-width: 160px;
+.checkin-modal-prompt h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--color-text);
+}
+
+.checkin-prompt-location {
+    margin: 4px 0 0;
+    font-size: 0.88rem;
+    color: var(--color-muted);
+}
+
+.checkin-prompt-xp {
+    display: inline-block;
+    margin: 14px 0 0;
+    padding: 5px 14px;
+    border-radius: 99px;
+    font-size: 0.82rem;
+    font-weight: 650;
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+.checkin-prompt-xp:empty {
+    display: none;
+}
+
+.checkin-prompt-xp-first {
+    color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+.checkin-prompt-hint {
+    margin: 18px 0 16px;
+    font-size: 0.92rem;
+    color: var(--color-muted);
+}
+
+.checkin-modal-prompt button[data-checkin-take-photo] {
+    min-width: 180px;
 }
 
 .checkin-preview {

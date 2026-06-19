@@ -11,6 +11,10 @@
     var photoInput = widget.querySelector('[data-checkin-photo-input]');
     var modal = widget.querySelector('[data-checkin-modal]');
     var prompt = modal ? modal.querySelector('[data-checkin-prompt]') : null;
+    var promptName = modal ? modal.querySelector('[data-checkin-prompt-name]') : null;
+    var promptLocation = modal ? modal.querySelector('[data-checkin-prompt-location]') : null;
+    var promptXp = modal ? modal.querySelector('[data-checkin-prompt-xp]') : null;
+    var closeButton = modal ? modal.querySelector('[data-checkin-close]') : null;
     var takePhotoButton = modal ? modal.querySelector('[data-checkin-take-photo]') : null;
     var preview = modal ? modal.querySelector('[data-checkin-preview]') : null;
     var previewTitle = modal ? modal.querySelector('[data-checkin-preview-title]') : null;
@@ -83,6 +87,22 @@
         if (preview) {
             preview.hidden = true;
         }
+
+        if (verifyData) {
+            if (promptName) {
+                promptName.textContent = verifyData.business_name || '';
+            }
+            if (promptLocation) {
+                promptLocation.textContent = [verifyData.city, verifyData.state].filter(Boolean).join(', ');
+            }
+            if (promptXp) {
+                var isFirst = verifyData.visit_type === 'first_time';
+                var label = isFirst ? 'First visit' : 'Welcome back';
+                promptXp.textContent = label + ' · +' + (verifyData.xp_awarded || 0) + ' XP';
+                promptXp.className = 'checkin-prompt-xp' + (isFirst ? ' checkin-prompt-xp-first' : '');
+            }
+        }
+
         modal.hidden = false;
         document.body.style.overflow = 'hidden';
     }
@@ -120,7 +140,22 @@
         }
     }
 
-    // "Take Photo" button — opens camera from a real user gesture
+    function cancelModal() {
+        if (pendingCheckin && pendingCheckin.button) {
+            pendingCheckin.button.disabled = false;
+        }
+        hideModal();
+        pendingCheckin = null;
+    }
+
+    if (closeButton) {
+        closeButton.addEventListener('click', cancelModal);
+    }
+
+    if (modal) {
+        modal.querySelector('.checkin-modal-scrim').addEventListener('click', cancelModal);
+    }
+
     if (takePhotoButton) {
         takePhotoButton.addEventListener('click', function () {
             if (photoInput) {
