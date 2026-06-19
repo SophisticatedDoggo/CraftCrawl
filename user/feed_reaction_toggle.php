@@ -4,6 +4,7 @@ include '../db.php';
 require_once '../lib/leveling.php';
 require_once '../lib/quests.php';
 require_once '../lib/onesignal.php';
+require_once '../lib/feed_items.php';
 
 header('Content-Type: application/json');
 
@@ -27,6 +28,7 @@ $reaction_type = $_POST['reaction_type'] ?? '';
 $reaction_stage = 'validate_request';
 
 $reaction_options_by_type = [
+    'checkin'       => ['cheers', 'nice_find'],
     'first_visit'   => ['cheers', 'nice_find'],
     'level_up'      => ['cheers', 'nice_find', 'trophy'],
     'event_want'    => ['cheers', 'nice_find'],
@@ -39,7 +41,7 @@ $reaction_options_by_type = [
 ];
 
 $item_type = null;
-if (preg_match('/^(first_visit|level_up|event_want|location_want|badge_earned|quest_complete|business_post|user_post):\d+$/', $item_key, $type_matches)
+if (preg_match('/^(checkin|first_visit|level_up|event_want|location_want|badge_earned|quest_complete|business_post|user_post):\d+$/', $item_key, $type_matches)
     || preg_match('/^(quest_sweep):(daily|weekly):\d+:\d{8}$/', $item_key, $type_matches)) {
     $item_type = $type_matches[1];
 }
@@ -53,6 +55,26 @@ try {
     }
 
 function craftcrawl_feed_item_is_visible($conn, $user_id, $item_key) {
+    if (preg_match('/^checkin:(\d+)$/', $item_key, $matches)) {
+        $visit_id = (int) $matches[1];
+        $stmt = $conn->prepare("
+            SELECT uv.id, uv.user_id, uv.location_id
+            FROM user_visits uv
+            INNER JOIN users u ON u.id = uv.user_id
+            WHERE uv.id=?
+                AND uv.photo_id IS NOT NULL
+                AND u.disabledAt IS NULL
+            LIMIT 1
+        ");
+        $stmt->bind_param("i", $visit_id);
+        $stmt->execute();
+        $visit = $stmt->get_result()->fetch_assoc();
+        if (!$visit) {
+            return false;
+        }
+        return craftcrawl_viewer_can_see_checkin($conn, $user_id, (int) $visit['user_id'], (int) $visit['location_id']);
+    }
+
     if (preg_match('/^first_visit:(\d+)$/', $item_key, $matches)) {
         $visit_id = (int) $matches[1];
         $stmt = $conn->prepare("
@@ -278,7 +300,12 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user
 
     $owner_user_id = 0;
 
-    if (preg_match('/^first_visit:(\d+)$/', $item_key, $m)) {
+    if (preg_match('/^checkin:(\d+)$/', $item_key, $m)) {
+        $item_id = (int) $m[1];
+        $s = $conn->prepare("SELECT user_id FROM user_visits WHERE id=? LIMIT 1");
+        $s->bind_param("i", $item_id); $s->execute();
+        $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
+    } elseif (preg_match('/^first_visit:(\d+)$/', $item_key, $m)) {
         $item_id = (int) $m[1];
         $s = $conn->prepare("SELECT user_id FROM user_visits WHERE id=? LIMIT 1");
         $s->bind_param("i", $item_id); $s->execute();
