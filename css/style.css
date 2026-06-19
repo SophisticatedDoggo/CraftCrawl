@@ -4516,10 +4516,9 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo) {
     border-color: var(--color-primary);
 }
 
-.friend-search-result button,
-.friend-current-actions,
-.friend-search-result .user-avatar-link,
-.friend-current-item .user-avatar-link {
+.leaderboard-card > :not(.leaderboard-card-link),
+.friend-search-result > :not(.friend-card-link),
+.friend-current-item > :not(.friend-card-link) {
     position: relative;
     z-index: 1;
 }
