@@ -29,6 +29,26 @@ window.CraftCrawlInitCheckIn = function (root = document) {
     var verifyData = null;
     var previewObjectUrl = null;
 
+    function getFreshPosition() {
+        return new Promise(function (resolve, reject) {
+            var provider = window.CraftCrawlLocation || null;
+            if (provider) {
+                var started = provider.getCurrentPosition(resolve, reject, {
+                    enableHighAccuracy: true, timeout: 10000, maximumAge: 0
+                });
+                if (!started) {
+                    reject(new Error('Location not available.'));
+                }
+            } else if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                    enableHighAccuracy: true, timeout: 10000, maximumAge: 0
+                });
+            } else {
+                reject(new Error('Location not available.'));
+            }
+        });
+    }
+
     function showFeedback(message, isError) {
         if (!feedback) {
             return;
@@ -179,7 +199,7 @@ window.CraftCrawlInitCheckIn = function (root = document) {
         });
     }
 
-    // Confirm button — resize photo and submit
+    // Confirm button — re-verify location, resize photo, and submit
     if (confirmButton) {
         confirmButton.addEventListener('click', async function () {
             if (!verifyData || !photoInput.files || !photoInput.files.length) {
@@ -188,14 +208,31 @@ window.CraftCrawlInitCheckIn = function (root = document) {
 
             confirmButton.disabled = true;
             confirmButton.classList.add('is-loading');
+            confirmButton.textContent = 'Verifying location...';
+
+            var freshPosition;
+            try {
+                freshPosition = await getFreshPosition();
+            } catch (locErr) {
+                hideModal();
+                showFeedback(locationErrorMessage(locErr), true);
+                confirmButton.disabled = false;
+                confirmButton.classList.remove('is-loading');
+                confirmButton.textContent = 'Post Check-in';
+                return;
+            }
+
+            latitudeInput.value = freshPosition.coords.latitude;
+            longitudeInput.value = freshPosition.coords.longitude;
+
             confirmButton.textContent = 'Posting...';
 
             var formData = new FormData();
             formData.append('csrf_token', form.querySelector('input[name="csrf_token"]').value);
             formData.append('business_id', form.querySelector('input[name="business_id"]').value);
             formData.append('location_id', form.querySelector('input[name="location_id"]').value);
-            formData.append('latitude', latitudeInput.value);
-            formData.append('longitude', longitudeInput.value);
+            formData.append('latitude', freshPosition.coords.latitude);
+            formData.append('longitude', freshPosition.coords.longitude);
 
             try {
                 var photo = photoInput.files[0];

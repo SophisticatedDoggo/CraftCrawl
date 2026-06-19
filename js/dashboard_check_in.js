@@ -27,6 +27,26 @@
     var pendingCheckin = null;
     var previewObjectUrl = null;
 
+    function getFreshPosition() {
+        return new Promise(function (resolve, reject) {
+            var provider = window.CraftCrawlLocation || null;
+            if (provider) {
+                var started = provider.getCurrentPosition(resolve, reject, {
+                    enableHighAccuracy: true, timeout: 10000, maximumAge: 0
+                });
+                if (!started) {
+                    reject(new Error('Location not available.'));
+                }
+            } else if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                    enableHighAccuracy: true, timeout: 10000, maximumAge: 0
+                });
+            } else {
+                reject(new Error('Location not available.'));
+            }
+        });
+    }
+
     function showStatus(message, isError) {
         feedback.textContent = message;
         feedback.classList.toggle('form-message-error', isError);
@@ -183,7 +203,7 @@
         });
     }
 
-    // Confirm — resize and submit
+    // Confirm — re-verify location, resize and submit
     if (confirmButton) {
         confirmButton.addEventListener('click', async function () {
             if (!pendingCheckin || !photoInput.files || !photoInput.files.length) {
@@ -192,13 +212,31 @@
 
             confirmButton.disabled = true;
             confirmButton.classList.add('is-loading');
+            confirmButton.textContent = 'Verifying location...';
+
+            var freshPosition;
+            try {
+                freshPosition = await getFreshPosition();
+            } catch (locErr) {
+                hideModal();
+                showStatus(locationErrorMessage(locErr), true);
+                if (pendingCheckin && pendingCheckin.button) {
+                    pendingCheckin.button.disabled = false;
+                }
+                confirmButton.disabled = false;
+                confirmButton.classList.remove('is-loading');
+                confirmButton.textContent = 'Post Check-in';
+                pendingCheckin = null;
+                return;
+            }
+
             confirmButton.textContent = 'Posting...';
 
             var formData = new FormData();
             formData.append('csrf_token', csrfToken);
             formData.append('location_id', pendingCheckin.location.id);
-            formData.append('latitude', currentPosition.latitude);
-            formData.append('longitude', currentPosition.longitude);
+            formData.append('latitude', freshPosition.coords.latitude);
+            formData.append('longitude', freshPosition.coords.longitude);
 
             try {
                 var photo = photoInput.files[0];
