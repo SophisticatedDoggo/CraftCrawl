@@ -597,12 +597,14 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     <div class="friend-search-summary">
                         <strong>${escapeHtml(user.name)}</strong>
                         <span class="friend-search-meta">Level ${escapeHtml(user.level || 1)}${user.title ? ` &middot; ${escapeHtml(user.title)}` : ''}</span>
-                        <span class="friend-search-username">@${escapeHtml(user.username || '')}</span>
+                        <div class="friend-card-action-row">
+                            <span class="friend-search-username">@${escapeHtml(user.username || '')}</span>
+                            <button type="button" data-friend-id="${user.id}" data-request-id="${user.received_request_id || user.sent_request_id || ''}" data-friend-action="${action}" ${disabled}>
+                                ${buttonText}
+                            </button>
+                        </div>
                         ${statusMarkup}
                     </div>
-                    <button type="button" data-friend-id="${user.id}" data-request-id="${user.received_request_id || user.sent_request_id || ''}" data-friend-action="${action}" ${disabled}>
-                        ${buttonText}
-                    </button>
                     <a class="friend-card-link" href="profile.php?id=${encodeURIComponent(user.id)}" aria-label="View ${escapeHtml(user.name)}'s profile"></a>
                 </article>
             `;
@@ -720,11 +722,13 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 <div>
                     <strong>${escapeHtml(request.name)}</strong>
                     <span>Level ${escapeHtml(request.level || 1)}${request.title ? ` &middot; ${escapeHtml(request.title)}` : ''}</span>
-                    <span class="friend-card-username">@${escapeHtml(request.username || '')}</span>
-                </div>
-                <div>
-                    <button type="button" data-request-id="${request.id}" data-response="accepted">Approve</button>
-                    <button type="button" data-request-id="${request.id}" data-response="declined">Decline</button>
+                    <div class="friend-card-action-row">
+                        <span class="friend-card-username">@${escapeHtml(request.username || '')}</span>
+                        <div class="friend-card-action-buttons">
+                            <button type="button" data-request-id="${request.id}" data-response="accepted">Approve</button>
+                            <button type="button" data-request-id="${request.id}" data-response="declined">Decline</button>
+                        </div>
+                    </div>
                 </div>
                 <a class="friend-card-link" href="profile.php?id=${encodeURIComponent(request.user_id || '')}" aria-label="View ${escapeHtml(request.name)}'s profile"></a>
             </article>
@@ -797,10 +801,12 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 <div class="friend-search-summary">
                     <strong>${escapeHtml(request.name)}</strong>
                     <span class="friend-search-meta">Level ${escapeHtml(request.level || 1)}${request.title ? ` &middot; ${escapeHtml(request.title)}` : ''}</span>
-                    <span class="friend-search-username">@${escapeHtml(request.username || '')}</span>
+                    <div class="friend-card-action-row">
+                        <span class="friend-search-username">@${escapeHtml(request.username || '')}</span>
+                        <button type="button" data-request-id="${request.id}" data-friend-action="cancel">Cancel Invite</button>
+                    </div>
                     <span class="friend-search-status is-sent">✓ Invitation sent</span>
                 </div>
-                <button type="button" data-request-id="${request.id}" data-friend-action="cancel">Cancel Invite</button>
                 <a class="friend-card-link" href="profile.php?id=${encodeURIComponent(request.user_id || '')}" aria-label="View ${escapeHtml(request.name)}'s profile"></a>
             </article>
         `).join('');
@@ -875,10 +881,10 @@ window.CraftCrawlInitFriends = function (scope = document) {
                         ${friend.is_new ? '<span class="friend-current-new-badge">New</span>' : ''}
                     </div>
                     <p class="friend-current-meta">Level ${escapeHtml(friend.level || 1)}${friend.title ? ` &middot; ${escapeHtml(friend.title)}` : ''}</p>
-                    <p class="friend-current-meta friend-current-username">@${escapeHtml(friend.username || '')}</p>
-                </div>
-                <div class="friend-current-actions">
-                    <button type="button" class="danger-button friend-remove-button" data-remove-friend-id="${friend.id}" data-remove-friend-name="${escapeHtml(friend.name)}">Remove</button>
+                    <div class="friend-current-action-row">
+                        <p class="friend-current-meta friend-current-username">@${escapeHtml(friend.username || '')}</p>
+                        <button type="button" class="danger-button friend-remove-button" data-remove-friend-id="${friend.id}" data-remove-friend-name="${escapeHtml(friend.name)}">Remove</button>
+                    </div>
                 </div>
                 <a class="friend-card-link" href="profile.php?id=${encodeURIComponent(friend.id)}" aria-label="View ${escapeHtml(friend.name)}'s profile"></a>
             </article>

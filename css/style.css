@@ -3755,8 +3755,8 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo) {
 }
 
 .friend-current-item {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: start;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
 }
 
 .friend-current-summary {
@@ -3772,12 +3772,6 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo) {
     align-items: center;
 }
 
-.friend-current-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: flex-end;
-}
 
 .friend-current-meta {
     margin: 0;
@@ -3806,7 +3800,6 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo) {
     font-weight: 800;
 }
 
-.friend-current-actions a,
 .friend-remove-button {
     min-height: 34px;
     padding: 6px 10px;
@@ -4555,10 +4548,8 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
     pointer-events: none;
 }
 
-.friend-search-result > button,
-.friend-current-actions,
-.friend-suggestion-card > div:last-of-type,
-.friend-request-item > div:last-of-type {
+.friend-card-action-row,
+.friend-current-action-row {
     pointer-events: auto;
 }
 
@@ -4584,11 +4575,40 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
 .friend-search-username,
 .friend-current-username,
 .friend-card-username {
-    display: block;
     margin-top: 2px;
-    color: var(--color-primary);
     font-size: 13px;
     font-weight: 800;
+}
+
+.leaderboard-username,
+.friends-leaderboard .leaderboard-username,
+.friend-search-username,
+.friend-current-username,
+.friend-card-username,
+.friend-recommendation-card .friend-card-username {
+    color: var(--color-primary);
+}
+
+.friend-card-action-row,
+.friend-current-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+    pointer-events: auto;
+}
+
+.friend-card-action-row button,
+.friend-current-action-row button {
+    min-height: 30px;
+    padding: 4px 12px;
+    font-size: 13px;
+}
+
+.friend-card-action-buttons {
+    display: flex;
+    gap: 8px;
 }
 
 .leaderboard-stat-grid {
@@ -10590,24 +10610,6 @@ a.event-calendar-event:focus .event-calendar-event-name {
         align-items: center;
     }
 
-    .friend-search-result > .user-avatar,
-    .friend-search-result > .user-avatar-link {
-        grid-column: 1;
-        grid-row: 1 / span 2;
-        align-self: center;
-    }
-
-    .friend-search-summary {
-        grid-column: 2;
-        grid-row: 1;
-    }
-
-    .friend-search-result > button {
-        grid-column: 2;
-        grid-row: 2;
-        justify-self: start;
-    }
-
     .friend-location-card > a:not(.mapboxgl-ctrl-logo),
     .friend-recommendation-card > a:not(.mapboxgl-ctrl-logo) {
         grid-column: auto;
@@ -10684,82 +10686,16 @@ a.event-calendar-event:focus .event-calendar-event-name {
         align-items: center;
     }
 
-    .friend-current-item > .user-avatar,
-    .friend-current-item > .user-avatar-link {
-        grid-column: 1;
-        grid-row: 1 / span 2;
-        align-self: center;
-    }
-
-    .friend-current-summary {
-        grid-column: 2;
-        grid-row: 1;
-    }
-
-    .friend-current-actions {
-        display: flex;
-        flex-wrap: wrap;
-        grid-column: 2;
-        grid-row: 2;
-        justify-content: flex-start;
-        width: auto;
-        max-width: 100%;
-    }
-
-    .friend-current-actions button {
-        min-height: 36px;
-        padding-right: 12px;
-        padding-left: 12px;
-        width: auto;
-        max-width: 100%;
-    }
-
     .friend-request-item {
         grid-template-columns: auto minmax(0, 1fr);
         gap: 10px 12px;
         align-items: center;
     }
 
-    .friend-request-item > .user-avatar,
-    .friend-request-item > .user-avatar-link {
-        grid-column: 1;
-        grid-row: 1 / span 2;
-        align-self: center;
-    }
-
-    .friend-request-item > div:nth-child(2) {
-        grid-column: 2;
-        grid-row: 1;
-    }
-
-    .friend-request-item > div:last-of-type {
-        grid-column: 2;
-        grid-row: 2;
-        justify-content: flex-start;
-    }
-
     .friend-suggestion-card {
         grid-template-columns: auto minmax(0, 1fr);
         gap: 10px 12px;
         align-items: center;
-    }
-
-    .friend-suggestion-card > .user-avatar,
-    .friend-suggestion-card > .user-avatar-link {
-        grid-column: 1;
-        grid-row: 1 / span 2;
-        align-self: center;
-    }
-
-    .friend-suggestion-card > div:nth-child(2) {
-        grid-column: 2;
-        grid-row: 1;
-    }
-
-    .friend-suggestion-card > div:last-of-type {
-        grid-column: 2;
-        grid-row: 2;
-        justify-self: start;
     }
 
     .feed-reactions {

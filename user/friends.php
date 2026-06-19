@@ -349,11 +349,11 @@ if (!$viewer_in_top_ten && $viewer_leaderboard_row !== null) {
                         <div>
                             <strong><?php echo escape_output($suggested_name); ?></strong>
                             <span>Level <?php echo escape_output($suggested_level); ?><?php echo $suggested_title !== '' ? ' · ' . escape_output($suggested_title) : ''; ?></span>
-                            <span class="friend-card-username">@<?php echo escape_output($suggested_friend['username']); ?></span>
+                            <div class="friend-card-action-row">
+                                <span class="friend-card-username">@<?php echo escape_output($suggested_friend['username']); ?></span>
+                                <button type="button" data-suggested-friend-action="invite" data-friend-id="<?php echo escape_output($suggested_friend['id']); ?>">Invite</button>
+                            </div>
                             <span><?php echo escape_output($mutual_friend_count); ?> mutual <?php echo $mutual_friend_count === 1 ? 'friend' : 'friends'; ?></span>
-                        </div>
-                        <div>
-                            <button type="button" data-suggested-friend-action="invite" data-friend-id="<?php echo escape_output($suggested_friend['id']); ?>">Invite</button>
                         </div>
                         <a class="friend-card-link" href="profile.php?id=<?php echo escape_output($suggested_friend['id']); ?>" aria-label="View <?php echo escape_output($suggested_name); ?>'s profile"></a>
                     </article>
