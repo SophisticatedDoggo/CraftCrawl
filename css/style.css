@@ -4678,20 +4678,19 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
     white-space: nowrap;
 }
 
-.friend-location-card.has-checkin-photo {
-    grid-template-columns: 60px minmax(0, 1fr) max-content;
-}
-
-.checkin-photo-thumb {
-    grid-row: 1 / -1;
-    width: 60px;
-    height: 60px;
+.checkin-card-photo {
+    grid-column: 1 / -1;
     border-radius: var(--radius-sm);
-    object-fit: cover;
+    overflow: hidden;
+    line-height: 0;
 }
 
-.friend-location-card.has-checkin-photo > a:not(.mapboxgl-ctrl-logo) {
-    grid-column: 3;
+.checkin-card-photo img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 600px;
+    object-fit: cover;
 }
 
 .profile-location-actions {
@@ -10644,18 +10643,6 @@ a.event-calendar-event:focus .event-calendar-event-name {
         grid-template-columns: 1fr;
     }
 
-    .friend-location-card.has-checkin-photo {
-        grid-template-columns: 52px minmax(0, 1fr);
-    }
-
-    .friend-location-card.has-checkin-photo .checkin-photo-thumb {
-        width: 52px;
-        height: 52px;
-    }
-
-    .friend-location-card.has-checkin-photo > a:not(.mapboxgl-ctrl-logo) {
-        grid-column: auto;
-    }
 
     .friend-search-result {
         grid-template-columns: auto minmax(0, 1fr);
