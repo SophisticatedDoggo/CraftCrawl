@@ -10465,35 +10465,33 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .mobile-app-tab-icon-events {
-        height: 18px;
-        margin-top: 6px;
         border: 2px solid currentColor;
         border-radius: 4px;
         background:
-            linear-gradient(currentColor, currentColor) 0 0 / 100% 4px no-repeat,
-            linear-gradient(currentColor, currentColor) 2.5px 6px / 3px 2px no-repeat,
-            linear-gradient(currentColor, currentColor) 8.5px 6px / 3px 2px no-repeat,
-            linear-gradient(currentColor, currentColor) 14.5px 6px / 3px 2px no-repeat,
-            linear-gradient(currentColor, currentColor) 2.5px 10px / 3px 2px no-repeat,
-            linear-gradient(currentColor, currentColor) 8.5px 10px / 3px 2px no-repeat,
-            linear-gradient(currentColor, currentColor) 14.5px 10px / 3px 2px no-repeat;
+            linear-gradient(currentColor, currentColor) 0 0 / 100% 5px no-repeat,
+            linear-gradient(currentColor, currentColor) 2.5px 8px / 3px 2px no-repeat,
+            linear-gradient(currentColor, currentColor) 8.5px 8px / 3px 2px no-repeat,
+            linear-gradient(currentColor, currentColor) 14.5px 8px / 3px 2px no-repeat,
+            linear-gradient(currentColor, currentColor) 2.5px 13px / 3px 2px no-repeat,
+            linear-gradient(currentColor, currentColor) 8.5px 13px / 3px 2px no-repeat,
+            linear-gradient(currentColor, currentColor) 14.5px 13px / 3px 2px no-repeat;
     }
 
     .mobile-app-tab-icon-events::before {
-        top: -4px;
-        left: 4px;
+        top: -5px;
+        left: 5px;
         right: auto;
         width: 3px;
-        height: 5px;
+        height: 6px;
         border-radius: 2px 2px 0 0;
     }
 
     .mobile-app-tab-icon-events::after {
-        top: -4px;
-        right: 4px;
+        top: -5px;
+        right: 5px;
         left: auto;
         width: 3px;
-        height: 5px;
+        height: 6px;
         border-radius: 2px 2px 0 0;
         background: currentColor;
     }
