@@ -332,9 +332,11 @@ if (!$profile) {
     }
 
     $past_checkins_stmt = $conn->prepare("
-        SELECT uv.id, uv.visit_type, uv.xp_awarded, uv.checkedInAt, l.id AS business_id, l.name AS bName, l.location_type AS bType, l.city, l.state
+        SELECT uv.id, uv.visit_type, uv.xp_awarded, uv.checkedInAt, l.id AS business_id, l.name AS bName, l.location_type AS bType, l.city, l.state,
+            vp.object_key AS visit_photo_object_key
         FROM user_visits uv
         INNER JOIN locations l ON l.id = uv.location_id
+        LEFT JOIN photos vp ON vp.id = uv.photo_id AND vp.deletedAt IS NULL AND vp.status = 'approved'
         WHERE uv.user_id=? AND l.visibility_status IN ('public_unclaimed', 'public_claimed') AND l.disabledAt IS NULL
         ORDER BY uv.checkedInAt DESC, uv.id DESC
         LIMIT 20
@@ -828,8 +830,12 @@ if (!$profile) {
                             $checked_in_at = strtotime($checkin['checkedInAt']);
                             $checked_in_text = $checked_in_at ? date('M j, Y', $checked_in_at) : '';
                             $visit_type_text = $checkin['visit_type'] === 'first_time' ? 'First-time check-in' : 'Repeat check-in';
+                            $has_checkin_photo = !empty($checkin['visit_photo_object_key']);
                         ?>
-                        <article class="friend-location-card" data-profile-filter-item>
+                        <article class="friend-location-card<?php echo $has_checkin_photo ? ' has-checkin-photo' : ''; ?>" data-profile-filter-item>
+                            <?php if ($has_checkin_photo) : ?>
+                                <img class="checkin-photo-thumb" src="<?php echo escape_output(craftcrawl_cloudinary_delivery_url($checkin['visit_photo_object_key'], 'f_auto,q_auto,c_fill,w_120,h_120')); ?>" alt="Check-in photo at <?php echo escape_output($checkin['bName']); ?>" loading="lazy">
+                            <?php endif; ?>
                             <strong><?php echo escape_output($checkin['bName']); ?></strong>
                             <span><?php echo escape_output(craftcrawl_profile_business_type_label($checkin['bType'])); ?> · <?php echo escape_output($checkin['city']); ?>, <?php echo escape_output($checkin['state']); ?></span>
                             <span><?php echo escape_output($visit_type_text); ?><?php echo $checked_in_text !== '' ? ' · ' . escape_output($checked_in_text) : ''; ?><?php echo (int) $checkin['xp_awarded'] > 0 ? ' · +' . escape_output($checkin['xp_awarded']) . ' XP' : ''; ?></span>
