@@ -530,7 +530,7 @@ window.CraftCrawlInitFeedThread = function (root = document) {
         if (form.dataset.shellCommentReady === 'true') return;
         form.dataset.shellCommentReady = 'true';
         form.addEventListener('submit', (event) => {
-            const isOverlay = Boolean(form.closest('[data-feed-thread-overlay]'));
+            const isOverlay = Boolean(threadPage?.closest('[data-feed-thread-overlay]'));
             if ((!isOverlay && typeof window.CraftCrawlNavigateUserShell !== 'function') || form.dataset.shellSubmitting === 'true') {
                 return;
             }
