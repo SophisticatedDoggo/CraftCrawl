@@ -10448,12 +10448,12 @@ a.event-calendar-event:focus .event-calendar-event-name {
         border-radius: 4px;
         background:
             linear-gradient(currentColor, currentColor) 0 0 / 100% 4px no-repeat,
-            linear-gradient(currentColor, currentColor) 2px 7px / 3px 2px no-repeat,
-            linear-gradient(currentColor, currentColor) 7px 7px / 3px 2px no-repeat,
-            linear-gradient(currentColor, currentColor) 12px 7px / 3px 2px no-repeat,
-            linear-gradient(currentColor, currentColor) 2px 11px / 3px 2px no-repeat,
-            linear-gradient(currentColor, currentColor) 7px 11px / 3px 2px no-repeat,
-            linear-gradient(currentColor, currentColor) 12px 11px / 3px 2px no-repeat;
+            linear-gradient(currentColor, currentColor) 1.5px 5.5px / 3px 2px no-repeat,
+            linear-gradient(currentColor, currentColor) 7.5px 5.5px / 3px 2px no-repeat,
+            linear-gradient(currentColor, currentColor) 13.5px 5.5px / 3px 2px no-repeat,
+            linear-gradient(currentColor, currentColor) 1.5px 10.5px / 3px 2px no-repeat,
+            linear-gradient(currentColor, currentColor) 7.5px 10.5px / 3px 2px no-repeat,
+            linear-gradient(currentColor, currentColor) 13.5px 10.5px / 3px 2px no-repeat;
     }
 
     .mobile-app-tab-icon-events::before {
@@ -10492,41 +10492,35 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .mobile-app-tab-icon-quests {
-        width: 14px;
-        height: 20px;
-        margin: 2px 5px;
+        width: 18px;
+        height: 22px;
+        margin: 1px 3px;
         border: 2px solid currentColor;
-        border-right: 0;
-        border-radius: 3px 0 0 3px;
-        background:
-            linear-gradient(currentColor, currentColor) right center / 2px 4px no-repeat,
-            linear-gradient(currentColor, currentColor) 3px 5px / 6px 2px no-repeat,
-            linear-gradient(currentColor, currentColor) 3px 9px / 4px 2px no-repeat,
-            linear-gradient(currentColor, currentColor) 3px 13px / 5px 2px no-repeat;
+        border-left-width: 4px;
+        border-radius: 2px 4px 4px 2px;
+        background: none;
     }
 
     .mobile-app-tab-icon-quests::before {
-        top: -2px;
-        right: -5px;
-        width: 5px;
+        top: 3px;
+        left: 50%;
+        width: 2.5px;
         height: 8px;
-        border: 2px solid currentColor;
-        border-left: 0;
-        border-radius: 0 4px 4px 0;
-        background: transparent;
+        border-radius: 1px;
+        transform: translateX(-50%);
         clip-path: none;
     }
 
     .mobile-app-tab-icon-quests::after {
         top: auto;
-        bottom: -2px;
-        right: -5px;
-        width: 5px;
-        height: 8px;
-        border: 2px solid currentColor;
-        border-left: 0;
-        border-radius: 0 4px 4px 0;
-        background: transparent;
+        bottom: 3px;
+        left: 50%;
+        right: auto;
+        width: 3px;
+        height: 3px;
+        border-radius: 999px;
+        transform: translateX(-50%);
+        background: currentColor;
     }
 
     .mobile-app-tab-icon-checkin {
