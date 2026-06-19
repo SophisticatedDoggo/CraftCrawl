@@ -3732,8 +3732,7 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo) {
     font-size: inherit;
     font-weight: inherit;
     line-height: inherit;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+    text-decoration: none;
 }
 
 .friends-feed-item .feed-item-detail {
@@ -4547,6 +4546,13 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
     border-color: var(--color-primary);
 }
 
+.friend-search-result .feed-avatar,
+.friend-current-item .feed-avatar,
+.friend-request-item .feed-avatar {
+    --avatar-size: 58px;
+    align-self: center;
+}
+
 .leaderboard-username,
 .friend-search-username,
 .friend-current-username,
@@ -4610,6 +4616,10 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
 .friend-recommendation-card span,
 .friends-leaderboard span {
     color: var(--color-muted);
+}
+
+.friends-leaderboard span span {
+    display: inline;
 }
 
 .friend-location-card > a:not(.mapboxgl-ctrl-logo),
@@ -13638,8 +13648,7 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo):focus,
     -webkit-backdrop-filter: none;
     font-size: inherit;
     font-weight: inherit;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+    text-decoration: none;
 }
 
 a.feed-detail-link:not(.mapboxgl-ctrl-logo),
