@@ -402,6 +402,10 @@ window.CraftCrawlInitFriends = function (scope = document) {
         return `data-feed-item-key="${escapeHtml(item.item_key || '')}" data-feed-item-type="${escapeHtml(item.type || '')}" data-feed-is-self="${item.is_self ? 'true' : 'false'}"`;
     }
 
+    function renderBusinessLink(item) {
+        return `<a class="feed-business-link" href="../business_details.php?id=${encodeURIComponent(item.business_id)}">${escapeHtml(item.business_name)}</a>`;
+    }
+
     function renderFeedMeta(label, date, extraHtml = '') {
         return `
             <p class="feed-item-meta">
@@ -1037,9 +1041,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
-                        <strong class="feed-item-title">${escapeHtml(item.is_self ? 'Want' : 'Wants')} to visit ${escapeHtml(item.business_name)}</strong>
+                        <strong class="feed-item-title">${escapeHtml(item.is_self ? 'Want' : 'Wants')} to visit ${renderBusinessLink(item)}</strong>
                         <p class="feed-item-detail">${escapeHtml(formatBusinessType(item.business_type))} · ${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
-                        ${renderFeedDetailLinkRow(item)}
                         ${actions}
                     </div>
                 </article>
@@ -1079,11 +1082,13 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 <article class="friends-feed-item" ${feedItemAttrs(item)}>
                     <div class="friends-feed-icon">${isPoll ? '📊' : '📢'}</div>
                     <div class="feed-item-content">
-                        ${renderFeedMeta(item.business_name, date)}
+                        <p class="feed-item-meta">
+                            <span>${renderBusinessLink(item)}</span>
+                            ${date ? `<span aria-hidden="true">·</span><time>${escapeHtml(date)}</time>` : ''}
+                        </p>
                         <strong class="feed-item-title">${escapeHtml(item.title)}</strong>
                         ${item.body ? `<p class="feed-item-detail feed-business-post-body">${escapeHtml(item.body)}</p>` : ''}
                         ${pollSection}
-                        ${renderFeedDetailLinkRow(item)}
                         ${actions}
                     </div>
                 </article>
@@ -1100,10 +1105,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
-                        <strong class="feed-item-title">Checked in at ${escapeHtml(item.business_name)}${visitLabel}</strong>
+                        <strong class="feed-item-title">Checked in at ${renderBusinessLink(item)}${visitLabel}</strong>
                         <p class="feed-item-detail">${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
                         ${photoHtml}
-                        ${renderFeedDetailLinkRow(item)}
                         ${actions}
                     </div>
                 </article>
@@ -1115,9 +1119,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 ${renderAvatar(item.actor, item.friend_name)}
                 <div class="feed-item-content">
                     ${renderFeedMeta(actorName, date)}
-                    <strong class="feed-item-title">Visited ${escapeHtml(item.business_name)} for the first time</strong>
+                    <strong class="feed-item-title">Visited ${renderBusinessLink(item)} for the first time</strong>
                     <p class="feed-item-detail">${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
-                    ${renderFeedDetailLinkRow(item)}
                     ${actions}
                 </div>
             </article>
@@ -1925,10 +1928,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
     function renderFeedDetailLink(item) {
         if (item.type === 'event_want') {
             return `<a class="feed-detail-link" href="../event_details.php?id=${encodeURIComponent(item.event_id)}&date=${encodeURIComponent(item.event_date)}">View Event</a>`;
-        }
-
-        if (item.type === 'checkin' || item.type === 'first_visit' || item.type === 'location_want' || item.type === 'business_post') {
-            return `<a class="feed-detail-link" href="../business_details.php?id=${encodeURIComponent(item.business_id)}">View Business</a>`;
         }
 
         return '';

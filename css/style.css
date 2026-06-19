@@ -3718,6 +3718,13 @@ body.map-expanded-open {
     line-height: 1.28;
 }
 
+a.feed-business-link:not(.mapboxgl-ctrl-logo) {
+    color: var(--color-primary);
+    font-weight: 800;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
 .friends-feed-item .feed-item-detail {
     margin-top: 6px;
     line-height: 1.45;

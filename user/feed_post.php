@@ -252,14 +252,6 @@ function render_feed_thread_detail_link($item) {
         ';
     }
 
-    if (in_array($type, ['checkin', 'first_visit', 'location_want', 'business_post'], true) && !empty($item['business_id'])) {
-        return '
-            <div class="feed-detail-link-row">
-                <a class="feed-detail-link" href="../business_details.php?id=' . escape_output($item['business_id']) . '">View Business</a>
-            </div>
-        ';
-    }
-
     return '';
 }
 
@@ -338,9 +330,8 @@ function render_feed_thread_post($item, $actions_html = '') {
             <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
                 ' . $avatar . '
                 <div>
-                    <strong>' . escape_output($want_phrase) . ' to visit ' . escape_output($item['business_name']) . '</strong>
+                    <strong>' . escape_output($want_phrase) . ' to visit <a class="feed-business-link" href="../business_details.php?id=' . escape_output($item['business_id']) . '">' . escape_output($item['business_name']) . '</a></strong>
                     <p>' . escape_output($item['business_type']) . ' · ' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
-                    ' . render_feed_thread_detail_link($item) . '
                     ' . $actions_html . '
                 </div>
             </article>
@@ -353,10 +344,9 @@ function render_feed_thread_post($item, $actions_html = '') {
             <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
                 <div class="friends-feed-icon">' . ($is_poll ? '📊' : '📢') . '</div>
                 <div>
-                    <strong>' . escape_output($item['business_name']) . '</strong>
+                    <strong><a class="feed-business-link" href="../business_details.php?id=' . escape_output($item['business_id']) . '">' . escape_output($item['business_name']) . '</a></strong>
                     <p>' . escape_output($item['title']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
                     ' . (!empty($item['body']) ? '<p>' . nl2br(escape_output($item['body'])) . '</p>' : '') . '
-                    ' . render_feed_thread_detail_link($item) . '
                     ' . $actions_html . '
                 </div>
             </article>
@@ -414,10 +404,9 @@ function render_feed_thread_post($item, $actions_html = '') {
             <article class="friends-feed-item feed-thread-post feed-checkin-post" ' . feed_thread_attrs($item) . '>
                 ' . $avatar . '
                 <div>
-                    <strong>' . escape_output($actor_name) . ' checked in at ' . escape_output($item['business_name']) . $visit_label . '</strong>
+                    <strong>' . escape_output($actor_name) . ' checked in at <a class="feed-business-link" href="../business_details.php?id=' . escape_output($item['business_id']) . '">' . escape_output($item['business_name']) . '</a>' . $visit_label . '</strong>
                     <p>' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
                     ' . $photo_html . '
-                    ' . render_feed_thread_detail_link($item) . '
                     ' . $actions_html . '
                 </div>
             </article>
@@ -428,9 +417,8 @@ function render_feed_thread_post($item, $actions_html = '') {
         <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
             ' . $avatar . '
             <div>
-                <strong>' . escape_output($actor_name) . ' visited ' . escape_output($item['business_name']) . ' for the first time</strong>
+                <strong>' . escape_output($actor_name) . ' visited <a class="feed-business-link" href="../business_details.php?id=' . escape_output($item['business_id']) . '">' . escape_output($item['business_name']) . '</a> for the first time</strong>
                 <p>' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
-                ' . render_feed_thread_detail_link($item) . '
                 ' . $actions_html . '
             </div>
         </article>
