@@ -5155,6 +5155,17 @@ a.mobile-context-back.feed-thread-back-link:focus {
     margin: 0;
 }
 
+.feed-thread-post .feed-reactions {
+    grid-column: 1 / -1;
+    justify-self: start;
+    justify-content: flex-start;
+}
+
+.feed-thread-page {
+    padding-right: calc(var(--space-page) / 2);
+    padding-left: calc(var(--space-page) / 2);
+}
+
 @media (max-width: 700px) {
     .feed-compose-form {
         gap: 12px;
@@ -13655,19 +13666,15 @@ a.feed-detail-link:not(.mapboxgl-ctrl-logo):focus,
 
 .feed-reaction-disclosure-toggle,
 :root[data-palette$="-dark"] .feed-reaction-disclosure-toggle {
-    border: 1px solid rgba(255, 255, 255, 0.13);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 999px;
     color: var(--color-primary);
-    background:
-        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.055) 34%, transparent 66%),
-        linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.045) 46%, rgba(255, 255, 255, 0.015)),
-        color-mix(in srgb, var(--color-surface) 12%, transparent);
+    background: color-mix(in srgb, var(--color-surface) 12%, transparent);
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.26),
-        inset 0 -1px 0 rgba(255, 255, 255, 0.055),
-        0 7px 16px rgba(0, 0, 0, 0.26);
-    backdrop-filter: blur(22px) saturate(1.55);
-    -webkit-backdrop-filter: blur(22px) saturate(1.55);
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 4px 10px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
 }
 
 .feed-reaction-disclosure-toggle:hover,
@@ -13675,10 +13682,7 @@ a.feed-detail-link:not(.mapboxgl-ctrl-logo):focus,
 :root[data-palette$="-dark"] .feed-reaction-disclosure-toggle:hover,
 :root[data-palette$="-dark"] .feed-reaction-disclosure-toggle:focus {
     color: var(--color-primary);
-    background:
-        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.075) 34%, transparent 66%),
-        linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.055) 46%, rgba(255, 255, 255, 0.02)),
-        color-mix(in srgb, var(--color-surface) 16%, transparent);
+    background: color-mix(in srgb, var(--color-surface) 18%, transparent);
 }
 
 :root[data-palette$="-dark"] button[data-find-checkins],
