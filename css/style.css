@@ -10386,7 +10386,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
 
     .mobile-app-tab-icon-map::before {
         top: 1px;
-        left: 4px;
+        left: 1.5px;
         width: 16px;
         height: 16px;
         border: 2.5px solid currentColor;
@@ -10396,8 +10396,8 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .mobile-app-tab-icon-map::after {
-        top: 5px;
-        left: 8.5px;
+        top: 4.5px;
+        left: 6.5px;
         width: 7px;
         height: 7px;
         border: 2px solid currentColor;
