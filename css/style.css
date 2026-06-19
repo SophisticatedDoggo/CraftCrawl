@@ -3237,16 +3237,16 @@ a.text-link:focus {
     height: 46px;
     min-height: 46px;
     padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.22);
     border-radius: 50%;
     background:
-        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.08) 35%, transparent 66%),
-        linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.07) 48%, rgba(255, 255, 255, 0.02)),
-        color-mix(in srgb, var(--color-surface) 18%, transparent);
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.12) 35%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.1) 48%, rgba(255, 255, 255, 0.04)),
+        color-mix(in srgb, var(--color-surface) 55%, transparent);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.34),
         inset 0 -1px 0 rgba(255, 255, 255, 0.08),
-        0 10px 24px color-mix(in srgb, var(--color-text) 18%, transparent);
+        0 10px 24px color-mix(in srgb, var(--color-text) 22%, transparent);
     backdrop-filter: blur(22px) saturate(1.45);
     -webkit-backdrop-filter: blur(22px) saturate(1.45);
     cursor: pointer;
@@ -3287,9 +3287,9 @@ a.text-link:focus {
 .map-location-control:focus-visible {
     border-color: var(--color-primary);
     background:
-        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.1) 35%, transparent 66%),
-        linear-gradient(145deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.08) 48%, rgba(255, 255, 255, 0.03)),
-        color-mix(in srgb, var(--color-surface) 24%, transparent);
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.14) 35%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.12) 48%, rgba(255, 255, 255, 0.05)),
+        color-mix(in srgb, var(--color-surface) 62%, transparent);
     outline: 0;
     transform: translateY(-1px);
 }
@@ -3306,16 +3306,16 @@ a.text-link:focus {
     height: 46px;
     min-height: 46px;
     padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.22);
     border-radius: 50%;
     background:
-        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.08) 35%, transparent 66%),
-        linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.07) 48%, rgba(255, 255, 255, 0.02)),
-        color-mix(in srgb, var(--color-surface) 18%, transparent);
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.12) 35%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.1) 48%, rgba(255, 255, 255, 0.04)),
+        color-mix(in srgb, var(--color-surface) 55%, transparent);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.34),
         inset 0 -1px 0 rgba(255, 255, 255, 0.08),
-        0 10px 24px color-mix(in srgb, var(--color-text) 18%, transparent);
+        0 10px 24px color-mix(in srgb, var(--color-text) 22%, transparent);
     backdrop-filter: blur(22px) saturate(1.45);
     -webkit-backdrop-filter: blur(22px) saturate(1.45);
     cursor: pointer;
@@ -3340,9 +3340,9 @@ a.text-link:focus {
 .map-expand-control:focus-visible {
     border-color: var(--color-primary);
     background:
-        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.1) 35%, transparent 66%),
-        linear-gradient(145deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.08) 48%, rgba(255, 255, 255, 0.03)),
-        color-mix(in srgb, var(--color-surface) 24%, transparent);
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.14) 35%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.12) 48%, rgba(255, 255, 255, 0.05)),
+        color-mix(in srgb, var(--color-surface) 62%, transparent);
     outline: 0;
     transform: translateY(-1px);
 }
@@ -7435,8 +7435,10 @@ a.mobile-context-back.feed-thread-back-link:focus {
     z-index: 2;
     min-height: 42px;
     padding: 10px 15px;
-    border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
-    box-shadow: var(--shadow-md);
+    border: 1px solid var(--color-primary);
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .business-details-hero h1 {
@@ -13934,14 +13936,15 @@ a.text-link:focus,
 
 :root[data-palette$="-dark"] .map-location-control,
 :root[data-palette$="-dark"] .map-expand-control {
+    border-color: rgba(255, 255, 255, 0.18);
     background:
-        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.06) 35%, transparent 66%),
-        linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05) 48%, rgba(255, 255, 255, 0.015)),
-        color-mix(in srgb, var(--color-surface) 13%, transparent);
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.06) 35%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04) 48%, rgba(255, 255, 255, 0.015)),
+        color-mix(in srgb, var(--color-surface) 58%, transparent);
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
         inset 0 -1px 0 rgba(255, 255, 255, 0.055),
-        0 7px 16px rgba(0, 0, 0, 0.28);
+        0 7px 16px rgba(0, 0, 0, 0.4);
 }
 
 :root[data-palette$="-dark"] .map-location-control:hover,
@@ -13949,9 +13952,9 @@ a.text-link:focus,
 :root[data-palette$="-dark"] .map-expand-control:hover,
 :root[data-palette$="-dark"] .map-expand-control:focus-visible {
     background:
-        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.08) 35%, transparent 66%),
-        linear-gradient(145deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.06) 48%, rgba(255, 255, 255, 0.02)),
-        color-mix(in srgb, var(--color-surface) 17%, transparent);
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08) 35%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.06) 48%, rgba(255, 255, 255, 0.02)),
+        color-mix(in srgb, var(--color-surface) 65%, transparent);
 }
 
 :root[data-palette$="-dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="file"]):not([type="range"]):not([type="color"]):not([type="hidden"]),
