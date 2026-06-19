@@ -4483,24 +4483,50 @@ a.feed-detail-link:not(.mapboxgl-ctrl-logo) {
     white-space: nowrap;
 }
 
-a.leaderboard-card-link:not(.mapboxgl-ctrl-logo) {
+.leaderboard-card,
+.friend-search-result,
+.friend-current-item {
+    position: relative;
+}
+
+a.leaderboard-card-link:not(.mapboxgl-ctrl-logo),
+a.friend-card-link:not(.mapboxgl-ctrl-logo) {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
     display: block;
-    text-decoration: none;
-    color: inherit;
-    border-radius: var(--radius-sm);
     min-height: 0;
     padding: 0;
     border: 0;
+    border-radius: var(--radius-sm);
+    color: transparent;
     background: transparent;
     box-shadow: none;
 }
 
-a.leaderboard-card-link:not(.mapboxgl-ctrl-logo):hover article,
-a.leaderboard-card-link:not(.mapboxgl-ctrl-logo):focus article {
+.leaderboard-card,
+.friend-search-result:has(.friend-card-link),
+.friend-current-item:has(.friend-card-link) {
+    cursor: pointer;
+}
+
+.leaderboard-card:hover,
+.friend-search-result:has(.friend-card-link):hover,
+.friend-current-item:has(.friend-card-link):hover {
     border-color: var(--color-primary);
 }
 
-.leaderboard-username {
+.friend-search-result button,
+.friend-current-actions,
+.friend-search-result .user-avatar-link,
+.friend-current-item .user-avatar-link {
+    position: relative;
+    z-index: 1;
+}
+
+.leaderboard-username,
+.friend-search-username,
+.friend-current-username {
     display: block;
     margin-top: 2px;
     color: var(--color-primary);

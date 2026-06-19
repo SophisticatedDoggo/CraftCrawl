@@ -286,22 +286,21 @@ if (!$viewer_in_top_ten && $viewer_leaderboard_row !== null) {
                         $metric_key = $active_leaderboard['metric_key'];
                         $metric_text = $leaderboard_mode === 'level' ? '' : (int) ($leader[$metric_key] ?? 0) . ' ' . $active_leaderboard['metric_label'];
                     ?>
-                    <a class="leaderboard-card-link" href="profile.php?id=<?php echo escape_output($leader['id']); ?>">
-                    <article <?php echo (int) $leader['id'] === $user_id ? 'data-user-progress-summary' : ''; ?>>
+                    <article class="leaderboard-card" <?php echo (int) $leader['id'] === $user_id ? 'data-user-progress-summary' : ''; ?>>
                         <strong><?php echo escape_output(ordinal_rank($leader['rank'])); ?></strong>
                         <?php echo craftcrawl_render_user_avatar($leader, 'medium', 'leaderboard-avatar'); ?>
                         <div>
                             <div class="leaderboard-row-top">
-                                <h3><?php echo escape_output($leader_name); ?> <span <?php echo (int) $leader['id'] === $user_id ? 'data-user-progress-level' : ''; ?>>Level <?php echo escape_output($level); ?></span></h3>
+                                <h3><?php echo escape_output($leader_name); ?></h3>
                                 <?php if ($metric_text !== '') : ?>
                                     <strong><?php echo escape_output($metric_text); ?></strong>
                                 <?php endif; ?>
                             </div>
-                            <span <?php echo (int) $leader['id'] === $user_id ? 'data-user-progress-title' : ''; ?>><?php echo escape_output($level_title); ?></span>
+                            <span <?php echo (int) $leader['id'] === $user_id ? 'data-user-progress-level' : ''; ?>>Level <?php echo escape_output($level); ?><?php echo $level_title !== '' ? ' &middot; ' : ''; ?><span <?php echo (int) $leader['id'] === $user_id ? 'data-user-progress-title' : ''; ?>><?php echo escape_output($level_title); ?></span></span>
                             <span class="leaderboard-username">@<?php echo escape_output($leader['username']); ?></span>
                         </div>
+                        <a class="leaderboard-card-link" href="profile.php?id=<?php echo escape_output($leader['id']); ?>" aria-label="View <?php echo escape_output($leader_name); ?>'s profile"></a>
                     </article>
-                    </a>
                 <?php endforeach; ?>
             </div>
         </section>
