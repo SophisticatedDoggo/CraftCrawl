@@ -18,7 +18,7 @@ $craftcrawl_user_logout_action = $craftcrawl_user_logout_action ?? '/logout.php'
         <a href="<?php echo $craftcrawl_user_nav_prefix; ?>rewards.php">Rewards</a>
         <a href="<?php echo $craftcrawl_user_nav_prefix; ?>profile.php">Profile</a>
         <a class="settings-icon-link" href="<?php echo $craftcrawl_user_nav_prefix; ?>settings.php" aria-label="Settings">
-            <span aria-hidden="true">⚙</span>
+            <span class="settings-gear-icon" aria-hidden="true"></span>
         </a>
         <form action="<?php echo $craftcrawl_user_logout_action; ?>" method="POST">
             <?php echo craftcrawl_csrf_input(); ?>
