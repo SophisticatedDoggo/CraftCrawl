@@ -3731,7 +3731,7 @@ body.map-expanded-open {
     line-height: 1.38;
 }
 
-.friend-request-item > div:last-child {
+.friend-request-item > div:last-of-type {
     display: flex;
     gap: 8px;
     align-items: center;
@@ -4485,15 +4485,22 @@ a.feed-detail-link:not(.mapboxgl-ctrl-logo) {
 
 .leaderboard-card,
 .friend-search-result,
-.friend-current-item {
+.friend-current-item,
+.friend-suggestion-card,
+.friend-request-item {
     position: relative;
+    isolation: isolate;
 }
 
 a.leaderboard-card-link:not(.mapboxgl-ctrl-logo),
-a.friend-card-link:not(.mapboxgl-ctrl-logo) {
+a.friend-card-link:not(.mapboxgl-ctrl-logo),
+a.leaderboard-card-link:not(.mapboxgl-ctrl-logo):hover,
+a.leaderboard-card-link:not(.mapboxgl-ctrl-logo):focus,
+a.friend-card-link:not(.mapboxgl-ctrl-logo):hover,
+a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
     position: absolute;
     inset: 0;
-    z-index: 0;
+    z-index: -1;
     display: block;
     min-height: 0;
     padding: 0;
@@ -4502,30 +4509,30 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo) {
     color: transparent;
     background: transparent;
     box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 .leaderboard-card,
 .friend-search-result:has(.friend-card-link),
-.friend-current-item:has(.friend-card-link) {
+.friend-current-item:has(.friend-card-link),
+.friend-suggestion-card:has(.friend-card-link),
+.friend-request-item:has(.friend-card-link) {
     cursor: pointer;
 }
 
 .leaderboard-card:hover,
 .friend-search-result:has(.friend-card-link):hover,
-.friend-current-item:has(.friend-card-link):hover {
+.friend-current-item:has(.friend-card-link):hover,
+.friend-suggestion-card:has(.friend-card-link):hover,
+.friend-request-item:has(.friend-card-link):hover {
     border-color: var(--color-primary);
-}
-
-.leaderboard-card > :not(.leaderboard-card-link),
-.friend-search-result > :not(.friend-card-link),
-.friend-current-item > :not(.friend-card-link) {
-    position: relative;
-    z-index: 1;
 }
 
 .leaderboard-username,
 .friend-search-username,
-.friend-current-username {
+.friend-current-username,
+.friend-card-username {
     display: block;
     margin-top: 2px;
     color: var(--color-primary);
@@ -4702,7 +4709,7 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo) {
     justify-content: flex-end;
 }
 
-.friend-suggestion-card > div:last-child {
+.friend-suggestion-card > div:last-of-type {
     grid-column: auto;
 }
 
@@ -10517,11 +10524,33 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .dashboard-checkin-panel,
     .dashboard-checkin-item,
     .recommend-location-form > div,
-    .friend-search-result,
-    .friend-request-item,
     .friend-location-card,
-    .friend-recommendation-card {
+    .friend-recommendation-card:not(.friend-suggestion-card) {
         grid-template-columns: 1fr;
+    }
+
+    .friend-search-result {
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 10px 12px;
+        align-items: center;
+    }
+
+    .friend-search-result > .user-avatar,
+    .friend-search-result > .user-avatar-link {
+        grid-column: 1;
+        grid-row: 1;
+        align-self: start;
+    }
+
+    .friend-search-summary {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .friend-search-result > button {
+        grid-column: 2;
+        grid-row: 2;
+        justify-self: start;
     }
 
     .friend-location-card > a:not(.mapboxgl-ctrl-logo),
@@ -10548,9 +10577,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
 
     .dashboard-checkin-panel > button,
     .dashboard-checkin-item button,
-    .friends-search-form button,
-    .friend-search-result button,
-    .friend-request-item button {
+    .friends-search-form button {
         width: 100%;
     }
 
@@ -10577,18 +10604,8 @@ a.event-calendar-event:focus .event-calendar-event-name {
         width: 100%;
     }
 
-    .friends-search-form button,
-    .friend-search-result button,
-    .friend-request-item button {
+    .friends-search-form button {
         justify-self: center;
-        width: auto;
-        max-width: 100%;
-    }
-
-    .friend-request-item > div:last-child {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
         width: auto;
         max-width: 100%;
     }
@@ -10616,7 +10633,6 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .friend-current-item > .user-avatar-link {
         grid-column: 1;
         grid-row: 1;
-        align-self: start;
     }
 
     .friend-current-summary {
@@ -10634,13 +10650,58 @@ a.event-calendar-event:focus .event-calendar-event-name {
         max-width: 100%;
     }
 
-    .friend-current-actions a,
     .friend-current-actions button {
         min-height: 36px;
         padding-right: 12px;
         padding-left: 12px;
         width: auto;
         max-width: 100%;
+    }
+
+    .friend-request-item {
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 10px 12px;
+        align-items: center;
+    }
+
+    .friend-request-item > .user-avatar,
+    .friend-request-item > .user-avatar-link {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .friend-request-item > div:nth-child(2) {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .friend-request-item > div:last-of-type {
+        grid-column: 2;
+        grid-row: 2;
+        justify-content: flex-start;
+    }
+
+    .friend-suggestion-card {
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 10px 12px;
+        align-items: center;
+    }
+
+    .friend-suggestion-card > .user-avatar,
+    .friend-suggestion-card > .user-avatar-link {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .friend-suggestion-card > div:nth-child(2) {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .friend-suggestion-card > div:last-of-type {
+        grid-column: 2;
+        grid-row: 2;
+        justify-self: start;
     }
 
     .feed-reactions {

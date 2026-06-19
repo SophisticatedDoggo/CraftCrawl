@@ -715,12 +715,14 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 ${renderAvatar(request.actor, request.name)}
                 <div>
                     <strong>${escapeHtml(request.name)}</strong>
-                    <span>@${escapeHtml(request.username || '')}</span>
+                    <span>Level ${escapeHtml(request.level || 1)}${request.title ? ` &middot; ${escapeHtml(request.title)}` : ''}</span>
+                    <span class="friend-card-username">@${escapeHtml(request.username || '')}</span>
                 </div>
                 <div>
                     <button type="button" data-request-id="${request.id}" data-response="accepted">Approve</button>
                     <button type="button" data-request-id="${request.id}" data-response="declined">Decline</button>
                 </div>
+                <a class="friend-card-link" href="profile.php?id=${encodeURIComponent(request.user_id || '')}" aria-label="View ${escapeHtml(request.name)}'s profile"></a>
             </article>
         `).join('');
 
