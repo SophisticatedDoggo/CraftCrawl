@@ -10358,27 +10358,33 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .mobile-app-tab-icon-map {
-        border: 2px solid currentColor;
-        border-radius: 6px;
+        border-radius: 50%;
+        background: currentColor;
     }
 
     .mobile-app-tab-icon-map::before,
     .mobile-app-tab-icon-map::after {
         content: "";
         position: absolute;
-        top: 2px;
-        bottom: 2px;
-        width: 2px;
-        border-radius: 999px;
-        background: currentColor;
     }
 
     .mobile-app-tab-icon-map::before {
-        left: 6px;
+        top: 3px;
+        left: 7px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        background: var(--color-bg, #000);
     }
 
     .mobile-app-tab-icon-map::after {
-        right: 6px;
+        top: 5.5px;
+        left: 10px;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: currentColor;
     }
 
     .mobile-app-tab-icon-events::before,
@@ -10492,35 +10498,27 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .mobile-app-tab-icon-quests {
-        width: 18px;
+        width: 16px;
         height: 22px;
-        margin: 1px 3px;
+        margin: 1px 4px;
         border: 2px solid currentColor;
-        border-left-width: 4px;
-        border-radius: 2px 4px 4px 2px;
-        background: none;
+        border-radius: 1px 4px 4px 1px;
+        background:
+            linear-gradient(currentColor, currentColor) center 2px / 2.5px 8px no-repeat,
+            linear-gradient(currentColor, currentColor) center 12px / 3px 3px no-repeat;
     }
 
     .mobile-app-tab-icon-quests::before {
-        top: 3px;
-        left: 50%;
-        width: 2.5px;
-        height: 8px;
-        border-radius: 1px;
-        transform: translateX(-50%);
+        top: 1px;
+        bottom: 1px;
+        left: -5px;
+        width: 5px;
+        border-radius: 3px 0 0 3px;
         clip-path: none;
     }
 
     .mobile-app-tab-icon-quests::after {
-        top: auto;
-        bottom: 3px;
-        left: 50%;
-        right: auto;
-        width: 3px;
-        height: 3px;
-        border-radius: 999px;
-        transform: translateX(-50%);
-        background: currentColor;
+        display: none;
     }
 
     .mobile-app-tab-icon-checkin {
