@@ -13511,6 +13511,15 @@ a.mobile-context-back.feed-thread-back-link:focus {
     box-shadow: none;
 }
 
+:root[data-palette$="-dark"] .business-location-directions-button,
+:root[data-palette$="-dark"] .business-location-directions-button:hover,
+:root[data-palette$="-dark"] .business-location-directions-button:focus {
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
 :root[data-palette$="-dark"] .leaderboard-mode-tabs a.is-active:not(.mapboxgl-ctrl-logo),
 :root[data-palette$="-dark"] .leaderboard-mode-tabs a.is-active:not(.mapboxgl-ctrl-logo):hover,
 :root[data-palette$="-dark"] .leaderboard-mode-tabs a.is-active:not(.mapboxgl-ctrl-logo):focus {
