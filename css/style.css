@@ -4506,7 +4506,6 @@ a.feed-detail-link:not(.mapboxgl-ctrl-logo) {
 .friend-suggestion-card,
 .friend-request-item {
     position: relative;
-    isolation: isolate;
 }
 
 a.leaderboard-card-link:not(.mapboxgl-ctrl-logo),
@@ -4517,7 +4516,7 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):hover,
 a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
     position: absolute;
     inset: 0;
-    z-index: -1;
+    z-index: 0;
     display: block;
     min-height: 0;
     padding: 0;
@@ -4544,6 +4543,14 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
 .friend-suggestion-card:has(.friend-card-link):hover,
 .friend-request-item:has(.friend-card-link):hover {
     border-color: var(--color-primary);
+}
+
+.friend-search-result > button,
+.friend-current-actions,
+.friend-suggestion-card > div:last-of-type,
+.friend-request-item > div:last-of-type {
+    position: relative;
+    z-index: 1;
 }
 
 .friend-search-result .feed-avatar,
@@ -10566,8 +10573,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .friend-search-result > .user-avatar,
     .friend-search-result > .user-avatar-link {
         grid-column: 1;
-        grid-row: 1;
-        align-self: start;
+        grid-row: 1 / -1;
     }
 
     .friend-search-summary {
@@ -10660,7 +10666,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .friend-current-item > .user-avatar,
     .friend-current-item > .user-avatar-link {
         grid-column: 1;
-        grid-row: 1;
+        grid-row: 1 / -1;
     }
 
     .friend-current-summary {
@@ -10695,7 +10701,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .friend-request-item > .user-avatar,
     .friend-request-item > .user-avatar-link {
         grid-column: 1;
-        grid-row: 1;
+        grid-row: 1 / -1;
     }
 
     .friend-request-item > div:nth-child(2) {
@@ -10718,7 +10724,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .friend-suggestion-card > .user-avatar,
     .friend-suggestion-card > .user-avatar-link {
         grid-column: 1;
-        grid-row: 1;
+        grid-row: 1 / -1;
     }
 
     .friend-suggestion-card > div:nth-child(2) {
