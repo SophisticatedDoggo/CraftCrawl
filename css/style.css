@@ -5161,7 +5161,7 @@ a.mobile-context-back.feed-thread-back-link:focus {
     justify-content: flex-start;
 }
 
-.feed-thread-page {
+.settings-page.feed-thread-page {
     padding-right: 0;
     padding-left: 0;
 }
