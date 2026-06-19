@@ -3858,10 +3858,7 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo) {
     object-fit: cover;
 }
 
-.feed-thread-post .feed-checkin-photo {
-    width: 100%;
-    margin-left: 0;
-}
+
 
 .checkin-modal {
     position: fixed;
