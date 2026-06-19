@@ -4545,18 +4545,30 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
     border-color: var(--color-primary);
 }
 
-.friend-search-result > button,
-.friend-current-actions,
-.friend-suggestion-card > div:last-of-type,
-.friend-request-item > div:last-of-type {
+.leaderboard-card > :not(.leaderboard-card-link),
+.friend-search-result > :not(.friend-card-link),
+.friend-current-item > :not(.friend-card-link),
+.friend-suggestion-card > :not(.friend-card-link),
+.friend-request-item > :not(.friend-card-link) {
     position: relative;
     z-index: 1;
 }
 
 .friend-search-result .feed-avatar,
 .friend-current-item .feed-avatar,
-.friend-request-item .feed-avatar {
+.friend-request-item .feed-avatar,
+.friend-suggestion-card .feed-avatar {
     --avatar-size: 58px;
+}
+
+.friend-search-result > .user-avatar-link,
+.friend-search-result > .user-avatar,
+.friend-current-item > .user-avatar-link,
+.friend-current-item > .user-avatar,
+.friend-request-item > .user-avatar-link,
+.friend-request-item > .user-avatar,
+.friend-suggestion-card > .user-avatar-link,
+.friend-suggestion-card > .user-avatar {
     align-self: center;
 }
 
