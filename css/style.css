@@ -10498,15 +10498,11 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .mobile-app-tab-icon-quests {
-        width: 18px;
-        height: 22px;
-        margin: 1px 3px;
-        border: 2px solid currentColor;
-        border-radius: 3px;
+        border: 2.5px solid currentColor;
+        border-radius: 50%;
         background:
-            linear-gradient(currentColor, currentColor) 0 0 / 4px 100% no-repeat,
-            linear-gradient(currentColor, currentColor) 7.75px 2px / 2.5px 8px no-repeat,
-            linear-gradient(currentColor, currentColor) 7.5px 12px / 3px 3px no-repeat;
+            linear-gradient(currentColor, currentColor) center 4px / 2.5px 8px no-repeat,
+            linear-gradient(currentColor, currentColor) center 14px / 3px 3px no-repeat;
     }
 
     .mobile-app-tab-icon-quests::before {
