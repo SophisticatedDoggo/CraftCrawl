@@ -386,7 +386,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         let avatar = '';
 
         if (data.avatar_url) {
-            avatar = `<span class="${classes}"><img src="${escapeHtml(data.avatar_url)}" alt="${escapeHtml(name)} profile photo" loading="lazy"></span>`;
+            avatar = `<span class="${classes}"><img src="${escapeHtml(data.avatar_url)}" alt="${escapeHtml(name)} profile photo"></span>`;
         } else {
             avatar = `<span class="${classes}" aria-label="${escapeHtml(name)} profile photo"><span>${escapeHtml(initials)}</span></span>`;
         }
@@ -1104,7 +1104,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         if (item.type === 'checkin') {
             const visitLabel = item.visit_type === 'first_time' ? ' for the first time' : '';
             const photoHtml = item.photo_url
-                ? `<div class="feed-checkin-photo"><img src="${escapeHtml(item.photo_url)}" alt="Check-in photo at ${escapeHtml(item.business_name)}" loading="lazy"></div>`
+                ? `<div class="feed-checkin-photo"><img src="${escapeHtml(item.photo_url)}" alt="Check-in photo at ${escapeHtml(item.business_name)}"></div>`
                 : '';
             return `
                 <article class="friends-feed-item feed-checkin-item" ${feedItemAttrs(item)}>
