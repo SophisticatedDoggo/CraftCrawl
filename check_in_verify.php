@@ -38,7 +38,7 @@ if (!empty($result['http_status'])) {
     unset($result['http_status']);
 }
 
-echo json_encode([
+$response = [
     'ok' => $result['ok'],
     'message' => $result['message'] ?? null,
     'location_id' => $result['location_id'] ?? null,
@@ -48,6 +48,13 @@ echo json_encode([
     'visit_type' => $result['visit_type'] ?? null,
     'xp_awarded' => $result['xp_awarded'] ?? null,
     'checkin_message' => $result['checkin_message'] ?? null
-]);
+];
+
+if (!empty($result['on_cooldown'])) {
+    $response['on_cooldown'] = true;
+    $response['session_closes_at'] = $result['session_closes_at'] ?? null;
+}
+
+echo json_encode($response);
 
 ?>

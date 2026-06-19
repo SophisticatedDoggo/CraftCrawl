@@ -332,10 +332,27 @@
                 ? 'First-time check-in · +' + location.xp_awarded + ' XP'
                 : 'Repeat check-in · +' + location.xp_awarded + ' XP';
 
+            var isOnCooldown = !location.eligible && location.is_open && location.eligible_at;
             meta.textContent = formatBusinessType(location.type) + ' · ' + location.city + ', ' + location.state + ' · ' + formatDistance(location.distance_meters) + ' · ' + (location.eligible ? visitText : location.unavailable_reason);
             action.type = 'button';
-            action.textContent = location.eligible ? 'Check In' : (location.is_open ? 'On Cooldown' : 'Closed');
             action.disabled = !location.eligible;
+
+            if (isOnCooldown) {
+                action.className = 'checkin-cooldown-btn';
+                var cooldownSpan = document.createElement('span');
+                cooldownSpan.setAttribute('data-checkin-cooldown-label', '');
+                cooldownSpan.textContent = 'On Cooldown';
+                action.appendChild(cooldownSpan);
+                if (window.CraftCrawlCooldownTimer) {
+                    window.CraftCrawlCooldownTimer.start(cooldownSpan, location.eligible_at, function () {
+                        action.disabled = false;
+                        action.className = '';
+                        action.textContent = 'Check In';
+                    });
+                }
+            } else {
+                action.textContent = location.eligible ? 'Check In' : (location.is_open ? 'On Cooldown' : 'Closed');
+            }
 
             // Step 1: Click "Check In" → verify → show modal
             action.addEventListener('click', function () {

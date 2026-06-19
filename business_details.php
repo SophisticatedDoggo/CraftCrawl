@@ -157,6 +157,8 @@ $business_hours_text = craftcrawl_business_hours_have_saved_hours($business_hour
 $user_has_checked_in = false;
 $user_has_reviewed = false;
 $user_review = null;
+$checkin_on_cooldown = false;
+$checkin_session_closes_at = null;
 
 if ($user_id > 0) {
     $review_eligibility_stmt = $conn->prepare("
@@ -169,6 +171,22 @@ if ($user_id > 0) {
     $review_eligibility = $review_eligibility_stmt->get_result()->fetch_assoc();
     $user_has_checked_in = !empty($review_eligibility['has_checked_in']);
     $user_has_reviewed = !empty($review_eligibility['has_reviewed']);
+
+    if ($user_has_checked_in) {
+        $session_start = craftcrawl_location_current_session_start($conn, $location_id);
+        if ($session_start !== null) {
+            $cooldown_check = $conn->prepare("SELECT checkedInAt FROM user_visits WHERE user_id=? AND location_id=? AND xp_awarded > 0 AND checkedInAt >= ? LIMIT 1");
+            $cooldown_check->bind_param("iis", $user_id, $location_id, $session_start);
+            $cooldown_check->execute();
+            if ($cooldown_check->get_result()->fetch_assoc()) {
+                $checkin_on_cooldown = true;
+                $session_end = craftcrawl_location_current_session_end($conn, $location_id);
+                if ($session_end !== null) {
+                    $checkin_session_closes_at = date('c', strtotime($session_end));
+                }
+            }
+        }
+    }
 }
 
 if ($user_id > 0 && $user_has_reviewed) {
@@ -644,7 +662,14 @@ function format_event_time_range($event) {
                     <input type="hidden" name="longitude" value="">
                     <input type="file" name="checkin_photo" accept="image/jpeg,image/png,image/webp"
                            capture data-checkin-photo-input class="visually-hidden">
+                    <?php if ($checkin_on_cooldown) : ?>
+                    <button type="submit" disabled class="checkin-cooldown-btn" data-checkin-cooldown-btn
+                            <?php if ($checkin_session_closes_at) : ?>data-cooldown-until="<?php echo escape_output($checkin_session_closes_at); ?>"<?php endif; ?>>
+                        <span data-checkin-cooldown-label>On Cooldown</span>
+                    </button>
+                    <?php else : ?>
                     <button type="submit">Check In</button>
+                    <?php endif; ?>
                 </form>
                 <div class="checkin-modal" data-checkin-modal hidden>
                     <div class="checkin-modal-scrim"></div>
@@ -1096,6 +1121,7 @@ function format_event_time_range($event) {
     }
 </script>
 <script src="js/photo_resize.js?v=<?php echo filemtime(__DIR__ . '/js/photo_resize.js'); ?>"></script>
+<script src="js/cooldown_timer.js?v=<?php echo filemtime(__DIR__ . '/js/cooldown_timer.js'); ?>"></script>
 <script src="js/check_in.js?v=<?php echo filemtime(__DIR__ . '/js/check_in.js'); ?>"></script>
 <script src="js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/js/business_posts.js'); ?>"></script>
 <script src="js/business_gallery.js?v=<?php echo filemtime(__DIR__ . '/js/business_gallery.js'); ?>"></script>

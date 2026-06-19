@@ -75,7 +75,13 @@ function craftcrawl_validate_checkin($conn, $user_id, $location_id_input, $busin
             $already_visited = $cooldown_stmt->get_result()->fetch_assoc();
 
             if ($already_visited) {
-                return ['ok' => false, 'message' => 'You\'ve already checked in during this session. Come back next time they\'re open!'];
+                $session_end = craftcrawl_location_current_session_end($conn, $location_id);
+                return [
+                    'ok' => false,
+                    'message' => 'You\'ve already checked in during this session. Come back next time they\'re open!',
+                    'on_cooldown' => true,
+                    'session_closes_at' => $session_end !== null ? date('c', strtotime($session_end)) : null
+                ];
             }
         }
     }

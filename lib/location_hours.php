@@ -133,6 +133,48 @@ function craftcrawl_location_current_session_start($conn, $location_id) {
     return null;
 }
 
+function craftcrawl_location_current_session_end($conn, $location_id) {
+    $now = new DateTimeImmutable('now');
+    $today = (int) $now->format('w');
+    $yesterday = ($today + 6) % 7;
+
+    $stmt = $conn->prepare("
+        SELECT day_of_week, opens_at, closes_at, is_closed
+        FROM location_hours
+        WHERE location_id=? AND day_of_week IN (?, ?)
+    ");
+    $stmt->bind_param("iii", $location_id, $today, $yesterday);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    while ($row = $result->fetch_assoc()) {
+        if (!empty($row['is_closed']) || empty($row['opens_at']) || empty($row['closes_at'])) {
+            continue;
+        }
+
+        $day = (int) $row['day_of_week'];
+        $opens = (string) $row['opens_at'];
+        $closes = (string) $row['closes_at'];
+
+        if ($day === $today && craftcrawl_time_is_within_hours($now, $opens, $closes)) {
+            if ($opens < $closes) {
+                return $now->format('Y-m-d') . ' ' . $closes;
+            }
+            $current_time = $now->format('H:i:s');
+            if ($current_time >= $opens) {
+                return $now->modify('+1 day')->format('Y-m-d') . ' ' . $closes;
+            }
+            return $now->format('Y-m-d') . ' ' . $closes;
+        }
+
+        if ($day === $yesterday && $opens >= $closes && craftcrawl_time_is_within_hours($now, $opens, $closes)) {
+            return $now->format('Y-m-d') . ' ' . $closes;
+        }
+    }
+
+    return null;
+}
+
 function craftcrawl_location_is_open_now($conn, $location_id) {
     $now = new DateTimeImmutable('now');
     $today = (int) $now->format('w');

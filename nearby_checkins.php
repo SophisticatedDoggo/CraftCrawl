@@ -78,6 +78,10 @@ while ($business = $businesses->fetch_assoc()) {
             $eligible = false;
             $unavailable_reason = 'Already checked in this session';
             $xp_awarded = 0;
+            $session_end = craftcrawl_location_current_session_end($conn, $location_id);
+            if ($session_end !== null) {
+                $eligible_at = date('c', strtotime($session_end));
+            }
         }
     }
 

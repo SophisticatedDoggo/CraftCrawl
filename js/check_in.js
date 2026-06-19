@@ -7,6 +7,7 @@ window.CraftCrawlInitCheckIn = function (root = document) {
     form.dataset.checkInReady = 'true';
 
     var button = form.querySelector('button[type="submit"]');
+    var cooldownLabel = button ? button.querySelector('[data-checkin-cooldown-label]') : null;
     var feedback = root.querySelector('[data-check-in-feedback]');
     var latitudeInput = form.querySelector('input[name="latitude"]');
     var longitudeInput = form.querySelector('input[name="longitude"]');
@@ -295,6 +296,35 @@ window.CraftCrawlInitCheckIn = function (root = document) {
         });
     }
 
+    function showCooldown(sessionClosesAt) {
+        if (!button || !window.CraftCrawlCooldownTimer) {
+            return;
+        }
+        button.disabled = true;
+        button.classList.add('checkin-cooldown-btn');
+        var label = cooldownLabel;
+        if (!label) {
+            label = document.createElement('span');
+            label.setAttribute('data-checkin-cooldown-label', '');
+            button.textContent = '';
+            button.appendChild(label);
+            cooldownLabel = label;
+        }
+        label.textContent = 'On Cooldown';
+        if (sessionClosesAt) {
+            window.CraftCrawlCooldownTimer.start(label, sessionClosesAt, function () {
+                button.disabled = false;
+                button.classList.remove('checkin-cooldown-btn');
+                button.textContent = 'Check In';
+                cooldownLabel = null;
+            });
+        }
+    }
+
+    if (button && button.dataset.cooldownUntil) {
+        showCooldown(button.dataset.cooldownUntil);
+    }
+
     // Step 1: Click "Check In" → verify proximity + hours → show modal
     form.addEventListener('submit', function (event) {
         event.preventDefault();
@@ -353,6 +383,9 @@ window.CraftCrawlInitCheckIn = function (root = document) {
                     resetButton(originalText);
 
                     if (!data.ok) {
+                        if (data.on_cooldown) {
+                            showCooldown(data.session_closes_at);
+                        }
                         showFeedback(data.message || 'Check-in failed.', true);
                         return;
                     }

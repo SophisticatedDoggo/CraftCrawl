@@ -3997,6 +3997,18 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo) {
     min-width: 180px;
 }
 
+.checkin-cooldown-btn,
+.checkin-cooldown-btn:hover,
+.checkin-cooldown-btn:focus {
+    color: var(--color-muted);
+    opacity: 0.75;
+    cursor: not-allowed;
+}
+
+.checkin-cooldown-btn [data-checkin-cooldown-label] {
+    font-variant-numeric: tabular-nums;
+}
+
 .checkin-preview {
     margin-top: 0;
 }
