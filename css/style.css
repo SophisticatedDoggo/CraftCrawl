@@ -4552,6 +4552,14 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
 .friend-request-item > :not(.friend-card-link) {
     position: relative;
     z-index: 1;
+    pointer-events: none;
+}
+
+.friend-search-result > button,
+.friend-current-actions,
+.friend-suggestion-card > div:last-of-type,
+.friend-request-item > div:last-of-type {
+    pointer-events: auto;
 }
 
 .friend-search-result .feed-avatar,
@@ -10585,7 +10593,8 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .friend-search-result > .user-avatar,
     .friend-search-result > .user-avatar-link {
         grid-column: 1;
-        grid-row: 1 / -1;
+        grid-row: 1 / span 2;
+        align-self: center;
     }
 
     .friend-search-summary {
@@ -10678,7 +10687,8 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .friend-current-item > .user-avatar,
     .friend-current-item > .user-avatar-link {
         grid-column: 1;
-        grid-row: 1 / -1;
+        grid-row: 1 / span 2;
+        align-self: center;
     }
 
     .friend-current-summary {
@@ -10713,7 +10723,8 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .friend-request-item > .user-avatar,
     .friend-request-item > .user-avatar-link {
         grid-column: 1;
-        grid-row: 1 / -1;
+        grid-row: 1 / span 2;
+        align-self: center;
     }
 
     .friend-request-item > div:nth-child(2) {
@@ -10736,7 +10747,8 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .friend-suggestion-card > .user-avatar,
     .friend-suggestion-card > .user-avatar-link {
         grid-column: 1;
-        grid-row: 1 / -1;
+        grid-row: 1 / span 2;
+        align-self: center;
     }
 
     .friend-suggestion-card > div:nth-child(2) {
