@@ -286,6 +286,7 @@ if (!$viewer_in_top_ten && $viewer_leaderboard_row !== null) {
                         $metric_key = $active_leaderboard['metric_key'];
                         $metric_text = $leaderboard_mode === 'level' ? '' : (int) ($leader[$metric_key] ?? 0) . ' ' . $active_leaderboard['metric_label'];
                     ?>
+                    <a class="leaderboard-card-link" href="profile.php?id=<?php echo escape_output($leader['id']); ?>">
                     <article <?php echo (int) $leader['id'] === $user_id ? 'data-user-progress-summary' : ''; ?>>
                         <strong><?php echo escape_output(ordinal_rank($leader['rank'])); ?></strong>
                         <?php echo craftcrawl_render_user_avatar($leader, 'medium', 'leaderboard-avatar'); ?>
@@ -297,9 +298,10 @@ if (!$viewer_in_top_ten && $viewer_leaderboard_row !== null) {
                                 <?php endif; ?>
                             </div>
                             <span <?php echo (int) $leader['id'] === $user_id ? 'data-user-progress-title' : ''; ?>><?php echo escape_output($level_title); ?></span>
-                            <a class="leaderboard-profile-link" href="profile.php?id=<?php echo escape_output($leader['id']); ?>">View Profile</a>
+                            <span class="leaderboard-username">@<?php echo escape_output($leader['username']); ?></span>
                         </div>
                     </article>
+                    </a>
                 <?php endforeach; ?>
             </div>
         </section>

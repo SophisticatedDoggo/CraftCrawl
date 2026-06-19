@@ -4483,29 +4483,29 @@ a.feed-detail-link:not(.mapboxgl-ctrl-logo) {
     white-space: nowrap;
 }
 
-a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo) {
-    display: inline-flex;
-    width: fit-content;
-    margin-top: 6px;
+a.leaderboard-card-link:not(.mapboxgl-ctrl-logo) {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    border-radius: var(--radius-sm);
     min-height: 0;
     padding: 0;
     border: 0;
-    border-radius: 0;
-    color: var(--color-primary);
     background: transparent;
     box-shadow: none;
-    font-size: 13px;
-    font-weight: 800;
-    text-decoration: underline;
-    text-underline-offset: 2px;
 }
 
-a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):hover,
-a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
-    border-color: transparent;
-    color: var(--color-primary-dark);
-    background: transparent;
-    box-shadow: none;
+a.leaderboard-card-link:not(.mapboxgl-ctrl-logo):hover article,
+a.leaderboard-card-link:not(.mapboxgl-ctrl-logo):focus article {
+    border-color: var(--color-primary);
+}
+
+.leaderboard-username {
+    display: block;
+    margin-top: 2px;
+    color: var(--color-primary);
+    font-size: 13px;
+    font-weight: 800;
 }
 
 .leaderboard-stat-grid {
@@ -13640,15 +13640,9 @@ button.mobile-app-tab.is-active,
 a.text-link,
 a.text-link:hover,
 a.text-link:focus,
-a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo),
-a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):hover,
-a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
 :root[data-palette$="-dark"] a.text-link,
 :root[data-palette$="-dark"] a.text-link:hover,
-:root[data-palette$="-dark"] a.text-link:focus,
-:root[data-palette$="-dark"] a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo),
-:root[data-palette$="-dark"] a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):hover,
-:root[data-palette$="-dark"] a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
+:root[data-palette$="-dark"] a.text-link:focus {
     display: inline;
     min-height: 0;
     padding: 0;
@@ -13668,12 +13662,8 @@ a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
 
 a.text-link:hover,
 a.text-link:focus,
-a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):hover,
-a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus,
 :root[data-palette$="-dark"] a.text-link:hover,
-:root[data-palette$="-dark"] a.text-link:focus,
-:root[data-palette$="-dark"] a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):hover,
-:root[data-palette$="-dark"] a.leaderboard-profile-link:not(.mapboxgl-ctrl-logo):focus {
+:root[data-palette$="-dark"] a.text-link:focus {
     color: var(--color-primary-dark);
 }
 
