@@ -110,6 +110,9 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
         shell.closest('[data-user-page-content]')?.querySelectorAll('[data-user-tab-map-only]').forEach((element) => {
             element.hidden = tab !== 'map';
         });
+        shell.closest('[data-user-page-content]')?.querySelectorAll('[data-user-level-summary]').forEach((element) => {
+            element.hidden = !['map', 'quests'].includes(tab);
+        });
         window.CraftCrawlCloseMobileActionsMenu?.();
         document.title = titleByTab[tab];
         if (options.updateHistory) history.pushState({ craftcrawlUserTab: tab }, '', `${routeByTab[tab]}${options.search || ''}${options.hash || ''}`);

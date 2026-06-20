@@ -4,7 +4,8 @@ require_once __DIR__ . '/../lib/user_avatar.php';
 $craftcrawl_portal_active = $craftcrawl_portal_active ?? 'map';
 $craftcrawl_portal_show_search = $craftcrawl_portal_show_search ?? false;
 $craftcrawl_portal_shell = $craftcrawl_portal_shell ?? false;
-$craftcrawl_portal_show_level_summary = !in_array($craftcrawl_portal_active, ['events', 'feed'], true);
+$craftcrawl_portal_level_summary_visible = in_array($craftcrawl_portal_active, ['map', 'quests'], true);
+$craftcrawl_portal_show_level_summary = $craftcrawl_portal_shell || $craftcrawl_portal_level_summary_visible;
 $craftcrawl_portal_avatar = null;
 
 if ($craftcrawl_portal_show_level_summary && isset($conn, $user_id)) {
@@ -55,7 +56,7 @@ if ($craftcrawl_portal_show_level_summary && isset($conn, $user_id)) {
         </div>
     </div>
     <?php if ($craftcrawl_portal_show_level_summary) : ?>
-    <section class="portal-level-summary" aria-label="Your CraftCrawl level" data-user-tab-map-only data-user-progress-summary <?php echo $craftcrawl_portal_active !== 'map' ? 'hidden' : ''; ?>>
+    <section class="portal-level-summary" aria-label="Your CraftCrawl level" data-user-level-summary data-user-progress-summary <?php echo !$craftcrawl_portal_level_summary_visible ? 'hidden' : ''; ?>>
         <?php if ($craftcrawl_portal_avatar) : ?>
             <?php echo craftcrawl_render_user_avatar($craftcrawl_portal_avatar, 'medium', 'portal-level-avatar'); ?>
         <?php endif; ?>
