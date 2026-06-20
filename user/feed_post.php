@@ -408,12 +408,12 @@ function render_feed_thread_post($item, $actions_html = '') {
         $reward_parts = [];
         if (!empty($item['linked_badges'])) {
             foreach ($item['linked_badges'] as $badge) {
-                $reward_parts[] = 'Earned ' . escape_output($badge['name']);
+                $reward_parts[] = 'Badge earned: ' . escape_output($badge['name']);
             }
         }
         if (!empty($item['linked_quests'])) {
             foreach ($item['linked_quests'] as $quest) {
-                $reward_parts[] = 'Completed ' . escape_output($quest['name']);
+                $reward_parts[] = 'Quest completed: ' . escape_output($quest['name']);
             }
         }
         $reward_html = !empty($reward_parts) ? '<p class="feed-reward-line">' . implode(' · ', $reward_parts) . '</p>' : '';

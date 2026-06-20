@@ -1051,10 +1051,10 @@ window.CraftCrawlInitFriends = function (scope = document) {
     function buildRewardSummary(item) {
         const parts = [];
         if (item.linked_badges && item.linked_badges.length) {
-            item.linked_badges.forEach(function (b) { parts.push('Earned ' + b.name); });
+            item.linked_badges.forEach(function (b) { parts.push('Badge earned: ' + b.name); });
         }
         if (item.linked_quests && item.linked_quests.length) {
-            item.linked_quests.forEach(function (q) { parts.push('Completed ' + q.name); });
+            item.linked_quests.forEach(function (q) { parts.push('Quest completed: ' + q.name); });
         }
         const totalXp = ((item.linked_badges || []).reduce(function (s, b) { return s + b.xp; }, 0))
             + ((item.linked_quests || []).reduce(function (s, q) { return s + q.xp; }, 0));
