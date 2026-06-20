@@ -3848,8 +3848,11 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo) {
 }
 
 .feed-checkin-photo {
-    width: calc(100% + var(--feed-avatar-track) + var(--feed-column-gap) + 32px);
-    margin: 10px 0 6px calc(-1 * (var(--feed-avatar-track) + var(--feed-column-gap) + 16px));
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 10px 0 6px 0;
     overflow: hidden;
     background: var(--color-surface-muted);
     line-height: 0;
@@ -4119,8 +4122,7 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo) {
 }
 
 .feed-reactions button.is-active .feed-reaction-icon {
-    fill: var(--color-primary);
-    stroke: var(--color-primary);
+    color: var(--color-primary);
 }
 
 .feed-reaction-count {
