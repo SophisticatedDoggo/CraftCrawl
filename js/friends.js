@@ -1057,13 +1057,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
         return `
             <div class="feed-caption-area" data-feed-caption>
-                <div class="feed-caption-collapsed" data-feed-caption-collapsed>
+                <div class="feed-caption-content" data-feed-caption-content>
                     <span class="feed-caption-text">${inlinePreview}</span>
-                    <button type="button" class="feed-caption-more" data-feed-caption-more>more${unreadBadge}</button>
-                </div>
-                <div class="feed-caption-expanded" data-feed-caption-expanded hidden>
-                    <p><strong>${escapeHtml(actorName)}</strong> ${hasCaption ? escapeHtml(caption) : ''}</p>
-                    ${hasRewards ? '<p class="feed-reward-line">' + escapeHtml(rewardSummary) + '</p>' : ''}
+                    <button type="button" class="feed-caption-more" data-feed-caption-more aria-expanded="false"><span data-feed-caption-toggle-label>more</span>${unreadBadge}</button>
                 </div>
             </div>
         `;
@@ -1733,21 +1729,13 @@ window.CraftCrawlInitFriends = function (scope = document) {
             const moreButton = event.target.closest('[data-feed-caption-more]');
             if (moreButton) {
                 const captionArea = moreButton.closest('[data-feed-caption]');
-                const collapsed = captionArea?.querySelector('[data-feed-caption-collapsed]');
-                const expanded = captionArea?.querySelector('[data-feed-caption-expanded]');
-                if (collapsed && expanded) {
-                    collapsed.hidden = true;
-                    expanded.hidden = false;
-                    const article = moreButton.closest('article');
-                    const panel = expanded.querySelector('[data-reaction-disclosure-panel]');
-                    if (panel) {
-                        setReactionPage(panel, 0, false);
-                        highlightUnreadReactionEntries(panel);
-                        const itemKey = panel.dataset.itemKey || '';
-                        if (itemKey) {
-                            const fakeDisclosure = { dataset: { itemKey: itemKey, unreadCount: '0' }, querySelector: function () { return null; } };
-                            markReactionNotificationsSeen(fakeDisclosure);
-                        }
+                const content = captionArea?.querySelector('[data-feed-caption-content]');
+                if (content) {
+                    const isExpanded = content.classList.toggle('is-expanded');
+                    moreButton.setAttribute('aria-expanded', String(isExpanded));
+                    const label = moreButton.querySelector('[data-feed-caption-toggle-label]');
+                    if (label) {
+                        label.textContent = isExpanded ? 'less' : 'more';
                     }
                 }
                 return;
