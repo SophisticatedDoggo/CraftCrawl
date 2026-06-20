@@ -4116,7 +4116,7 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo) {
     gap: 4px;
     min-height: 0;
     padding: 0;
-    color: var(--color-text-muted);
+    color: var(--color-heading);
     background: transparent;
     border: none;
     box-shadow: none;
