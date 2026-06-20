@@ -538,6 +538,14 @@ window.CraftCrawlInitFriends = function (scope = document) {
         menuToggleBadges.forEach((badge) => setBadge(badge, friendsBadgeCount));
         tabBadges.forEach((badge) => setBadge(badge, feedBadgeCount));
         syncNativeAppBadge(badgeCount);
+
+        if (newFeedItems < 1 && feed) {
+            feed.querySelectorAll('.is-new').forEach((item) => {
+                item.classList.remove('is-new');
+            });
+            teardownNewItemObserver();
+        }
+        updateScrollToNotificationButton();
     }
 
     function clearLocalSocialNotificationCount(value) {
@@ -3043,7 +3051,13 @@ window.CraftCrawlInitFriends = function (scope = document) {
     });
 
     document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
+        if (document.hidden) {
+            if (markFeedSeenTimer) {
+                clearTimeout(markFeedSeenTimer);
+                markFeedSeenTimer = null;
+                markFriendsSeen('feed');
+            }
+        } else {
             loadStatus();
             if (managerPage) {
                 loadRequests();

@@ -22,11 +22,11 @@ variants=(
 )
 
 densities=(
-  "mdpi:48:108"
-  "hdpi:72:162"
-  "xhdpi:96:216"
-  "xxhdpi:144:324"
-  "xxxhdpi:192:432"
+  "mdpi:48:108:66"
+  "hdpi:72:162:99"
+  "xhdpi:96:216:132"
+  "xxhdpi:144:324:198"
+  "xxxhdpi:192:432:264"
 )
 
 write_ios_contents() {
@@ -84,14 +84,23 @@ for variant in "${variants[@]}"; do
   fi
 
   android_base="ic_launcher${android_suffix}"
+  android_background="$(convert "$source_image" -format '%[pixel:p{0,0}]' info:)"
   for density in "${densities[@]}"; do
-    IFS=":" read -r bucket icon_size foreground_size <<< "$density"
+    IFS=":" read -r bucket icon_size foreground_size safe_size <<< "$density"
     mipmap_dir="$ROOT_DIR/android/app/src/main/res/mipmap-${bucket}"
     mkdir -p "$mipmap_dir"
 
     convert "$source_image" -resize "${icon_size}x${icon_size}" "$mipmap_dir/${android_base}.png"
     convert "$source_image" -resize "${icon_size}x${icon_size}" "$mipmap_dir/${android_base}_round.png"
-    convert "$source_image" -resize "${foreground_size}x${foreground_size}" "$mipmap_dir/${android_base}_foreground.png"
+    # Adaptive launchers may crop everything outside the centered 66dp safe zone.
+    # Keep the complete square artwork inside that zone and extend its own
+    # background color through the rest of the 108dp foreground layer.
+    convert "$source_image" \
+      -resize "${safe_size}x${safe_size}" \
+      -gravity center \
+      -background "$android_background" \
+      -extent "${foreground_size}x${foreground_size}" \
+      "$mipmap_dir/${android_base}_foreground.png"
   done
 
   if [ "$name" != "trail" ]; then
