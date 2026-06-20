@@ -20,7 +20,7 @@ function craftcrawl_secure_session_start() {
     }
 
     session_set_cookie_params([
-        'lifetime' => 0,
+        'lifetime' => 30 * 86400,
         'path' => '/',
         'domain' => '',
         'secure' => craftcrawl_is_https(),
@@ -29,6 +29,7 @@ function craftcrawl_secure_session_start() {
     ]);
 
     ini_set('session.use_strict_mode', '1');
+    ini_set('session.gc_maxlifetime', (string) (7 * 86400));
     session_start();
 }
 

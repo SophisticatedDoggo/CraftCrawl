@@ -38,7 +38,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $email = strtolower(trim($_POST['email'] ?? ''));
     $password = (string) ($_POST['password'] ?? '');
-    $remember_me = isset($_POST['remember_me']);
     $captcha_token = $_POST['g-recaptcha-response'] ?? '';
 
     try {
@@ -98,11 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'samesite' => 'Lax',
             ]);
 
-            if ($remember_me) {
-                craftcrawl_issue_remember_token($conn, 'user', (int) $user['id']);
-            } else {
-                craftcrawl_revoke_current_remember_token($conn);
-            }
+            craftcrawl_issue_remember_token($conn, 'user', (int) $user['id']);
 
             header("Location: user/portal.php");
             exit();
@@ -175,10 +170,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </button>
                 </div>
             </div>
-            <label class="remember-login-toggle">
-                <input type="checkbox" name="remember_me" value="1">
-                Stay signed in
-            </label>
             <div class="captcha-field">
                 <?php echo craftcrawl_recaptcha_widget(); ?>
             </div>

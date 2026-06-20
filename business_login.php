@@ -53,7 +53,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $email = strtolower(trim($_POST['email'] ?? ''));
     $password = (string) ($_POST['password'] ?? '');
-    $remember_me = isset($_POST['remember_me']);
     $captcha_token = $_POST['g-recaptcha-response'] ?? '';
 
     try {
@@ -114,11 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'samesite' => 'Lax',
             ]);
 
-            if ($remember_me) {
-                craftcrawl_issue_remember_token($conn, 'business', (int) $business['id']);
-            } else {
-                craftcrawl_revoke_current_remember_token($conn);
-            }
+            craftcrawl_issue_remember_token($conn, 'business', (int) $business['id']);
 
             if (empty($_SESSION['business_post_login_redirect']) && !empty($business['pending_claim_location_id'])) {
                 $_SESSION['business_post_login_redirect'] = 'business_claim_start.php?location_id=' . (int) $business['pending_claim_location_id'];
@@ -179,10 +174,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </button>
                 </div>
             </div>
-            <label class="remember-login-toggle">
-                <input type="checkbox" name="remember_me" value="1">
-                Stay signed in
-            </label>
             <div class="captcha-field">
                 <?php echo craftcrawl_recaptcha_widget(); ?>
             </div>
