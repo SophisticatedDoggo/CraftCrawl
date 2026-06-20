@@ -1668,7 +1668,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 }
 
                 event.preventDefault();
-                openFeedThreadOverlay(itemKey);
+                openCommentsSheet(itemKey);
                 return;
             }
 

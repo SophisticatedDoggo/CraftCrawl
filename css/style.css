@@ -3836,7 +3836,7 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo) {
 
 .feed-action-row {
     display: grid;
-    grid-template-columns: minmax(40px, 1fr) minmax(78px, auto) minmax(max-content, 1fr);
+    grid-template-columns: auto 1fr;
     align-items: center;
     gap: 8px;
     margin-top: 16px;
