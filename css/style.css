@@ -4332,7 +4332,8 @@ body:not(.feed-page-body) .feed-scroll-to-notification-fab {
     display: none;
 }
 
-.friends-feed-item.is-new {
+.friends-feed-item.is-new,
+.friends-feed-item.has-unread-notifications {
     border-left: 3px solid var(--color-primary);
 }
 

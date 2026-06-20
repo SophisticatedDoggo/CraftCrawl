@@ -376,7 +376,11 @@ window.CraftCrawlInitFriends = function (scope = document) {
         hasFocusedFeedItem = true;
         focusNotificationTarget(item);
 
-        if (requestedFocusSection === 'reactions') {
+        if (requestedFocusSection === 'comments') {
+            window.setTimeout(() => {
+                openCommentsSheet(requestedFocusItemKey);
+            }, 350);
+        } else if (requestedFocusSection === 'reactions') {
             const captionMore = item.querySelector('[data-feed-caption-more]');
             const toggle = captionMore || item.querySelector('[data-reaction-disclosure-toggle]');
             if (toggle && (captionMore || toggle.getAttribute('aria-expanded') !== 'true')) {
@@ -486,6 +490,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         let cls = 'friends-feed-item';
         if (extra) cls += ' ' + extra;
         if (isNewFeedItem(item)) cls += ' is-new';
+        if (Number(item.unread_reaction_count || 0) + Number(item.unread_comment_count || 0) > 0) cls += ' has-unread-notifications';
         return cls;
     }
 
@@ -545,6 +550,11 @@ window.CraftCrawlInitFriends = function (scope = document) {
             });
             teardownNewItemObserver();
         }
+        if (socialNotifications < 1 && feed) {
+            feed.querySelectorAll('.has-unread-notifications').forEach((item) => {
+                item.classList.remove('has-unread-notifications');
+            });
+        }
         updateScrollToNotificationButton();
     }
 
@@ -601,6 +611,11 @@ window.CraftCrawlInitFriends = function (scope = document) {
         disclosure.dataset.markingSeen = 'true';
         disclosure.dataset.unreadCount = '0';
         disclosure.querySelectorAll('.feed-action-unread-badge').forEach((badge) => badge.remove());
+        const feedCard = disclosure.closest('.friends-feed-item');
+        if (feedCard && !feedCard.querySelector('.feed-action-unread-badge')) {
+            feedCard.classList.remove('has-unread-notifications');
+            updateScrollToNotificationButton();
+        }
         clearLocalSocialNotificationCount(unreadCount);
 
         return postForm(userEndpoint('feed_notification_seen.php'), {
@@ -2081,7 +2096,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             return;
         }
 
-        const item = feed.querySelector('.is-new');
+        const item = feed.querySelector('.is-new, .has-unread-notifications');
         if (item) {
             focusNotificationTarget(item);
             return;
@@ -2097,9 +2112,10 @@ window.CraftCrawlInitFriends = function (scope = document) {
             return;
         }
 
-        const domCount = feed?.querySelectorAll('.is-new').length || 0;
-        const serverCount = currentStatus.newFeedItems || 0;
-        const visibleCount = Math.max(domCount, serverCount);
+        const domNewCount = feed?.querySelectorAll('.is-new').length || 0;
+        const domUnreadCount = feed?.querySelectorAll('.has-unread-notifications').length || 0;
+        const serverCount = (currentStatus.newFeedItems || 0) + (currentStatus.socialNotifications || 0);
+        const visibleCount = Math.max(domNewCount + domUnreadCount, serverCount);
         const countEl = scrollToNotificationButton.querySelector('[data-notification-scroll-count]');
 
         if (visibleCount < 1) {
@@ -2961,18 +2977,25 @@ window.CraftCrawlInitFriends = function (scope = document) {
         const feedCard = feed?.querySelector(`[data-feed-item-key="${CSS.escape(itemKey)}"]`);
         if (!feedCard) return;
 
+        feedCard.classList.remove('has-unread-notifications');
         feedCard.querySelectorAll('.feed-comments-link .feed-action-unread-badge').forEach((badge) => badge.remove());
+
+        updateScrollToNotificationButton();
 
         if (csrfToken) {
             postForm(userEndpoint('feed_notification_seen.php'), {
                 csrf_token: csrfToken,
                 item_key: itemKey,
                 notification_type: 'comment'
+            }).then((data) => {
+                if (data?.ok) applyStatusCounts(data);
             }).catch(() => {});
             postForm(userEndpoint('feed_notification_seen.php'), {
                 csrf_token: csrfToken,
                 item_key: itemKey,
                 notification_type: 'reaction'
+            }).then((data) => {
+                if (data?.ok) applyStatusCounts(data);
             }).catch(() => {});
         }
     }
