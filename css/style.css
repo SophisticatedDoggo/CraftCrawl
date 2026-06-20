@@ -3891,6 +3891,22 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo) {
         margin-left: -14px;
         transform: none;
     }
+
+    .feed-page-body .friends-feed-item {
+        position: relative;
+        border-bottom: 0;
+    }
+
+    .feed-page-body .friends-feed-item::after {
+        content: "";
+        position: absolute;
+        right: -14px;
+        bottom: 0;
+        left: -14px;
+        height: 1px;
+        background: var(--color-border);
+        pointer-events: none;
+    }
 }
 
 .feed-checkin-below {

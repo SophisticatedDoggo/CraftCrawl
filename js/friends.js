@@ -121,11 +121,17 @@ window.CraftCrawlInitFriends = function (scope = document) {
             }
 
             content.classList.remove('has-text-overflow');
-            const previousDisplay = text.style.display;
-            text.style.display = 'block';
-            const lineHeight = Number.parseFloat(window.getComputedStyle(text).lineHeight) || 20;
-            const hasTextOverflow = text.scrollHeight > (lineHeight * 2) + 1;
-            text.style.display = previousDisplay;
+            const range = document.createRange();
+            range.selectNodeContents(text);
+            const lineTops = [];
+            Array.from(range.getClientRects()).forEach((rect) => {
+                if (rect.width <= 0 || rect.height <= 0) return;
+                if (!lineTops.some((top) => Math.abs(top - rect.top) < 1)) {
+                    lineTops.push(rect.top);
+                }
+            });
+            range.detach();
+            const hasTextOverflow = lineTops.length > 2;
 
             const hasAccomplishments = content.dataset.hasAccomplishments === 'true';
             content.classList.toggle('has-text-overflow', hasTextOverflow);
@@ -1299,7 +1305,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         }
 
         feed.innerHTML = items.map(renderFeedItem).join('');
-        syncCaptionToggleVisibility(feed);
+        window.requestAnimationFrame(() => syncCaptionToggleVisibility(feed));
 
         focusFeedItemIfRequested();
         nextFeedCursor = feedCursorFromResponse(data, items);
@@ -1848,7 +1854,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     const article = div.firstElementChild;
                     if (article) {
                         feed.appendChild(article);
-                        syncCaptionToggleVisibility(article);
+                        window.requestAnimationFrame(() => syncCaptionToggleVisibility(article));
                     }
                 });
 
