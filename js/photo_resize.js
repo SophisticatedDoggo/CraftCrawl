@@ -1,7 +1,7 @@
 window.CraftCrawlResizePhoto = (function () {
-    var MAX_DIMENSION = 1600;
-    var TARGET_BYTES = 1800000;
-    var MIN_QUALITY = 0.62;
+    var MAX_DIMENSION = 1080;
+    var TARGET_BYTES = 300000;
+    var MIN_QUALITY = 0.40;
 
     function loadImage(file) {
         return new Promise(function (resolve, reject) {
@@ -56,11 +56,11 @@ window.CraftCrawlResizePhoto = (function () {
         context.fillRect(0, 0, width, height);
         context.drawImage(image, 0, 0, width, height);
 
-        var quality = 0.82;
+        var quality = 0.70;
         var blob = await canvasToBlob(canvas, quality);
 
         while (blob.size > TARGET_BYTES && quality > MIN_QUALITY) {
-            quality = Math.max(MIN_QUALITY, quality - 0.08);
+            quality = Math.max(MIN_QUALITY, quality - 0.05);
             blob = await canvasToBlob(canvas, quality);
         }
 

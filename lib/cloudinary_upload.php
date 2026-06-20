@@ -153,35 +153,49 @@ function craftcrawl_upload_photo_to_cloudinary($file, $context, $owner_id, $opti
     $params['api_key'] = $config['api_key'];
     $params['file'] = new CURLFile($file['tmp_name'], $mime_type, $file['name'] ?? 'photo');
 
-    $endpoint = 'https://api.cloudinary.com/v1_1/' . rawurlencode($config['cloud_name']) . '/image/upload';
-    $curl = curl_init($endpoint);
-
-    curl_setopt_array($curl, [
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => $params,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 30
-    ]);
-
-    $response = curl_exec($curl);
-    $status_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-    $curl_error = curl_error($curl);
-    curl_close($curl);
-
-    if ($response === false) {
-        throw new RuntimeException('Cloudinary upload failed: ' . $curl_error);
-    }
-
-    $result = json_decode($response, true);
-
-    if ($status_code < 200 || $status_code >= 300 || !is_array($result)) {
-        $message = $result['error']['message'] ?? 'Cloudinary upload failed.';
-        throw new RuntimeException($message);
-    }
-
+    $result = craftcrawl_cloudinary_curl_with_retry($config['cloud_name'], $params);
     $result['validated_mime_type'] = $mime_type;
 
     return $result;
+}
+
+function craftcrawl_cloudinary_curl_with_retry($cloud_name, $params, $max_attempts = 2) {
+    $endpoint = 'https://api.cloudinary.com/v1_1/' . rawurlencode($cloud_name) . '/image/upload';
+    $last_error = null;
+
+    for ($attempt = 1; $attempt <= $max_attempts; $attempt++) {
+        $curl = curl_init($endpoint);
+
+        curl_setopt_array($curl, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $params,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 60
+        ]);
+
+        $response = curl_exec($curl);
+        $status_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curl_error = curl_error($curl);
+        curl_close($curl);
+
+        if ($response !== false) {
+            $result = json_decode($response, true);
+
+            if ($status_code >= 200 && $status_code < 300 && is_array($result)) {
+                return $result;
+            }
+
+            $last_error = $result['error']['message'] ?? 'Cloudinary upload failed.';
+        } else {
+            $last_error = 'Cloudinary upload failed: ' . $curl_error;
+        }
+
+        if ($attempt < $max_attempts) {
+            sleep(2);
+        }
+    }
+
+    throw new RuntimeException($last_error);
 }
 
 function craftcrawl_upload_data_url_to_cloudinary($data_url, $context, $owner_id, $options = []) {
@@ -258,32 +272,7 @@ function craftcrawl_upload_photo_file_to_cloudinary($file, $context, $owner_id, 
     $params['api_key'] = $config['api_key'];
     $params['file'] = new CURLFile($file['tmp_name'], $mime_type, $file['name'] ?? 'photo');
 
-    $endpoint = 'https://api.cloudinary.com/v1_1/' . rawurlencode($config['cloud_name']) . '/image/upload';
-    $curl = curl_init($endpoint);
-
-    curl_setopt_array($curl, [
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => $params,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 30
-    ]);
-
-    $response = curl_exec($curl);
-    $status_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-    $curl_error = curl_error($curl);
-    curl_close($curl);
-
-    if ($response === false) {
-        throw new RuntimeException('Cloudinary upload failed: ' . $curl_error);
-    }
-
-    $result = json_decode($response, true);
-
-    if ($status_code < 200 || $status_code >= 300 || !is_array($result)) {
-        $message = $result['error']['message'] ?? 'Cloudinary upload failed.';
-        throw new RuntimeException($message);
-    }
-
+    $result = craftcrawl_cloudinary_curl_with_retry($config['cloud_name'], $params);
     $result['validated_mime_type'] = $mime_type;
 
     return $result;

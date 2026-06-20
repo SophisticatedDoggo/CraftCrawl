@@ -255,12 +255,19 @@
 
             var actionButton = pendingCheckin.button;
 
+            var controller = new AbortController();
+            var timeoutId = setTimeout(function () { controller.abort(); }, 45000);
+
             fetch('../check_in.php', {
                 method: 'POST',
                 body: formData,
-                credentials: 'same-origin'
+                credentials: 'same-origin',
+                signal: controller.signal
             })
-                .then(function (response) { return response.json(); })
+                .then(function (response) {
+                    clearTimeout(timeoutId);
+                    return response.json();
+                })
                 .then(function (data) {
                     hideModal();
 
@@ -291,9 +298,13 @@
                         actionButton.classList.remove('is-loading');
                     }
                 })
-                .catch(function () {
+                .catch(function (err) {
                     hideModal();
-                    showStatus('Check-in failed. Please try again.', true);
+                    if (err && err.name === 'AbortError') {
+                        showStatus('Check-in timed out. Move to a stronger signal and try again.', true);
+                    } else {
+                        showStatus('Check-in failed. Please try again.', true);
+                    }
                     if (actionButton) {
                         actionButton.disabled = false;
                         actionButton.classList.remove('is-loading');

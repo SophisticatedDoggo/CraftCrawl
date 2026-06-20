@@ -250,12 +250,17 @@ window.CraftCrawlInitCheckIn = function (root = document) {
                 return;
             }
 
+            var controller = new AbortController();
+            var timeoutId = setTimeout(function () { controller.abort(); }, 45000);
+
             fetch(form.action, {
                 method: 'POST',
                 body: formData,
-                credentials: 'same-origin'
+                credentials: 'same-origin',
+                signal: controller.signal
             })
                 .then(function (response) {
+                    clearTimeout(timeoutId);
                     return response.json();
                 })
                 .then(function (data) {
@@ -283,9 +288,13 @@ window.CraftCrawlInitCheckIn = function (root = document) {
                         window.craftcrawlShowXpReward(data);
                     }
                 })
-                .catch(function () {
+                .catch(function (err) {
                     hideModal();
-                    showFeedback('Check-in failed. Please try again.', true);
+                    if (err && err.name === 'AbortError') {
+                        showFeedback('Check-in timed out. Move to a stronger signal and try again.', true);
+                    } else {
+                        showFeedback('Check-in failed. Please try again.', true);
+                    }
                 })
                 .finally(function () {
                     confirmButton.disabled = false;
