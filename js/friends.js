@@ -2037,7 +2037,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                                 <div class="feed-reaction-page">
                                     ${page.map((entry) => `
                                         <div class="feed-reaction-list-item${entry.is_unread ? ' is-unread' : ''}" data-reaction-list-item data-reaction-type="${escapeHtml(entry.type || '')}" data-reactor-id="${escapeHtml(entry.user_id || '')}" data-reaction-unread="${entry.is_unread ? 'true' : 'false'}">
-                                            <span class="feed-reaction-list-symbol">${escapeHtml(reactionLabels[entry.type] || '')}</span>
+                                            <span class="feed-reaction-list-symbol">${reactionLabels[entry.type] || ''}</span>
                                             <strong>${escapeHtml(entry.name || 'Someone')}</strong>
                                             ${entry.created_at ? `<time>${escapeHtml(formatDate(entry.created_at))}</time>` : ''}
                                         </div>
