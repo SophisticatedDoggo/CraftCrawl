@@ -2279,8 +2279,38 @@ window.CraftCrawlInitFriends = function (scope = document) {
         form: null,
         replyContext: null,
         itemKey: '',
-        closeTimer: 0
+        closeTimer: 0,
+        pageScrollX: 0,
+        pageScrollY: 0,
+        previousBodyTop: '',
+        pageScrollLocked: false
     };
+
+    function lockCommentsSheetPageScroll() {
+        if (commentsSheetState.pageScrollLocked) return;
+
+        commentsSheetState.pageScrollX = window.scrollX || 0;
+        commentsSheetState.pageScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+        commentsSheetState.previousBodyTop = document.body.style.top;
+        commentsSheetState.pageScrollLocked = true;
+
+        document.body.style.top = `-${commentsSheetState.pageScrollY}px`;
+        document.body.classList.add('feed-comments-sheet-open');
+    }
+
+    function unlockCommentsSheetPageScroll() {
+        if (!commentsSheetState.pageScrollLocked) {
+            document.body.classList.remove('feed-comments-sheet-open');
+            return;
+        }
+
+        const scrollX = commentsSheetState.pageScrollX;
+        const scrollY = commentsSheetState.pageScrollY;
+        document.body.classList.remove('feed-comments-sheet-open');
+        document.body.style.top = commentsSheetState.previousBodyTop;
+        commentsSheetState.pageScrollLocked = false;
+        window.scrollTo(scrollX, scrollY);
+    }
 
     function ensureCommentsSheet() {
         if (commentsSheetState.overlay?.isConnected) {
@@ -2456,7 +2486,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         overlay.hidden = false;
         overlay.classList.remove('is-closing');
         overlay.classList.add('is-open');
-        document.body.classList.add('feed-comments-sheet-open');
+        lockCommentsSheetPageScroll();
 
         fetch(userEndpoint(`feed_comments.php?item_key=${encodeURIComponent(itemKey)}`), {
             credentials: 'same-origin',
@@ -2489,6 +2519,10 @@ window.CraftCrawlInitFriends = function (scope = document) {
         const { overlay, panel } = commentsSheetState;
         if (!overlay || overlay.hidden) return;
 
+        if (overlay.contains(document.activeElement)) {
+            document.activeElement.blur();
+        }
+
         overlay.classList.remove('is-open', 'is-dragging');
         overlay.classList.add('is-closing');
 
@@ -2506,7 +2540,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             overlay.hidden = true;
             overlay.classList.remove('is-closing', 'is-drag-dismiss');
             panel.style.transform = '';
-            document.body.classList.remove('feed-comments-sheet-open');
+            unlockCommentsSheetPageScroll();
             commentsSheetState.itemKey = '';
         }, 220);
     }

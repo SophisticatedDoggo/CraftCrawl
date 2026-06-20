@@ -6151,7 +6151,12 @@ a.mobile-context-back.feed-thread-back-link:focus {
 }
 
 body.feed-comments-sheet-open {
+    position: fixed;
+    right: 0;
+    left: 0;
+    width: 100%;
     overflow: hidden;
+    overscroll-behavior: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
