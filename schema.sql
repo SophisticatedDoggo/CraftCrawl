@@ -634,6 +634,7 @@ CREATE TABLE IF NOT EXISTS user_visits (
     user_longitude DECIMAL(9,6) NOT NULL,
     distance_meters DECIMAL(8,2) NOT NULL,
     photo_id INT,
+    caption VARCHAR(360) DEFAULT NULL,
     checkedInAt DATETIME NOT NULL,
     KEY idx_user_visits_user_business (user_id, business_id),
     KEY idx_user_visits_user_location (user_id, location_id),
@@ -669,6 +670,7 @@ CREATE TABLE IF NOT EXISTS xp_log (
 CREATE TABLE IF NOT EXISTS user_quest_completions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
+    visit_id INT DEFAULT NULL,
     quest_key VARCHAR(64) NOT NULL,
     period_type ENUM('daily', 'weekly') NOT NULL,
     period_start DATE NOT NULL,
@@ -677,13 +679,17 @@ CREATE TABLE IF NOT EXISTS user_quest_completions (
     completedAt DATETIME NOT NULL,
     UNIQUE KEY unique_user_quest_period (user_id, quest_key, period_start),
     KEY idx_user_quest_completions_user_period (user_id, period_type, period_start),
+    KEY idx_user_quest_completions_visit_id (visit_id),
     CONSTRAINT fk_user_quest_completions_userId FOREIGN KEY (user_id)
-    REFERENCES users(id)
+    REFERENCES users(id),
+    CONSTRAINT fk_user_quest_completions_visitId FOREIGN KEY (visit_id)
+    REFERENCES user_visits(id)
 );
 
 CREATE TABLE IF NOT EXISTS user_badges (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
+    visit_id INT DEFAULT NULL,
     badge_key VARCHAR(64) NOT NULL,
     badge_name VARCHAR(100) NOT NULL,
     badge_description VARCHAR(255) NOT NULL,
@@ -693,8 +699,11 @@ CREATE TABLE IF NOT EXISTS user_badges (
     earnedAt DATETIME NOT NULL,
     UNIQUE KEY unique_user_badge (user_id, badge_key),
     KEY idx_user_badges_user_earned (user_id, earnedAt),
+    KEY idx_user_badges_visit_id (visit_id),
     CONSTRAINT fk_user_badges_userId FOREIGN KEY (user_id)
-    REFERENCES users(id)
+    REFERENCES users(id),
+    CONSTRAINT fk_user_badges_visitId FOREIGN KEY (visit_id)
+    REFERENCES user_visits(id)
 );
 
 CREATE TABLE IF NOT EXISTS business_photos (

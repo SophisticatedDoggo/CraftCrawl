@@ -694,6 +694,7 @@ function format_event_time_range($event) {
                                 <div class="checkin-preview-photo">
                                     <img data-checkin-preview-img alt="Check-in photo preview">
                                 </div>
+                                <textarea data-checkin-caption class="checkin-caption-input" placeholder="Write a caption..." maxlength="360" rows="2"></textarea>
                             </div>
                             <div class="checkin-preview-actions">
                                 <button type="button" data-checkin-retake>Retake</button>

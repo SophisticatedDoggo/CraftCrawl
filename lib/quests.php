@@ -392,7 +392,7 @@ function craftcrawl_user_quest_rows($conn, $user_id) {
     return $rows;
 }
 
-function craftcrawl_award_eligible_quest_rewards($conn, $user_id) {
+function craftcrawl_award_eligible_quest_rewards($conn, $user_id, $visit_id = null) {
     if (!craftcrawl_quest_storage_ready($conn)) {
         return [];
     }
@@ -411,12 +411,13 @@ function craftcrawl_award_eligible_quest_rewards($conn, $user_id) {
         $xp_awarded = (int) $quest['xp'];
 
         $insert_stmt = $conn->prepare("
-            INSERT IGNORE INTO user_quest_completions (user_id, quest_key, period_type, period_start, period_end, xp_awarded, completedAt)
-            VALUES (?, ?, ?, ?, ?, ?, NOW())
+            INSERT IGNORE INTO user_quest_completions (user_id, visit_id, quest_key, period_type, period_start, period_end, xp_awarded, completedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
         ");
         $insert_stmt->bind_param(
-            "issssi",
+            "iissssi",
             $user_id,
+            $visit_id,
             $quest_key,
             $period_type,
             $period_start,

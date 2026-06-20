@@ -152,7 +152,7 @@ function craftcrawl_feed_person_payload($person) {
 
 $before_clause_checkin = $before_dt ? ' AND uv.checkedInAt <= ?' : '';
 $visit_sql = "
-    SELECT uv.id, uv.user_id, uv.visit_type, uv.checkedInAt, l.id AS business_id, l.name AS bName, l.city, l.state,
+    SELECT uv.id, uv.user_id, uv.visit_type, uv.caption, uv.checkedInAt, l.id AS business_id, l.name AS bName, l.city, l.state,
         u.allow_post_interactions,
         vp.object_key AS visit_photo_object_key
     FROM user_visits uv
@@ -193,6 +193,7 @@ while ($visit = $visit_result->fetch_assoc()) {
     if ($has_photo) {
         $item['photo_url'] = craftcrawl_cloudinary_delivery_url($visit['visit_photo_object_key'], 'f_auto,q_auto,c_limit,w_1080');
         $item['visit_type'] = $visit['visit_type'];
+        $item['caption'] = $visit['caption'] ?? null;
     }
     $feed[] = $item;
 }
@@ -320,7 +321,7 @@ $badge_sql = "
         u.allow_post_interactions
     FROM user_badges ub
     INNER JOIN users u ON u.id = ub.user_id
-    WHERE ub.user_id IN ($placeholders)
+    WHERE ub.user_id IN ($placeholders) AND ub.visit_id IS NULL
     $before_clause_badge
     ORDER BY ub.earnedAt DESC, ub.id DESC
     LIMIT $feed_source_fetch_limit
@@ -346,42 +347,6 @@ while ($badge = $badge_result->fetch_assoc()) {
         'badge_name' => $badge['badge_name'],
         'badge_description' => $badge['badge_description'],
         'badge_tier' => $badge['badge_tier']
-    ];
-}
-
-$before_clause_quest = $before_dt ? ' AND uqc.completedAt <= ?' : '';
-$quest_sql = "
-    SELECT uqc.id, uqc.user_id, uqc.quest_key, uqc.period_type, uqc.xp_awarded, uqc.completedAt,
-        u.allow_post_interactions
-    FROM user_quest_completions uqc
-    INNER JOIN users u ON u.id = uqc.user_id
-    WHERE uqc.user_id IN ($placeholders)
-    $before_clause_quest
-    ORDER BY uqc.completedAt DESC, uqc.id DESC
-    LIMIT $feed_source_fetch_limit
-";
-$quest_stmt = $conn->prepare($quest_sql);
-$before_dt
-    ? craftcrawl_bind_feed_user_ids_before($quest_stmt, $types, $feed_user_ids, $before_dt)
-    : craftcrawl_bind_feed_user_ids($quest_stmt, $types, $feed_user_ids);
-$quest_stmt->execute();
-$quest_result = $quest_stmt->get_result();
-
-while ($quest = $quest_result->fetch_assoc()) {
-    $actor_id = (int) $quest['user_id'];
-    $feed[] = [
-        'item_key' => 'quest_complete:' . (int) $quest['id'],
-        'type' => 'quest_complete',
-        'created_at' => $quest['completedAt'],
-        'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
-        'actor' => craftcrawl_feed_person_payload($people[$actor_id] ?? []),
-        'owner_user_id' => $actor_id,
-        'is_self' => $actor_id === $user_id,
-        'allow_interactions' => (bool) $quest['allow_post_interactions'],
-        'quest_name' => craftcrawl_quest_name($quest['quest_key']),
-        'quest_description' => craftcrawl_quest_description($quest['quest_key']),
-        'period_type' => $quest['period_type'],
-        'xp_awarded' => (int) $quest['xp_awarded'],
     ];
 }
 
@@ -532,7 +497,7 @@ $exclude_types = str_repeat('i', count($exclude_user_ids));
 
 if ($before_dt) {
     $public_checkin_sql = "
-        SELECT uv.id, uv.user_id, uv.visit_type, uv.checkedInAt,
+        SELECT uv.id, uv.user_id, uv.visit_type, uv.caption, uv.checkedInAt,
             l.id AS business_id, l.name AS bName, l.city, l.state,
             u.fName, u.lName, u.allow_post_interactions,
             u.selected_profile_frame, u.selected_profile_frame_style,
@@ -561,7 +526,7 @@ if ($before_dt) {
     call_user_func_array([$public_checkin_stmt, 'bind_param'], $public_bind_params);
 } else {
     $public_checkin_sql = "
-        SELECT uv.id, uv.user_id, uv.visit_type, uv.checkedInAt,
+        SELECT uv.id, uv.user_id, uv.visit_type, uv.caption, uv.checkedInAt,
             l.id AS business_id, l.name AS bName, l.city, l.state,
             u.fName, u.lName, u.allow_post_interactions,
             u.selected_profile_frame, u.selected_profile_frame_style,
@@ -614,7 +579,8 @@ while ($pv = $public_checkin_result->fetch_assoc()) {
         'city' => $pv['city'],
         'state' => $pv['state'],
         'photo_url' => craftcrawl_cloudinary_delivery_url($pv['visit_photo_object_key'], 'f_auto,q_auto,c_limit,w_1080'),
-        'visit_type' => $pv['visit_type']
+        'visit_type' => $pv['visit_type'],
+        'caption' => $pv['caption'] ?? null
     ];
 }
 
@@ -641,6 +607,58 @@ $has_more = count($feed) > $feed_page_size;
 $feed = array_slice($feed, 0, $feed_page_size);
 $next_before = !empty($feed) ? ($feed[count($feed) - 1]['created_at'] ?? null) : null;
 $next_before_key = !empty($feed) ? ($feed[count($feed) - 1]['item_key'] ?? null) : null;
+
+// Attach linked badges and quests to check-in items
+$checkin_visit_ids = [];
+$checkin_index_by_visit_id = [];
+foreach ($feed as $idx => $item) {
+    if ($item['type'] === 'checkin' || $item['type'] === 'first_visit') {
+        $vid = (int) explode(':', $item['item_key'])[1];
+        $checkin_visit_ids[] = $vid;
+        $checkin_index_by_visit_id[$vid] = $idx;
+    }
+}
+
+if (!empty($checkin_visit_ids)) {
+    $visit_ph = implode(',', array_fill(0, count($checkin_visit_ids), '?'));
+    $visit_bind_types = str_repeat('i', count($checkin_visit_ids));
+
+    $linked_badge_stmt = $conn->prepare("
+        SELECT id, visit_id, badge_name, badge_tier, xp_awarded
+        FROM user_badges
+        WHERE visit_id IN ($visit_ph)
+        ORDER BY earnedAt
+    ");
+    $lb_params = [$visit_bind_types];
+    foreach ($checkin_visit_ids as $k => $vid) { $lb_params[] = &$checkin_visit_ids[$k]; }
+    call_user_func_array([$linked_badge_stmt, 'bind_param'], $lb_params);
+    $linked_badge_stmt->execute();
+    $lb_result = $linked_badge_stmt->get_result();
+    while ($lb = $lb_result->fetch_assoc()) {
+        $fi = $checkin_index_by_visit_id[(int) $lb['visit_id']] ?? null;
+        if ($fi !== null) {
+            $feed[$fi]['linked_badges'][] = ['name' => $lb['badge_name'], 'tier' => $lb['badge_tier'], 'xp' => (int) $lb['xp_awarded']];
+        }
+    }
+
+    $linked_quest_stmt = $conn->prepare("
+        SELECT id, visit_id, quest_key, xp_awarded
+        FROM user_quest_completions
+        WHERE visit_id IN ($visit_ph)
+        ORDER BY completedAt
+    ");
+    $lq_params = [$visit_bind_types];
+    foreach ($checkin_visit_ids as $k => $vid) { $lq_params[] = &$checkin_visit_ids[$k]; }
+    call_user_func_array([$linked_quest_stmt, 'bind_param'], $lq_params);
+    $linked_quest_stmt->execute();
+    $lq_result = $linked_quest_stmt->get_result();
+    while ($lq = $lq_result->fetch_assoc()) {
+        $fi = $checkin_index_by_visit_id[(int) $lq['visit_id']] ?? null;
+        if ($fi !== null) {
+            $feed[$fi]['linked_quests'][] = ['name' => craftcrawl_quest_name($lq['quest_key']), 'xp' => (int) $lq['xp_awarded']];
+        }
+    }
+}
 
 // Batch-load poll options + user votes for poll-type business posts in this page
 $poll_feed_idx_to_post_id = [];
@@ -943,9 +961,12 @@ if (!empty($feed_item_keys)) {
     }
 }
 
+$feed_seen_at_value = $seen_row['feedSeenAt'] ?? $seen_row['friendsSeenAt'] ?? null;
+
 $response = [
     'ok' => true,
     'feed' => $feed,
+    'feed_seen_at' => $feed_seen_at_value,
     'has_more' => $has_more,
     'next_before' => $has_more ? $next_before : null,
     'next_before_key' => $has_more ? $next_before_key : null

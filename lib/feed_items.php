@@ -196,7 +196,7 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
     if (preg_match('/^checkin:(\d+)$/', $item_key, $matches)) {
         $visit_id = (int) $matches[1];
         $stmt = $conn->prepare("
-            SELECT uv.id, uv.user_id, uv.visit_type, uv.checkedInAt,
+            SELECT uv.id, uv.user_id, uv.visit_type, uv.caption, uv.checkedInAt,
                 l.id AS business_id, l.name AS bName, l.city, l.state,
                 u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, u.allow_post_interactions,
                 p.object_key AS profile_photo_object_key,
@@ -240,6 +240,24 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
         if (!empty($visit['visit_photo_object_key'])) {
             $item['photo_url'] = craftcrawl_cloudinary_delivery_url($visit['visit_photo_object_key'], 'f_auto,q_auto,c_limit,w_1080');
         }
+        $item['caption'] = $visit['caption'] ?? null;
+
+        $lb_stmt = $conn->prepare("SELECT badge_name, badge_tier, xp_awarded FROM user_badges WHERE visit_id=? ORDER BY earnedAt");
+        $lb_stmt->bind_param("i", $visit_id);
+        $lb_stmt->execute();
+        $lb_result = $lb_stmt->get_result();
+        while ($lb = $lb_result->fetch_assoc()) {
+            $item['linked_badges'][] = ['name' => $lb['badge_name'], 'tier' => $lb['badge_tier'], 'xp' => (int) $lb['xp_awarded']];
+        }
+
+        $lq_stmt = $conn->prepare("SELECT quest_key, xp_awarded FROM user_quest_completions WHERE visit_id=? ORDER BY completedAt");
+        $lq_stmt->bind_param("i", $visit_id);
+        $lq_stmt->execute();
+        $lq_result = $lq_stmt->get_result();
+        while ($lq = $lq_result->fetch_assoc()) {
+            $item['linked_quests'][] = ['name' => craftcrawl_quest_name($lq['quest_key']), 'xp' => (int) $lq['xp_awarded']];
+        }
+
         return $item;
     }
 

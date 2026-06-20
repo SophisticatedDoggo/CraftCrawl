@@ -782,11 +782,11 @@ function craftcrawl_user_badge_progress($conn, $user_id) {
     return $rows;
 }
 
-function craftcrawl_award_badge($conn, $user_id, $badge_key, $badge) {
+function craftcrawl_award_badge($conn, $user_id, $badge_key, $badge, $visit_id = null) {
     $category = $badge['category'] ?? craftcrawl_badge_category($badge_key);
     $tier = $badge['tier'] ?? 'small';
-    $stmt = $conn->prepare("INSERT IGNORE INTO user_badges (user_id, badge_key, badge_name, badge_description, badge_category, badge_tier, xp_awarded, earnedAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
-    $stmt->bind_param("isssssi", $user_id, $badge_key, $badge['name'], $badge['description'], $category, $tier, $badge['xp']);
+    $stmt = $conn->prepare("INSERT IGNORE INTO user_badges (user_id, visit_id, badge_key, badge_name, badge_description, badge_category, badge_tier, xp_awarded, earnedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+    $stmt->bind_param("iisssssi", $user_id, $visit_id, $badge_key, $badge['name'], $badge['description'], $category, $tier, $badge['xp']);
     $stmt->execute();
 
     if ($stmt->affected_rows < 1) {
@@ -797,7 +797,7 @@ function craftcrawl_award_badge($conn, $user_id, $badge_key, $badge) {
     return $badge['name'];
 }
 
-function craftcrawl_award_eligible_badges($conn, $user_id) {
+function craftcrawl_award_eligible_badges($conn, $user_id, $visit_id = null) {
     $badges = craftcrawl_badge_definitions();
     $earned = [];
 
@@ -1011,7 +1011,7 @@ function craftcrawl_award_eligible_badges($conn, $user_id) {
             continue;
         }
 
-        $badge_name = craftcrawl_award_badge($conn, $user_id, $badge_key, $badges[$badge_key]);
+        $badge_name = craftcrawl_award_badge($conn, $user_id, $badge_key, $badges[$badge_key], $visit_id);
 
         if ($badge_name !== null) {
             $earned[] = $badge_name;

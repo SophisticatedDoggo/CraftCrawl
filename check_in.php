@@ -36,6 +36,11 @@ try {
 }
 
 $user_id = (int) $_SESSION['user_id'];
+$caption = trim($_POST['caption'] ?? '');
+if (mb_strlen($caption) > 360) {
+    $caption = mb_substr($caption, 0, 360);
+}
+$caption = $caption !== '' ? $caption : null;
 $business_id = filter_var($_POST['business_id'] ?? null, FILTER_VALIDATE_INT);
 $location_id_input = filter_var($_POST['location_id'] ?? null, FILTER_VALIDATE_INT);
 $user_latitude = filter_var($_POST['latitude'] ?? null, FILTER_VALIDATE_FLOAT);
@@ -67,8 +72,8 @@ try {
     $conn->begin_transaction();
     $progress_before = craftcrawl_user_level_progress($conn, $user_id);
 
-    $visit_stmt = $conn->prepare("INSERT INTO user_visits (user_id, business_id, location_id, visit_type, xp_awarded, user_latitude, user_longitude, distance_meters, checkedInAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-    $visit_stmt->bind_param("iiisiddd", $user_id, $legacy_business_id, $location_id, $visit_type, $xp_awarded, $user_latitude, $user_longitude, $distance_meters);
+    $visit_stmt = $conn->prepare("INSERT INTO user_visits (user_id, business_id, location_id, visit_type, xp_awarded, user_latitude, user_longitude, distance_meters, caption, checkedInAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+    $visit_stmt->bind_param("iiisiddds", $user_id, $legacy_business_id, $location_id, $visit_type, $xp_awarded, $user_latitude, $user_longitude, $distance_meters, $caption);
     $visit_stmt->execute();
     $visit_id = $visit_stmt->insert_id;
 
@@ -81,8 +86,8 @@ try {
     $source_type = $visit_type === 'first_time' ? 'first_time_visit' : 'repeat_visit';
     $source_id = $visit_type === 'first_time' ? (string) $location_id : (string) $visit_id;
     craftcrawl_add_xp($conn, $user_id, $xp_awarded, $source_type, $source_id, $validation['business_name']);
-    $badges = craftcrawl_award_eligible_badges($conn, $user_id);
-    $quest_rewards = craftcrawl_award_eligible_quest_rewards($conn, $user_id);
+    $badges = craftcrawl_award_eligible_badges($conn, $user_id, $visit_id);
+    $quest_rewards = craftcrawl_award_eligible_quest_rewards($conn, $user_id, $visit_id);
     $action_label = $visit_type === 'first_time' ? 'First-Time Check-In' : 'Repeat Check-In';
     $xp_items = array_values(array_filter(array_merge(
         [craftcrawl_xp_item($action_label, $xp_awarded, 'Check-In')],

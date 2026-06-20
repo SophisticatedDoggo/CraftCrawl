@@ -134,7 +134,7 @@ function feed_thread_post_reference($item) {
         return [
             'title' => $actor_name . ' checked in at ' . ($item['business_name'] ?? '') . $visit_label,
             'meta' => trim(($item['city'] ?? '') . ', ' . ($item['state'] ?? '') . ($date ? ' · ' . $date : '')),
-            'body' => ''
+            'body' => $item['caption'] ?? ''
         ];
     }
 
@@ -400,6 +400,22 @@ function render_feed_thread_post($item, $actions_html = '') {
         if (!empty($item['photo_url'])) {
             $photo_html = '<div class="feed-checkin-photo"><img src="' . escape_output($item['photo_url']) . '" alt="Check-in photo at ' . escape_output($item['business_name']) . '" loading="lazy"></div>';
         }
+        $caption_html = '';
+        if (!empty($item['caption'])) {
+            $caption_html = '<p class="feed-thread-caption"><strong>' . escape_output($actor_name) . '</strong> ' . escape_output($item['caption']) . '</p>';
+        }
+        $reward_parts = [];
+        if (!empty($item['linked_badges'])) {
+            foreach ($item['linked_badges'] as $badge) {
+                $reward_parts[] = 'Earned ' . escape_output($badge['name']);
+            }
+        }
+        if (!empty($item['linked_quests'])) {
+            foreach ($item['linked_quests'] as $quest) {
+                $reward_parts[] = 'Completed ' . escape_output($quest['name']);
+            }
+        }
+        $reward_html = !empty($reward_parts) ? '<p class="feed-reward-line">' . implode(' · ', $reward_parts) . '</p>' : '';
         return '
             <article class="friends-feed-item feed-thread-post feed-checkin-post" ' . feed_thread_attrs($item) . '>
                 ' . $avatar . '
@@ -407,6 +423,8 @@ function render_feed_thread_post($item, $actions_html = '') {
                     <strong>' . escape_output($actor_name) . ' checked in at <a class="feed-business-link" href="../business_details.php?id=' . escape_output($item['business_id']) . '">' . escape_output($item['business_name']) . '</a>' . $visit_label . '</strong>
                     <p>' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
                     ' . $photo_html . '
+                    ' . $caption_html . '
+                    ' . $reward_html . '
                     ' . $actions_html . '
                 </div>
             </article>

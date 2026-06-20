@@ -222,22 +222,6 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
         [$feed_seen_at, $user_id, $user_id]
     );
 
-    $new_feed_items += craftcrawl_notification_count_value(
-        $conn,
-        "
-            SELECT COUNT(*) AS total
-            FROM user_quest_completions uqc
-            INNER JOIN users actor ON actor.id = uqc.user_id
-            WHERE uqc.completedAt > ?
-                AND uqc.user_id<>?
-                AND actor.show_feed_activity=TRUE
-                AND actor.disabledAt IS NULL
-                AND $friend_activity_exists
-        ",
-        "sii",
-        [$feed_seen_at, $user_id, $user_id]
-    );
-
     $daily_required = CRAFTCRAWL_DAILY_QUEST_COUNT;
     $weekly_required = CRAFTCRAWL_WEEKLY_QUEST_COUNT;
     $new_feed_items += craftcrawl_notification_count_value(

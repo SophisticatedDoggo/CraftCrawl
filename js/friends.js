@@ -39,13 +39,14 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let loadingMore = false;
     let feedObserver = null;
     let feedPaginationFailed = false;
+    let feedSeenAt = null;
     const feedPageSize = 40;
     const feedPaginationDelayMs = 1300;
     const reactionLabels = {
-        cheers: '🍻',
-        nice_find: '🔥',
-        want_to_go: '📍',
-        trophy: '🏆'
+        cheers: '<svg class="feed-reaction-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M5 10c0-1 .5-4 3-4h1l1 4M19 10c0-1-.5-4-3-4h-1l-1 4M5 10l-1 8c0 2 2 4 5 4h1M19 10l1 8c0 2-2 4-5 4h-1M9 22h6"/></svg>',
+        nice_find: '<svg class="feed-reaction-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1 3 5 5 5 10a5 5 0 01-10 0c0-5 4-7 5-10z"/><path d="M12 18c-1.5 0-2.5-1-2.5-2.5 0-2 2.5-3.5 2.5-3.5s2.5 1.5 2.5 3.5c0 1.5-1 2.5-2.5 2.5z"/></svg>',
+        want_to_go: '<svg class="feed-reaction-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+        trophy: '<svg class="feed-reaction-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4a2 2 0 01-2-2V5h4M18 9h2a2 2 0 002-2V5h-4M6 5h12v5a6 6 0 01-12 0V5zM12 16v3M8 22h8M8 19h8"/></svg>'
     };
     const reactionTextLabels = {
         cheers: 'Cheers',
@@ -61,7 +62,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
         event_want: ['cheers', 'nice_find'],
         location_want: ['cheers', 'nice_find', 'want_to_go'],
         badge_earned: ['cheers', 'nice_find', 'trophy'],
-        quest_complete: ['cheers', 'nice_find', 'trophy'],
         quest_sweep: ['cheers', 'nice_find', 'trophy'],
         user_post: ['cheers', 'nice_find'],
         business_post: ['cheers', 'want_to_go']
@@ -303,8 +303,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
         focusNotificationTarget(item);
 
         if (requestedFocusSection === 'reactions') {
-            const toggle = item.querySelector('[data-reaction-disclosure-toggle]');
-            if (toggle && toggle.getAttribute('aria-expanded') !== 'true') {
+            const captionMore = item.querySelector('[data-feed-caption-more]');
+            const toggle = captionMore || item.querySelector('[data-reaction-disclosure-toggle]');
+            if (toggle && (captionMore || toggle.getAttribute('aria-expanded') !== 'true')) {
                 window.setTimeout(() => {
                     toggle.click();
                     window.setTimeout(() => {
@@ -398,8 +399,20 @@ window.CraftCrawlInitFriends = function (scope = document) {
         return `<a class="user-avatar-link feed-avatar-link" href="${profileUrl}" aria-label="${escapeHtml(label)}">${avatar}</a>`;
     }
 
+    function isNewFeedItem(item) {
+        if (!feedSeenAt || !item.created_at) return false;
+        return new Date(item.created_at) > new Date(feedSeenAt);
+    }
+
     function feedItemAttrs(item) {
         return `data-feed-item-key="${escapeHtml(item.item_key || '')}" data-feed-item-type="${escapeHtml(item.type || '')}" data-feed-is-self="${item.is_self ? 'true' : 'false'}"`;
+    }
+
+    function feedItemClasses(item, extra) {
+        let cls = 'friends-feed-item';
+        if (extra) cls += ' ' + extra;
+        if (isNewFeedItem(item)) cls += ' is-new';
+        return cls;
     }
 
     function renderBusinessLink(item) {
@@ -964,6 +977,67 @@ window.CraftCrawlInitFriends = function (scope = document) {
             + '</div>';
     }
 
+    function buildRewardSummary(item) {
+        const parts = [];
+        if (item.linked_badges && item.linked_badges.length) {
+            item.linked_badges.forEach(function (b) { parts.push('Earned ' + b.name); });
+        }
+        if (item.linked_quests && item.linked_quests.length) {
+            item.linked_quests.forEach(function (q) { parts.push('Completed ' + q.name); });
+        }
+        const totalXp = ((item.linked_badges || []).reduce(function (s, b) { return s + b.xp; }, 0))
+            + ((item.linked_quests || []).reduce(function (s, q) { return s + q.xp; }, 0));
+        if (totalXp > 0) {
+            parts.push('+' + totalXp + ' XP');
+        }
+        return parts.join(' · ');
+    }
+
+    function renderCaptionArea(item) {
+        const actorName = item.is_self ? 'You' : item.friend_name;
+        const caption = item.caption || '';
+        const rewardSummary = buildRewardSummary(item);
+        const hasCaption = caption.length > 0;
+        const hasRewards = rewardSummary.length > 0;
+
+        if (!hasCaption && !hasRewards) {
+            return '';
+        }
+
+        const unreadReactions = Number(item.unread_reaction_count || 0);
+        const unreadComments = Number(item.unread_comment_count || 0);
+        const totalUnread = unreadReactions + unreadComments;
+        const unreadBadge = totalUnread > 0
+            ? '<span class="feed-caption-unread-badge">' + (totalUnread > 9 ? '9+' : totalUnread) + '</span>'
+            : '';
+
+        const captionParts = [];
+        if (hasCaption) {
+            captionParts.push(escapeHtml(caption));
+        }
+        if (hasRewards) {
+            captionParts.push('<span class="feed-reward-line">' + escapeHtml(rewardSummary) + '</span>');
+        }
+        const fullText = captionParts.join(' ');
+        const inlinePreview = '<strong>' + escapeHtml(actorName) + '</strong> ' + fullText;
+
+        const reactionPanel = renderReactionPanel(item);
+
+        return `
+            <div class="feed-caption-area" data-feed-caption>
+                <div class="feed-caption-collapsed" data-feed-caption-collapsed>
+                    <span class="feed-caption-text">${inlinePreview}</span>
+                    <button type="button" class="feed-caption-more" data-feed-caption-more>more${unreadBadge}</button>
+                </div>
+                <div class="feed-caption-expanded" data-feed-caption-expanded hidden>
+                    <p><strong>${escapeHtml(actorName)}</strong> ${hasCaption ? escapeHtml(caption) : ''}</p>
+                    ${hasRewards ? '<p class="feed-reward-line">' + escapeHtml(rewardSummary) + '</p>' : ''}
+                    ${reactionPanel}
+                </div>
+            </div>
+        `;
+    }
+
     function renderFeedItem(item) {
         const date = formatDate(item.created_at);
         const actions = renderFeedActions(item);
@@ -971,7 +1045,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
         if (item.type === 'level_up') {
             return `
-                <article class="friends-feed-item" ${feedItemAttrs(item)}>
+                <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
@@ -985,7 +1059,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
         if (item.type === 'badge_earned') {
             return `
-                <article class="friends-feed-item" ${feedItemAttrs(item)}>
+                <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
@@ -999,7 +1073,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
         if (item.type === 'quest_complete') {
             return `
-                <article class="friends-feed-item" ${feedItemAttrs(item)}>
+                <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
@@ -1014,7 +1088,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         if (item.type === 'quest_sweep') {
             const periodLabel = item.period_type === 'weekly' ? 'weekly' : 'daily';
             return `
-                <article class="friends-feed-item" ${feedItemAttrs(item)}>
+                <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
@@ -1028,7 +1102,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
         if (item.type === 'event_want') {
             return `
-                <article class="friends-feed-item" ${feedItemAttrs(item)}>
+                <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
@@ -1043,7 +1117,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
         if (item.type === 'location_want') {
             return `
-                <article class="friends-feed-item" ${feedItemAttrs(item)}>
+                <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
@@ -1057,7 +1131,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
         if (item.type === 'user_post') {
             return `
-                <article class="friends-feed-item" ${feedItemAttrs(item)}>
+                <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
@@ -1085,7 +1159,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             }
 
             return `
-                <article class="friends-feed-item" ${feedItemAttrs(item)}>
+                <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
                     <div class="friends-feed-icon">${isPoll ? '📊' : '📢'}</div>
                     <div class="feed-item-content">
                         <p class="feed-item-meta">
@@ -1106,22 +1180,25 @@ window.CraftCrawlInitFriends = function (scope = document) {
             const photoHtml = item.photo_url
                 ? `<div class="feed-checkin-photo"><img src="${escapeHtml(item.photo_url)}" alt="Check-in photo at ${escapeHtml(item.business_name)}"></div>`
                 : '';
+            const captionArea = renderCaptionArea(item);
+            const checkinActions = renderCheckinActions(item);
             return `
-                <article class="friends-feed-item feed-checkin-item" ${feedItemAttrs(item)}>
+                <article class="${feedItemClasses(item, 'feed-checkin-item')}" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
                         <strong class="feed-item-title">Checked in at ${renderBusinessLink(item)}${visitLabel}</strong>
                         <p class="feed-item-detail">${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
                         ${photoHtml}
-                        ${actions}
+                        ${checkinActions}
+                        ${captionArea}
                     </div>
                 </article>
             `;
         }
 
         return `
-            <article class="friends-feed-item" ${feedItemAttrs(item)}>
+            <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
                 ${renderAvatar(item.actor, item.friend_name)}
                 <div class="feed-item-content">
                     ${renderFeedMeta(actorName, date)}
@@ -1136,6 +1213,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
     function renderFeed(data) {
         const friends = data.friends || [];
         const items = data.feed || [];
+        if (data.feed_seen_at) {
+            feedSeenAt = data.feed_seen_at;
+        }
         currentFriendsCache = friends;
 
         if (count) {
@@ -1580,7 +1660,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         feed.addEventListener('pointercancel', finishReactionSwipe);
 
         feed.addEventListener('click', function (event) {
-            const interactiveTarget = event.target.closest('a, button, input, textarea, select, label, [role="button"], [data-reaction-disclosure], [data-feed-poll-section]');
+            const interactiveTarget = event.target.closest('a, button, input, textarea, select, label, [role="button"], [data-reaction-disclosure], [data-feed-poll-section], [data-feed-caption]');
             const feedItem = event.target.closest('.friends-feed-item[data-feed-item-key]');
             if (feedItem && !interactiveTarget && feed.contains(feedItem)) {
                 const itemKey = feedItem.dataset.feedItemKey || '';
@@ -1613,6 +1693,29 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
                 if (!isExpanded && (Number(disclosure.dataset.unreadCount || 0) > 0 || disclosure.querySelector('.feed-action-unread-badge'))) {
                     markReactionNotificationsSeen(disclosure);
+                }
+                return;
+            }
+
+            const moreButton = event.target.closest('[data-feed-caption-more]');
+            if (moreButton) {
+                const captionArea = moreButton.closest('[data-feed-caption]');
+                const collapsed = captionArea?.querySelector('[data-feed-caption-collapsed]');
+                const expanded = captionArea?.querySelector('[data-feed-caption-expanded]');
+                if (collapsed && expanded) {
+                    collapsed.hidden = true;
+                    expanded.hidden = false;
+                    const article = moreButton.closest('article');
+                    const panel = expanded.querySelector('[data-reaction-disclosure-panel]');
+                    if (panel) {
+                        setReactionPage(panel, 0, false);
+                        highlightUnreadReactionEntries(panel);
+                        const itemKey = panel.dataset.itemKey || '';
+                        if (itemKey) {
+                            const fakeDisclosure = { dataset: { itemKey: itemKey, unreadCount: '0' }, querySelector: function () { return null; } };
+                            markReactionNotificationsSeen(fakeDisclosure);
+                        }
+                    }
                 }
                 return;
             }
@@ -1799,6 +1902,42 @@ window.CraftCrawlInitFriends = function (scope = document) {
     if (feed) {
         window.addEventListener('scroll', checkFeedNearBottom, { passive: true });
         window.addEventListener('resize', checkFeedNearBottom);
+    }
+
+    function renderCheckinActions(item) {
+        if (!item.item_key) {
+            return '';
+        }
+
+        if (item.allow_interactions === false && !item.is_self) {
+            return '';
+        }
+
+        const reactions = item.reactions || [];
+        const reactionMap = {};
+        const availableReactions = availableReactionTypes(item);
+
+        reactions.forEach((reaction) => {
+            reactionMap[reaction.type] = reaction;
+        });
+
+        return `
+            <div class="feed-action-row feed-action-row-flat">
+                <div class="feed-primary-actions">
+                    ${renderCommentsLink(item)}
+                </div>
+                <div class="feed-reactions">
+                    ${availableReactions.map((type) => {
+                        const reaction = reactionMap[type] || { count: 0, reacted: false };
+                        return `
+                            <button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(item.item_key)}" data-reaction-type="${type}" aria-label="${escapeHtml(reactionTextLabels[type] || type)}">
+                                ${reactionLabels[type]}${reaction.count > 0 ? `<span class="feed-reaction-count">${reaction.count}</span>` : ''}
+                            </button>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
     }
 
     function renderFeedActions(item) {

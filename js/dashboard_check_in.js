@@ -238,6 +238,12 @@
             formData.append('latitude', freshPosition.coords.latitude);
             formData.append('longitude', freshPosition.coords.longitude);
 
+            var captionInput = modal ? modal.querySelector('[data-checkin-caption]') : null;
+            var captionValue = captionInput ? captionInput.value.trim() : '';
+            if (captionValue) {
+                formData.append('caption', captionValue);
+            }
+
             try {
                 var photo = photoInput.files[0];
                 if (window.CraftCrawlResizePhoto) {
