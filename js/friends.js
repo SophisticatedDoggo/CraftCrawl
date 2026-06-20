@@ -2521,13 +2521,14 @@ window.CraftCrawlInitFriends = function (scope = document) {
             return ta - tb;
         });
 
-        if (entries.length === 0) {
-            body.innerHTML = '<p class="feed-empty-comments">No activity yet.</p>';
-            return;
-        }
-
         const container = document.createElement('div');
         container.className = 'feed-comment-list';
+
+        if (entries.length === 0) {
+            container.innerHTML = '<p class="feed-empty-comments">No activity yet.</p>';
+            body.replaceChildren(container);
+            return;
+        }
 
         entries.forEach((entry) => {
             if (entry.type === 'comment') {
@@ -2650,7 +2651,12 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 if (!comment) return;
 
                 const sheetBody = commentsSheetState.body;
-                const list = sheetBody?.querySelector('.feed-comment-list');
+                let list = sheetBody?.querySelector('.feed-comment-list');
+                if (!list && sheetBody) {
+                    list = document.createElement('div');
+                    list.className = 'feed-comment-list';
+                    sheetBody.replaceChildren(list);
+                }
                 if (!list) return;
 
                 const emptyMsg = list.querySelector('.feed-empty-comments');
