@@ -1021,8 +1021,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
         const fullText = captionParts.join(' ');
         const inlinePreview = '<strong>' + escapeHtml(actorName) + '</strong> ' + fullText;
 
-        const reactionPanel = renderReactionPanel(item);
-
         return `
             <div class="feed-caption-area" data-feed-caption>
                 <div class="feed-caption-collapsed" data-feed-caption-collapsed>
@@ -1032,7 +1030,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 <div class="feed-caption-expanded" data-feed-caption-expanded hidden>
                     <p><strong>${escapeHtml(actorName)}</strong> ${hasCaption ? escapeHtml(caption) : ''}</p>
                     ${hasRewards ? '<p class="feed-reward-line">' + escapeHtml(rewardSummary) + '</p>' : ''}
-                    ${reactionPanel}
                 </div>
             </div>
         `;
@@ -1964,7 +1961,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 <div class="feed-primary-actions">
                     ${renderCommentsLink(item)}
                 </div>
-                ${renderReactionDisclosure(item)}
                 <div class="feed-reactions">
                     ${availableReactions.map((type) => {
                         const reaction = reactionMap[type] || { count: 0, reacted: false };
@@ -1976,7 +1972,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     }).join('')}
                 </div>
             </div>
-            ${renderReactionPanel(item)}
         `;
     }
 
@@ -1986,18 +1981,20 @@ window.CraftCrawlInitFriends = function (scope = document) {
         }
 
         const commentCount = Number(item.comment_count || 0);
-        const unreadCount = Number(item.unread_comment_count || 0);
+        const unreadComments = Number(item.unread_comment_count || 0);
+        const unreadReactions = Number(item.unread_reaction_count || 0);
+        const totalUnread = unreadComments + unreadReactions;
         const label = commentCount > 0 ? String(commentCount) : '';
-        const unreadLabel = unreadCount > 9 ? '9+' : String(unreadCount);
+        const unreadLabel = totalUnread > 9 ? '9+' : String(totalUnread);
 
         return `
-            <a class="feed-comments-link" href="feed_post.php?item=${encodeURIComponent(item.item_key)}" aria-label="Show comments">
-                <svg aria-hidden="true" viewBox="0 0 24 24">
-                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7A8.38 8.38 0 0 1 4 11.5a8.5 8.5 0 0 1 17 0Z"></path>
+            <button type="button" class="feed-comments-link" data-comments-sheet-trigger data-item-key="${escapeHtml(item.item_key)}" aria-label="Show comments">
+                <svg aria-hidden="true" viewBox="0 0 32 32">
+                    <path d="M16,0 C7.164,0 0,6.269 0,14 C0,18.419 2.345,22.354 6,24.919 L6,32 L13.009,27.747 C13.979,27.907 14.977,28 16,28 C24.836,28 32,21.732 32,14 C32,6.269 24.836,0 16,0 Z M8,12 C6.896,12 6,12.896 6,14 C6,15.104 6.896,16 8,16 C9.104,16 10,15.104 10,14 C10,12.896 9.104,12 8,12 Z M16,12 C14.896,12 14,12.896 14,14 C14,15.104 14.896,16 16,16 C17.104,16 18,15.104 18,14 C18,12.896 17.104,12 16,12 Z M24,12 C22.896,12 22,12.896 22,14 C22,15.104 22.896,16 24,16 C25.104,16 26,15.104 26,14 C26,12.896 25.104,12 24,12 Z"></path>
                 </svg>
                 ${label ? `<span>${label}</span>` : ''}
-                ${unreadCount > 0 ? `<span class="feed-action-unread-badge">${unreadLabel}</span>` : ''}
-            </a>
+                ${totalUnread > 0 ? `<span class="feed-action-unread-badge">${unreadLabel}</span>` : ''}
+            </button>
         `;
     }
 
@@ -2215,6 +2212,505 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 });
         });
     }
+
+    // --- Comments Bottom Sheet ---
+
+    const commentsSheetState = {
+        overlay: null,
+        panel: null,
+        body: null,
+        form: null,
+        replyContext: null,
+        itemKey: '',
+        closeTimer: 0
+    };
+
+    function ensureCommentsSheet() {
+        if (commentsSheetState.overlay?.isConnected) {
+            return commentsSheetState.overlay;
+        }
+
+        const existing = document.querySelector('[data-comments-sheet]');
+        if (existing) {
+            existing.remove();
+        }
+
+        const overlay = document.createElement('div');
+        overlay.className = 'feed-comments-sheet-overlay';
+        overlay.setAttribute('data-comments-sheet', '');
+        overlay.hidden = true;
+        overlay.innerHTML = `
+            <div class="feed-comments-sheet-scrim" data-comments-sheet-close></div>
+            <div class="feed-comments-sheet" data-comments-sheet-panel>
+                <div class="feed-comments-sheet-handle" data-comments-sheet-handle><span></span></div>
+                <div class="feed-comments-sheet-header"><strong>Comments</strong></div>
+                <div class="feed-comments-sheet-body" data-comments-sheet-body></div>
+                <div class="feed-comments-sheet-reply-context" data-comments-sheet-reply-context hidden>
+                    <span></span>
+                    <button type="button" data-comments-sheet-reply-cancel aria-label="Cancel reply">&times;</button>
+                </div>
+                <form class="feed-comments-sheet-compose" data-comments-sheet-form>
+                    <input type="hidden" name="item_key" value="">
+                    <input type="hidden" name="parent_comment_id" value="" data-comments-sheet-parent-id>
+                    <input type="text" name="body" placeholder="Join the conversation..." maxlength="500" autocomplete="off" data-comments-sheet-input>
+                    <button type="submit" aria-label="Post comment">
+                        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M22 2L11 13"></path><path d="m22 2-7 20-4-9-9-4z"></path></svg>
+                    </button>
+                </form>
+                <p class="feed-comments-sheet-disabled-msg" data-comments-sheet-disabled hidden>Comments are turned off.</p>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        commentsSheetState.overlay = overlay;
+        commentsSheetState.panel = overlay.querySelector('[data-comments-sheet-panel]');
+        commentsSheetState.body = overlay.querySelector('[data-comments-sheet-body]');
+        commentsSheetState.form = overlay.querySelector('[data-comments-sheet-form]');
+        commentsSheetState.replyContext = overlay.querySelector('[data-comments-sheet-reply-context]');
+
+        overlay.querySelector('[data-comments-sheet-close]').addEventListener('click', () => closeCommentsSheet());
+
+        const handle = overlay.querySelector('[data-comments-sheet-handle]');
+        const sheetPanel = commentsSheetState.panel;
+        const sheetBody = commentsSheetState.body;
+        let dragState = { active: false, startY: 0, currentY: 0, pointerId: null };
+
+        function startDrag(y, pointerId) {
+            dragState = { active: true, startY: y, currentY: y, pointerId };
+            overlay.classList.add('is-dragging');
+        }
+
+        function moveDrag(y) {
+            if (!dragState.active) return;
+            dragState.currentY = y;
+            const deltaY = Math.max(0, y - dragState.startY);
+            sheetPanel.style.transform = `translateY(${deltaY}px)`;
+        }
+
+        function endDrag() {
+            if (!dragState.active) return;
+            const deltaY = dragState.currentY - dragState.startY;
+            dragState.active = false;
+            overlay.classList.remove('is-dragging');
+            if (deltaY > 120) {
+                closeCommentsSheet();
+            } else {
+                sheetPanel.style.transform = '';
+            }
+        }
+
+        handle.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
+            startDrag(e.clientY, e.pointerId);
+            handle.setPointerCapture(e.pointerId);
+        });
+        handle.addEventListener('pointermove', (e) => {
+            if (dragState.active && e.pointerId === dragState.pointerId) moveDrag(e.clientY);
+        });
+        handle.addEventListener('pointerup', (e) => {
+            if (e.pointerId === dragState.pointerId) endDrag();
+        });
+        handle.addEventListener('pointercancel', (e) => {
+            if (e.pointerId === dragState.pointerId) endDrag();
+        });
+
+        let bodyDrag = { tracking: false, startY: 0 };
+        sheetBody.addEventListener('touchstart', (e) => {
+            if (sheetBody.scrollTop <= 0 && e.touches.length === 1) {
+                bodyDrag = { tracking: true, startY: e.touches[0].clientY };
+            }
+        }, { passive: true });
+        sheetBody.addEventListener('touchmove', (e) => {
+            if (!bodyDrag.tracking) return;
+            const deltaY = e.touches[0].clientY - bodyDrag.startY;
+            if (deltaY > 10 && sheetBody.scrollTop <= 0) {
+                if (!dragState.active) {
+                    startDrag(bodyDrag.startY, null);
+                }
+                moveDrag(e.touches[0].clientY);
+                e.preventDefault();
+            } else if (deltaY < -5) {
+                bodyDrag.tracking = false;
+            }
+        }, { passive: false });
+        sheetBody.addEventListener('touchend', () => {
+            bodyDrag.tracking = false;
+            if (dragState.active) endDrag();
+        });
+
+        overlay.querySelector('[data-comments-sheet-reply-cancel]').addEventListener('click', clearSheetReply);
+
+        commentsSheetState.form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            submitSheetComment();
+        });
+
+        return overlay;
+    }
+
+    function openCommentsSheet(itemKey) {
+        if (!itemKey) return;
+
+        const overlay = ensureCommentsSheet();
+        const { panel, body, form } = commentsSheetState;
+
+        if (commentsSheetState.itemKey === itemKey && !overlay.hidden) {
+            const input = form.querySelector('[data-comments-sheet-input]');
+            input?.focus();
+            return;
+        }
+
+        if (!overlay.hidden && commentsSheetState.itemKey !== itemKey) {
+            panel.style.transform = '';
+            overlay.classList.remove('is-open', 'is-closing', 'is-dragging');
+        }
+
+        commentsSheetState.itemKey = itemKey;
+        window.clearTimeout(commentsSheetState.closeTimer);
+
+        form.querySelector('input[name="item_key"]').value = itemKey;
+        form.querySelector('[data-comments-sheet-parent-id]').value = '';
+        const input = form.querySelector('[data-comments-sheet-input]');
+        if (input) input.value = '';
+        clearSheetReply();
+
+        body.innerHTML = `
+            <div class="feed-comments-sheet-loading">
+                <div class="feed-comments-sheet-skeleton"><div class="feed-comments-sheet-skeleton-avatar"></div><div class="feed-comments-sheet-skeleton-lines"><div class="feed-comments-sheet-skeleton-line"></div><div class="feed-comments-sheet-skeleton-line"></div></div></div>
+                <div class="feed-comments-sheet-skeleton"><div class="feed-comments-sheet-skeleton-avatar"></div><div class="feed-comments-sheet-skeleton-lines"><div class="feed-comments-sheet-skeleton-line"></div><div class="feed-comments-sheet-skeleton-line"></div></div></div>
+                <div class="feed-comments-sheet-skeleton"><div class="feed-comments-sheet-skeleton-avatar"></div><div class="feed-comments-sheet-skeleton-lines"><div class="feed-comments-sheet-skeleton-line"></div><div class="feed-comments-sheet-skeleton-line"></div></div></div>
+            </div>
+        `;
+
+        overlay.hidden = false;
+        overlay.classList.remove('is-closing');
+        overlay.classList.add('is-open');
+        document.body.classList.add('feed-comments-sheet-open');
+
+        fetch(userEndpoint(`feed_comments.php?item_key=${encodeURIComponent(itemKey)}`), {
+            credentials: 'same-origin',
+            cache: 'no-store'
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                if (!data.ok || commentsSheetState.itemKey !== itemKey) return;
+
+                renderSheetActivity(data.comments || [], data.reactions || []);
+
+                const composeForm = commentsSheetState.form;
+                const disabledMsg = overlay.querySelector('[data-comments-sheet-disabled]');
+                if (data.allow_compose) {
+                    composeForm.hidden = false;
+                    if (disabledMsg) disabledMsg.hidden = true;
+                } else {
+                    composeForm.hidden = true;
+                    if (disabledMsg) disabledMsg.hidden = false;
+                }
+
+                clearUnreadBadge(itemKey);
+            })
+            .catch(() => {
+                body.innerHTML = '<p class="feed-empty-comments">Comments could not be loaded.</p>';
+            });
+    }
+
+    function closeCommentsSheet() {
+        const { overlay, panel } = commentsSheetState;
+        if (!overlay || overlay.hidden) return;
+
+        overlay.classList.remove('is-open', 'is-dragging');
+        overlay.classList.add('is-closing');
+        panel.style.transform = '';
+
+        commentsSheetState.closeTimer = window.setTimeout(() => {
+            overlay.hidden = true;
+            overlay.classList.remove('is-closing');
+            document.body.classList.remove('feed-comments-sheet-open');
+            commentsSheetState.itemKey = '';
+        }, 220);
+    }
+
+    function renderSheetActivity(comments, reactions) {
+        const body = commentsSheetState.body;
+        if (!body) return;
+
+        const entries = [];
+
+        comments.forEach((comment) => {
+            entries.push({ type: 'comment', data: comment, created_at: comment.created_at });
+        });
+
+        reactions.forEach((reaction) => {
+            entries.push({ type: 'reaction', data: reaction, created_at: reaction.created_at });
+        });
+
+        entries.sort((a, b) => {
+            const ta = new Date(a.created_at.replace(' ', 'T')).getTime() || 0;
+            const tb = new Date(b.created_at.replace(' ', 'T')).getTime() || 0;
+            return ta - tb;
+        });
+
+        if (entries.length === 0) {
+            body.innerHTML = '<p class="feed-empty-comments">No activity yet.</p>';
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'feed-comment-list';
+
+        entries.forEach((entry) => {
+            if (entry.type === 'comment') {
+                container.appendChild(renderSheetComment(entry.data));
+            } else {
+                container.appendChild(renderSheetReaction(entry.data));
+            }
+        });
+
+        body.replaceChildren(container);
+    }
+
+    function renderSheetComment(comment) {
+        const article = document.createElement('article');
+        article.className = 'feed-comment';
+        article.id = `comment-${comment.id}`;
+
+        const repliesArr = comment.replies || [];
+        const replyCount = repliesArr.length;
+        const repliesId = `sheet-replies-${comment.id}`;
+
+        article.innerHTML = `
+            ${comment.avatar_html || ''}
+            <div>
+                <strong>${escapeHtml(comment.author_name)}</strong>
+                <span>${escapeHtml(formatDate(comment.created_at))}</span>
+            </div>
+            <p>${escapeHtml(comment.body).replace(/\n/g, '<br>')}</p>
+            <button type="button" class="feed-reply-toggle" data-sheet-reply data-parent-comment-id="${comment.id}" data-reply-label="${escapeHtml(comment.author_name)}">Reply</button>
+            ${replyCount > 0 ? `
+                <button type="button" class="feed-replies-toggle" data-sheet-replies-toggle aria-expanded="false" aria-controls="${escapeHtml(repliesId)}">
+                    <span>${replyCount} ${replyCount === 1 ? 'Reply' : 'Replies'}</span>
+                    <span class="feed-replies-toggle-arrow" aria-hidden="true">&#8964;</span>
+                </button>
+                <div class="feed-reply-list" id="${escapeHtml(repliesId)}" hidden>
+                    ${repliesArr.map((reply) => `
+                        <article class="feed-comment feed-reply" id="comment-${reply.id}">
+                            ${reply.avatar_html || ''}
+                            <div>
+                                <strong>${escapeHtml(reply.author_name)}</strong>
+                                <span>${escapeHtml(formatDate(reply.created_at))}</span>
+                            </div>
+                            <p>${escapeHtml(reply.body).replace(/\n/g, '<br>')}</p>
+                            <button type="button" class="feed-reply-toggle" data-sheet-reply data-parent-comment-id="${comment.id}" data-reply-label="${escapeHtml(reply.author_name)}">Reply</button>
+                        </article>
+                    `).join('')}
+                </div>
+            ` : ''}
+        `;
+
+        return article;
+    }
+
+    function renderSheetReaction(reaction) {
+        const div = document.createElement('div');
+        div.className = 'feed-comments-sheet-activity-item';
+        const reactionEmoji = reactionLabels[reaction.reaction_type] || '';
+        div.innerHTML = `
+            ${reaction.avatar_html || ''}
+            <span><strong>${escapeHtml(reaction.user_name)}</strong> reacted ${reactionEmoji}</span>
+            <time>${escapeHtml(formatDate(reaction.created_at))}</time>
+        `;
+        return div;
+    }
+
+    function setSheetReply(parentId, label) {
+        const { form, replyContext } = commentsSheetState;
+        if (!form || !replyContext) return;
+
+        form.querySelector('[data-comments-sheet-parent-id]').value = parentId;
+        replyContext.querySelector('span').textContent = `Replying to ${label}`;
+        replyContext.hidden = false;
+        const input = form.querySelector('[data-comments-sheet-input]');
+        if (input) {
+            input.placeholder = `Reply to ${label}...`;
+            input.focus();
+        }
+    }
+
+    function clearSheetReply() {
+        const { form, replyContext } = commentsSheetState;
+        if (!form || !replyContext) return;
+
+        form.querySelector('[data-comments-sheet-parent-id]').value = '';
+        replyContext.hidden = true;
+        const input = form.querySelector('[data-comments-sheet-input]');
+        if (input) input.placeholder = 'Join the conversation...';
+    }
+
+    function submitSheetComment() {
+        const { form, itemKey } = commentsSheetState;
+        if (!form || !itemKey) return;
+
+        const input = form.querySelector('[data-comments-sheet-input]');
+        const body = (input?.value || '').trim();
+        if (!body) {
+            input?.focus();
+            return;
+        }
+
+        const parentId = form.querySelector('[data-comments-sheet-parent-id]')?.value || '';
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
+        postForm(userEndpoint('feed_comments.php'), {
+            csrf_token: csrfToken,
+            item_key: itemKey,
+            body,
+            parent_comment_id: parentId
+        })
+            .then((data) => {
+                if (!data.ok) {
+                    return;
+                }
+
+                if (input) input.value = '';
+                clearSheetReply();
+
+                const comment = data.comment;
+                if (!comment) return;
+
+                const sheetBody = commentsSheetState.body;
+                const list = sheetBody?.querySelector('.feed-comment-list');
+                if (!list) return;
+
+                const emptyMsg = list.querySelector('.feed-empty-comments');
+                if (emptyMsg) emptyMsg.remove();
+
+                if (comment.parent_comment_id) {
+                    const parentArticle = list.querySelector(`#comment-${CSS.escape(comment.parent_comment_id)}`);
+                    if (parentArticle) {
+                        let replyList = parentArticle.querySelector('.feed-reply-list');
+                        if (!replyList) {
+                            replyList = document.createElement('div');
+                            replyList.className = 'feed-reply-list';
+                            replyList.id = `sheet-replies-${comment.parent_comment_id}`;
+                            parentArticle.appendChild(replyList);
+
+                            const toggleBtn = document.createElement('button');
+                            toggleBtn.type = 'button';
+                            toggleBtn.className = 'feed-replies-toggle';
+                            toggleBtn.setAttribute('data-sheet-replies-toggle', '');
+                            toggleBtn.setAttribute('aria-expanded', 'true');
+                            toggleBtn.setAttribute('aria-controls', replyList.id);
+                            toggleBtn.innerHTML = '<span>1 Reply</span><span class="feed-replies-toggle-arrow" aria-hidden="true">&#8964;</span>';
+                            parentArticle.insertBefore(toggleBtn, replyList);
+                        } else {
+                            replyList.hidden = false;
+                            const toggle = parentArticle.querySelector('[data-sheet-replies-toggle]');
+                            if (toggle) {
+                                toggle.setAttribute('aria-expanded', 'true');
+                                const count = replyList.children.length + 1;
+                                toggle.querySelector('span').textContent = `${count} ${count === 1 ? 'Reply' : 'Replies'}`;
+                            }
+                        }
+
+                        const replyArticle = document.createElement('article');
+                        replyArticle.className = 'feed-comment feed-reply';
+                        replyArticle.id = `comment-${comment.id}`;
+                        replyArticle.innerHTML = `
+                            ${comment.avatar_html || ''}
+                            <div>
+                                <strong>${escapeHtml(comment.author_name)}</strong>
+                                <span>${escapeHtml(formatDate(comment.created_at))}</span>
+                            </div>
+                            <p>${escapeHtml(comment.body).replace(/\n/g, '<br>')}</p>
+                            <button type="button" class="feed-reply-toggle" data-sheet-reply data-parent-comment-id="${comment.parent_comment_id}" data-reply-label="${escapeHtml(comment.author_name)}">Reply</button>
+                        `;
+                        replyList.appendChild(replyArticle);
+                        replyArticle.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                } else {
+                    const newComment = renderSheetComment(comment);
+                    list.appendChild(newComment);
+                    newComment.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+
+                updateFeedCardCommentCount(itemKey, 1);
+            })
+            .catch(() => {})
+            .finally(() => {
+                if (submitBtn) submitBtn.disabled = false;
+            });
+    }
+
+    function updateFeedCardCommentCount(itemKey, delta) {
+        const feedCard = feed?.querySelector(`[data-feed-item-key="${CSS.escape(itemKey)}"]`);
+        if (!feedCard) return;
+
+        const countSpan = feedCard.querySelector('.feed-comments-link span:not(.feed-action-unread-badge)');
+        if (countSpan) {
+            const current = Number(countSpan.textContent || 0);
+            countSpan.textContent = String(current + delta);
+        } else {
+            const link = feedCard.querySelector('.feed-comments-link');
+            if (link) {
+                const span = document.createElement('span');
+                span.textContent = String(delta);
+                link.querySelector('svg')?.after(span);
+            }
+        }
+    }
+
+    function clearUnreadBadge(itemKey) {
+        const feedCard = feed?.querySelector(`[data-feed-item-key="${CSS.escape(itemKey)}"]`);
+        if (!feedCard) return;
+
+        feedCard.querySelectorAll('.feed-comments-link .feed-action-unread-badge').forEach((badge) => badge.remove());
+
+        if (csrfToken) {
+            postForm(userEndpoint('feed_notification_seen.php'), {
+                csrf_token: csrfToken,
+                item_key: itemKey,
+                notification_type: 'comment'
+            }).catch(() => {});
+            postForm(userEndpoint('feed_notification_seen.php'), {
+                csrf_token: csrfToken,
+                item_key: itemKey,
+                notification_type: 'reaction'
+            }).catch(() => {});
+        }
+    }
+
+    document.addEventListener('click', (event) => {
+        const trigger = event.target.closest('[data-comments-sheet-trigger]');
+        if (trigger) {
+            event.preventDefault();
+            event.stopPropagation();
+            const itemKey = trigger.dataset.itemKey;
+            if (itemKey) openCommentsSheet(itemKey);
+            return;
+        }
+
+        const replyBtn = event.target.closest('[data-sheet-reply]');
+        if (replyBtn) {
+            const parentId = replyBtn.dataset.parentCommentId || '';
+            const label = replyBtn.dataset.replyLabel || '';
+            if (parentId) setSheetReply(parentId, label);
+            return;
+        }
+
+        const repliesToggle = event.target.closest('[data-sheet-replies-toggle]');
+        if (repliesToggle) {
+            const panelId = repliesToggle.getAttribute('aria-controls') || '';
+            const replyPanel = panelId ? document.getElementById(panelId) : null;
+            if (replyPanel) {
+                const isExpanded = repliesToggle.getAttribute('aria-expanded') === 'true';
+                repliesToggle.setAttribute('aria-expanded', String(!isExpanded));
+                replyPanel.hidden = isExpanded;
+            }
+            return;
+        }
+    });
 
     function isFeedTabActive() {
         return Boolean(panel && !panel.closest('[data-user-tab-panel]')?.hidden);

@@ -4158,6 +4158,12 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo) {
     font-size: 13px;
     font-weight: 600;
     text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.feed-comments-link:active {
+    opacity: 0.6;
 }
 
 .feed-action-row-flat {
@@ -4169,11 +4175,8 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo) {
 .feed-comments-link svg {
     width: 18px;
     height: 18px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    fill: currentColor;
+    stroke: none;
 }
 
 .feed-compose-fab {
@@ -5756,6 +5759,293 @@ a.mobile-context-back.feed-thread-back-link:focus {
 
 .feed-reply {
     background: var(--color-surface);
+}
+
+/* --- Comments Bottom Sheet --- */
+
+.feed-comments-sheet-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1210;
+    display: grid;
+    align-items: end;
+}
+
+.feed-comments-sheet-overlay[hidden] {
+    display: none;
+}
+
+.feed-comments-sheet-scrim {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--color-text) 32%, transparent);
+    transition: opacity 200ms ease;
+}
+
+.feed-comments-sheet-overlay.is-closing .feed-comments-sheet-scrim {
+    opacity: 0;
+}
+
+.feed-comments-sheet {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    width: min(100%, 760px);
+    max-height: 70vh;
+    min-height: 40vh;
+    margin: 0 auto;
+    border-radius: 16px 16px 0 0;
+    background: var(--color-bg);
+    box-shadow: 0 -16px 48px color-mix(in srgb, var(--color-text) 18%, transparent);
+    overflow: hidden;
+    will-change: transform;
+}
+
+.feed-comments-sheet-overlay.is-open .feed-comments-sheet {
+    animation: commentsSheetSlideUp 300ms cubic-bezier(.2, .82, .2, 1) both;
+}
+
+.feed-comments-sheet-overlay.is-closing .feed-comments-sheet {
+    animation: commentsSheetSlideDown 200ms ease-in both;
+}
+
+.feed-comments-sheet-overlay.is-dragging .feed-comments-sheet {
+    animation: none;
+    transition: none;
+}
+
+@keyframes commentsSheetSlideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+}
+
+@keyframes commentsSheetSlideDown {
+    from { transform: translateY(0); }
+    to   { transform: translateY(100%); }
+}
+
+.feed-comments-sheet-handle {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0 4px;
+    cursor: grab;
+    touch-action: none;
+}
+
+.feed-comments-sheet-handle span {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--color-border);
+}
+
+.feed-comments-sheet-header {
+    padding: 4px 16px 12px;
+    text-align: center;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.feed-comments-sheet-header strong {
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.feed-comments-sheet-body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 12px 16px;
+}
+
+.feed-comments-sheet-body .feed-comment-list {
+    display: grid;
+    gap: 10px;
+}
+
+.feed-comments-sheet-body .feed-empty-comments {
+    text-align: center;
+    color: var(--color-muted);
+    padding: 32px 0;
+}
+
+.feed-comments-sheet-activity-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 13px;
+    color: var(--color-muted);
+}
+
+.feed-comments-sheet-activity-item .user-avatar {
+    flex: 0 0 auto;
+}
+
+.feed-comments-sheet-activity-item strong {
+    color: var(--color-text);
+    font-weight: 700;
+}
+
+.feed-comments-sheet-activity-item time {
+    margin-left: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+.feed-comments-sheet-activity-item .feed-reaction-icon {
+    width: 16px;
+    height: 16px;
+    vertical-align: -2px;
+}
+
+.feed-comments-sheet-reply-context {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface-muted);
+    font-size: 13px;
+    color: var(--color-muted);
+}
+
+.feed-comments-sheet-reply-context span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.feed-comments-sheet-reply-context button {
+    flex: 0 0 auto;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    border: 0;
+    background: transparent;
+    color: var(--color-muted);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: none;
+}
+
+.feed-comments-sheet-compose {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px max(10px, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg);
+}
+
+.feed-comments-sheet-compose input[name="body"] {
+    flex: 1;
+    min-height: 36px;
+    padding: 8px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-surface-muted);
+    color: var(--color-text);
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.feed-comments-sheet-compose input[name="body"]::placeholder {
+    color: var(--color-muted);
+}
+
+.feed-comments-sheet-compose button[type="submit"] {
+    flex: 0 0 auto;
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    color: var(--color-primary);
+    background: transparent;
+    box-shadow: none;
+    cursor: pointer;
+}
+
+.feed-comments-sheet-compose button[type="submit"] svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.feed-comments-sheet-compose[hidden] {
+    display: none;
+}
+
+.feed-comments-sheet-disabled-msg {
+    padding: 10px 16px max(10px, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--color-border);
+    text-align: center;
+    font-size: 13px;
+    color: var(--color-muted);
+}
+
+.feed-comments-sheet-loading {
+    display: grid;
+    gap: 16px;
+    padding: 16px 0;
+}
+
+.feed-comments-sheet-skeleton {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.feed-comments-sheet-skeleton-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--color-border);
+    animation: commentsSheetPulse 1.2s ease-in-out infinite;
+}
+
+.feed-comments-sheet-skeleton-lines {
+    flex: 1;
+    display: grid;
+    gap: 6px;
+}
+
+.feed-comments-sheet-skeleton-line {
+    height: 12px;
+    border-radius: 6px;
+    background: var(--color-border);
+    animation: commentsSheetPulse 1.2s ease-in-out infinite;
+}
+
+.feed-comments-sheet-skeleton-line:nth-child(2) {
+    width: 60%;
+}
+
+@keyframes commentsSheetPulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.7; }
+}
+
+body.feed-comments-sheet-open {
+    overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .feed-comments-sheet-overlay.is-open .feed-comments-sheet,
+    .feed-comments-sheet-overlay.is-closing .feed-comments-sheet {
+        animation: none;
+    }
 }
 
 .follow-business-form {
