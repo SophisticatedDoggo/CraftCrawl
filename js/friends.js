@@ -2272,6 +2272,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         overlay.querySelector('[data-comments-sheet-close]').addEventListener('click', () => closeCommentsSheet());
 
         const handle = overlay.querySelector('[data-comments-sheet-handle]');
+        const sheetHeader = overlay.querySelector('.feed-comments-sheet-header');
         const sheetPanel = commentsSheetState.panel;
         const sheetBody = commentsSheetState.body;
         let dragState = { active: false, startY: 0, currentY: 0, pointerId: null };
@@ -2300,19 +2301,31 @@ window.CraftCrawlInitFriends = function (scope = document) {
             }
         }
 
-        handle.addEventListener('pointerdown', (e) => {
-            if (e.button !== 0 && e.pointerType === 'mouse') return;
-            startDrag(e.clientY, e.pointerId);
-            handle.setPointerCapture(e.pointerId);
-        });
-        handle.addEventListener('pointermove', (e) => {
-            if (dragState.active && e.pointerId === dragState.pointerId) moveDrag(e.clientY);
-        });
-        handle.addEventListener('pointerup', (e) => {
-            if (e.pointerId === dragState.pointerId) endDrag();
-        });
-        handle.addEventListener('pointercancel', (e) => {
-            if (e.pointerId === dragState.pointerId) endDrag();
+        [handle, sheetHeader].forEach((dragSurface) => {
+            dragSurface.addEventListener('touchstart', (e) => {
+                if (e.touches.length !== 1) return;
+                startDrag(e.touches[0].clientY, null);
+            }, { passive: true });
+            dragSurface.addEventListener('touchmove', (e) => {
+                if (!dragState.active) return;
+                moveDrag(e.touches[0].clientY);
+                e.preventDefault();
+            }, { passive: false });
+            dragSurface.addEventListener('touchend', () => {
+                if (dragState.active) endDrag();
+            });
+            dragSurface.addEventListener('touchcancel', () => {
+                if (dragState.active) endDrag();
+            });
+
+            dragSurface.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return;
+                startDrag(e.clientY, 'mouse');
+                const onMove = (ev) => moveDrag(ev.clientY);
+                const onUp = () => { endDrag(); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
         });
 
         let bodyDrag = { tracking: false, startY: 0 };

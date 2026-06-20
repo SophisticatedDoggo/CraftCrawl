@@ -5828,9 +5828,11 @@ a.mobile-context-back.feed-thread-back-link:focus {
 .feed-comments-sheet-handle {
     display: flex;
     justify-content: center;
-    padding: 10px 0 4px;
+    padding: 14px 0 10px;
     cursor: grab;
     touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .feed-comments-sheet-handle span {
@@ -5844,6 +5846,9 @@ a.mobile-context-back.feed-thread-back-link:focus {
     padding: 4px 16px 12px;
     text-align: center;
     border-bottom: 1px solid var(--color-border);
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .feed-comments-sheet-header strong {
@@ -5909,6 +5914,10 @@ a.mobile-context-back.feed-thread-back-link:focus {
     background: var(--color-surface-muted);
     font-size: 13px;
     color: var(--color-muted);
+}
+
+.feed-comments-sheet-reply-context[hidden] {
+    display: none;
 }
 
 .feed-comments-sheet-reply-context span {
