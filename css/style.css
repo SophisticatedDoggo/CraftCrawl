@@ -3847,15 +3847,29 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo) {
     margin-left: calc(-1 * (var(--feed-avatar-track) + var(--feed-column-gap)));
 }
 
+.feed-checkin-item .feed-checkin-photo,
+.feed-checkin-item .feed-checkin-below {
+    grid-column: 1 / -1;
+}
+
 .feed-checkin-photo {
     width: 100vw;
-    position: relative;
-    left: 50%;
+    margin-left: 50%;
     transform: translateX(-50%);
-    margin: 10px 0 6px 0;
+    margin-top: 10px;
+    margin-bottom: 6px;
     overflow: hidden;
     background: var(--color-surface-muted);
     line-height: 0;
+}
+
+.feed-checkin-below {
+    padding: 0 4px;
+}
+
+.feed-checkin-below .feed-action-row {
+    width: 100%;
+    margin-left: 0;
 }
 
 .feed-checkin-photo img {
@@ -4398,9 +4412,7 @@ body:not(.feed-page-body) .feed-compose-fab {
 }
 
 .feed-caption-area {
-    width: calc(100% + var(--feed-avatar-track) + var(--feed-column-gap));
-    margin-left: calc(-1 * (var(--feed-avatar-track) + var(--feed-column-gap)));
-    padding: 8px 16px 0;
+    padding: 8px 0 0;
     font-size: 14px;
     line-height: 1.45;
 }
@@ -4458,10 +4470,7 @@ body:not(.feed-page-body) .feed-compose-fab {
     font-size: 13px;
 }
 
-.friends-feed-item.is-new {
-    border-left: 3px solid var(--color-primary);
-    padding-left: 13px;
-}
+
 
 .checkin-caption-input {
     display: block;

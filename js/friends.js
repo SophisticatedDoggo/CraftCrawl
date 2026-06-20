@@ -1189,7 +1189,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
                         ${renderFeedMeta(actorName, date)}
                         <strong class="feed-item-title">Checked in at ${renderBusinessLink(item)}${visitLabel}</strong>
                         <p class="feed-item-detail">${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
-                        ${photoHtml}
+                    </div>
+                    ${photoHtml}
+                    <div class="feed-checkin-below">
                         ${checkinActions}
                         ${captionArea}
                     </div>
