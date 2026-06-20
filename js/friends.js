@@ -121,6 +121,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             }
 
             content.classList.remove('has-text-overflow');
+            button.hidden = true;
             const range = document.createRange();
             range.selectNodeContents(text);
             const lineTops = [];
@@ -131,7 +132,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 }
             });
             range.detach();
-            const hasTextOverflow = lineTops.length > 2;
+            const hasTextOverflow = lineTops.length > 1;
 
             const hasAccomplishments = content.dataset.hasAccomplishments === 'true';
             content.classList.toggle('has-text-overflow', hasTextOverflow);
@@ -1080,20 +1081,16 @@ window.CraftCrawlInitFriends = function (scope = document) {
             ? '<span class="feed-caption-unread-badge">' + (totalUnread > 9 ? '9+' : totalUnread) + '</span>'
             : '';
 
-        const captionParts = [];
-        if (hasCaption) {
-            captionParts.push(escapeHtml(caption));
-        }
-        if (hasRewards) {
-            captionParts.push('<span class="feed-reward-line">' + escapeHtml(rewardSummary) + '</span>');
-        }
-        const fullText = captionParts.join(' ');
-        const inlinePreview = fullText;
+        const captionText = hasCaption ? escapeHtml(caption) : '';
+        const accomplishmentText = hasRewards
+            ? `<span class="feed-reward-line">${escapeHtml(rewardSummary)}</span>`
+            : '';
 
         return `
             <div class="feed-caption-area" data-feed-caption>
                 <div class="feed-caption-content" data-feed-caption-content data-has-accomplishments="${hasRewards ? 'true' : 'false'}">
-                    <span class="feed-caption-text">${inlinePreview}</span>
+                    <span class="feed-caption-text">${captionText}</span>
+                    ${accomplishmentText}
                     <button type="button" class="feed-caption-more" data-feed-caption-more aria-expanded="false"${hasRewards ? '' : ' hidden'}><span data-feed-caption-toggle-label>more</span>${unreadBadge}</button>
                 </div>
             </div>

@@ -4507,7 +4507,7 @@ body:not(.feed-page-body) .feed-compose-fab {
 
 .feed-caption-content.has-text-overflow:not(.is-expanded) .feed-caption-text {
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -4544,6 +4544,10 @@ body:not(.feed-page-body) .feed-compose-fab {
     font-weight: 400;
     cursor: pointer;
     position: relative;
+}
+
+.feed-caption-more[hidden] {
+    display: none !important;
 }
 
 .feed-caption-unread-badge {
