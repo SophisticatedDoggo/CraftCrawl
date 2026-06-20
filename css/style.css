@@ -4151,21 +4151,53 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo) {
     box-shadow: none;
     font-size: 13px;
     font-weight: 600;
+    transition: color 180ms ease;
 }
 
 .feed-reactions button.is-active {
-    color: var(--color-primary-dark);
+    color: var(--color-primary);
     background: transparent;
     border: none;
+}
+
+.feed-reactions button.is-reacting {
+    animation: feed-reaction-activate 260ms ease-out;
+}
+
+@keyframes feed-reaction-activate {
+    0% {
+        color: var(--color-heading);
+        transform: scale(1);
+    }
+    55% {
+        color: var(--color-primary);
+        transform: scale(1.16);
+    }
+    100% {
+        color: var(--color-primary);
+        transform: scale(1);
+    }
 }
 
 .feed-reaction-icon {
     width: 22px;
     height: 22px;
+    transition: color 180ms ease;
 }
 
 .feed-reactions button.is-active .feed-reaction-icon {
     color: var(--color-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .feed-reactions button,
+    .feed-reaction-icon {
+        transition: none;
+    }
+
+    .feed-reactions button.is-reacting {
+        animation: none;
+    }
 }
 
 .feed-reaction-count {

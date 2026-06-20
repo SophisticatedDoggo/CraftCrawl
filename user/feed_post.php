@@ -231,9 +231,10 @@ function render_feed_thread_reactions($conn, $user_id, $item) {
     foreach (feed_thread_reaction_options($item) as $reaction_type) {
         $reaction = $reactions[$reaction_type] ?? ['count' => 0, 'reacted' => false];
         $active_class = $reaction['reacted'] ? ' is-active' : '';
-        $count_text = $reaction['count'] > 0 ? ' ' . (int) $reaction['count'] : '';
-        $html .= '<button type="button" class="' . $active_class . '" data-feed-reaction data-item-key="' . escape_output($item_key) . '" data-reaction-type="' . escape_output($reaction_type) . '" aria-label="' . escape_output($aria_labels[$reaction_type] ?? $reaction_type) . '">';
-        $html .= escape_output($labels[$reaction_type] ?? $reaction_type) . $count_text;
+        $reaction_count = (int) $reaction['count'];
+        $count_hidden = $reaction_count > 0 ? '' : ' hidden';
+        $html .= '<button type="button" class="' . $active_class . '" data-feed-reaction data-item-key="' . escape_output($item_key) . '" data-reaction-type="' . escape_output($reaction_type) . '" data-reaction-count="' . $reaction_count . '" aria-label="' . escape_output($aria_labels[$reaction_type] ?? $reaction_type) . '" aria-pressed="' . ($reaction['reacted'] ? 'true' : 'false') . '">';
+        $html .= escape_output($labels[$reaction_type] ?? $reaction_type) . '<span class="feed-reaction-count"' . $count_hidden . '>' . ($reaction_count > 0 ? $reaction_count : '') . '</span>';
         $html .= '</button>';
     }
     $html .= '</div></div>';

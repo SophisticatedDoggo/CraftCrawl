@@ -95,6 +95,23 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let feedThreadPendingReturnItemKey = '';
     let feedThreadPendingReturnUntil = 0;
 
+    function setReactionButtonState(button, reacted, count) {
+        const normalizedCount = Math.max(0, Number(count) || 0);
+        let countElement = button.querySelector('.feed-reaction-count');
+
+        if (!countElement) {
+            countElement = document.createElement('span');
+            countElement.className = 'feed-reaction-count';
+            button.appendChild(countElement);
+        }
+
+        button.classList.toggle('is-active', reacted);
+        button.dataset.reactionCount = String(normalizedCount);
+        button.setAttribute('aria-pressed', reacted ? 'true' : 'false');
+        countElement.textContent = normalizedCount > 0 ? String(normalizedCount) : '';
+        countElement.hidden = normalizedCount === 0;
+    }
+
     function installFeedReactionHandler() {
         if (document.documentElement.dataset.feedReactionReady === 'true') {
             return;
@@ -105,15 +122,24 @@ window.CraftCrawlInitFriends = function (scope = document) {
         // Event delegation for reactions — works for feed lists, feed threads, and business post surfaces.
         document.addEventListener('click', (event) => {
             const button = event.target.closest('[data-feed-reaction]');
-            if (!button || button.disabled) {
+            if (!button || button.disabled || button.dataset.reactionPending === 'true') {
                 return;
             }
 
             const tokenSource = button.closest('[data-csrf-token]');
             const requestCsrfToken = tokenSource?.dataset.csrfToken || csrfToken;
+            const wasActive = button.classList.contains('is-active');
+            const previousCount = Number(button.dataset.reactionCount || button.querySelector('.feed-reaction-count')?.textContent || 0);
+            const optimisticCount = Math.max(0, previousCount + (wasActive ? -1 : 1));
+            const rollback = () => setReactionButtonState(button, wasActive, previousCount);
 
-            button.disabled = true;
-            button.classList.add('is-loading');
+            button.dataset.reactionPending = 'true';
+            button.setAttribute('aria-busy', 'true');
+            setReactionButtonState(button, !wasActive, optimisticCount);
+            if (!wasActive) {
+                button.classList.add('is-reacting');
+                window.setTimeout(() => button.classList.remove('is-reacting'), 280);
+            }
 
             postForm(userEndpoint('feed_reaction_toggle.php'), {
                 csrf_token: requestCsrfToken,
@@ -122,6 +148,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             })
                 .then((data) => {
                     if (!data.ok) {
+                        rollback();
                         showStatus(data.message || 'Reaction could not be saved.', true);
                         return;
                     }
@@ -141,10 +168,14 @@ window.CraftCrawlInitFriends = function (scope = document) {
                         });
                         const reactionMap = {};
                         data.reactions.forEach((r) => { reactionMap[r.type] = r; });
-                        reactionsDiv.innerHTML = availableReactions.map((type) => {
+                        availableReactions.forEach((type) => {
                             const reaction = reactionMap[type] || { count: 0, reacted: false };
-                            return `<button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(itemKey)}" data-reaction-type="${type}" aria-label="${escapeHtml(reactionTextLabels[type] || type)}">${reactionLabels[type]}${reaction.count > 0 ? ` ${reaction.count}` : ''}</button>`;
-                        }).join('');
+                            const reactionButton = Array.from(reactionsDiv.querySelectorAll('[data-feed-reaction]'))
+                                .find((candidate) => candidate.dataset.reactionType === type);
+                            if (reactionButton) {
+                                setReactionButtonState(reactionButton, Boolean(reaction.reacted), reaction.count);
+                            }
+                        });
                     }
                     if (article && data.reaction_entries) {
                         const disclosure = article.querySelector('[data-reaction-disclosure]');
@@ -164,10 +195,13 @@ window.CraftCrawlInitFriends = function (scope = document) {
                         }
                     }
                 })
-                .catch((error) => showStatus(error.message || 'Reaction could not be saved.', true))
+                .catch((error) => {
+                    rollback();
+                    showStatus(error.message || 'Reaction could not be saved.', true);
+                })
                 .finally(() => {
-                    button.disabled = false;
-                    button.classList.remove('is-loading');
+                    delete button.dataset.reactionPending;
+                    button.removeAttribute('aria-busy');
                 });
         });
     }
@@ -1929,8 +1963,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     ${availableReactions.map((type) => {
                         const reaction = reactionMap[type] || { count: 0, reacted: false };
                         return `
-                            <button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(item.item_key)}" data-reaction-type="${type}" aria-label="${escapeHtml(reactionTextLabels[type] || type)}">
-                                ${reactionLabels[type]}${reaction.count > 0 ? `<span class="feed-reaction-count">${reaction.count}</span>` : ''}
+                            <button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(item.item_key)}" data-reaction-type="${type}" data-reaction-count="${Number(reaction.count || 0)}" aria-label="${escapeHtml(reactionTextLabels[type] || type)}" aria-pressed="${reaction.reacted ? 'true' : 'false'}">
+                                ${reactionLabels[type]}<span class="feed-reaction-count"${reaction.count > 0 ? '' : ' hidden'}>${reaction.count > 0 ? reaction.count : ''}</span>
                             </button>
                         `;
                     }).join('')}
@@ -1965,8 +1999,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     ${availableReactions.map((type) => {
                         const reaction = reactionMap[type] || { count: 0, reacted: false };
                         return `
-                            <button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(item.item_key)}" data-reaction-type="${type}" aria-label="${escapeHtml(reactionTextLabels[type] || type)}">
-                                ${reactionLabels[type]}${reaction.count > 0 ? ` ${reaction.count}` : ''}
+                            <button type="button" class="${reaction.reacted ? 'is-active' : ''}" data-feed-reaction data-item-key="${escapeHtml(item.item_key)}" data-reaction-type="${type}" data-reaction-count="${Number(reaction.count || 0)}" aria-label="${escapeHtml(reactionTextLabels[type] || type)}" aria-pressed="${reaction.reacted ? 'true' : 'false'}">
+                                ${reactionLabels[type]}<span class="feed-reaction-count"${reaction.count > 0 ? '' : ' hidden'}>${reaction.count > 0 ? reaction.count : ''}</span>
                             </button>
                         `;
                     }).join('')}
