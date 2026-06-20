@@ -40,6 +40,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let feedObserver = null;
     let feedPaginationFailed = false;
     let feedSeenAt = null;
+    let newItemObserver = null;
+    let markFeedSeenTimer = null;
+    let scrollToNotificationButton = null;
     const feedPageSize = 40;
     const feedPaginationDelayMs = 1300;
     const reactionLabels = {
@@ -1301,6 +1304,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             return;
         }
 
+        teardownNewItemObserver();
         feed.innerHTML = items.map(renderFeedItem).join('');
         window.requestAnimationFrame(() => syncCaptionToggleVisibility(feed));
 
@@ -1311,6 +1315,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
         updateFeedPagingDebug(items.length);
         updateFeedSentinel(hasMore);
         window.requestAnimationFrame(checkFeedNearBottom);
+
+        observeNewItems(feed);
+        updateScrollToNotificationButton();
 
         playPendingThreadReturnAnchor();
     }
@@ -1852,10 +1859,14 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     if (article) {
                         feed.appendChild(article);
                         window.requestAnimationFrame(() => syncCaptionToggleVisibility(article));
+                        if (article.classList.contains('is-new')) {
+                            ensureNewItemObserver()?.observe(article);
+                        }
                     }
                 });
 
                 focusFeedItemIfRequested();
+                updateScrollToNotificationButton();
                 nextFeedCursor = feedCursorFromResponse(data, data.feed);
                 hasMore = feedPageMayHaveMore(data, data.feed);
                 feedPaginationFailed = false;
@@ -1960,6 +1971,138 @@ window.CraftCrawlInitFriends = function (scope = document) {
     if (feed) {
         window.addEventListener('scroll', checkFeedNearBottom, { passive: true });
         window.addEventListener('resize', checkFeedNearBottom);
+    }
+
+    function ensureNewItemObserver() {
+        if (newItemObserver || !feed) {
+            return newItemObserver;
+        }
+
+        newItemObserver = new IntersectionObserver((entries) => {
+            if (!isFeedTabActive()) {
+                return;
+            }
+
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    clearNewFeedItem(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        return newItemObserver;
+    }
+
+    function clearNewFeedItem(article) {
+        if (!article.classList.contains('is-new')) {
+            return;
+        }
+
+        article.classList.remove('is-new');
+        if (newItemObserver) {
+            newItemObserver.unobserve(article);
+        }
+
+        applyStatusCounts({
+            pending_invites: currentStatus.pendingInvites,
+            pending_recommendations: currentStatus.pendingRecommendations,
+            social_notifications: currentStatus.socialNotifications,
+            new_friends: currentStatus.newFriends,
+            new_feed_items: Math.max(0, currentStatus.newFeedItems - 1),
+            badge_count: Math.max(0, currentStatus.badgeCount - 1)
+        });
+
+        updateScrollToNotificationButton();
+
+        clearTimeout(markFeedSeenTimer);
+        markFeedSeenTimer = window.setTimeout(() => {
+            markFriendsSeen('feed');
+        }, 2000);
+    }
+
+    function observeNewItems(container) {
+        if (!container) {
+            return;
+        }
+
+        const observer = ensureNewItemObserver();
+        if (!observer) {
+            return;
+        }
+
+        container.querySelectorAll('.is-new').forEach((item) => {
+            observer.observe(item);
+        });
+    }
+
+    function teardownNewItemObserver() {
+        if (newItemObserver) {
+            newItemObserver.disconnect();
+            newItemObserver = null;
+        }
+        clearTimeout(markFeedSeenTimer);
+        markFeedSeenTimer = null;
+    }
+
+    function ensureScrollToNotificationButton() {
+        if (!panel || scrollToNotificationButton) {
+            return;
+        }
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'feed-scroll-to-notification-fab';
+        button.dataset.feedScrollToNotification = 'true';
+        button.hidden = true;
+        button.setAttribute('aria-label', 'Scroll to next new post');
+        button.innerHTML = `
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M12 5v14"></path>
+                <path d="m19 12-7 7-7-7"></path>
+            </svg>
+            <span data-notification-scroll-count></span>
+        `;
+        document.body.appendChild(button);
+        scrollToNotificationButton = button;
+
+        button.addEventListener('click', scrollToNextNewItem);
+    }
+
+    function scrollToNextNewItem() {
+        if (!feed) {
+            return;
+        }
+
+        const item = feed.querySelector('.is-new');
+        if (item) {
+            focusNotificationTarget(item);
+            return;
+        }
+
+        if (hasMore && !loadingMore) {
+            loadMore();
+        }
+    }
+
+    function updateScrollToNotificationButton() {
+        if (!scrollToNotificationButton) {
+            return;
+        }
+
+        const domCount = feed?.querySelectorAll('.is-new').length || 0;
+        const serverCount = currentStatus.newFeedItems || 0;
+        const visibleCount = Math.max(domCount, serverCount);
+        const countEl = scrollToNotificationButton.querySelector('[data-notification-scroll-count]');
+
+        if (visibleCount < 1) {
+            scrollToNotificationButton.hidden = true;
+            return;
+        }
+
+        scrollToNotificationButton.hidden = false;
+        if (countEl) {
+            countEl.textContent = visibleCount > 9 ? '9+' : String(visibleCount);
+        }
     }
 
     function renderCheckinActions(item) {
@@ -2884,6 +3027,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
             updateFocusRequestFromUrl(event.detail?.url || window.location.href);
             if (!event.detail?.userInitiated && hasRenderedFeedItems()) {
                 playPendingThreadReturnAnchor();
+                observeNewItems(feed);
+                updateScrollToNotificationButton();
                 return;
             }
             refreshVisibleFeed()
@@ -3136,6 +3281,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         refreshFriendsData();
     } else if (panel) {
         ensureFeedComposer();
+        ensureScrollToNotificationButton();
         loadRequests();
         loadFeed();
     } else {

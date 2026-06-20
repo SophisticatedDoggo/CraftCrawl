@@ -4291,6 +4291,51 @@ body:not(.feed-page-body) .feed-compose-fab {
     display: none;
 }
 
+.feed-scroll-to-notification-fab {
+    position: fixed;
+    left: max(20px, env(safe-area-inset-left));
+    bottom: calc(92px + env(safe-area-inset-bottom));
+    z-index: 1180;
+    display: inline-grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    gap: 4px;
+    height: 42px;
+    min-height: 42px;
+    padding: 0 12px 0 10px;
+    border: none;
+    border-radius: 999px;
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--color-primary) 36%, transparent);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.feed-scroll-to-notification-fab[hidden] {
+    display: none;
+}
+
+.feed-scroll-to-notification-fab svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+body:not(.feed-page-body) .feed-scroll-to-notification-fab {
+    display: none;
+}
+
+.friends-feed-item.is-new {
+    border-left: 3px solid var(--color-primary);
+}
+
 .feed-compose-modal {
     position: fixed;
     inset: 0;
@@ -5260,6 +5305,11 @@ body.feed-comment-composer-open {
 
 body.feed-thread-overlay-open .mobile-app-tabbar,
 body.event-detail-overlay-open .mobile-app-tabbar {
+    display: none;
+}
+
+body.feed-thread-overlay-open .feed-scroll-to-notification-fab,
+body.event-detail-overlay-open .feed-scroll-to-notification-fab {
     display: none;
 }
 
@@ -14568,6 +14618,10 @@ a.text-link:focus,
     color: var(--color-on-primary);
     background: var(--color-primary);
     box-shadow: 0 10px 22px color-mix(in srgb, var(--color-primary) 36%, transparent);
+}
+
+:root[data-palette$="-dark"] .feed-scroll-to-notification-fab {
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4);
 }
 
 :root[data-palette$="-dark"] a.landing-choice:not(.mapboxgl-ctrl-logo),
