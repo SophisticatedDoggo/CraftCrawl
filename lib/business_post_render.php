@@ -85,9 +85,9 @@ function craftcrawl_render_business_post(array $post): string {
     $html .= '<div class="feed-action-row">';
     $html .= '<div class="feed-primary-actions">';
     $html .= '<a class="feed-comments-link" href="user/feed_post.php?item=' . $item_key . '" aria-label="Comments">';
-    $html .= '<span aria-hidden="true">💬</span>';
+    $html .= '<span class="feed-comments-icon" aria-hidden="true"></span>';
     if ($comment_label !== '') {
-        $html .= '<span>' . $comment_label . '</span>';
+        $html .= '<span class="feed-comment-count">' . $comment_label . '</span>';
     }
     $html .= '</a>';
     $html .= '</div>';

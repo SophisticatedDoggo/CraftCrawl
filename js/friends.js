@@ -1989,10 +1989,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
         return `
             <button type="button" class="feed-comments-link" data-comments-sheet-trigger data-item-key="${escapeHtml(item.item_key)}" aria-label="Show comments">
-                <svg aria-hidden="true" viewBox="0 0 32 32">
-                    <path d="M16,0 C7.164,0 0,6.269 0,14 C0,18.419 2.345,22.354 6,24.919 L6,32 L13.009,27.747 C13.979,27.907 14.977,28 16,28 C24.836,28 32,21.732 32,14 C32,6.269 24.836,0 16,0 Z M8,12 C6.896,12 6,12.896 6,14 C6,15.104 6.896,16 8,16 C9.104,16 10,15.104 10,14 C10,12.896 9.104,12 8,12 Z M16,12 C14.896,12 14,12.896 14,14 C14,15.104 14.896,16 16,16 C17.104,16 18,15.104 18,14 C18,12.896 17.104,12 16,12 Z M24,12 C22.896,12 22,12.896 22,14 C22,15.104 22.896,16 24,16 C25.104,16 26,15.104 26,14 C26,12.896 25.104,12 24,12 Z"></path>
-                </svg>
-                ${label ? `<span>${label}</span>` : ''}
+                <span class="feed-comments-icon" aria-hidden="true"></span>
+                ${label ? `<span class="feed-comment-count">${label}</span>` : ''}
                 ${totalUnread > 0 ? `<span class="feed-action-unread-badge">${unreadLabel}</span>` : ''}
             </button>
         `;
@@ -2660,7 +2658,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         const feedCard = feed?.querySelector(`[data-feed-item-key="${CSS.escape(itemKey)}"]`);
         if (!feedCard) return;
 
-        const countSpan = feedCard.querySelector('.feed-comments-link span:not(.feed-action-unread-badge)');
+        const countSpan = feedCard.querySelector('.feed-comment-count');
         if (countSpan) {
             const current = Number(countSpan.textContent || 0);
             countSpan.textContent = String(current + delta);
@@ -2668,8 +2666,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
             const link = feedCard.querySelector('.feed-comments-link');
             if (link) {
                 const span = document.createElement('span');
+                span.className = 'feed-comment-count';
                 span.textContent = String(delta);
-                link.querySelector('svg')?.after(span);
+                link.querySelector('.feed-comments-icon')?.after(span);
             }
         }
     }
