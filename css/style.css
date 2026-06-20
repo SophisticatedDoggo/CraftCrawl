@@ -5909,6 +5909,11 @@ a.mobile-context-back.feed-thread-back-link:focus {
     animation: commentsSheetSlideDown 200ms ease-in both;
 }
 
+.feed-comments-sheet-overlay.is-closing.is-drag-dismiss .feed-comments-sheet {
+    animation: none;
+    transition: transform 200ms ease-in;
+}
+
 .feed-comments-sheet-overlay.is-dragging .feed-comments-sheet {
     animation: none;
     transition: none;
@@ -6153,6 +6158,10 @@ body.feed-comments-sheet-open {
     .feed-comments-sheet-overlay.is-open .feed-comments-sheet,
     .feed-comments-sheet-overlay.is-closing .feed-comments-sheet {
         animation: none;
+    }
+
+    .feed-comments-sheet-overlay.is-closing.is-drag-dismiss .feed-comments-sheet {
+        transition: none;
     }
 }
 

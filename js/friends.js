@@ -2352,7 +2352,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             dragState.active = false;
             overlay.classList.remove('is-dragging');
             if (deltaY > 120) {
-                closeCommentsSheet();
+                closeCommentsSheet(Math.max(0, deltaY));
             } else {
                 sheetPanel.style.transform = '';
             }
@@ -2485,17 +2485,27 @@ window.CraftCrawlInitFriends = function (scope = document) {
             });
     }
 
-    function closeCommentsSheet() {
+    function closeCommentsSheet(dragOffset = 0) {
         const { overlay, panel } = commentsSheetState;
         if (!overlay || overlay.hidden) return;
 
         overlay.classList.remove('is-open', 'is-dragging');
         overlay.classList.add('is-closing');
-        panel.style.transform = '';
+
+        if (dragOffset > 0) {
+            overlay.classList.add('is-drag-dismiss');
+            panel.style.transform = `translateY(${dragOffset}px)`;
+            panel.getBoundingClientRect();
+            panel.style.transform = 'translateY(100%)';
+        } else {
+            overlay.classList.remove('is-drag-dismiss');
+            panel.style.transform = '';
+        }
 
         commentsSheetState.closeTimer = window.setTimeout(() => {
             overlay.hidden = true;
-            overlay.classList.remove('is-closing');
+            overlay.classList.remove('is-closing', 'is-drag-dismiss');
+            panel.style.transform = '';
             document.body.classList.remove('feed-comments-sheet-open');
             commentsSheetState.itemKey = '';
         }, 220);
@@ -2618,6 +2628,30 @@ window.CraftCrawlInitFriends = function (scope = document) {
         if (input) input.placeholder = 'Join the conversation...';
     }
 
+    function scrollSheetEntryIntoView(entry) {
+        const sheetBody = commentsSheetState.body;
+        if (!sheetBody || !entry) return;
+
+        window.requestAnimationFrame(() => {
+            const bodyRect = sheetBody.getBoundingClientRect();
+            const entryRect = entry.getBoundingClientRect();
+            let nextScrollTop = sheetBody.scrollTop;
+
+            if (entryRect.bottom > bodyRect.bottom) {
+                nextScrollTop += entryRect.bottom - bodyRect.bottom + 8;
+            } else if (entryRect.top < bodyRect.top) {
+                nextScrollTop -= bodyRect.top - entryRect.top + 8;
+            }
+
+            if (nextScrollTop !== sheetBody.scrollTop) {
+                sheetBody.scrollTo({
+                    top: Math.max(0, nextScrollTop),
+                    behavior: 'smooth'
+                });
+            }
+        });
+    }
+
     function submitSheetComment() {
         const { form, itemKey } = commentsSheetState;
         if (!form || !itemKey) return;
@@ -2703,12 +2737,12 @@ window.CraftCrawlInitFriends = function (scope = document) {
                             <button type="button" class="feed-reply-toggle" data-sheet-reply data-parent-comment-id="${comment.parent_comment_id}" data-reply-label="${escapeHtml(comment.author_name)}">Reply</button>
                         `;
                         replyList.appendChild(replyArticle);
-                        replyArticle.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        scrollSheetEntryIntoView(replyArticle);
                     }
                 } else {
                     const newComment = renderSheetComment(comment);
                     list.appendChild(newComment);
-                    newComment.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    scrollSheetEntryIntoView(newComment);
                 }
 
                 updateFeedCardCommentCount(itemKey, 1);
