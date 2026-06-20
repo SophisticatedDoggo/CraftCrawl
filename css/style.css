@@ -3849,6 +3849,7 @@ a.feed-business-link:not(.mapboxgl-ctrl-logo) {
 
 .feed-checkin-item {
     padding-top: 10px;
+    row-gap: 0;
 }
 
 .feed-checkin-item .feed-item-meta {
@@ -4485,6 +4486,10 @@ body:not(.feed-page-body) .feed-compose-fab {
 }
 
 .feed-caption-content {
+    overflow: visible;
+}
+
+.feed-caption-content.has-text-overflow:not(.is-expanded) .feed-caption-text {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -4492,7 +4497,11 @@ body:not(.feed-page-body) .feed-compose-fab {
 }
 
 .feed-caption-content.is-expanded {
-    display: block;
+    overflow: visible;
+}
+
+.feed-caption-content.is-expanded .feed-caption-text {
+    display: inline;
     overflow: visible;
     -webkit-line-clamp: unset;
 }

@@ -112,6 +112,36 @@ window.CraftCrawlInitFriends = function (scope = document) {
         countElement.hidden = normalizedCount === 0;
     }
 
+    function syncCaptionToggleVisibility(scope = document) {
+        scope.querySelectorAll('[data-feed-caption-content]').forEach((content) => {
+            const text = content.querySelector('.feed-caption-text');
+            const button = content.querySelector('[data-feed-caption-more]');
+            if (!text || !button || content.classList.contains('is-expanded')) {
+                return;
+            }
+
+            content.classList.remove('has-text-overflow');
+            const previousDisplay = text.style.display;
+            text.style.display = 'block';
+            const lineHeight = Number.parseFloat(window.getComputedStyle(text).lineHeight) || 20;
+            const hasTextOverflow = text.scrollHeight > (lineHeight * 2) + 1;
+            text.style.display = previousDisplay;
+
+            const hasAccomplishments = content.dataset.hasAccomplishments === 'true';
+            content.classList.toggle('has-text-overflow', hasTextOverflow);
+            button.hidden = !hasTextOverflow && !hasAccomplishments;
+        });
+    }
+
+    if (document.documentElement.dataset.feedCaptionResizeReady !== 'true') {
+        document.documentElement.dataset.feedCaptionResizeReady = 'true';
+        let captionResizeFrame = 0;
+        window.addEventListener('resize', () => {
+            window.cancelAnimationFrame(captionResizeFrame);
+            captionResizeFrame = window.requestAnimationFrame(() => syncCaptionToggleVisibility(document));
+        }, { passive: true });
+    }
+
     function installFeedReactionHandler() {
         if (document.documentElement.dataset.feedReactionReady === 'true') {
             return;
@@ -1028,7 +1058,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     function renderCaptionArea(item) {
-        const actorName = item.is_self ? 'You' : item.friend_name;
         const caption = item.caption || '';
         const rewardSummary = buildRewardSummary(item);
         const hasCaption = caption.length > 0;
@@ -1053,13 +1082,13 @@ window.CraftCrawlInitFriends = function (scope = document) {
             captionParts.push('<span class="feed-reward-line">' + escapeHtml(rewardSummary) + '</span>');
         }
         const fullText = captionParts.join(' ');
-        const inlinePreview = '<strong>' + escapeHtml(actorName) + '</strong> ' + fullText;
+        const inlinePreview = fullText;
 
         return `
             <div class="feed-caption-area" data-feed-caption>
-                <div class="feed-caption-content" data-feed-caption-content>
+                <div class="feed-caption-content" data-feed-caption-content data-has-accomplishments="${hasRewards ? 'true' : 'false'}">
                     <span class="feed-caption-text">${inlinePreview}</span>
-                    <button type="button" class="feed-caption-more" data-feed-caption-more aria-expanded="false"><span data-feed-caption-toggle-label>more</span>${unreadBadge}</button>
+                    <button type="button" class="feed-caption-more" data-feed-caption-more aria-expanded="false"${hasRewards ? '' : ' hidden'}><span data-feed-caption-toggle-label>more</span>${unreadBadge}</button>
                 </div>
             </div>
         `;
@@ -1270,6 +1299,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         }
 
         feed.innerHTML = items.map(renderFeedItem).join('');
+        syncCaptionToggleVisibility(feed);
 
         focusFeedItemIfRequested();
         nextFeedCursor = feedCursorFromResponse(data, items);
@@ -1737,6 +1767,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     if (label) {
                         label.textContent = isExpanded ? 'less' : 'more';
                     }
+                    if (!isExpanded && captionArea) {
+                        syncCaptionToggleVisibility(captionArea);
+                    }
                 }
                 return;
             }
@@ -1815,6 +1848,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                     const article = div.firstElementChild;
                     if (article) {
                         feed.appendChild(article);
+                        syncCaptionToggleVisibility(article);
                     }
                 });
 
