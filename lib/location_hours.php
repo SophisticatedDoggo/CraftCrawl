@@ -47,11 +47,11 @@ function craftcrawl_location_hours_rows_are_open_now(array $rows, ?DateTimeInter
         $opens = (string) $row['opens_at'];
         $closes = (string) $row['closes_at'];
 
-        if ($day === $today && craftcrawl_time_is_within_hours($now, $opens, $closes)) {
+        if ($day === $today && craftcrawl_time_is_within_today_hours($now, $opens, $closes)) {
             return true;
         }
 
-        if ($day === $yesterday && $opens >= $closes && craftcrawl_time_is_within_hours($now, $opens, $closes)) {
+        if ($day === $yesterday && craftcrawl_time_is_within_yesterday_overnight_hours($now, $opens, $closes)) {
             return true;
         }
     }
@@ -114,18 +114,11 @@ function craftcrawl_location_current_session_start($conn, $location_id) {
         $opens = (string) $row['opens_at'];
         $closes = (string) $row['closes_at'];
 
-        if ($day === $today && craftcrawl_time_is_within_hours($now, $opens, $closes)) {
-            if ($opens < $closes) {
-                return $now->format('Y-m-d') . ' ' . $opens;
-            }
-            $current_time = $now->format('H:i:s');
-            if ($current_time >= $opens) {
-                return $now->format('Y-m-d') . ' ' . $opens;
-            }
-            return $now->modify('-1 day')->format('Y-m-d') . ' ' . $opens;
+        if ($day === $today && craftcrawl_time_is_within_today_hours($now, $opens, $closes)) {
+            return $now->format('Y-m-d') . ' ' . $opens;
         }
 
-        if ($day === $yesterday && $opens >= $closes && craftcrawl_time_is_within_hours($now, $opens, $closes)) {
+        if ($day === $yesterday && craftcrawl_time_is_within_yesterday_overnight_hours($now, $opens, $closes)) {
             return $now->modify('-1 day')->format('Y-m-d') . ' ' . $opens;
         }
     }
@@ -156,18 +149,14 @@ function craftcrawl_location_current_session_end($conn, $location_id) {
         $opens = (string) $row['opens_at'];
         $closes = (string) $row['closes_at'];
 
-        if ($day === $today && craftcrawl_time_is_within_hours($now, $opens, $closes)) {
+        if ($day === $today && craftcrawl_time_is_within_today_hours($now, $opens, $closes)) {
             if ($opens < $closes) {
                 return $now->format('Y-m-d') . ' ' . $closes;
             }
-            $current_time = $now->format('H:i:s');
-            if ($current_time >= $opens) {
-                return $now->modify('+1 day')->format('Y-m-d') . ' ' . $closes;
-            }
-            return $now->format('Y-m-d') . ' ' . $closes;
+            return $now->modify('+1 day')->format('Y-m-d') . ' ' . $closes;
         }
 
-        if ($day === $yesterday && $opens >= $closes && craftcrawl_time_is_within_hours($now, $opens, $closes)) {
+        if ($day === $yesterday && craftcrawl_time_is_within_yesterday_overnight_hours($now, $opens, $closes)) {
             return $now->format('Y-m-d') . ' ' . $closes;
         }
     }

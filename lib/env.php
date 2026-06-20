@@ -55,4 +55,17 @@ function craftcrawl_env($key, $default = '') {
 
 craftcrawl_load_env();
 
+// Check-ins compare the current time with local business hours. Pin the
+// application timezone instead of inheriting Cloudways' server default, which
+// may be UTC and may not match MySQL's session timezone.
+$craftcrawl_timezone = craftcrawl_env('CRAFTCRAWL_TIMEZONE', 'America/New_York');
+
+try {
+    new DateTimeZone($craftcrawl_timezone);
+    date_default_timezone_set($craftcrawl_timezone);
+} catch (Throwable $error) {
+    error_log('Invalid CRAFTCRAWL_TIMEZONE; falling back to America/New_York.');
+    date_default_timezone_set('America/New_York');
+}
+
 ?>

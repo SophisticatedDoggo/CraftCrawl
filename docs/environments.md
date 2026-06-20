@@ -22,6 +22,10 @@ The `Deploy Web` workflow deploys `main` to prod with `rsync` over SSH. Add thes
 
 Cloudways usually provides SSH/SFTP credentials and an application path. Use a dedicated SSH key when possible. The deploy excludes local secrets, GitHub workflow files, Node dependencies, generated native projects, and local upload folders.
 
+Set `CRAFTCRAWL_TIMEZONE=America/New_York` in the hosted application's `.env`
+for the current Pennsylvania launch area. The app uses it for opening-hours and
+check-in cooldown decisions and aligns MySQL's connection clock automatically.
+
 ## Mobile URL
 
 The Capacitor app reads `CRAFTCRAWL_MOBILE_URL` when syncing native projects:
@@ -105,7 +109,8 @@ In Xcode, select an iPhone simulator and run the `App` scheme. For physical devi
 
 ## Production Readiness Checklist
 
-- Prod host has its own database, `.env` values, Cloudinary, reCAPTCHA, Mailgun, and OneSignal configuration.
+- Prod host has its own database, `.env` values (including `CRAFTCRAWL_TIMEZONE`), Cloudinary, reCAPTCHA, Mailgun, and OneSignal configuration.
+- Production has the latest SQL migrations, including check-in photos and feed consolidation.
 - `app.craftcrawl.site` has HTTPS and OneSignal configured for that origin.
 - Android debug build works against prod.
 - iOS simulator or TestFlight build works against prod.

@@ -9,6 +9,12 @@ CraftCrawl needs a host that supports:
 - File uploads routed through PHP, with photos stored in Cloudinary
 - GitHub-based deploys or SSH/rsync deploys from GitHub Actions
 
+Set `CRAFTCRAWL_TIMEZONE` in the application environment to the IANA timezone
+used by the listed businesses (currently `America/New_York`). CraftCrawl uses
+this value for business-hours checks and aligns each MySQL connection to the
+same UTC offset. This avoids Cloudways' PHP/server defaults shifting open-hours
+and check-in cooldown calculations.
+
 ## Branch and Host Model
 
 CraftCrawl uses:

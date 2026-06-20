@@ -159,6 +159,30 @@ function craftcrawl_time_is_within_hours($now, $opens_at, $closes_at) {
     return $current_time >= $opens_at || $current_time < $closes_at;
 }
 
+function craftcrawl_time_is_within_today_hours($now, $opens_at, $closes_at) {
+    if ($opens_at === null || $closes_at === null) {
+        return false;
+    }
+
+    $current_time = $now->format('H:i:s');
+
+    if ($opens_at < $closes_at) {
+        return $current_time >= $opens_at && $current_time < $closes_at;
+    }
+
+    // For an overnight range, only the evening portion belongs to today's
+    // row. The after-midnight portion must come from yesterday's row.
+    return $current_time >= $opens_at;
+}
+
+function craftcrawl_time_is_within_yesterday_overnight_hours($now, $opens_at, $closes_at) {
+    if ($opens_at === null || $closes_at === null || $opens_at < $closes_at) {
+        return false;
+    }
+
+    return $now->format('H:i:s') < $closes_at;
+}
+
 function craftcrawl_business_is_open_now($conn, $business_id) {
     $now = new DateTimeImmutable('now');
     $today = (int) $now->format('w');
@@ -182,12 +206,12 @@ function craftcrawl_business_is_open_now($conn, $business_id) {
         return false;
     }
 
-    if (isset($rows[$today]) && !(bool) $rows[$today]['is_closed'] && craftcrawl_time_is_within_hours($now, $rows[$today]['opens_at'], $rows[$today]['closes_at'])) {
+    if (isset($rows[$today]) && !(bool) $rows[$today]['is_closed'] && craftcrawl_time_is_within_today_hours($now, $rows[$today]['opens_at'], $rows[$today]['closes_at'])) {
         return true;
     }
 
-    if (isset($rows[$yesterday]) && !(bool) $rows[$yesterday]['is_closed'] && $rows[$yesterday]['opens_at'] >= $rows[$yesterday]['closes_at']) {
-        return craftcrawl_time_is_within_hours($now, $rows[$yesterday]['opens_at'], $rows[$yesterday]['closes_at']);
+    if (isset($rows[$yesterday]) && !(bool) $rows[$yesterday]['is_closed']) {
+        return craftcrawl_time_is_within_yesterday_overnight_hours($now, $rows[$yesterday]['opens_at'], $rows[$yesterday]['closes_at']);
     }
 
     return false;

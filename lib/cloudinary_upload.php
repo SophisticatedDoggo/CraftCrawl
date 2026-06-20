@@ -170,7 +170,8 @@ function craftcrawl_cloudinary_curl_with_retry($cloud_name, $params, $max_attemp
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $params,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 60
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_TIMEOUT => 25
         ]);
 
         $response = curl_exec($curl);

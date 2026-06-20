@@ -131,6 +131,7 @@ development, then fill in your real values:
 - `CRAFTCRAWL_DB_USER`
 - `CRAFTCRAWL_DB_PASSWORD`
 - `CRAFTCRAWL_DB_NAME`
+- `CRAFTCRAWL_TIMEZONE` (use `America/New_York` for the current PA launch area)
 
 Rotate any credentials that were previously committed before deploying publicly.
 
@@ -143,6 +144,8 @@ mysql -u craft_crawl -p craft_crawl < migrations/2026_05_10_leveling_system.sql
 mysql -u craft_crawl -p craft_crawl < migrations/2026_05_12_progressive_level_state.sql
 mysql -u craft_crawl -p craft_crawl < migrations/2026_05_14_user_profile_photos.sql
 mysql -u craft_crawl -p craft_crawl < migrations/2026_05_19_questing_system.sql
+mysql -u craft_crawl -p craft_crawl < migrations/2026_06_18_checkin_photos.sql
+mysql -u craft_crawl -p craft_crawl < migrations/2026_06_20_feed_consolidation.sql
 ```
 
 Check-ins use browser GPS and server-side distance checks. Review XP is only

@@ -22,4 +22,13 @@ if ($conn->connect_errno) {
 }
 
 $conn->set_charset('utf8mb4');
+
+// MySQL DATETIME values do not carry a timezone. Keep NOW() aligned with the
+// PHP clock used by location-hours and cooldown calculations. A numeric offset
+// works even when the MySQL timezone tables are not installed on the host.
+$database_timezone_offset = (new DateTimeImmutable('now'))->format('P');
+$escaped_timezone_offset = $conn->real_escape_string($database_timezone_offset);
+if (!$conn->query("SET time_zone = '{$escaped_timezone_offset}'")) {
+    error_log('Could not align the MySQL session timezone: ' . $conn->error);
+}
 ?>

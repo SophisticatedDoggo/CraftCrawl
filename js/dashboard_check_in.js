@@ -262,7 +262,10 @@
             var actionButton = pendingCheckin.button;
 
             var controller = new AbortController();
-            var timeoutId = setTimeout(function () { controller.abort(); }, 45000);
+            // The server may make a second bounded Cloudinary attempt. Keep the
+            // browser alive long enough to receive the real result so a saved
+            // check-in is never presented as a timeout and retried by the user.
+            var timeoutId = setTimeout(function () { controller.abort(); }, 70000);
 
             fetch('../check_in.php', {
                 method: 'POST',
