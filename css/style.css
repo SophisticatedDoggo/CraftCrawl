@@ -4497,6 +4497,14 @@ body:not(.feed-page-body) .feed-compose-fab {
     -webkit-line-clamp: unset;
 }
 
+.feed-caption-content:not(.is-expanded) .feed-reward-line {
+    display: none;
+}
+
+.feed-caption-content.is-expanded .feed-reward-line {
+    display: inline;
+}
+
 .feed-caption-text {
     word-break: break-word;
 }
