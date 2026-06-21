@@ -4369,7 +4369,7 @@ body:not(.feed-page-body) .feed-scroll-to-notification-fab {
     pointer-events: none;
 }
 
-.friends-feed-item.notification-focus-target:is(.is-new, .has-unread-notifications) {
+.friends-feed-item.notification-focus-target {
     animation: none;
 }
 
