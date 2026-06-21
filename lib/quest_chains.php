@@ -5,9 +5,31 @@ require_once __DIR__ . '/leveling.php';
 const CRAFTCRAWL_CHAIN_OPTIONS_COUNT = 5;
 const CRAFTCRAWL_CHAIN_RADIUS_METERS = 40234; // 25 miles
 const CRAFTCRAWL_CHAIN_MIN_STEPS = 4;
-const CRAFTCRAWL_CHAIN_MAX_STEPS = 6;
-const CRAFTCRAWL_CHAIN_XP_PER_STEP = 40;
-const CRAFTCRAWL_CHAIN_XP_BASE = 100;
+const CRAFTCRAWL_CHAIN_MAX_STEPS = 7;
+const CRAFTCRAWL_CHAIN_XP_BASE = 80;
+const CRAFTCRAWL_CHAIN_XP_CHECKIN = 50;
+const CRAFTCRAWL_CHAIN_XP_REVIEW = 35;
+const CRAFTCRAWL_CHAIN_XP_FEED_REACTION = 20;
+const CRAFTCRAWL_CHAIN_XP_EVENT = 25;
+
+function craftcrawl_chain_calculate_xp($steps) {
+    $xp = CRAFTCRAWL_CHAIN_XP_BASE;
+
+    foreach ($steps as $step) {
+        $type = $step['action_type'] ?? '';
+        if ($type === 'checkin') {
+            $xp += CRAFTCRAWL_CHAIN_XP_CHECKIN;
+        } elseif ($type === 'review') {
+            $xp += CRAFTCRAWL_CHAIN_XP_REVIEW;
+        } elseif ($type === 'feed_reaction') {
+            $xp += CRAFTCRAWL_CHAIN_XP_FEED_REACTION;
+        } elseif ($type === 'event_want_to_go') {
+            $xp += CRAFTCRAWL_CHAIN_XP_EVENT;
+        }
+    }
+
+    return $xp;
+}
 
 function craftcrawl_chain_template_pool() {
     return [
@@ -17,7 +39,7 @@ function craftcrawl_chain_template_pool() {
             'icon' => 'hops',
             'preferred_types' => ['brewery'],
             'fallback_types' => ['bar', 'social_club'],
-            'step_pattern' => ['checkin', 'review', 'checkin', 'checkin', 'review'],
+            'step_pattern' => ['checkin', 'review', 'checkin', 'feed_reaction', 'checkin', 'review'],
             'min_locations' => 3,
             'prefer_unvisited' => true,
         ],
@@ -37,8 +59,8 @@ function craftcrawl_chain_template_pool() {
             'icon' => 'barrel',
             'preferred_types' => ['distillery', 'distilery'],
             'fallback_types' => ['brewery', 'bar'],
-            'step_pattern' => ['checkin', 'checkin', 'review', 'checkin', 'review'],
-            'min_locations' => 3,
+            'step_pattern' => ['checkin', 'review', 'checkin', 'checkin', 'review', 'feed_reaction', 'checkin'],
+            'min_locations' => 4,
             'prefer_unvisited' => true,
         ],
         'cider_trail' => [
@@ -47,8 +69,8 @@ function craftcrawl_chain_template_pool() {
             'icon' => 'apple',
             'preferred_types' => ['cidery'],
             'fallback_types' => ['brewery', 'bar'],
-            'step_pattern' => ['checkin', 'review', 'checkin', 'checkin', 'review'],
-            'min_locations' => 3,
+            'step_pattern' => ['checkin', 'review', 'checkin', 'checkin'],
+            'min_locations' => 2,
             'prefer_unvisited' => true,
         ],
         'craft_circuit' => [
@@ -57,7 +79,7 @@ function craftcrawl_chain_template_pool() {
             'icon' => 'circuit',
             'preferred_types' => ['brewery', 'winery', 'distillery', 'distilery', 'cidery'],
             'fallback_types' => ['bar', 'meadery', 'social_club'],
-            'step_pattern' => ['checkin', 'review', 'checkin', 'checkin', 'review', 'checkin'],
+            'step_pattern' => ['checkin', 'review', 'checkin', 'feed_reaction', 'checkin', 'review', 'checkin'],
             'min_locations' => 4,
             'prefer_unvisited' => true,
         ],
@@ -68,7 +90,7 @@ function craftcrawl_chain_template_pool() {
             'preferred_types' => ['brewery', 'winery', 'distillery', 'distilery', 'cidery', 'bar', 'meadery'],
             'fallback_types' => ['social_club'],
             'step_pattern' => ['checkin', 'review', 'checkin', 'review'],
-            'min_locations' => 3,
+            'min_locations' => 2,
             'prefer_unvisited' => false,
             'prefer_high_rating' => true,
         ],
@@ -78,7 +100,7 @@ function craftcrawl_chain_template_pool() {
             'icon' => 'compass',
             'preferred_types' => ['brewery', 'winery', 'distillery', 'distilery', 'cidery', 'bar', 'meadery'],
             'fallback_types' => ['social_club'],
-            'step_pattern' => ['checkin', 'review', 'checkin', 'checkin', 'review'],
+            'step_pattern' => ['checkin', 'review', 'checkin', 'feed_reaction', 'checkin'],
             'min_locations' => 3,
             'prefer_unvisited' => true,
             'require_unvisited' => true,
@@ -99,17 +121,17 @@ function craftcrawl_chain_template_pool() {
             'icon' => 'bolt',
             'preferred_types' => ['brewery', 'winery', 'distillery', 'distilery', 'cidery', 'bar'],
             'fallback_types' => ['meadery', 'social_club'],
-            'step_pattern' => ['checkin', 'review', 'checkin', 'review'],
+            'step_pattern' => ['checkin', 'review', 'checkin', 'feed_reaction'],
             'min_locations' => 2,
             'prefer_unvisited' => true,
         ],
         'grand_tour' => [
             'name' => 'Grand Tour',
-            'description' => 'The ultimate six-stop crawl through your region.',
+            'description' => 'The ultimate crawl through your region.',
             'icon' => 'map',
             'preferred_types' => ['brewery', 'winery', 'distillery', 'distilery', 'cidery'],
             'fallback_types' => ['bar', 'meadery', 'social_club'],
-            'step_pattern' => ['checkin', 'review', 'checkin', 'checkin', 'review', 'checkin'],
+            'step_pattern' => ['checkin', 'review', 'checkin', 'feed_reaction', 'checkin', 'review', 'checkin'],
             'min_locations' => 4,
             'prefer_unvisited' => true,
         ],
@@ -119,7 +141,7 @@ function craftcrawl_chain_template_pool() {
             'icon' => 'pin',
             'preferred_types' => ['brewery', 'winery', 'distillery', 'distilery', 'cidery', 'bar'],
             'fallback_types' => ['meadery', 'social_club'],
-            'step_pattern' => ['checkin', 'review', 'checkin', 'checkin', 'review'],
+            'step_pattern' => ['checkin', 'review', 'checkin', 'feed_reaction', 'checkin', 'review'],
             'min_locations' => 3,
             'prefer_unvisited' => false,
             'prefer_different_cities' => true,
@@ -130,7 +152,7 @@ function craftcrawl_chain_template_pool() {
             'icon' => 'gem',
             'preferred_types' => ['brewery', 'winery', 'distillery', 'distilery', 'cidery', 'bar', 'meadery'],
             'fallback_types' => ['social_club'],
-            'step_pattern' => ['checkin', 'review', 'checkin', 'review', 'checkin'],
+            'step_pattern' => ['checkin', 'review', 'checkin', 'feed_reaction', 'checkin'],
             'min_locations' => 3,
             'prefer_unvisited' => true,
             'prefer_low_traffic' => true,
@@ -310,7 +332,7 @@ function craftcrawl_generate_chain_options($conn, $user_id, $latitude, $longitud
 
     foreach ($chains_built as $chain) {
         $step_count = count($chain['steps']);
-        $xp_reward = CRAFTCRAWL_CHAIN_XP_BASE + ($step_count * CRAFTCRAWL_CHAIN_XP_PER_STEP);
+        $xp_reward = craftcrawl_chain_calculate_xp($chain['steps']);
 
         $insert_stmt = $conn->prepare("
             INSERT INTO quest_chains (owner_user_id, template_key, chain_name, chain_description, step_count, xp_reward, status, user_latitude, user_longitude, generation_batch, createdAt)
@@ -461,30 +483,59 @@ function craftcrawl_build_chain_from_template($template_key, $template, $nearby,
         return null;
     }
 
-    $steps = [];
+    $raw_steps = [];
     $location_index = 0;
     $location_count = count($selected_locations);
+    $current_loc = $selected_locations[0];
 
     foreach ($step_pattern as $action_type) {
-        $loc = $selected_locations[$location_index % $location_count];
-
         if ($action_type === 'event_want_to_go') {
             $action_type = 'checkin';
         }
 
-        $steps[] = [
-            'action_type' => $action_type,
-            'location_id' => (int) $loc['id'],
-            'location_name' => $loc['name'],
-            'location_city' => $loc['city'] ?? null,
-            'location_state' => $loc['state'] ?? null,
-            'event_id' => null,
-            'description' => craftcrawl_chain_step_description($action_type, $loc['name']),
-        ];
-
-        if ($action_type === 'checkin') {
+        if ($action_type === 'checkin' || $action_type === 'feed_reaction') {
+            $current_loc = $selected_locations[$location_index % $location_count];
             $location_index++;
         }
+
+        $raw_steps[] = [
+            'action_type' => $action_type,
+            'location_id' => (int) $current_loc['id'],
+            'location_name' => $current_loc['name'],
+            'location_city' => $current_loc['city'] ?? null,
+            'location_state' => $current_loc['state'] ?? null,
+            'event_id' => null,
+        ];
+    }
+
+    $steps = [];
+    $checked_in_locations = [];
+
+    foreach ($raw_steps as $step) {
+        $loc_id = $step['location_id'];
+
+        if (($step['action_type'] === 'review' || $step['action_type'] === 'feed_reaction') && !isset($checked_in_locations[$loc_id])) {
+            $steps[] = [
+                'action_type' => 'checkin',
+                'location_id' => $loc_id,
+                'location_name' => $step['location_name'],
+                'location_city' => $step['location_city'],
+                'location_state' => $step['location_state'],
+                'event_id' => null,
+                'description' => craftcrawl_chain_step_description('checkin', $step['location_name']),
+            ];
+            $checked_in_locations[$loc_id] = true;
+        }
+
+        if ($step['action_type'] === 'checkin') {
+            if (isset($checked_in_locations[$loc_id])) {
+                continue;
+            }
+            $checked_in_locations[$loc_id] = true;
+        }
+
+        $step['description'] = craftcrawl_chain_step_description($step['action_type'], $step['location_name']);
+        $steps[] = $step;
     }
 
     return [
