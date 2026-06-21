@@ -85,6 +85,7 @@ feed_notification_assert(strpos($feed_source, "notification_type='feed_item'") !
 feed_notification_assert(strpos($feed_source, "['is_new']") !== false, 'feed payload must return server-calculated is_new state');
 feed_notification_assert(strpos($client_source, 'return item.is_new === true;') !== false, 'client must use server-calculated is_new state');
 feed_notification_assert(strpos($client_source, "markFriendsSeen('feed')") === false, 'client must not globally clear feed notifications');
+feed_notification_assert(strpos($client_source, 'while (!item && hasMore)') !== false, 'notification button must load pages until it finds a target');
 feed_notification_assert(strpos($friend_seen_source, 'feedSeenAt=NOW()') === false, 'legacy seen endpoint must not advance the feed cutoff');
 feed_notification_assert(strpos($schema_source, "ENUM('feed_item', 'comment', 'reaction')") !== false, 'schema must allow feed-item reads');
 

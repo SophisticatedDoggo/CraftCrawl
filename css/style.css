@@ -4328,6 +4328,17 @@ body:not(.feed-page-body) .feed-compose-fab {
     stroke-linejoin: round;
 }
 
+.feed-scroll-to-notification-fab.is-searching svg {
+    animation: feed-notification-search-pulse 720ms ease-in-out infinite alternate;
+}
+
+@keyframes feed-notification-search-pulse {
+    to {
+        transform: translateY(4px);
+        opacity: 0.55;
+    }
+}
+
 body:not(.feed-page-body) .feed-scroll-to-notification-fab {
     display: none;
 }

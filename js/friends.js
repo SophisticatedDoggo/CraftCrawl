@@ -37,10 +37,12 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let nextFeedCursor = { before: null, key: null };
     let hasMore = false;
     let loadingMore = false;
+    let feedLoadPromise = null;
     let feedObserver = null;
     let feedPaginationFailed = false;
     let newItemObserver = null;
     let scrollToNotificationButton = null;
+    let notificationSearchPromise = null;
     let notificationSeenQueue = Promise.resolve();
     let notificationStatusVersion = 0;
     const feedPageSize = 40;
@@ -1865,9 +1867,13 @@ window.CraftCrawlInitFriends = function (scope = document) {
         });
     }
 
-    function loadMore() {
-        if (!feed || !nextFeedCursor.before || !nextFeedCursor.key || !hasMore || loadingMore || feedPaginationFailed) {
-            return;
+    function loadMore({ immediate = false } = {}) {
+        if (loadingMore) {
+            return feedLoadPromise || Promise.resolve(false);
+        }
+
+        if (!feed || !nextFeedCursor.before || !nextFeedCursor.key || !hasMore || feedPaginationFailed) {
+            return Promise.resolve(false);
         }
 
         loadingMore = true;
@@ -1878,13 +1884,15 @@ window.CraftCrawlInitFriends = function (scope = document) {
             before_key: nextFeedCursor.key
         });
 
-        window.setTimeout(() => {
-            fetch(`${userEndpoint('friends_feed.php')}?${params.toString()}`, { credentials: 'same-origin', cache: 'no-store' })
+        feedLoadPromise = new Promise((resolve) => {
+            window.setTimeout(resolve, immediate ? 0 : feedPaginationDelayMs);
+        })
+            .then(() => fetch(`${userEndpoint('friends_feed.php')}?${params.toString()}`, { credentials: 'same-origin', cache: 'no-store' }))
             .then((r) => r.json())
             .then((data) => {
                 if (!data.ok || !data.feed || !data.feed.length) {
                     hasMore = false;
-                    return;
+                    return false;
                 }
 
                 data.feed.forEach((item) => {
@@ -1906,18 +1914,22 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 hasMore = feedPageMayHaveMore(data, data.feed);
                 feedPaginationFailed = false;
                 updateFeedPagingDebug(data.feed.length);
+                return true;
             })
             .catch((error) => {
                 feedPaginationFailed = true;
                 hasMore = false;
                 console.warn('Friends feed pagination failed.', error);
+                return false;
             })
             .finally(() => {
                 loadingMore = false;
+                feedLoadPromise = null;
                 updateFeedSentinel(hasMore);
                 checkFeedNearBottom();
             });
-        }, feedPaginationDelayMs);
+
+        return feedLoadPromise;
     }
 
     function feedCursorFromResponse(data, items) {
@@ -2103,15 +2115,45 @@ window.CraftCrawlInitFriends = function (scope = document) {
             return;
         }
 
-        const item = feed.querySelector('.is-new, .has-unread-notifications');
+        let item = feed.querySelector('.is-new, .has-unread-notifications');
         if (item) {
             focusNotificationTarget(item);
             return;
         }
 
-        if (hasMore && !loadingMore) {
-            loadMore();
+        if (!hasMore || notificationSearchPromise) {
+            return;
         }
+
+        scrollToNotificationButton?.classList.add('is-searching');
+        scrollToNotificationButton?.setAttribute('aria-busy', 'true');
+        if (scrollToNotificationButton) {
+            scrollToNotificationButton.disabled = true;
+        }
+
+        notificationSearchPromise = (async () => {
+            while (!item && hasMore) {
+                const loaded = await loadMore({ immediate: true });
+                item = feed.querySelector('.is-new, .has-unread-notifications');
+                if (!loaded && !loadingMore) {
+                    break;
+                }
+            }
+
+            if (item) {
+                focusNotificationTarget(item);
+            } else {
+                await loadStatus();
+            }
+        })().finally(() => {
+            notificationSearchPromise = null;
+            scrollToNotificationButton?.classList.remove('is-searching');
+            scrollToNotificationButton?.removeAttribute('aria-busy');
+            if (scrollToNotificationButton) {
+                scrollToNotificationButton.disabled = false;
+            }
+            updateScrollToNotificationButton();
+        });
     }
 
     function updateScrollToNotificationButton() {
