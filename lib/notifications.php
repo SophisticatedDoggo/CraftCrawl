@@ -143,15 +143,55 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
             SELECT COUNT(*) AS total
             FROM user_visits uv
             INNER JOIN users actor ON actor.id = uv.user_id
-            WHERE uv.visit_type='first_time'
+            LEFT JOIN photos vp ON vp.id=uv.photo_id AND vp.deletedAt IS NULL AND vp.status='approved'
+            WHERE (vp.object_key IS NOT NULL OR uv.visit_type='first_time')
                 AND uv.checkedInAt > ?
                 AND uv.user_id<>?
                 AND actor.show_feed_activity=TRUE
                 AND actor.disabledAt IS NULL
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM feed_notification_reads fnr
+                    WHERE fnr.user_id=?
+                        AND fnr.feed_item_key=CONCAT(IF(vp.object_key IS NOT NULL, 'checkin:', 'first_visit:'), uv.id)
+                        AND fnr.notification_type='feed_item'
+                )
                 AND $friend_activity_exists
         ",
-        "sii",
-        [$feed_seen_at, $user_id, $user_id]
+        "siii",
+        [$feed_seen_at, $user_id, $user_id, $user_id]
+    );
+
+    $new_feed_items += craftcrawl_notification_count_value(
+        $conn,
+        "
+            SELECT COUNT(*) AS total
+            FROM user_visits uv
+            INNER JOIN users actor ON actor.id=uv.user_id
+                AND actor.disabledAt IS NULL
+                AND actor.checkin_visibility='public'
+            INNER JOIN locations l ON l.id=uv.location_id
+            INNER JOIN liked_businesses lb ON lb.location_id=uv.location_id AND lb.user_id=?
+            INNER JOIN photos vp ON vp.id=uv.photo_id AND vp.deletedAt IS NULL AND vp.status='approved'
+            WHERE uv.checkedInAt > ?
+                AND uv.user_id<>?
+                AND NOT (
+                    actor.show_feed_activity=TRUE
+                    AND EXISTS (
+                        SELECT 1 FROM user_friends public_uf
+                        WHERE public_uf.user_id=? AND public_uf.friend_user_id=uv.user_id
+                    )
+                )
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM feed_notification_reads fnr
+                    WHERE fnr.user_id=?
+                        AND fnr.feed_item_key=CONCAT('checkin:', uv.id)
+                        AND fnr.notification_type='feed_item'
+                )
+        ",
+        "isiii",
+        [$user_id, $feed_seen_at, $user_id, $user_id, $user_id]
     );
 
     $new_feed_items += craftcrawl_notification_count_value(
@@ -165,10 +205,16 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                 AND xl.level_after > xl.level_before
                 AND actor.show_feed_activity=TRUE
                 AND actor.disabledAt IS NULL
+                AND NOT EXISTS (
+                    SELECT 1 FROM feed_notification_reads fnr
+                    WHERE fnr.user_id=?
+                        AND fnr.feed_item_key=CONCAT('level_up:', xl.id)
+                        AND fnr.notification_type='feed_item'
+                )
                 AND $friend_activity_exists
         ",
-        "sii",
-        [$feed_seen_at, $user_id, $user_id]
+        "siii",
+        [$feed_seen_at, $user_id, $user_id, $user_id]
     );
 
     $new_feed_items += craftcrawl_notification_count_value(
@@ -181,10 +227,16 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                 AND ew.user_id<>?
                 AND actor.show_feed_activity=TRUE
                 AND actor.disabledAt IS NULL
+                AND NOT EXISTS (
+                    SELECT 1 FROM feed_notification_reads fnr
+                    WHERE fnr.user_id=?
+                        AND fnr.feed_item_key=CONCAT('event_want:', ew.id)
+                        AND fnr.notification_type='feed_item'
+                )
                 AND $friend_activity_exists
         ",
-        "sii",
-        [$feed_seen_at, $user_id, $user_id]
+        "siii",
+        [$feed_seen_at, $user_id, $user_id, $user_id]
     );
 
     $new_feed_items += craftcrawl_notification_count_value(
@@ -200,10 +252,16 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                 AND l.visibility_status IN ('public_unclaimed','public_claimed')
                 AND actor.show_feed_activity=TRUE
                 AND actor.disabledAt IS NULL
+                AND NOT EXISTS (
+                    SELECT 1 FROM feed_notification_reads fnr
+                    WHERE fnr.user_id=?
+                        AND fnr.feed_item_key=CONCAT('location_want:', wtg.id)
+                        AND fnr.notification_type='feed_item'
+                )
                 AND $friend_activity_exists
         ",
-        "sii",
-        [$feed_seen_at, $user_id, $user_id]
+        "siii",
+        [$feed_seen_at, $user_id, $user_id, $user_id]
     );
 
     $new_feed_items += craftcrawl_notification_count_value(
@@ -214,12 +272,19 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
             INNER JOIN users actor ON actor.id = ub.user_id
             WHERE ub.earnedAt > ?
                 AND ub.user_id<>?
+                AND ub.visit_id IS NULL
                 AND actor.show_feed_activity=TRUE
                 AND actor.disabledAt IS NULL
+                AND NOT EXISTS (
+                    SELECT 1 FROM feed_notification_reads fnr
+                    WHERE fnr.user_id=?
+                        AND fnr.feed_item_key=CONCAT('badge_earned:', ub.id)
+                        AND fnr.notification_type='feed_item'
+                )
                 AND $friend_activity_exists
         ",
-        "sii",
-        [$feed_seen_at, $user_id, $user_id]
+        "siii",
+        [$feed_seen_at, $user_id, $user_id, $user_id]
     );
 
     $daily_required = CRAFTCRAWL_DAILY_QUEST_COUNT;
@@ -240,9 +305,18 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                 HAVING completedAt > ?
                     AND quest_count >= CASE WHEN period_type='weekly' THEN ? ELSE ? END
             ) quest_sweeps
+            WHERE NOT EXISTS (
+                SELECT 1 FROM feed_notification_reads fnr
+                WHERE fnr.user_id=?
+                    AND fnr.feed_item_key=CONCAT(
+                        'quest_sweep:', quest_sweeps.period_type, ':', quest_sweeps.user_id, ':',
+                        DATE_FORMAT(quest_sweeps.period_start, '%Y%m%d')
+                    )
+                    AND fnr.notification_type='feed_item'
+            )
         ",
-        "iisii",
-        [$user_id, $user_id, $feed_seen_at, $weekly_required, $daily_required]
+        "iisiii",
+        [$user_id, $user_id, $feed_seen_at, $weekly_required, $daily_required, $user_id]
     );
 
     $new_feed_items += craftcrawl_notification_count_value(
@@ -253,9 +327,15 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
             INNER JOIN locations l ON l.id = bp.location_id AND l.visibility_status='public_claimed'
             INNER JOIN liked_businesses lb ON lb.location_id = bp.location_id AND lb.user_id=?
             WHERE bp.created_at > ?
+                AND NOT EXISTS (
+                    SELECT 1 FROM feed_notification_reads fnr
+                    WHERE fnr.user_id=?
+                        AND fnr.feed_item_key=CONCAT('business_post:', bp.id)
+                        AND fnr.notification_type='feed_item'
+                )
         ",
-        "is",
-        [$user_id, $feed_seen_at]
+        "isi",
+        [$user_id, $feed_seen_at, $user_id]
     );
 
     $new_feed_items += craftcrawl_notification_count_value(
@@ -269,10 +349,16 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                 AND ufp.user_id<>?
                 AND actor.show_feed_activity=TRUE
                 AND actor.disabledAt IS NULL
+                AND NOT EXISTS (
+                    SELECT 1 FROM feed_notification_reads fnr
+                    WHERE fnr.user_id=?
+                        AND fnr.feed_item_key=CONCAT('user_post:', ufp.id)
+                        AND fnr.notification_type='feed_item'
+                )
                 AND $friend_activity_exists
         ",
-        "sii",
-        [$feed_seen_at, $user_id, $user_id]
+        "siii",
+        [$feed_seen_at, $user_id, $user_id, $user_id]
     );
 
     $social_notifications = 0;
@@ -283,6 +369,10 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                 EXISTS (
                     SELECT 1 FROM user_visits uv
                     WHERE CONCAT('first_visit:', uv.id)=activity.feed_item_key AND uv.user_id=?
+                )
+                OR EXISTS (
+                    SELECT 1 FROM user_visits uv
+                    WHERE CONCAT('checkin:', uv.id)=activity.feed_item_key AND uv.user_id=?
                 )
                 OR EXISTS (
                     SELECT 1 FROM xp_log xl
@@ -332,8 +422,8 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                     ), ?)
                     AND $owned_item_exists
             ",
-            "iisiiiiiiis",
-            [$user_id, $user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, (string) $user_id]
+            "iisiiiiiiiis",
+            [$user_id, $user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, (string) $user_id]
         );
 
         $comment_notification_scope = "
@@ -369,8 +459,8 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
                     ), ?)
                     AND $comment_notification_scope
             ",
-            "iisiiiiiiisi",
-            [$user_id, $user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, (string) $user_id, $user_id]
+            "iisiiiiiiiisi",
+            [$user_id, $user_id, $social_seen_at, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, (string) $user_id, $user_id]
         );
     }
 

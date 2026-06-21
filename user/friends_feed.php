@@ -24,12 +24,14 @@ $feed_page_size = 40;
 $feed_source_fetch_limit = ($feed_page_size * 10) + 1;
 $business_post_fetch_limit = $feed_source_fetch_limit;
 
-$seen_stmt = $conn->prepare("SELECT friendsSeenAt, socialNotificationsSeenAt FROM users WHERE id=?");
+$seen_stmt = $conn->prepare("SELECT notify_social_activity, friendsSeenAt, feedSeenAt, socialNotificationsSeenAt FROM users WHERE id=?");
 $seen_stmt->bind_param("i", $user_id);
 $seen_stmt->execute();
 $seen_row = $seen_stmt->get_result()->fetch_assoc() ?: [];
 $seen_at = $seen_row['friendsSeenAt'] ?? null;
+$feed_seen_at = $seen_row['feedSeenAt'] ?? $seen_at ?? '1970-01-01 00:00:00';
 $social_seen_at = $seen_row['socialNotificationsSeenAt'] ?? '1970-01-01 00:00:00';
+$notify_social_activity = !empty($seen_row['notify_social_activity']);
 
 $friend_stmt = $conn->prepare("
     SELECT
@@ -159,7 +161,7 @@ $visit_sql = "
     INNER JOIN locations l ON l.id = uv.location_id
     INNER JOIN users u ON u.id = uv.user_id
     LEFT JOIN photos vp ON vp.id = uv.photo_id AND vp.deletedAt IS NULL AND vp.status = 'approved'
-    WHERE (uv.photo_id IS NOT NULL OR uv.visit_type = 'first_time') AND uv.user_id IN ($placeholders)
+    WHERE (vp.object_key IS NOT NULL OR uv.visit_type = 'first_time') AND uv.user_id IN ($placeholders)
     $before_clause_checkin
     ORDER BY uv.checkedInAt DESC, uv.id DESC
     LIMIT $feed_source_fetch_limit
@@ -731,6 +733,36 @@ $reaction_seen_at_by_item = [];
 $comment_counts_by_item = [];
 
 if (!empty($feed_item_keys)) {
+    $feed_read_placeholders = implode(',', array_fill(0, count($feed_item_keys), '?'));
+    $feed_read_types = str_repeat('s', count($feed_item_keys));
+    $feed_read_sql = "
+        SELECT feed_item_key
+        FROM feed_notification_reads
+        WHERE user_id=?
+            AND notification_type='feed_item'
+            AND feed_item_key IN ($feed_read_placeholders)
+    ";
+    $feed_read_stmt = $conn->prepare($feed_read_sql);
+    $feed_read_params = ['i' . $feed_read_types, &$user_id];
+    foreach ($feed_item_keys as $index => $feed_item_key) {
+        $feed_read_params[] = &$feed_item_keys[$index];
+    }
+    call_user_func_array([$feed_read_stmt, 'bind_param'], $feed_read_params);
+    $feed_read_stmt->execute();
+    $feed_read_result = $feed_read_stmt->get_result();
+    $read_feed_item_keys = [];
+    while ($feed_read = $feed_read_result->fetch_assoc()) {
+        $read_feed_item_keys[$feed_read['feed_item_key']] = true;
+    }
+
+    foreach ($feed as $index => $feed_item) {
+        $feed[$index]['is_new'] = empty($feed_item['is_self'])
+            && strtotime($feed_item['created_at']) > strtotime($feed_seen_at)
+            && empty($read_feed_item_keys[$feed_item['item_key']]);
+    }
+}
+
+if (!empty($feed_item_keys)) {
     $reaction_placeholders = implode(',', array_fill(0, count($feed_item_keys), '?'));
     $reaction_types = str_repeat('s', count($feed_item_keys));
 
@@ -800,7 +832,8 @@ if (!empty($feed_item_keys)) {
             $reaction_entries_by_item[$key] = [];
         }
         $reaction_seen_at = $reaction_seen_at_by_item[$key] ?? $social_seen_at;
-        $is_unread = ($feed_owner_by_key[$key] ?? 0) === $user_id
+        $is_unread = $notify_social_activity
+            && ($feed_owner_by_key[$key] ?? 0) === $user_id
             && $reactor_id !== $user_id
             && strtotime($reaction['createdAt']) > strtotime($reaction_seen_at);
         $reaction_entries_by_item[$key][] = [
@@ -855,7 +888,7 @@ if (!empty($feed_item_keys)) {
     }
 }
 
-if (!empty($feed_item_keys)) {
+if (!empty($feed_item_keys) && $notify_social_activity) {
     $unread_placeholders = implode(',', array_fill(0, count($feed_item_keys), '?'));
     $unread_types = str_repeat('s', count($feed_item_keys));
 
@@ -959,14 +992,16 @@ if (!empty($feed_item_keys)) {
         $feed[$index]['unread_comment_count'] = $unread_comment_counts[$feed_item['item_key']] ?? 0;
         $feed[$index]['unread_reaction_count'] = $unread_reaction_counts[$feed_item['item_key']] ?? 0;
     }
+} else {
+    foreach ($feed as $index => $feed_item) {
+        $feed[$index]['unread_comment_count'] = 0;
+        $feed[$index]['unread_reaction_count'] = 0;
+    }
 }
-
-$feed_seen_at_value = $seen_row['feedSeenAt'] ?? $seen_row['friendsSeenAt'] ?? null;
 
 $response = [
     'ok' => true,
     'feed' => $feed,
-    'feed_seen_at' => $feed_seen_at_value,
     'has_more' => $has_more,
     'next_before' => $has_more ? $next_before : null,
     'next_before_key' => $has_more ? $next_before_key : null

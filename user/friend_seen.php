@@ -23,19 +23,15 @@ $user_id = (int) $_SESSION['user_id'];
 $scope = (string) ($_POST['scope'] ?? 'all');
 
 if (!in_array($scope, ['friends', 'feed', 'all'], true)) {
-    $scope = 'all';
+    $scope = 'friends';
 }
 
-if ($scope === 'friends') {
+// feedSeenAt is a legacy rollout cutoff. Feed items are now marked individually.
+if ($scope !== 'feed') {
     $stmt = $conn->prepare("UPDATE users SET friendsSeenAt=NOW() WHERE id=?");
-} elseif ($scope === 'feed') {
-    $stmt = $conn->prepare("UPDATE users SET feedSeenAt=NOW() WHERE id=?");
-} else {
-    $stmt = $conn->prepare("UPDATE users SET friendsSeenAt=NOW(), feedSeenAt=NOW() WHERE id=?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
 }
-
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
 
 $counts = craftcrawl_user_notification_counts($conn, $user_id);
 

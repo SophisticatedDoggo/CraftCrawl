@@ -39,10 +39,10 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let loadingMore = false;
     let feedObserver = null;
     let feedPaginationFailed = false;
-    let feedSeenAt = null;
     let newItemObserver = null;
-    let markFeedSeenTimer = null;
     let scrollToNotificationButton = null;
+    let notificationSeenQueue = Promise.resolve();
+    let notificationStatusVersion = 0;
     const feedPageSize = 40;
     const feedPaginationDelayMs = 1300;
     const reactionLabels = {
@@ -437,6 +437,24 @@ window.CraftCrawlInitFriends = function (scope = document) {
         }));
     }
 
+    function postNotificationSeen(values) {
+        const mutationVersion = ++notificationStatusVersion;
+        const request = notificationSeenQueue
+            .then(() => postForm(userEndpoint('feed_notification_seen.php'), values))
+            .then((data) => {
+                data.notificationStatusVersion = mutationVersion;
+                return data;
+            });
+        notificationSeenQueue = request.catch(() => {});
+        return request;
+    }
+
+    function applyNotificationMutationCounts(data) {
+        if (data?.notificationStatusVersion === notificationStatusVersion) {
+            applyStatusCounts(data);
+        }
+    }
+
     function formatDate(value) {
         const date = new Date(value.replace(' ', 'T'));
 
@@ -478,8 +496,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     function isNewFeedItem(item) {
-        if (!feedSeenAt || !item.created_at) return false;
-        return new Date(item.created_at) > new Date(feedSeenAt);
+        return item.is_new === true;
     }
 
     function feedItemAttrs(item) {
@@ -554,31 +571,28 @@ window.CraftCrawlInitFriends = function (scope = document) {
             feed.querySelectorAll('.has-unread-notifications').forEach((item) => {
                 item.classList.remove('has-unread-notifications');
             });
+            feed.querySelectorAll('.feed-action-unread-badge').forEach((badge) => badge.remove());
+            feed.querySelectorAll('[data-reaction-disclosure]').forEach((disclosure) => {
+                disclosure.dataset.unreadCount = '0';
+            });
+            feed.querySelectorAll('[data-reaction-unread="true"]').forEach((entry) => {
+                entry.dataset.reactionUnread = 'false';
+                entry.classList.remove('is-unread');
+            });
         }
         updateScrollToNotificationButton();
     }
 
-    function clearLocalSocialNotificationCount(value) {
-        const clearedCount = Math.max(0, Number(value || 0));
-        if (clearedCount < 1) {
-            return;
-        }
-
-        applyStatusCounts({
-            pending_invites: currentStatus.pendingInvites,
-            pending_recommendations: currentStatus.pendingRecommendations,
-            social_notifications: Math.max(0, currentStatus.socialNotifications - clearedCount),
-            new_friends: currentStatus.newFriends,
-            new_feed_items: currentStatus.newFeedItems,
-            badge_count: Math.max(0, currentStatus.badgeCount - clearedCount)
-        });
-    }
-
     function loadStatus() {
+        const requestVersion = notificationStatusVersion;
         return fetch(userEndpoint('friend_status.php'), { credentials: 'same-origin' })
             .then((response) => response.json())
             .then((data) => {
                 if (!data.ok) {
+                    return;
+                }
+
+                if (requestVersion !== notificationStatusVersion) {
                     return;
                 }
 
@@ -605,20 +619,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
             return Promise.resolve();
         }
 
-        const visibleBadgeText = disclosure.querySelector('.feed-action-unread-badge')?.textContent || '';
-        const visibleBadgeCount = visibleBadgeText.trim() === '9+' ? 9 : Number(visibleBadgeText.trim() || 0);
-        const unreadCount = Math.max(Number(disclosure.dataset.unreadCount || 0), visibleBadgeCount);
         disclosure.dataset.markingSeen = 'true';
-        disclosure.dataset.unreadCount = '0';
-        disclosure.querySelectorAll('.feed-action-unread-badge').forEach((badge) => badge.remove());
-        const feedCard = disclosure.closest('.friends-feed-item');
-        if (feedCard && !feedCard.querySelector('.feed-action-unread-badge')) {
-            feedCard.classList.remove('has-unread-notifications');
-            updateScrollToNotificationButton();
-        }
-        clearLocalSocialNotificationCount(unreadCount);
 
-        return postForm(userEndpoint('feed_notification_seen.php'), {
+        return postNotificationSeen({
             csrf_token: csrfToken,
             item_key: disclosure.dataset.itemKey,
             notification_type: 'reaction'
@@ -627,11 +630,23 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 if (!data.ok) {
                     return;
                 }
-                applyStatusCounts(data);
+                disclosure.dataset.unreadCount = '0';
+                disclosure.querySelectorAll('.feed-action-unread-badge').forEach((badge) => badge.remove());
+                const panel = disclosure.closest('.friends-feed-item')?.querySelector('[data-reaction-disclosure-panel]');
+                panel?.querySelectorAll('[data-reaction-unread="true"]').forEach((entry) => {
+                    entry.dataset.reactionUnread = 'false';
+                    entry.classList.remove('is-unread');
+                });
+                const feedCard = disclosure.closest('.friends-feed-item');
+                if (feedCard && !feedCard.querySelector('.feed-action-unread-badge')) {
+                    feedCard.classList.remove('has-unread-notifications');
+                }
+                applyNotificationMutationCounts(data);
             })
-            .catch(() => {})
+            .catch(() => loadStatus())
             .finally(() => {
                 delete disclosure.dataset.markingSeen;
+                updateScrollToNotificationButton();
             });
     }
 
@@ -1300,9 +1315,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
     function renderFeed(data) {
         const friends = data.friends || [];
         const items = data.feed || [];
-        if (data.feed_seen_at) {
-            feedSeenAt = data.feed_seen_at;
-        }
         currentFriendsCache = friends;
 
         if (count) {
@@ -2017,30 +2029,27 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     function clearNewFeedItem(article) {
-        if (!article.classList.contains('is-new')) {
+        if (!article.classList.contains('is-new') || article.dataset.markingFeedSeen === 'true' || !csrfToken) {
             return;
         }
 
-        article.classList.remove('is-new');
-        if (newItemObserver) {
-            newItemObserver.unobserve(article);
-        }
-
-        applyStatusCounts({
-            pending_invites: currentStatus.pendingInvites,
-            pending_recommendations: currentStatus.pendingRecommendations,
-            social_notifications: currentStatus.socialNotifications,
-            new_friends: currentStatus.newFriends,
-            new_feed_items: Math.max(0, currentStatus.newFeedItems - 1),
-            badge_count: Math.max(0, currentStatus.badgeCount - 1)
-        });
-
-        updateScrollToNotificationButton();
-
-        clearTimeout(markFeedSeenTimer);
-        markFeedSeenTimer = window.setTimeout(() => {
-            markFriendsSeen('feed');
-        }, 2000);
+        article.dataset.markingFeedSeen = 'true';
+        postNotificationSeen({
+            csrf_token: csrfToken,
+            item_key: article.dataset.feedItemKey,
+            notification_type: 'feed_item'
+        })
+            .then((data) => {
+                if (!data?.ok) return;
+                article.classList.remove('is-new');
+                newItemObserver?.unobserve(article);
+                applyNotificationMutationCounts(data);
+            })
+            .catch(() => loadStatus())
+            .finally(() => {
+                delete article.dataset.markingFeedSeen;
+                updateScrollToNotificationButton();
+            });
     }
 
     function observeNewItems(container) {
@@ -2063,8 +2072,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
             newItemObserver.disconnect();
             newItemObserver = null;
         }
-        clearTimeout(markFeedSeenTimer);
-        markFeedSeenTimer = null;
     }
 
     function ensureScrollToNotificationButton() {
@@ -2977,29 +2984,48 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
     function clearUnreadBadge(itemKey) {
         const feedCard = feed?.querySelector(`[data-feed-item-key="${CSS.escape(itemKey)}"]`);
-        if (!feedCard) return;
+        if (!feedCard || !csrfToken || feedCard.dataset.markingSocialSeen === 'true') return;
 
-        feedCard.classList.remove('has-unread-notifications');
-        feedCard.querySelectorAll('.feed-comments-link .feed-action-unread-badge').forEach((badge) => badge.remove());
-
-        updateScrollToNotificationButton();
-
-        if (csrfToken) {
-            postForm(userEndpoint('feed_notification_seen.php'), {
-                csrf_token: csrfToken,
-                item_key: itemKey,
-                notification_type: 'comment'
-            }).then((data) => {
-                if (data?.ok) applyStatusCounts(data);
-            }).catch(() => {});
-            postForm(userEndpoint('feed_notification_seen.php'), {
-                csrf_token: csrfToken,
-                item_key: itemKey,
-                notification_type: 'reaction'
-            }).then((data) => {
-                if (data?.ok) applyStatusCounts(data);
-            }).catch(() => {});
+        const notificationTypes = [];
+        if (feedCard.querySelector('.feed-comments-link .feed-action-unread-badge')) {
+            notificationTypes.push('comment');
         }
+        if (feedCard.dataset.feedIsSelf === 'true' && feedCard.querySelector('[data-reaction-disclosure] .feed-action-unread-badge')) {
+            notificationTypes.push('reaction');
+        }
+        if (!notificationTypes.length) return;
+
+        feedCard.dataset.markingSocialSeen = 'true';
+
+        postNotificationSeen({
+            csrf_token: csrfToken,
+            item_key: itemKey,
+            notification_types: notificationTypes.join(',')
+        })
+            .then((data) => {
+                if (!data?.ok) return;
+
+                feedCard.querySelectorAll('.feed-comments-link .feed-action-unread-badge').forEach((badge) => badge.remove());
+                if (notificationTypes.includes('reaction')) {
+                    feedCard.querySelectorAll('[data-reaction-disclosure]').forEach((disclosure) => {
+                        disclosure.dataset.unreadCount = '0';
+                        disclosure.querySelectorAll('.feed-action-unread-badge').forEach((badge) => badge.remove());
+                    });
+                    feedCard.querySelectorAll('[data-reaction-unread="true"]').forEach((entry) => {
+                        entry.dataset.reactionUnread = 'false';
+                        entry.classList.remove('is-unread');
+                    });
+                }
+                if (!feedCard.querySelector('.feed-action-unread-badge')) {
+                    feedCard.classList.remove('has-unread-notifications');
+                }
+                applyNotificationMutationCounts(data);
+            })
+            .catch(() => loadStatus())
+            .finally(() => {
+                delete feedCard.dataset.markingSocialSeen;
+                updateScrollToNotificationButton();
+            });
     }
 
     document.addEventListener('click', (event) => {
@@ -3071,25 +3097,12 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 updateScrollToNotificationButton();
                 return;
             }
-            refreshVisibleFeed()
-                .then(() => {
-                    if (event.detail?.userInitiated) {
-                        return markFriendsSeen('feed');
-                    }
-
-                    return null;
-                });
+            refreshVisibleFeed();
         }
     });
 
     document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            if (markFeedSeenTimer) {
-                clearTimeout(markFeedSeenTimer);
-                markFeedSeenTimer = null;
-                markFriendsSeen('feed');
-            }
-        } else {
+        if (!document.hidden) {
             loadStatus();
             if (managerPage) {
                 loadRequests();
@@ -3330,6 +3343,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         ensureScrollToNotificationButton();
         loadRequests();
         loadFeed();
+        loadStatus();
     } else {
         loadStatus();
     }
