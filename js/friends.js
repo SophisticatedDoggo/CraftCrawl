@@ -3134,43 +3134,46 @@ window.CraftCrawlInitFriends = function (scope = document) {
             });
     }
 
-    document.addEventListener('click', (event) => {
-        const trigger = event.target.closest('[data-comments-sheet-trigger]');
-        if (trigger) {
-            event.preventDefault();
-            event.stopPropagation();
-            const itemKey = trigger.dataset.itemKey;
-            if (itemKey) openCommentsSheet(itemKey);
-            return;
-        }
-
-        const replyBtn = event.target.closest('[data-sheet-reply]');
-        if (replyBtn) {
-            const parentId = replyBtn.dataset.parentCommentId || '';
-            const label = replyBtn.dataset.replyLabel || '';
-            if (parentId) setSheetReply(parentId, label);
-            return;
-        }
-
-        const repliesToggle = event.target.closest('[data-sheet-replies-toggle]');
-        if (repliesToggle) {
-            const panelId = repliesToggle.getAttribute('aria-controls') || '';
-            const replyPanel = panelId ? document.getElementById(panelId) : null;
-            if (replyPanel) {
-                const isExpanded = repliesToggle.getAttribute('aria-expanded') === 'true';
-                repliesToggle.setAttribute('aria-expanded', String(!isExpanded));
-                replyPanel.hidden = isExpanded;
-                const label = repliesToggle.querySelector('span');
-                const replyCount = Number(repliesToggle.dataset.replyCount || replyPanel.children.length || 0);
-                if (label) {
-                    label.textContent = isExpanded
-                        ? `View ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`
-                        : 'Hide replies';
-                }
+    if (document.documentElement.dataset.commentsSheetClickReady !== 'true') {
+        document.documentElement.dataset.commentsSheetClickReady = 'true';
+        document.addEventListener('click', (event) => {
+            const trigger = event.target.closest('[data-comments-sheet-trigger]');
+            if (trigger) {
+                event.preventDefault();
+                event.stopPropagation();
+                const itemKey = trigger.dataset.itemKey;
+                if (itemKey) window.CraftCrawlOpenCommentsSheet?.(itemKey);
+                return;
             }
-            return;
-        }
-    });
+
+            const replyBtn = event.target.closest('[data-sheet-reply]');
+            if (replyBtn) {
+                const parentId = replyBtn.dataset.parentCommentId || '';
+                const label = replyBtn.dataset.replyLabel || '';
+                if (parentId) window.CraftCrawlSetSheetReply?.(parentId, label);
+                return;
+            }
+
+            const repliesToggle = event.target.closest('[data-sheet-replies-toggle]');
+            if (repliesToggle) {
+                const panelId = repliesToggle.getAttribute('aria-controls') || '';
+                const replyPanel = panelId ? document.getElementById(panelId) : null;
+                if (replyPanel) {
+                    const isExpanded = repliesToggle.getAttribute('aria-expanded') === 'true';
+                    repliesToggle.setAttribute('aria-expanded', String(!isExpanded));
+                    replyPanel.hidden = isExpanded;
+                    const label = repliesToggle.querySelector('span');
+                    const replyCount = Number(repliesToggle.dataset.replyCount || replyPanel.children.length || 0);
+                    if (label) {
+                        label.textContent = isExpanded
+                            ? `View ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`
+                            : 'Hide replies';
+                    }
+                }
+                return;
+            }
+        });
+    }
 
     function isFeedTabActive() {
         return Boolean(panel && !panel.closest('[data-user-tab-panel]')?.hidden);
@@ -3189,6 +3192,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     window.CraftCrawlRefreshFriendsFeed = refreshVisibleFeed;
+    window.CraftCrawlOpenCommentsSheet = openCommentsSheet;
+    window.CraftCrawlSetSheetReply = setSheetReply;
 
     window.addEventListener('craftcrawl:event-want-updated', () => {
         loadFeed();
