@@ -3,7 +3,7 @@
 require_once __DIR__ . '/leveling.php';
 
 const CRAFTCRAWL_CHAIN_OPTIONS_COUNT = 5;
-const CRAFTCRAWL_CHAIN_RADIUS_METERS = 40234; // 25 miles
+const CRAFTCRAWL_CHAIN_RADIUS_METERS = 24140; // 15 miles
 const CRAFTCRAWL_CHAIN_MIN_STEPS = 4;
 const CRAFTCRAWL_CHAIN_MAX_STEPS = 7;
 const CRAFTCRAWL_CHAIN_XP_BASE = 80;
@@ -38,7 +38,7 @@ function craftcrawl_chain_template_pool() {
             'description' => 'Blaze a trail through the local brewery scene.',
             'icon' => 'hops',
             'preferred_types' => ['brewery'],
-            'fallback_types' => ['bar', 'social_club'],
+            'fallback_types' => ['bar'],
             'step_pattern' => ['checkin', 'review', 'checkin', 'feed_reaction', 'checkin', 'review'],
             'min_locations' => 3,
             'prefer_unvisited' => true,
@@ -78,7 +78,7 @@ function craftcrawl_chain_template_pool() {
             'description' => 'Sample the best of every craft category nearby.',
             'icon' => 'circuit',
             'preferred_types' => ['brewery', 'winery', 'distillery', 'distilery', 'cidery'],
-            'fallback_types' => ['bar', 'meadery', 'social_club'],
+            'fallback_types' => ['bar', 'meadery'],
             'step_pattern' => ['checkin', 'review', 'checkin', 'feed_reaction', 'checkin', 'review', 'checkin'],
             'min_locations' => 4,
             'prefer_unvisited' => true,
@@ -109,7 +109,7 @@ function craftcrawl_chain_template_pool() {
             'name' => 'Social Crawl',
             'description' => 'Hit the town and share the experience with friends.',
             'icon' => 'people',
-            'preferred_types' => ['brewery', 'bar', 'social_club'],
+            'preferred_types' => ['brewery', 'bar'],
             'fallback_types' => ['winery', 'cidery', 'distillery', 'distilery', 'meadery'],
             'step_pattern' => ['checkin', 'feed_reaction', 'checkin', 'review', 'feed_reaction', 'checkin'],
             'min_locations' => 3,
@@ -120,7 +120,7 @@ function craftcrawl_chain_template_pool() {
             'description' => 'A quick four-stop adventure for a great day out.',
             'icon' => 'bolt',
             'preferred_types' => ['brewery', 'winery', 'distillery', 'distilery', 'cidery', 'bar'],
-            'fallback_types' => ['meadery', 'social_club'],
+            'fallback_types' => ['meadery'],
             'step_pattern' => ['checkin', 'review', 'checkin', 'feed_reaction'],
             'min_locations' => 2,
             'prefer_unvisited' => true,
@@ -130,7 +130,7 @@ function craftcrawl_chain_template_pool() {
             'description' => 'The ultimate crawl through your region.',
             'icon' => 'map',
             'preferred_types' => ['brewery', 'winery', 'distillery', 'distilery', 'cidery'],
-            'fallback_types' => ['bar', 'meadery', 'social_club'],
+            'fallback_types' => ['bar', 'meadery'],
             'step_pattern' => ['checkin', 'review', 'checkin', 'feed_reaction', 'checkin', 'review', 'checkin'],
             'min_locations' => 4,
             'prefer_unvisited' => true,
@@ -140,7 +140,7 @@ function craftcrawl_chain_template_pool() {
             'description' => 'Cross city lines and explore different neighborhoods.',
             'icon' => 'pin',
             'preferred_types' => ['brewery', 'winery', 'distillery', 'distilery', 'cidery', 'bar'],
-            'fallback_types' => ['meadery', 'social_club'],
+            'fallback_types' => ['meadery'],
             'step_pattern' => ['checkin', 'review', 'checkin', 'feed_reaction', 'checkin', 'review'],
             'min_locations' => 3,
             'prefer_unvisited' => false,

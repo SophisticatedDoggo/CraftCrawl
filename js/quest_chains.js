@@ -247,7 +247,7 @@
                     return;
                 }
                 renderChainOptions(data.chains || [], optionsEl, statusEl);
-                btn.textContent = 'Refresh Options';
+                btn.textContent = 'Refresh Quests';
                 btn.className = 'chain-btn-secondary';
                 btn.disabled = false;
             })
