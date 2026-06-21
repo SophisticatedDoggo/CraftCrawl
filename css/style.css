@@ -4345,7 +4345,36 @@ body:not(.feed-page-body) .feed-scroll-to-notification-fab {
 
 .friends-feed-item.is-new,
 .friends-feed-item.has-unread-notifications {
-    border-left: 3px solid var(--color-primary);
+    position: relative;
+    --feed-unread-glow-left: 0px;
+    --feed-unread-glow-right: 0px;
+}
+
+.friends-feed-item.is-new::before,
+.friends-feed-item.has-unread-notifications::before {
+    content: "";
+    position: absolute;
+    z-index: 5;
+    top: 1px;
+    right: var(--feed-unread-glow-right);
+    bottom: 1px;
+    left: var(--feed-unread-glow-left);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 62%, transparent);
+    border-radius: 10px;
+    box-shadow:
+        inset 0 0 12px color-mix(in srgb, var(--color-primary) 16%, transparent),
+        0 0 8px color-mix(in srgb, var(--color-primary) 34%, transparent),
+        0 -4px 12px color-mix(in srgb, var(--color-primary) 18%, transparent),
+        0 4px 12px color-mix(in srgb, var(--color-primary) 18%, transparent);
+    pointer-events: none;
+}
+
+@media (max-width: 760px) {
+    .feed-page-body .friends-feed-item.is-new,
+    .feed-page-body .friends-feed-item.has-unread-notifications {
+        --feed-unread-glow-left: -14px;
+        --feed-unread-glow-right: -14px;
+    }
 }
 
 .feed-compose-modal {

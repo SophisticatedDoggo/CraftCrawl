@@ -78,6 +78,7 @@ feed_notification_assert(strpos($query_text, 'ub.visit_id IS NULL') !== false, '
 
 $feed_source = file_get_contents(__DIR__ . '/../user/friends_feed.php');
 $client_source = file_get_contents(__DIR__ . '/../js/friends.js');
+$style_source = file_get_contents(__DIR__ . '/../css/style.css');
 $friend_seen_source = file_get_contents(__DIR__ . '/../user/friend_seen.php');
 $schema_source = file_get_contents(__DIR__ . '/../schema.sql');
 
@@ -88,6 +89,11 @@ feed_notification_assert(strpos($client_source, "markFriendsSeen('feed')") === f
 feed_notification_assert(strpos($client_source, 'while (!item && hasMore)') !== false, 'notification button must load pages until it finds a target');
 feed_notification_assert(strpos($client_source, "const notificationTypes = ['comment'];") !== false, 'opening combined activity must clear comment notifications');
 feed_notification_assert(strpos($client_source, "notificationTypes.push('reaction');") !== false, 'opening owned combined activity must also clear reaction notifications');
+feed_notification_assert(strpos($style_source, '.friends-feed-item.has-unread-notifications::before') !== false, 'unread cards must render an edge glow');
+feed_notification_assert(
+    !preg_match('/\.friends-feed-item\.is-new,\s*\.friends-feed-item\.has-unread-notifications\s*\{[^}]*border-left/s', $style_source),
+    'unread cards must not use the broken split left border'
+);
 feed_notification_assert(strpos($friend_seen_source, 'feedSeenAt=NOW()') === false, 'legacy seen endpoint must not advance the feed cutoff');
 feed_notification_assert(strpos($schema_source, "ENUM('feed_item', 'comment', 'reaction')") !== false, 'schema must allow feed-item reads');
 
