@@ -39,8 +39,14 @@
             },
             Notifications: {
                 addEventListener(event, listener) {
-                    if (event === 'click' && typeof rawPlugin.addListener === 'function') {
+                    if (typeof rawPlugin.addListener !== 'function') {
+                        return;
+                    }
+                    if (event === 'click') {
                         rawPlugin.addListener('notificationClick', listener);
+                    }
+                    if (event === 'foregroundWillDisplay') {
+                        rawPlugin.addListener('notificationWillDisplay', listener);
                     }
                 },
                 async hasPermission() {
@@ -122,6 +128,10 @@
         window.location.assign(path);
     }
 
+    function dispatchPushReceived() {
+        window.dispatchEvent(new CustomEvent('craftcrawl:push-received'));
+    }
+
     async function initNativeOneSignal(config) {
         const OneSignal = getNativeOneSignalPlugin();
 
@@ -134,6 +144,16 @@
             OneSignal.Notifications.addClickListener(handleNativeNotificationClick);
         } else {
             OneSignal.Notifications.addEventListener?.('click', handleNativeNotificationClick);
+        }
+        if (typeof OneSignal.Notifications.addForegroundWillDisplayListener === 'function') {
+            OneSignal.Notifications.addForegroundWillDisplayListener((event) => {
+                dispatchPushReceived();
+                event.getNotification().display();
+            });
+        } else {
+            OneSignal.Notifications.addEventListener?.('foregroundWillDisplay', () => {
+                dispatchPushReceived();
+            });
         }
         await OneSignal.login(config.external_id);
 
@@ -158,6 +178,11 @@
                         }
                     });
                     await OneSignal.login(config.external_id);
+                    if (OneSignal.Notifications && typeof OneSignal.Notifications.addEventListener === 'function') {
+                        OneSignal.Notifications.addEventListener('foregroundWillDisplay', () => {
+                            dispatchPushReceived();
+                        });
+                    }
                     resolve(OneSignal);
                 } catch (error) {
                     reject(error);

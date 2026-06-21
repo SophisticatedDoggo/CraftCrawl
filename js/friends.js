@@ -45,6 +45,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let notificationSearchPromise = null;
     let notificationSeenQueue = Promise.resolve();
     let notificationStatusVersion = 0;
+    let statusPollInterval = null;
     const feedPageSize = 40;
     const feedPaginationDelayMs = 1300;
     const reactionLabels = {
@@ -600,6 +601,24 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 applyStatusCounts(data);
             })
             .catch(() => {});
+    }
+
+    function startStatusPolling() {
+        if (statusPollInterval) {
+            return;
+        }
+        statusPollInterval = setInterval(function () {
+            if (!document.hidden) {
+                loadStatus();
+            }
+        }, 45000);
+    }
+
+    function stopStatusPolling() {
+        if (statusPollInterval) {
+            clearInterval(statusPollInterval);
+            statusPollInterval = null;
+        }
     }
 
     function markFriendsSeen(scope = 'all') {
@@ -3199,6 +3218,10 @@ window.CraftCrawlInitFriends = function (scope = document) {
         loadFeed();
     });
 
+    window.addEventListener('craftcrawl:push-received', () => {
+        loadStatus();
+    });
+
     window.addEventListener('craftcrawl:user-tab-changed', (event) => {
         if (event.detail?.tab === 'feed') {
             updateFocusRequestFromUrl(event.detail?.url || window.location.href);
@@ -3213,8 +3236,11 @@ window.CraftCrawlInitFriends = function (scope = document) {
     });
 
     document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
+        if (document.hidden) {
+            stopStatusPolling();
+        } else {
             loadStatus();
+            startStatusPolling();
             if (managerPage) {
                 loadRequests();
             }
@@ -3458,5 +3484,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     } else {
         loadStatus();
     }
+
+    startStatusPolling();
 };
 window.CraftCrawlInitFriends();
