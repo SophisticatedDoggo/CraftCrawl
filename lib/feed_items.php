@@ -551,15 +551,15 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
             return null;
         }
 
-        $locations_stmt = $conn->prepare("
-            SELECT DISTINCT location_name, location_city, location_state
+        $steps_stmt = $conn->prepare("
+            SELECT action_type, location_name, location_city, location_state
             FROM quest_chain_steps
             WHERE chain_id = ?
             ORDER BY step_order ASC
         ");
-        $locations_stmt->bind_param("i", $chain['chain_id']);
-        $locations_stmt->execute();
-        $locations = $locations_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $steps_stmt->bind_param("i", $chain['chain_id']);
+        $steps_stmt->execute();
+        $chain_steps = $steps_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
         return [
             'item_key' => $item_key,
@@ -572,7 +572,7 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
             'chain_description' => $chain['chain_description'],
             'step_count' => (int) $chain['step_count'],
             'xp_awarded' => (int) $chain['xp_awarded'],
-            'locations' => $locations,
+            'steps' => $chain_steps,
         ];
     }
 

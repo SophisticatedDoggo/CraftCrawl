@@ -1275,14 +1275,19 @@ window.CraftCrawlInitFriends = function (scope = document) {
         }
 
         if (item.type === 'chain_complete') {
-            const locationNames = (item.locations || []).map(l => escapeHtml(l.location_name)).join(', ');
+            const chainActionLabels = { checkin: 'Checked in at', review: 'Reviewed', event_want_to_go: 'RSVP\'d at', feed_reaction: 'Reacted to a post about' };
+            const stepItems = (item.steps || []).map((step, i) => {
+                const label = chainActionLabels[step.action_type] || 'Visited';
+                return `<li class="feed-chain-step"><span class="feed-chain-step-num">${i + 1}</span> ${escapeHtml(label)} <strong>${escapeHtml(step.location_name)}</strong></li>`;
+            }).join('');
             return `
                 <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
                         <strong class="feed-item-title">Completed quest chain: ${escapeHtml(item.chain_name)}</strong>
-                        <p class="feed-item-detail">${escapeHtml(item.step_count)} steps · ${locationNames} · +${escapeHtml(item.xp_awarded)} XP</p>
+                        <ol class="feed-chain-steps">${stepItems}</ol>
+                        <p class="feed-item-detail">+${escapeHtml(item.xp_awarded)} XP</p>
                         ${actions}
                     </div>
                 </article>

@@ -170,6 +170,17 @@
 
     function renderActiveChain(chain, members) {
         var actionLabels = { checkin: 'Check in', review: 'Leave a review', event_want_to_go: 'RSVP to an event', feed_reaction: 'React to a post' };
+        var otherMembers = members.filter(function (m) { return m.role !== 'owner' || members.length === 1; });
+        var memberStepMap = {};
+        members.forEach(function (m) {
+            if (m.step_progress) {
+                m.step_progress.forEach(function (sp) {
+                    if (!memberStepMap[sp.step_id]) memberStepMap[sp.step_id] = [];
+                    memberStepMap[sp.step_id].push({ name: m.name, completed: sp.completed, role: m.role });
+                });
+            }
+        });
+
         var html = '<div class="chain-active">';
         html += '<h3 class="chain-section-heading">Active Quest Chain</h3>';
         html += '<article class="chain-card is-active">';
@@ -191,7 +202,19 @@
 
             html += '<li class="chain-step' + cls + '">';
             html += '<span class="chain-step-dot" aria-hidden="true"></span>';
-            html += '<div class="chain-step-content"><strong>' + escapeHtml(label) + '</strong><span>' + loc + '</span></div>';
+            html += '<div class="chain-step-content"><strong>' + escapeHtml(label) + '</strong><span>' + loc + '</span>';
+
+            var stepMembers = memberStepMap[step.id];
+            if (stepMembers && members.length > 1) {
+                var dots = stepMembers.filter(function (sm) { return sm.role !== 'owner'; }).map(function (sm) {
+                    var initial = (sm.name || '?').charAt(0).toUpperCase();
+                    var dotCls = 'chain-step-member-dot' + (sm.completed ? ' is-done' : '');
+                    return '<span class="' + dotCls + '" aria-label="' + escapeHtml(sm.name) + (sm.completed ? ' (done)' : '') + '">' + initial + '</span>';
+                }).join('');
+                if (dots) html += '<span class="chain-step-member-dots">' + dots + '</span>';
+            }
+
+            html += '</div>';
             if (step.completed) {
                 html += '<span class="chain-step-check" aria-label="Completed"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
             }
@@ -201,14 +224,21 @@
         html += '</ol>';
 
         if (members.length > 1) {
-            html += '<div class="chain-member-avatars">';
+            html += '<div class="chain-members-section">';
+            html += '<h4 class="chain-members-heading">Party Progress</h4>';
             members.forEach(function (m) {
-                var title = escapeHtml(m.name) + ' (' + m.completed_count + '/' + chain.step_count + ')';
+                var pct = chain.step_count > 0 ? Math.round((m.completed_count / chain.step_count) * 100) : 0;
+                html += '<div class="chain-member-row">';
                 if (m.profile_photo_url) {
-                    html += '<img class="chain-member-avatar" src="' + escapeHtml(m.profile_photo_url) + '" alt="' + escapeHtml(m.name) + '" title="' + title + '">';
+                    html += '<img class="chain-member-avatar" src="' + escapeHtml(m.profile_photo_url) + '" alt="">';
                 } else {
-                    html += '<span class="chain-member-avatar-placeholder" title="' + title + '">' + (m.name || '?').charAt(0).toUpperCase() + '</span>';
+                    html += '<span class="chain-member-avatar-placeholder">' + (m.name || '?').charAt(0).toUpperCase() + '</span>';
                 }
+                html += '<div class="chain-member-info">';
+                html += '<span class="chain-member-name">' + escapeHtml(m.name) + (m.role === 'owner' ? ' <small>(host)</small>' : '') + '</span>';
+                html += '<div class="chain-member-bar"><span style="width:' + pct + '%;"></span></div>';
+                html += '<small>' + m.completed_count + ' / ' + chain.step_count + ' steps</small>';
+                html += '</div></div>';
             });
             html += '</div>';
         }
@@ -355,6 +385,9 @@
         postJSON('quest_chain_status.php', {})
             .then(function (statusData) {
                 var memberIds = (statusData.members || []).map(function (m) { return m.user_id; });
+                var memberCount = memberIds.length > 0 ? memberIds.length - 1 : 0;
+                var atLimit = memberCount >= 4;
+
                 return fetch('friends_list.php', { credentials: 'same-origin' })
                     .then(function (res) { return res.json(); })
                     .then(function (friendsData) {
@@ -363,16 +396,45 @@
                             container.innerHTML = '<p style="color:var(--color-muted);">No friends to invite.</p>';
                             return;
                         }
-                        container.innerHTML = friends.map(function (friend) {
+
+                        var html = '';
+                        if (atLimit) {
+                            html += '<p class="chain-invite-limit">Party is full (4 friends max).</p>';
+                        }
+
+                        html += friends.map(function (friend) {
                             var isMember = memberIds.indexOf(friend.id) >= 0;
+                            var avatar = friend.profile_photo_url
+                                ? '<img class="chain-invite-avatar" src="' + escapeHtml(friend.profile_photo_url) + '" alt="">'
+                                : '<span class="chain-invite-avatar-placeholder">' + (friend.name || '?').charAt(0).toUpperCase() + '</span>';
+
+                            var username = friend.username
+                                ? '<span class="chain-invite-username">@' + escapeHtml(friend.username) + '</span>'
+                                : '';
+
+                            var levelInfo = '<span class="chain-invite-level">Lv. ' + friend.level + (friend.title ? ' · ' + escapeHtml(friend.title) : '') + '</span>';
+
+                            var action;
+                            if (isMember) {
+                                action = '<span class="chain-invite-status">Invited</span>';
+                            } else if (atLimit) {
+                                action = '';
+                            } else {
+                                action = '<button type="button" class="chain-btn-start" data-chain-send-invite="' + friend.id + '" style="flex:0 0 auto;padding:6px 14px;font-size:13px;">Invite</button>';
+                            }
+
                             return '<div class="chain-invite-friend-item">' +
-                                '<span class="chain-invite-friend-name">' + escapeHtml(friend.name) + '</span>' +
-                                (isMember
-                                    ? '<span style="color:var(--color-muted);font-size:13px;">Already invited</span>'
-                                    : '<button type="button" class="chain-btn-primary" data-chain-send-invite="' + friend.id + '" style="flex:0;padding:6px 14px;font-size:13px;">Invite</button>'
-                                ) +
+                                avatar +
+                                '<div class="chain-invite-friend-info">' +
+                                    '<span class="chain-invite-friend-name">' + escapeHtml(friend.name) + '</span>' +
+                                    username +
+                                    levelInfo +
+                                '</div>' +
+                                action +
                             '</div>';
                         }).join('');
+
+                        container.innerHTML = html;
                     });
             })
             .catch(function () {

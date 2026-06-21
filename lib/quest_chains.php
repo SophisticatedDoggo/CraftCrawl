@@ -88,7 +88,7 @@ function craftcrawl_chain_template_pool() {
             'description' => 'Visit the top-rated spots in your area.',
             'icon' => 'star',
             'preferred_types' => ['brewery', 'winery', 'distillery', 'distilery', 'cidery', 'bar', 'meadery'],
-            'fallback_types' => ['social_club'],
+            'fallback_types' => [],
             'step_pattern' => ['checkin', 'review', 'checkin', 'review'],
             'min_locations' => 2,
             'prefer_unvisited' => false,
@@ -99,7 +99,7 @@ function craftcrawl_chain_template_pool() {
             'description' => 'Discover spots you\'ve never been to before.',
             'icon' => 'compass',
             'preferred_types' => ['brewery', 'winery', 'distillery', 'distilery', 'cidery', 'bar', 'meadery'],
-            'fallback_types' => ['social_club'],
+            'fallback_types' => [],
             'step_pattern' => ['checkin', 'review', 'checkin', 'feed_reaction', 'checkin'],
             'min_locations' => 3,
             'prefer_unvisited' => true,
@@ -151,7 +151,7 @@ function craftcrawl_chain_template_pool() {
             'description' => 'Seek out the lesser-known spots that deserve more love.',
             'icon' => 'gem',
             'preferred_types' => ['brewery', 'winery', 'distillery', 'distilery', 'cidery', 'bar', 'meadery'],
-            'fallback_types' => ['social_club'],
+            'fallback_types' => [],
             'step_pattern' => ['checkin', 'review', 'checkin', 'feed_reaction', 'checkin'],
             'min_locations' => 3,
             'prefer_unvisited' => true,
@@ -205,6 +205,7 @@ function craftcrawl_nearby_chain_locations($conn, $latitude, $longitude) {
         FROM locations
         WHERE visibility_status IN ('public_unclaimed', 'public_claimed')
           AND disabledAt IS NULL
+          AND location_type != 'social_club'
     ");
     $stmt->execute();
     $result = $stmt->get_result();
@@ -746,16 +747,37 @@ function craftcrawl_abandon_chain($conn, $user_id, $chain_id) {
         return ['ok' => true, 'action' => 'left'];
     }
 
+    $next_owner_stmt = $conn->prepare("
+        SELECT user_id FROM quest_chain_members
+        WHERE chain_id = ? AND status = 'accepted'
+        ORDER BY joinedAt ASC
+        LIMIT 1
+    ");
+    $next_owner_stmt->bind_param("i", $chain_id);
+    $next_owner_stmt->execute();
+    $next_owner = $next_owner_stmt->get_result()->fetch_assoc();
+
     $conn->begin_transaction();
 
     try {
-        $abandon_stmt = $conn->prepare("UPDATE quest_chains SET status = 'abandoned', abandonedAt = NOW() WHERE id = ?");
-        $abandon_stmt->bind_param("i", $chain_id);
-        $abandon_stmt->execute();
+        if ($next_owner) {
+            $new_owner_id = (int) $next_owner['user_id'];
+            $transfer_stmt = $conn->prepare("UPDATE quest_chains SET owner_user_id = ? WHERE id = ?");
+            $transfer_stmt->bind_param("ii", $new_owner_id, $chain_id);
+            $transfer_stmt->execute();
 
-        $members_stmt = $conn->prepare("UPDATE quest_chain_members SET status = 'left', leftAt = NOW() WHERE chain_id = ? AND status IN ('pending', 'accepted')");
-        $members_stmt->bind_param("i", $chain_id);
-        $members_stmt->execute();
+            $remove_member_stmt = $conn->prepare("DELETE FROM quest_chain_members WHERE chain_id = ? AND user_id = ?");
+            $remove_member_stmt->bind_param("ii", $chain_id, $new_owner_id);
+            $remove_member_stmt->execute();
+        } else {
+            $abandon_stmt = $conn->prepare("UPDATE quest_chains SET status = 'abandoned', abandonedAt = NOW() WHERE id = ?");
+            $abandon_stmt->bind_param("i", $chain_id);
+            $abandon_stmt->execute();
+
+            $members_stmt = $conn->prepare("UPDATE quest_chain_members SET status = 'left', leftAt = NOW() WHERE chain_id = ? AND status IN ('pending', 'accepted')");
+            $members_stmt->bind_param("i", $chain_id);
+            $members_stmt->execute();
+        }
 
         $conn->commit();
     } catch (Throwable $error) {
@@ -998,6 +1020,13 @@ function craftcrawl_check_chain_step_completion($conn, $user_id, $action_type, $
 function craftcrawl_check_chain_feed_reaction($conn, $user_id, $feed_item_key) {
     if (!craftcrawl_chain_storage_ready($conn)) {
         return null;
+    }
+
+    if (function_exists('craftcrawl_feed_item_owner_id')) {
+        $owner_id = craftcrawl_feed_item_owner_id($conn, $feed_item_key);
+        if ($owner_id === $user_id) {
+            return null;
+        }
     }
 
     $location_id = craftcrawl_feed_item_location_id($conn, $feed_item_key);
@@ -1287,6 +1316,18 @@ function craftcrawl_invite_to_chain($conn, $owner_user_id, $chain_id, $friend_us
 
     if (!$chain || (int) $chain['owner_user_id'] !== $owner_user_id || $chain['status'] !== 'active') {
         return ['ok' => false, 'message' => 'You can only invite friends to your active quest chain.'];
+    }
+
+    $member_count_stmt = $conn->prepare("
+        SELECT COUNT(*) AS cnt FROM quest_chain_members
+        WHERE chain_id = ? AND status IN ('pending', 'accepted')
+    ");
+    $member_count_stmt->bind_param("i", $chain_id);
+    $member_count_stmt->execute();
+    $member_count = (int) ($member_count_stmt->get_result()->fetch_assoc()['cnt'] ?? 0);
+
+    if ($member_count >= 4) {
+        return ['ok' => false, 'message' => 'Quest chains are limited to 4 friends.'];
     }
 
     $friend_stmt = $conn->prepare("SELECT id FROM user_friends WHERE user_id = ? AND friend_user_id = ? LIMIT 1");
