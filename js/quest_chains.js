@@ -1,11 +1,16 @@
 (function () {
     'use strict';
 
-    var chainsTabLoaded = false;
+    var chainsLoading = false;
 
     function getCsrfToken() {
         var panel = document.querySelector('[data-quest-chains-panel]');
         return (panel && panel.dataset.csrfToken) || window.CRAFTCRAWL_CSRF_TOKEN || '';
+    }
+
+    function chainsNeedLoad(panel) {
+        var content = panel && panel.querySelector('[data-chain-content]');
+        return content && !content.dataset.chainLoaded;
     }
 
     document.addEventListener('click', function (e) {
@@ -26,8 +31,7 @@
             p.hidden = p.dataset.questSubtabPanel !== target;
         });
 
-        if (target === 'chains' && !chainsTabLoaded) {
-            chainsTabLoaded = true;
+        if (target === 'chains' && chainsNeedLoad(panel) && !chainsLoading) {
             loadChainsTab(panel);
         }
     });
@@ -55,8 +59,7 @@
             postJSON('quest_chain_abandon.php', { chain_id: chainId })
                 .then(function (data) {
                     if (!data.ok) { alert(data.message || 'Could not abandon quest chain.'); return; }
-                    chainsTabLoaded = false;
-                    loadChainsTab(document.querySelector('[data-quest-chains-panel]'));
+                    reloadChainsTab();
                 })
                 .catch(function () { alert('Failed to abandon quest chain.'); });
             return;
@@ -97,20 +100,30 @@
         var container = panel && panel.querySelector('[data-chain-content]');
         if (!container) return;
 
+        chainsLoading = true;
         container.innerHTML = '<p class="chain-status-message">Loading quest chains...</p>';
 
         postJSON('quest_chain_status.php', {})
             .then(function (data) {
+                chainsLoading = false;
                 if (!data.ok) {
                     container.innerHTML = '<p class="chain-status-message">Could not load quest chains.</p>';
                     return;
                 }
                 renderChainsTab(container, data);
+                container.dataset.chainLoaded = 'true';
             })
             .catch(function () {
+                chainsLoading = false;
                 container.innerHTML = '<p class="chain-status-message">Could not load quest chains.</p>';
-                chainsTabLoaded = false;
             });
+    }
+
+    function reloadChainsTab() {
+        var panel = document.querySelector('[data-quest-chains-panel]');
+        var container = panel && panel.querySelector('[data-chain-content]');
+        if (container) delete container.dataset.chainLoaded;
+        if (panel) loadChainsTab(panel);
     }
 
     function renderChainsTab(container, data) {
@@ -284,8 +297,7 @@
         postJSON('quest_chain_activate.php', { chain_id: chainId })
             .then(function (data) {
                 if (!data.ok) { alert(data.message || 'Could not activate quest chain.'); return; }
-                chainsTabLoaded = false;
-                loadChainsTab(document.querySelector('[data-quest-chains-panel]'));
+                reloadChainsTab();
             })
             .catch(function () { alert('Failed to activate quest chain.'); });
     }
@@ -296,8 +308,7 @@
             .then(function (data) {
                 if (!data.ok) { alert(data.message || 'Could not respond to invite.'); return; }
                 if (accept) {
-                    chainsTabLoaded = false;
-                    loadChainsTab(document.querySelector('[data-quest-chains-panel]'));
+                    reloadChainsTab();
                 } else if (card) {
                     card.remove();
                 }
