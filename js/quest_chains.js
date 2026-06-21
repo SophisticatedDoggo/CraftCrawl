@@ -119,6 +119,7 @@
                 }
                 renderChainsTab(container, data);
                 container.dataset.chainLoaded = 'true';
+                clearChainBadges();
             })
             .catch(function () {
                 chainsLoading = false;
@@ -506,11 +507,16 @@
         var formData = new FormData();
         formData.append('csrf_token', token);
         fetch('quest_chain_invites_seen.php', { method: 'POST', credentials: 'same-origin', body: formData }).catch(function () {});
+        clearChainBadges();
+    }
+
+    function clearChainBadges() {
         document.querySelectorAll('[data-quests-tab-badge]').forEach(function (badge) {
             badge.hidden = true;
         });
-        var subtabBadge = document.querySelector('[data-quest-subtab="chains"] .quest-subtab-badge');
-        if (subtabBadge) subtabBadge.hidden = true;
+        document.querySelectorAll('.quest-subtab-badge').forEach(function (badge) {
+            badge.remove();
+        });
     }
 
     window.addEventListener('craftcrawl:user-tab-changed', function (e) {
