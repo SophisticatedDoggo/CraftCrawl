@@ -51,8 +51,9 @@ if ($result['ok'] ?? false) {
         craftcrawl_send_push_to_user(
             $conn,
             $friend_user_id,
+            'Quest Chain Invite',
             $sender_name . ' invited you to join ' . $chain_name . '!',
-            ['url' => '/user/quests.php']
+            'user/quests.php'
         );
     }
 }

@@ -17,11 +17,16 @@ $counts = craftcrawl_user_notification_counts($conn, $user_id);
 
 $pending_chain_invites = 0;
 if (craftcrawl_chain_storage_ready($conn)) {
-    $seen_stmt = $conn->prepare("SELECT chainInvitesSeenAt FROM users WHERE id = ? LIMIT 1");
-    $seen_stmt->bind_param("i", $user_id);
-    $seen_stmt->execute();
-    $seen_row = $seen_stmt->get_result()->fetch_assoc();
-    $chain_seen_at = $seen_row['chainInvitesSeenAt'] ?? null;
+    try {
+        $chain_seen_at = null;
+        $seen_stmt = $conn->prepare("SELECT chainInvitesSeenAt FROM users WHERE id = ? LIMIT 1");
+        $seen_stmt->bind_param("i", $user_id);
+        $seen_stmt->execute();
+        $seen_row = $seen_stmt->get_result()->fetch_assoc();
+        $chain_seen_at = $seen_row['chainInvitesSeenAt'] ?? null;
+    } catch (Throwable $e) {
+        $chain_seen_at = null;
+    }
 
     if ($chain_seen_at) {
         $chain_invite_stmt = $conn->prepare("
