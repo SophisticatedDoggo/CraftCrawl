@@ -53,7 +53,7 @@ if ($result['ok'] ?? false) {
             $friend_user_id,
             'Quest Chain Invite',
             $sender_name . ' invited you to join ' . $chain_name . '!',
-            'user/quests.php'
+            'user/quests.php?tab=chains'
         );
     }
 }

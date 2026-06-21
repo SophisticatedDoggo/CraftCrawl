@@ -32,8 +32,8 @@
         });
 
         if (target === 'chains' && !chainsLoading) {
-            loadChainsTab(panel);
             markChainInvitesSeen();
+            loadChainsTab(panel);
         }
     });
 
@@ -507,11 +507,13 @@
         var formData = new FormData();
         formData.append('csrf_token', token);
         fetch('quest_chain_invites_seen.php', { method: 'POST', credentials: 'same-origin', body: formData }).catch(function () {});
+        window._chainInvitesSuppressed = true;
         clearChainBadges();
     }
 
     function clearChainBadges() {
         document.querySelectorAll('[data-quests-tab-badge]').forEach(function (badge) {
+            badge.textContent = '';
             badge.hidden = true;
         });
         document.querySelectorAll('.quest-subtab-badge').forEach(function (badge) {
@@ -529,6 +531,29 @@
                 }
                 markChainInvitesSeen();
             }
+        }
+    });
+
+    function autoSelectChainsTab() {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('tab') !== 'chains') return;
+
+        var panel = document.querySelector('[data-quest-chains-panel]');
+        if (!panel) return;
+
+        var chainsBtn = panel.querySelector('[data-quest-subtab="chains"]');
+        if (chainsBtn) chainsBtn.click();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', autoSelectChainsTab);
+    } else {
+        setTimeout(autoSelectChainsTab, 0);
+    }
+
+    window.addEventListener('craftcrawl:user-tab-changed', function (e) {
+        if (e.detail && e.detail.tab === 'quests' && e.detail.url && e.detail.url.indexOf('tab=chains') !== -1) {
+            setTimeout(autoSelectChainsTab, 50);
         }
     });
 

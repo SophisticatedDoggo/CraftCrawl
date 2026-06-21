@@ -564,7 +564,12 @@ window.CraftCrawlInitFriends = function (scope = document) {
         menuBadges.forEach((badge) => setBadge(badge, friendsBadgeCount));
         menuToggleBadges.forEach((badge) => setBadge(badge, friendsBadgeCount));
         tabBadges.forEach((badge) => setBadge(badge, feedBadgeCount));
-        questsTabBadges.forEach((badge) => setBadge(badge, pendingChainInvites));
+        if (pendingChainInvites > 0 && !window._chainInvitesSuppressed) {
+            questsTabBadges.forEach((badge) => setBadge(badge, pendingChainInvites));
+        } else if (pendingChainInvites === 0) {
+            window._chainInvitesSuppressed = false;
+            questsTabBadges.forEach((badge) => setBadge(badge, 0));
+        }
         syncNativeAppBadge(badgeCount);
 
         if (newFeedItems < 1 && feed) {
