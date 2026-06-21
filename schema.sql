@@ -499,7 +499,7 @@ CREATE TABLE IF NOT EXISTS feed_reactions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     feed_item_key VARCHAR(100) NOT NULL,
-    reaction_type ENUM('cheers', 'nice_find', 'want_to_go', 'good_review', 'great_spot', 'trophy') NOT NULL,
+    reaction_type ENUM('cheers', 'nice_find', 'want_to_go', 'good_review', 'great_spot', 'trophy', 'heart', 'yuck') NOT NULL,
     createdAt DATETIME NOT NULL,
     UNIQUE KEY unique_feed_reaction (user_id, feed_item_key, reaction_type),
     KEY idx_feed_reactions_item (feed_item_key),

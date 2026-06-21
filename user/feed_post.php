@@ -147,17 +147,17 @@ function feed_thread_post_reference($item) {
 
 function feed_thread_reaction_options($item) {
     $options_by_type = [
-        'checkin' => ['cheers', 'nice_find'],
-        'first_visit' => ['cheers', 'nice_find'],
-        'level_up' => ['cheers', 'nice_find', 'trophy'],
-        'event' => ['cheers', 'nice_find', 'want_to_go'],
-        'event_want' => ['cheers', 'nice_find'],
-        'location_want' => ['cheers', 'nice_find', 'want_to_go'],
-        'badge_earned' => ['cheers', 'nice_find', 'trophy'],
-        'quest_complete' => ['cheers', 'nice_find', 'trophy'],
-        'quest_sweep' => ['cheers', 'nice_find', 'trophy'],
-        'business_post' => ['cheers', 'want_to_go'],
-        'user_post' => ['cheers', 'nice_find'],
+        'checkin' => ['cheers', 'nice_find', 'heart', 'yuck'],
+        'first_visit' => ['cheers', 'nice_find', 'heart', 'yuck'],
+        'level_up' => ['cheers', 'nice_find', 'trophy', 'heart', 'yuck'],
+        'event' => ['cheers', 'nice_find', 'want_to_go', 'heart', 'yuck'],
+        'event_want' => ['cheers', 'nice_find', 'heart', 'yuck'],
+        'location_want' => ['cheers', 'nice_find', 'want_to_go', 'heart', 'yuck'],
+        'badge_earned' => ['cheers', 'nice_find', 'trophy', 'heart', 'yuck'],
+        'quest_complete' => ['cheers', 'nice_find', 'trophy', 'heart', 'yuck'],
+        'quest_sweep' => ['cheers', 'nice_find', 'trophy', 'heart', 'yuck'],
+        'business_post' => ['cheers', 'want_to_go', 'heart', 'yuck'],
+        'user_post' => ['cheers', 'nice_find', 'heart', 'yuck'],
     ];
 
     $type = $item['type'] ?? '';
@@ -196,12 +196,16 @@ function render_feed_thread_reactions($conn, $user_id, $item) {
         'nice_find' => '🔥',
         'want_to_go' => '📍',
         'trophy' => '🏆',
+        'heart' => '<span class="feed-reaction-icon feed-reaction-icon-heart" aria-hidden="true"></span>',
+        'yuck' => '<span class="feed-reaction-icon feed-reaction-icon-yuck" aria-hidden="true"></span>',
     ];
     $aria_labels = [
-        'cheers' => 'Cheers',
-        'nice_find' => 'Nice',
+        'cheers' => 'Say cheers to this post',
+        'nice_find' => 'Say this post is fire',
         'want_to_go' => 'Want to Go',
-        'trophy' => 'Trophy',
+        'trophy' => 'Say congrats on this post',
+        'heart' => 'Like this post',
+        'yuck' => 'Say yuck to this post',
     ];
     $reactions = [];
 
@@ -234,26 +238,12 @@ function render_feed_thread_reactions($conn, $user_id, $item) {
         $reaction_count = (int) $reaction['count'];
         $count_hidden = $reaction_count > 0 ? '' : ' hidden';
         $html .= '<button type="button" class="' . $active_class . '" data-feed-reaction data-item-key="' . escape_output($item_key) . '" data-reaction-type="' . escape_output($reaction_type) . '" data-reaction-count="' . $reaction_count . '" aria-label="' . escape_output($aria_labels[$reaction_type] ?? $reaction_type) . '" aria-pressed="' . ($reaction['reacted'] ? 'true' : 'false') . '">';
-        $html .= escape_output($labels[$reaction_type] ?? $reaction_type) . '<span class="feed-reaction-count"' . $count_hidden . '>' . ($reaction_count > 0 ? $reaction_count : '') . '</span>';
+        $html .= ($labels[$reaction_type] ?? '') . '<span class="feed-reaction-count"' . $count_hidden . '>' . ($reaction_count > 0 ? $reaction_count : '') . '</span>';
         $html .= '</button>';
     }
     $html .= '</div></div>';
 
     return $html;
-}
-
-function render_feed_thread_detail_link($item) {
-    $type = $item['type'] ?? '';
-
-    if (($type === 'event_want' || $type === 'event') && !empty($item['event_id'])) {
-        return '
-            <div class="feed-detail-link-row">
-                <a class="feed-detail-link" href="../event_details.php?id=' . escape_output($item['event_id']) . '&date=' . escape_output($item['event_date'] ?? '') . '">View Event</a>
-            </div>
-        ';
-    }
-
-    return '';
 }
 
 function render_feed_thread_post($item, $actions_html = '') {
@@ -302,9 +292,8 @@ function render_feed_thread_post($item, $actions_html = '') {
             <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
                 ' . $avatar . '
                 <div>
-                    <strong>' . escape_output($want_phrase) . ' to go to ' . escape_output($item['event_name']) . '</strong>
-                    <p>' . escape_output($item['business_name']) . ' · ' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
-                    ' . render_feed_thread_detail_link($item) . '
+                    <strong>' . escape_output($want_phrase) . ' to go to <a class="feed-event-link" href="../event_details.php?id=' . escape_output($item['event_id']) . '&date=' . escape_output($item['event_date'] ?? '') . '">' . escape_output($item['event_name']) . '</a></strong>
+                    <p><a class="feed-business-link" href="../business_details.php?id=' . escape_output($item['business_id']) . '">' . escape_output($item['business_name']) . '</a> · ' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
                     ' . $actions_html . '
                 </div>
             </article>
@@ -316,10 +305,9 @@ function render_feed_thread_post($item, $actions_html = '') {
             <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
                 <div class="friends-feed-icon">📅</div>
                 <div>
-                    <strong>' . escape_output($item['event_name']) . '</strong>
-                    <p>' . escape_output($item['business_name']) . ' · ' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
+                    <strong><a class="feed-event-link" href="../event_details.php?id=' . escape_output($item['event_id']) . '&date=' . escape_output($item['event_date'] ?? '') . '">' . escape_output($item['event_name']) . '</a></strong>
+                    <p><a class="feed-business-link" href="../business_details.php?id=' . escape_output($item['business_id']) . '">' . escape_output($item['business_name']) . '</a> · ' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
                     ' . (!empty($item['event_description']) ? '<p>' . nl2br(escape_output($item['event_description'])) . '</p>' : '') . '
-                    ' . render_feed_thread_detail_link($item) . '
                     ' . $actions_html . '
                 </div>
             </article>

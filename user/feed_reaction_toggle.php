@@ -28,16 +28,16 @@ $reaction_type = $_POST['reaction_type'] ?? '';
 $reaction_stage = 'validate_request';
 
 $reaction_options_by_type = [
-    'checkin'       => ['cheers', 'nice_find'],
-    'first_visit'   => ['cheers', 'nice_find'],
-    'level_up'      => ['cheers', 'nice_find', 'trophy'],
-    'event_want'    => ['cheers', 'nice_find'],
-    'location_want' => ['cheers', 'nice_find', 'want_to_go'],
-    'badge_earned'  => ['cheers', 'nice_find', 'trophy'],
-    'quest_complete' => ['cheers', 'nice_find', 'trophy'],
-    'quest_sweep' => ['cheers', 'nice_find', 'trophy'],
-    'business_post' => ['cheers', 'want_to_go'],
-    'user_post' => ['cheers', 'nice_find'],
+    'checkin'       => ['cheers', 'nice_find', 'heart', 'yuck'],
+    'first_visit'   => ['cheers', 'nice_find', 'heart', 'yuck'],
+    'level_up'      => ['cheers', 'nice_find', 'trophy', 'heart', 'yuck'],
+    'event_want'    => ['cheers', 'nice_find', 'heart', 'yuck'],
+    'location_want' => ['cheers', 'nice_find', 'want_to_go', 'heart', 'yuck'],
+    'badge_earned'  => ['cheers', 'nice_find', 'trophy', 'heart', 'yuck'],
+    'quest_complete' => ['cheers', 'nice_find', 'trophy', 'heart', 'yuck'],
+    'quest_sweep' => ['cheers', 'nice_find', 'trophy', 'heart', 'yuck'],
+    'business_post' => ['cheers', 'want_to_go', 'heart', 'yuck'],
+    'user_post' => ['cheers', 'nice_find', 'heart', 'yuck'],
 ];
 
 $item_type = null;
@@ -415,11 +415,31 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user
                     'trophy' => 'Trophy',
                 ];
                 $reactor_name = craftcrawl_user_display_name_by_id($conn, $user_id);
+                $push_title = 'New reaction';
+                $push_message = $reactor_name . ' reacted ' . ($reaction_labels[$reaction_type] ?? 'to your post') . ' on your CraftCrawl post.';
+
+                if ($reaction_type === 'heart') {
+                    $push_title = 'Liked your post';
+                    $push_message = $reactor_name . ' liked your CraftCrawl post.';
+                } elseif ($reaction_type === 'yuck') {
+                    $push_title = 'Said yuck to your post';
+                    $push_message = $reactor_name . ' said yuck to your CraftCrawl post.';
+                } elseif ($reaction_type === 'cheers') {
+                    $push_title = 'Said Cheers to your post';
+                    $push_message = $reactor_name . ' said cheers to your CraftCrawl post.';
+                } elseif ($reaction_type === 'trophy') {
+                    $push_title = 'Said congrats on your post';
+                    $push_message = $reactor_name . ' said congrats on your CraftCrawl post.';
+                } elseif ($reaction_type === 'nice_find') {
+                    $push_title = 'Said your post is fire';
+                    $push_message = $reactor_name . ' said your CraftCrawl post is fire.';
+                }
+
                 craftcrawl_send_push_to_user(
                     $conn,
                     $owner_id,
-                    'New reaction',
-                    $reactor_name . ' reacted ' . ($reaction_labels[$reaction_type] ?? 'to your post') . ' on your CraftCrawl post.',
+                    $push_title,
+                    $push_message,
                     'user/feed.php?focus_item=' . rawurlencode($item_key)
                         . '&focus_section=reactions'
                         . '&focus_reaction_type=' . rawurlencode($reaction_type)

@@ -146,6 +146,7 @@ mysql -u craft_crawl -p craft_crawl < migrations/2026_05_14_user_profile_photos.
 mysql -u craft_crawl -p craft_crawl < migrations/2026_05_19_questing_system.sql
 mysql -u craft_crawl -p craft_crawl < migrations/2026_06_18_checkin_photos.sql
 mysql -u craft_crawl -p craft_crawl < migrations/2026_06_20_feed_consolidation.sql
+mysql -u craft_crawl -p craft_crawl < migrations/2026_06_21_heart_yuck_reactions.sql
 ```
 
 Check-ins use browser GPS and server-side distance checks. Review XP is only
