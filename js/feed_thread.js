@@ -516,6 +516,13 @@ window.CraftCrawlInitFeedThread = function (root = document) {
             const isExpanded = button.getAttribute('aria-expanded') === 'true';
             button.setAttribute('aria-expanded', String(!isExpanded));
             panel.hidden = isExpanded;
+            const label = button.querySelector('span');
+            const replyCount = Number(button.dataset.replyCount || panel.children.length || 0);
+            if (label) {
+                label.textContent = isExpanded
+                    ? `View ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`
+                    : 'Hide replies';
+            }
             scheduleThreadScrollabilityUpdate();
         });
     });

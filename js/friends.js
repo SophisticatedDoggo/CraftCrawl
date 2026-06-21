@@ -2770,8 +2770,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
             <p>${escapeHtml(comment.body).replace(/\n/g, '<br>')}</p>
             <button type="button" class="feed-reply-toggle" data-sheet-reply data-parent-comment-id="${comment.id}" data-reply-label="${escapeHtml(comment.author_name)}">Reply</button>
             ${replyCount > 0 ? `
-                <button type="button" class="feed-replies-toggle" data-sheet-replies-toggle aria-expanded="false" aria-controls="${escapeHtml(repliesId)}">
-                    <span>${replyCount} ${replyCount === 1 ? 'Reply' : 'Replies'}</span>
+                <button type="button" class="feed-replies-toggle" data-sheet-replies-toggle data-reply-count="${replyCount}" aria-expanded="false" aria-controls="${escapeHtml(repliesId)}">
+                    <span>View ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}</span>
                     <span class="feed-replies-toggle-arrow" aria-hidden="true">&#8964;</span>
                 </button>
                 <div class="feed-reply-list" id="${escapeHtml(repliesId)}" hidden>
@@ -2911,9 +2911,10 @@ window.CraftCrawlInitFriends = function (scope = document) {
                             toggleBtn.type = 'button';
                             toggleBtn.className = 'feed-replies-toggle';
                             toggleBtn.setAttribute('data-sheet-replies-toggle', '');
+                            toggleBtn.dataset.replyCount = '1';
                             toggleBtn.setAttribute('aria-expanded', 'true');
                             toggleBtn.setAttribute('aria-controls', replyList.id);
-                            toggleBtn.innerHTML = '<span>1 Reply</span><span class="feed-replies-toggle-arrow" aria-hidden="true">&#8964;</span>';
+                            toggleBtn.innerHTML = '<span>Hide replies</span><span class="feed-replies-toggle-arrow" aria-hidden="true">&#8964;</span>';
                             parentArticle.insertBefore(toggleBtn, replyList);
                         } else {
                             replyList.hidden = false;
@@ -2921,7 +2922,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
                             if (toggle) {
                                 toggle.setAttribute('aria-expanded', 'true');
                                 const count = replyList.children.length + 1;
-                                toggle.querySelector('span').textContent = `${count} ${count === 1 ? 'Reply' : 'Replies'}`;
+                                toggle.dataset.replyCount = String(count);
+                                toggle.querySelector('span').textContent = 'Hide replies';
                             }
                         }
 
@@ -3026,6 +3028,13 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 const isExpanded = repliesToggle.getAttribute('aria-expanded') === 'true';
                 repliesToggle.setAttribute('aria-expanded', String(!isExpanded));
                 replyPanel.hidden = isExpanded;
+                const label = repliesToggle.querySelector('span');
+                const replyCount = Number(repliesToggle.dataset.replyCount || replyPanel.children.length || 0);
+                if (label) {
+                    label.textContent = isExpanded
+                        ? `View ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`
+                        : 'Hide replies';
+                }
             }
             return;
         }

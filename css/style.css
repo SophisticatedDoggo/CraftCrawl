@@ -5705,7 +5705,7 @@ a.mobile-context-back.feed-thread-back-link:focus {
 
 .feed-comment-list {
     display: grid;
-    gap: 10px;
+    gap: 16px;
 }
 
 .feed-comment-list-empty {
@@ -5720,17 +5720,18 @@ a.mobile-context-back.feed-thread-back-link:focus {
 .feed-comment {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    gap: 8px;
-    padding: 12px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-surface-muted);
+    column-gap: 10px;
+    row-gap: 3px;
+    padding: 2px 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
 }
 
 .feed-comment > div {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
     align-items: baseline;
 }
 
@@ -5744,11 +5745,12 @@ a.mobile-context-back.feed-thread-back-link:focus {
 
 .feed-comment span {
     color: var(--color-muted);
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .feed-comment p {
     margin: 0;
+    line-height: 1.35;
 }
 
 .feed-comment-form {
@@ -5805,36 +5807,42 @@ a.mobile-context-back.feed-thread-back-link:focus {
 }
 
 .feed-comment > .feed-replies-toggle {
-    grid-column: 1 / -1;
+    grid-column: 2;
 }
 
 .feed-replies-toggle {
-    justify-self: center;
+    justify-self: start;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
+    justify-content: flex-start;
+    gap: 10px;
     width: auto;
-    min-width: 132px;
-    min-height: 38px;
-    margin-top: 8px;
-    padding: 8px 18px;
-    border: 1px solid color-mix(in srgb, var(--color-border) 78%, var(--color-primary));
-    border-radius: 999px;
-    color: var(--color-primary);
-    background: color-mix(in srgb, var(--color-surface) 72%, transparent);
-    box-shadow: 0 8px 18px color-mix(in srgb, var(--color-text) 10%, transparent);
-    font-size: 13px;
-    font-weight: 800;
+    min-width: 0;
+    min-height: 28px;
+    margin-top: 2px;
+    padding: 3px 0;
+    border: 0;
+    border-radius: 0;
+    color: var(--color-muted);
+    background: transparent;
+    box-shadow: none;
+    font-size: 12px;
+    font-weight: 700;
     line-height: 1.1;
+}
+
+.feed-replies-toggle::before {
+    content: "";
+    width: 24px;
+    height: 1px;
+    background: var(--color-border);
 }
 
 .feed-replies-toggle:hover,
 .feed-replies-toggle:focus {
-    border-color: color-mix(in srgb, var(--color-primary) 58%, var(--color-border));
-    color: var(--color-primary-dark);
-    background: color-mix(in srgb, var(--color-surface) 82%, var(--color-primary) 8%);
-    box-shadow: 0 10px 22px color-mix(in srgb, var(--color-text) 14%, transparent);
+    color: var(--color-text);
+    background: transparent;
+    box-shadow: none;
 }
 
 .feed-replies-toggle span {
@@ -5845,8 +5853,7 @@ a.mobile-context-back.feed-thread-back-link:focus {
 }
 
 .feed-replies-toggle-arrow {
-    display: inline-block;
-    transition: transform 140ms ease;
+    display: none;
 }
 
 .feed-replies-toggle[aria-expanded="true"] .feed-replies-toggle-arrow {
@@ -5872,10 +5879,10 @@ a.mobile-context-back.feed-thread-back-link:focus {
 
 .feed-reply-list {
     display: grid;
-    gap: 8px;
-    margin-top: 6px;
-    padding-left: 14px;
-    border-left: 2px solid var(--color-border);
+    gap: 14px;
+    margin-top: 4px;
+    padding: 2px 0 0 18px;
+    border: 0;
 }
 
 .feed-reply-list[hidden] {
@@ -5893,22 +5900,22 @@ a.mobile-context-back.feed-thread-back-link:focus {
 }
 
 :root[data-palette$="-dark"] .feed-replies-toggle {
-    border-color: color-mix(in srgb, var(--color-border) 80%, var(--color-primary));
-    color: var(--color-primary);
-    background: color-mix(in srgb, var(--color-surface-muted) 84%, transparent);
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+    border: 0;
+    color: var(--color-muted);
+    background: transparent;
+    box-shadow: none;
 }
 
 :root[data-palette$="-dark"] .feed-replies-toggle:hover,
 :root[data-palette$="-dark"] .feed-replies-toggle:focus {
-    border-color: color-mix(in srgb, var(--color-primary) 58%, var(--color-border));
-    color: var(--color-primary-dark);
-    background: color-mix(in srgb, var(--color-surface-muted) 88%, var(--color-primary) 10%);
-    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.24);
+    border: 0;
+    color: var(--color-text);
+    background: transparent;
+    box-shadow: none;
 }
 
 .feed-reply {
-    background: var(--color-surface);
+    background: transparent;
 }
 
 /* --- Comments Bottom Sheet --- */
@@ -6020,7 +6027,7 @@ a.mobile-context-back.feed-thread-back-link:focus {
 
 .feed-comments-sheet-body .feed-comment-list {
     display: grid;
-    gap: 10px;
+    gap: 16px;
 }
 
 .feed-comments-sheet-body .feed-empty-comments {

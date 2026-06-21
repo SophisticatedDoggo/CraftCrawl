@@ -665,8 +665,8 @@ if ($feed_item) {
                                     $replies_panel_id = 'replies-' . (int) $comment['id'];
                                     $should_expand_replies = $focus_comment_id > 0 && in_array($focus_comment_id, array_map(fn($reply) => (int) $reply['id'], $comment_replies), true);
                                 ?>
-                                <button type="button" class="feed-replies-toggle" data-replies-toggle aria-expanded="<?php echo $should_expand_replies ? 'true' : 'false'; ?>" aria-controls="<?php echo escape_output($replies_panel_id); ?>">
-                                    <span><?php echo escape_output($reply_count . ' ' . ($reply_count === 1 ? 'Reply' : 'Replies')); ?></span>
+                                <button type="button" class="feed-replies-toggle" data-replies-toggle data-reply-count="<?php echo escape_output($reply_count); ?>" aria-expanded="<?php echo $should_expand_replies ? 'true' : 'false'; ?>" aria-controls="<?php echo escape_output($replies_panel_id); ?>">
+                                    <span><?php echo $should_expand_replies ? 'Hide replies' : escape_output('View ' . $reply_count . ' ' . ($reply_count === 1 ? 'reply' : 'replies')); ?></span>
                                     <span class="feed-replies-toggle-arrow" aria-hidden="true">⌄</span>
                                 </button>
                                 <div class="feed-reply-list" id="<?php echo escape_output($replies_panel_id); ?>"<?php echo $should_expand_replies ? '' : ' hidden'; ?>>
