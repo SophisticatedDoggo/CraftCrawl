@@ -147,17 +147,17 @@ function feed_thread_post_reference($item) {
 
 function feed_thread_reaction_options($item) {
     $options_by_type = [
-        'checkin' => ['cheers', 'nice_find', 'heart', 'yuck'],
-        'first_visit' => ['cheers', 'nice_find', 'heart', 'yuck'],
-        'level_up' => ['cheers', 'nice_find', 'trophy', 'heart', 'yuck'],
-        'event' => ['cheers', 'nice_find', 'want_to_go', 'heart', 'yuck'],
-        'event_want' => ['cheers', 'nice_find', 'heart', 'yuck'],
-        'location_want' => ['cheers', 'nice_find', 'want_to_go', 'heart', 'yuck'],
-        'badge_earned' => ['cheers', 'nice_find', 'trophy', 'heart', 'yuck'],
-        'quest_complete' => ['cheers', 'nice_find', 'trophy', 'heart', 'yuck'],
-        'quest_sweep' => ['cheers', 'nice_find', 'trophy', 'heart', 'yuck'],
-        'business_post' => ['cheers', 'want_to_go', 'heart', 'yuck'],
-        'user_post' => ['cheers', 'nice_find', 'heart', 'yuck'],
+        'checkin' => ['heart', 'cheers', 'nice_find', 'yuck'],
+        'first_visit' => ['heart', 'cheers', 'nice_find', 'yuck'],
+        'level_up' => ['heart', 'cheers', 'nice_find', 'yuck', 'trophy'],
+        'event' => ['heart', 'cheers', 'nice_find', 'yuck', 'want_to_go'],
+        'event_want' => ['heart', 'cheers', 'nice_find', 'yuck'],
+        'location_want' => ['heart', 'cheers', 'nice_find', 'yuck', 'want_to_go'],
+        'badge_earned' => ['heart', 'cheers', 'nice_find', 'yuck', 'trophy'],
+        'quest_complete' => ['heart', 'cheers', 'nice_find', 'yuck', 'trophy'],
+        'quest_sweep' => ['heart', 'cheers', 'nice_find', 'yuck', 'trophy'],
+        'business_post' => ['heart', 'cheers', 'nice_find', 'yuck', 'want_to_go'],
+        'user_post' => ['heart', 'cheers', 'nice_find', 'yuck'],
     ];
 
     $type = $item['type'] ?? '';
