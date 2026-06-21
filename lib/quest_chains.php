@@ -479,6 +479,7 @@ function craftcrawl_build_chain_from_template($template_key, $template, $nearby,
             'location_city' => $loc['city'] ?? null,
             'location_state' => $loc['state'] ?? null,
             'event_id' => null,
+            'description' => craftcrawl_chain_step_description($action_type, $loc['name']),
         ];
 
         if ($action_type === 'checkin') {

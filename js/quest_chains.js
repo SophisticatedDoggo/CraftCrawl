@@ -253,9 +253,15 @@
             return;
         }
 
+        var actionLabels = { checkin: 'Check in at', review: 'Review', event_want_to_go: 'RSVP at', feed_reaction: 'React to a post about' };
+
         optionsEl.innerHTML = chains.map(function (chain) {
-            var pills = (chain.steps || []).map(function (step) {
-                return '<span class="chain-option-step-pill">' + escapeHtml(step.description) + '</span>';
+            var stepsList = (chain.steps || []).map(function (step, i) {
+                var label = actionLabels[step.action_type] || 'Visit';
+                return '<li class="chain-option-step">' +
+                    '<span class="chain-option-step-num">' + (i + 1) + '</span>' +
+                    '<span>' + escapeHtml(label) + ' <strong>' + escapeHtml(step.location_name) + '</strong></span>' +
+                '</li>';
             }).join('');
 
             return '<article class="chain-option-card">' +
@@ -264,10 +270,9 @@
                     '<p>' + escapeHtml(chain.description) + '</p>' +
                 '</div>' +
                 '<span class="chain-xp-badge">+' + chain.xp_reward + ' XP</span></div>' +
-                '<div class="chain-option-steps">' + pills + '</div>' +
+                '<ol class="chain-option-step-list">' + stepsList + '</ol>' +
                 '<div class="chain-option-footer">' +
-                    '<small>' + chain.step_count + ' steps</small>' +
-                    '<button type="button" class="chain-btn-primary" data-chain-activate="' + chain.id + '" style="flex:0;padding:8px 16px;">Start Quest</button>' +
+                    '<button type="button" class="chain-btn-primary" data-chain-activate="' + chain.id + '" style="width:100%;">Start Quest</button>' +
                 '</div>' +
             '</article>';
         }).join('');
