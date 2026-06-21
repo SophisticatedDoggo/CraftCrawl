@@ -481,6 +481,24 @@ function craftcrawl_badge_definitions() {
             'description' => 'Add 10 friends.',
             'xp' => 250,
             'tier' => 'major'
+        ],
+        'chain_starter' => [
+            'name' => 'Chain Starter',
+            'description' => 'Complete your first quest chain.',
+            'xp' => 100,
+            'tier' => 'small'
+        ],
+        'chain_crawler' => [
+            'name' => 'Chain Crawler',
+            'description' => 'Complete 5 quest chains.',
+            'xp' => 150,
+            'tier' => 'medium'
+        ],
+        'chain_legend' => [
+            'name' => 'Chain Legend',
+            'description' => 'Complete 10 quest chains.',
+            'xp' => 250,
+            'tier' => 'major'
         ]
     ];
 }
@@ -527,7 +545,10 @@ function craftcrawl_badge_category($badge_key) {
         'social_sipper' => 'friends',
         'friendly_pour' => 'friends',
         'shared_stop' => 'shared_activity',
-        'local_circle' => 'friends'
+        'local_circle' => 'friends',
+        'chain_starter' => 'quest_chains',
+        'chain_crawler' => 'quest_chains',
+        'chain_legend' => 'quest_chains'
     ];
 
     return $categories[$badge_key] ?? 'general';

@@ -3,6 +3,7 @@ require '../login_check.php';
 include '../db.php';
 require_once '../lib/leveling.php';
 require_once '../lib/quests.php';
+require_once '../lib/quest_chains.php';
 require_once '../lib/onesignal.php';
 require_once '../lib/feed_items.php';
 
@@ -394,10 +395,22 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user
             $badges = craftcrawl_award_eligible_badges($conn, $user_id);
             $reaction_stage = 'award_quests';
             $quest_rewards = craftcrawl_award_eligible_quest_rewards($conn, $user_id);
+            $reaction_stage = 'check_chain_reaction';
+            $chain_xp_items = [];
+            $chain_results = craftcrawl_check_chain_feed_reaction($conn, $user_id, $item_key);
+            if (!empty($chain_results)) {
+                foreach ($chain_results as $cr) {
+                    if (!empty($cr['chain_completed']) && !empty($cr['completion_data'])) {
+                        $chain_xp_items = array_merge($chain_xp_items, craftcrawl_chain_xp_items($cr['completion_data']));
+                        $badges = array_merge($badges, $cr['completion_data']['badges'] ?? []);
+                    }
+                }
+            }
             $reaction_stage = 'build_reward_payload';
             $xp_items = array_values(array_filter(array_merge(
                 craftcrawl_badge_xp_items($badges),
-                craftcrawl_quest_xp_items($quest_rewards)
+                craftcrawl_quest_xp_items($quest_rewards),
+                $chain_xp_items
             )));
             $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Feed Reaction', $xp_items);
         } catch (Throwable $reward_error) {

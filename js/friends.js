@@ -74,7 +74,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
         quest_complete: ['heart', 'cheers', 'nice_find', 'yuck', 'trophy'],
         quest_sweep: ['heart', 'cheers', 'nice_find', 'yuck', 'trophy'],
         user_post: ['heart', 'cheers', 'nice_find', 'yuck'],
-        business_post: ['heart', 'cheers', 'nice_find', 'yuck', 'want_to_go']
+        business_post: ['heart', 'cheers', 'nice_find', 'yuck', 'want_to_go'],
+        chain_complete: ['heart', 'cheers', 'nice_find', 'yuck', 'trophy']
     };
     const isUserPath = /\/user\/?$|\/user\//.test(window.location.pathname);
     let focusParams = new URLSearchParams(window.location.search);
@@ -1248,6 +1249,21 @@ window.CraftCrawlInitFriends = function (scope = document) {
                         ${renderFeedMeta(actorName, date)}
                         <strong class="feed-item-title">Completed all ${escapeHtml(periodLabel)} quests</strong>
                         <p class="feed-item-detail">${escapeHtml(item.quest_count)} quests cleared · +${escapeHtml(item.xp_awarded)} XP</p>
+                        ${actions}
+                    </div>
+                </article>
+            `;
+        }
+
+        if (item.type === 'chain_complete') {
+            const locationNames = (item.locations || []).map(l => escapeHtml(l.location_name)).join(', ');
+            return `
+                <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
+                    ${renderAvatar(item.actor, item.friend_name)}
+                    <div class="feed-item-content">
+                        ${renderFeedMeta(actorName, date)}
+                        <strong class="feed-item-title">Completed quest chain: ${escapeHtml(item.chain_name)}</strong>
+                        <p class="feed-item-detail">${escapeHtml(item.step_count)} steps · ${locationNames} · +${escapeHtml(item.xp_awarded)} XP</p>
                         ${actions}
                     </div>
                 </article>

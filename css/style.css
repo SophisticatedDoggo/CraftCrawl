@@ -2922,9 +2922,7 @@ a.text-link:focus {
     gap: 18px;
 }
 
-.quests-header,
-.quest-group-heading,
-.quest-title-row {
+.quests-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -2932,15 +2930,11 @@ a.text-link:focus {
 }
 
 .quests-header h2,
-.quests-header p,
-.quest-group-heading h3 {
+.quests-header p {
     margin: 0;
 }
 
-.quests-header p,
-.quest-group-heading span,
-.quest-card small,
-.quest-card p {
+.quests-header p {
     color: var(--color-muted);
 }
 
@@ -2953,37 +2947,84 @@ a.text-link:focus {
     font-weight: 700;
 }
 
+.quest-subtab-nav {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--color-border) 40%, var(--color-surface));
+}
+
+.quest-subtab {
+    flex: 1;
+    padding: 10px 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-muted);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    position: relative;
+}
+
+.quest-subtab.is-active {
+    background: var(--color-surface);
+    color: var(--color-text);
+    box-shadow: var(--shadow-sm);
+}
+
+.quest-subtab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--color-primary);
+    color: var(--color-on-primary, #fff);
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    vertical-align: middle;
+    margin-left: 4px;
+}
+
 .quest-summary-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
-}
-
-.quest-summary-grid article,
-.quest-card {
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-surface-muted);
+    margin-bottom: 6px;
 }
 
 .quest-summary-grid article {
     display: grid;
     gap: 4px;
-    padding: 12px;
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
 }
 
 .quest-summary-grid strong {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
+    background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 60%, var(--color-accent, #f3b35c)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .quest-summary-grid span {
     color: var(--color-muted);
-    font-size: 14px;
+    font-size: 13px;
 }
 
-.quest-group {
-    display: grid;
-    gap: 10px;
+.quest-summary-timer {
+    font-size: 12px;
+    font-weight: 600;
 }
 
 .quest-list {
@@ -2992,7 +3033,11 @@ a.text-link:focus {
 }
 
 .quest-card {
-    padding: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .quest-card-main {
@@ -3000,8 +3045,20 @@ a.text-link:focus {
     gap: 8px;
 }
 
+.quest-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+}
+
 .quest-title-row strong {
     font-size: 1rem;
+}
+
+.quest-card p,
+.quest-card small {
+    color: var(--color-muted);
 }
 
 .quest-title-row span {
@@ -3020,6 +3077,10 @@ a.text-link:focus {
     color: var(--color-success, #2f7d46);
 }
 
+.quest-card.is-claimed {
+    opacity: 0.7;
+}
+
 .quest-progress {
     height: 8px;
     overflow: hidden;
@@ -3032,6 +3093,416 @@ a.text-link:focus {
     height: 100%;
     border-radius: inherit;
     background: linear-gradient(90deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #f3b35c));
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.quest-card.is-complete .quest-progress span,
+.quest-card.is-claimed .quest-progress span {
+    background: linear-gradient(90deg, var(--color-success, #2f7d46), color-mix(in srgb, var(--color-success, #2f7d46) 70%, #a3e635));
+}
+
+/* Quest Chain Cards */
+.chain-section-heading {
+    margin: 0 0 10px;
+    font-size: 15px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-muted);
+}
+
+.chain-discover-header {
+    text-align: center;
+    padding: 12px 0 6px;
+}
+
+.chain-discover-header h3 {
+    margin: 0 0 6px;
+    font-size: 1.15rem;
+}
+
+.chain-discover-header p {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 14px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.chain-card {
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    display: grid;
+    gap: 12px;
+}
+
+.chain-card.is-active {
+    border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.chain-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.chain-card-header strong {
+    font-size: 1.05rem;
+}
+
+.chain-card-header p {
+    margin: 4px 0 0;
+    color: var(--color-muted);
+    font-size: 13px;
+}
+
+.chain-xp-badge {
+    flex: 0 0 auto;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 60%, var(--color-accent, #f3b35c)));
+    color: var(--color-on-primary, #fff);
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.chain-progress-bar {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-border) 60%, var(--color-surface));
+}
+
+.chain-progress-bar span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #f3b35c));
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chain-progress-label {
+    color: var(--color-muted);
+    font-size: 12px;
+}
+
+.chain-steps-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0;
+    position: relative;
+}
+
+.chain-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    position: relative;
+}
+
+.chain-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 28px;
+    bottom: -2px;
+    width: 2px;
+    background: var(--color-border);
+}
+
+.chain-step.is-complete:not(:last-child)::after {
+    background: var(--color-success, #2f7d46);
+}
+
+.chain-step-dot {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--color-border);
+    background: var(--color-surface);
+    margin-top: 1px;
+    position: relative;
+    z-index: 1;
+}
+
+.chain-step.is-complete .chain-step-dot {
+    border-color: var(--color-success, #2f7d46);
+    background: var(--color-success, #2f7d46);
+}
+
+.chain-step-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.chain-step-content strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.chain-step-content span {
+    display: block;
+    color: var(--color-muted);
+    font-size: 12px;
+    margin-top: 1px;
+}
+
+.chain-step.is-complete .chain-step-content strong {
+    color: var(--color-success, #2f7d46);
+}
+
+.chain-step-check {
+    flex: 0 0 auto;
+    color: var(--color-success, #2f7d46);
+    margin-top: 1px;
+}
+
+.chain-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.chain-btn-primary,
+.chain-btn-secondary,
+.chain-btn-danger {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.chain-btn-primary:active,
+.chain-btn-secondary:active,
+.chain-btn-danger:active {
+    opacity: 0.8;
+}
+
+.chain-btn-primary {
+    background: var(--color-primary);
+    color: var(--color-on-primary, #fff);
+}
+
+.chain-btn-secondary {
+    background: color-mix(in srgb, var(--color-border) 40%, var(--color-surface));
+    color: var(--color-text);
+}
+
+.chain-btn-danger {
+    background: transparent;
+    color: var(--color-muted);
+    border: 1px solid var(--color-border);
+}
+
+.chain-discover-actions {
+    display: grid;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.chain-options {
+    display: grid;
+    gap: 10px;
+}
+
+.chain-option-card {
+    padding: 14px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    display: grid;
+    gap: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.chain-option-card:hover {
+    border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border));
+}
+
+.chain-option-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.chain-option-header strong {
+    font-size: 0.95rem;
+}
+
+.chain-option-header p {
+    margin: 2px 0 0;
+    color: var(--color-muted);
+    font-size: 13px;
+}
+
+.chain-option-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.chain-option-step-pill {
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+    color: var(--color-muted);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.chain-option-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chain-option-footer small {
+    color: var(--color-muted);
+    font-size: 12px;
+}
+
+.chain-status-message {
+    text-align: center;
+    color: var(--color-muted);
+    font-size: 14px;
+    padding: 8px 0;
+}
+
+.chain-invite-card {
+    padding: 14px 16px;
+    border: 1px solid color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--color-primary) 4%, var(--color-surface));
+    display: grid;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.chain-invite-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.chain-invite-header small {
+    color: var(--color-muted);
+    font-size: 12px;
+}
+
+.chain-invite-card p {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 13px;
+}
+
+.chain-invite-card > small {
+    color: var(--color-muted);
+    font-size: 12px;
+}
+
+.chain-invite-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.chain-invite-actions button {
+    flex: 1;
+}
+
+.chain-member-avatars {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.chain-member-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--color-surface);
+    object-fit: cover;
+}
+
+.chain-member-avatar-placeholder {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--color-surface);
+    background: color-mix(in srgb, var(--color-primary) 15%, var(--color-surface));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+/* Friend invite modal for chains */
+.chain-invite-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.chain-invite-modal-scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.chain-invite-modal-body {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    max-height: 70vh;
+    padding: 20px;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    background: var(--color-surface);
+    overflow-y: auto;
+    display: grid;
+    gap: 12px;
+}
+
+.chain-invite-modal-body h3 {
+    margin: 0;
+}
+
+.chain-invite-friend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.chain-invite-friend-item:last-child {
+    border-bottom: none;
+}
+
+.chain-invite-friend-name {
+    font-weight: 600;
 }
 
 .mobile-app-tabbar {
@@ -11528,20 +11999,25 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .quests-header,
-    .quest-group-heading,
-    .quest-title-row,
-    .quest-summary-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .quests-header,
-    .quest-group-heading,
     .quest-title-row {
         flex-direction: column;
     }
 
+    .quest-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
     .quest-award-message {
         width: 100%;
+    }
+
+    .quest-subtab-nav {
+        gap: 2px;
+    }
+
+    .quest-subtab {
+        padding: 8px 6px;
+        font-size: 13px;
     }
 
     .friends-search-form button {

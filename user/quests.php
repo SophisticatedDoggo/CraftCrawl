@@ -4,6 +4,7 @@ include '../db.php';
 include '../config.php';
 require_once '../lib/leveling.php';
 require_once '../lib/quests.php';
+require_once '../lib/quest_chains.php';
 
 $user_id = (int) ($_SESSION['user_id'] ?? 0);
 $awarded_quests = [];
@@ -80,6 +81,7 @@ $craftcrawl_portal_shell = true;
 <script src="../js/badge_showcase.js?v=<?php echo filemtime(__DIR__ . '/../js/badge_showcase.js'); ?>"></script>
 <script src="../js/feed_thread.js?v=<?php echo filemtime(__DIR__ . '/../js/feed_thread.js'); ?>"></script>
 <script src="../js/user_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/user_shell_navigation.js'); ?>"></script>
+<script src="../js/quest_chains.js?v=<?php echo filemtime(__DIR__ . '/../js/quest_chains.js'); ?>"></script>
 <script src="../js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/../js/depth_animations.js'); ?>"></script>
 <script src="../js/onesignal_push.js?v=<?php echo filemtime(__DIR__ . '/../js/onesignal_push.js'); ?>"></script>
 <script>

@@ -2,6 +2,7 @@
 require 'login_check.php';
 include 'db.php';
 require_once 'lib/user_avatar.php';
+require_once 'lib/quest_chains.php';
 
 if (!isset($_SESSION['user_id']) && !isset($_SESSION['admin_id'])) {
     craftcrawl_redirect('user_login.php');
@@ -282,10 +283,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $badges = craftcrawl_award_eligible_badges($conn, $user_id);
                 $quest_rewards = craftcrawl_award_eligible_quest_rewards($conn, $user_id);
+                $chain_results = craftcrawl_check_chain_step_completion($conn, $user_id, 'review', $location_id);
+                $chain_xp_items = [];
+                if (!empty($chain_results)) {
+                    foreach ($chain_results as $cr) {
+                        if (!empty($cr['chain_completed']) && !empty($cr['completion_data'])) {
+                            $chain_xp_items = array_merge($chain_xp_items, craftcrawl_chain_xp_items($cr['completion_data']));
+                            $badges = array_merge($badges, $cr['completion_data']['badges'] ?? []);
+                        }
+                    }
+                }
                 $xp_items = array_values(array_filter(array_merge(
                     [$review_xp_awarded ? craftcrawl_xp_item('Review', CRAFTCRAWL_XP_REVIEW, 'Review') : null],
                     craftcrawl_badge_xp_items($badges),
-                    craftcrawl_quest_xp_items($quest_rewards)
+                    craftcrawl_quest_xp_items($quest_rewards),
+                    $chain_xp_items
                 )));
                 $reward_payload = craftcrawl_xp_reward_payload($conn, $user_id, $progress_before, $badges, 'Review', $xp_items);
                 $progress = $reward_payload['progress'] ?? craftcrawl_user_level_progress($conn, $user_id);

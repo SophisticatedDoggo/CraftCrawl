@@ -3,6 +3,7 @@ require '../login_check.php';
 include '../db.php';
 require_once '../lib/leveling.php';
 require_once '../lib/quests.php';
+require_once '../lib/quest_chains.php';
 require_once '../lib/user_avatar.php';
 require_once '../lib/cloudinary_upload.php';
 
@@ -409,6 +410,59 @@ while ($sweep = $sweep_result->fetch_assoc()) {
         'quest_count' => (int) $sweep['quest_count'],
         'xp_awarded' => (int) $sweep['xp_awarded'],
     ];
+}
+
+$before_clause_chain = $before_dt ? ' AND qcc.completedAt <= ?' : '';
+if (craftcrawl_chain_storage_ready($conn)) {
+    $chain_sql = "
+        SELECT qcc.id, qcc.user_id, qcc.chain_id, qcc.xp_awarded, qcc.completedAt,
+               qc.chain_name, qc.chain_description, qc.template_key, qc.step_count,
+               u.allow_post_interactions
+        FROM quest_chain_completions qcc
+        INNER JOIN quest_chains qc ON qc.id = qcc.chain_id
+        INNER JOIN users u ON u.id = qcc.user_id
+        WHERE qcc.user_id IN ($placeholders)
+          AND u.show_feed_activity = TRUE
+          AND u.disabledAt IS NULL
+        $before_clause_chain
+        ORDER BY qcc.completedAt DESC, qcc.id DESC
+        LIMIT $feed_source_fetch_limit
+    ";
+    $chain_stmt = $conn->prepare($chain_sql);
+    $before_dt
+        ? craftcrawl_bind_feed_user_ids_before($chain_stmt, $types, $feed_user_ids, $before_dt)
+        : craftcrawl_bind_feed_user_ids($chain_stmt, $types, $feed_user_ids);
+    $chain_stmt->execute();
+    $chain_result = $chain_stmt->get_result();
+
+    while ($chain = $chain_result->fetch_assoc()) {
+        $actor_id = (int) $chain['user_id'];
+        $chain_id = (int) $chain['chain_id'];
+
+        $loc_stmt = $conn->prepare("
+            SELECT DISTINCT location_name, location_city, location_state
+            FROM quest_chain_steps WHERE chain_id = ? ORDER BY step_order ASC
+        ");
+        $loc_stmt->bind_param("i", $chain_id);
+        $loc_stmt->execute();
+        $locations = $loc_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+        $feed[] = [
+            'item_key' => 'chain_complete:' . (int) $chain['id'],
+            'type' => 'chain_complete',
+            'created_at' => $chain['completedAt'],
+            'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
+            'actor' => craftcrawl_feed_person_payload($people[$actor_id] ?? []),
+            'owner_user_id' => $actor_id,
+            'is_self' => $actor_id === $user_id,
+            'allow_interactions' => (bool) $chain['allow_post_interactions'],
+            'chain_name' => $chain['chain_name'],
+            'chain_description' => $chain['chain_description'],
+            'step_count' => (int) $chain['step_count'],
+            'xp_awarded' => (int) $chain['xp_awarded'],
+            'locations' => $locations,
+        ];
+    }
 }
 
 $before_clause_user_posts = $before_dt ? ' AND ufp.createdAt <= ?' : '';

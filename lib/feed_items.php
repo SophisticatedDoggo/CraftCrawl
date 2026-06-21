@@ -131,6 +131,16 @@ function craftcrawl_feed_item_owner_id($conn, $item_key) {
         return (int) $matches[2];
     }
 
+    if (preg_match('/^chain_complete:(\d+)$/', $item_key, $matches)) {
+        $completion_id = (int) $matches[1];
+        $stmt = $conn->prepare("SELECT user_id FROM quest_chain_completions WHERE id=? LIMIT 1");
+        $stmt->bind_param("i", $completion_id);
+        $stmt->execute();
+        $completion = $stmt->get_result()->fetch_assoc();
+
+        return $completion ? (int) $completion['user_id'] : 0;
+    }
+
     if (preg_match('/^business_post:(\d+)$/', $item_key)) {
         return 0;
     }
@@ -516,6 +526,53 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
             'quest_description' => craftcrawl_quest_description($quest['quest_key']),
             'period_type' => $quest['period_type'],
             'xp_awarded' => (int) $quest['xp_awarded'],
+        ];
+    }
+
+    if (preg_match('/^chain_complete:(\d+)$/', $item_key, $matches)) {
+        $completion_id = (int) $matches[1];
+        $stmt = $conn->prepare("
+            SELECT qcc.id, qcc.user_id, qcc.chain_id, qcc.xp_awarded, qcc.completedAt,
+                qc.chain_name, qc.chain_description, qc.template_key, qc.step_count,
+                u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url,
+                p.object_key AS profile_photo_object_key
+            FROM quest_chain_completions qcc
+            INNER JOIN quest_chains qc ON qc.id = qcc.chain_id
+            INNER JOIN users u ON u.id = qcc.user_id
+            LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+            WHERE qcc.id=? AND u.disabledAt IS NULL
+            LIMIT 1
+        ");
+        $stmt->bind_param("i", $completion_id);
+        $stmt->execute();
+        $chain = $stmt->get_result()->fetch_assoc();
+
+        if (!$chain || !craftcrawl_user_can_view_feed_actor($conn, $viewer_id, (int) $chain['user_id'])) {
+            return null;
+        }
+
+        $locations_stmt = $conn->prepare("
+            SELECT DISTINCT location_name, location_city, location_state
+            FROM quest_chain_steps
+            WHERE chain_id = ?
+            ORDER BY step_order ASC
+        ");
+        $locations_stmt->bind_param("i", $chain['chain_id']);
+        $locations_stmt->execute();
+        $locations = $locations_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+        return [
+            'item_key' => $item_key,
+            'type' => 'chain_complete',
+            'created_at' => $chain['completedAt'],
+            'friend_name' => craftcrawl_feed_actor_name($chain['user_id'], $viewer_id, $chain['fName'], $chain['lName']),
+            'actor' => craftcrawl_feed_actor_payload($chain),
+            'is_self' => (int) $chain['user_id'] === (int) $viewer_id,
+            'chain_name' => $chain['chain_name'],
+            'chain_description' => $chain['chain_description'],
+            'step_count' => (int) $chain['step_count'],
+            'xp_awarded' => (int) $chain['xp_awarded'],
+            'locations' => $locations,
         ];
     }
 

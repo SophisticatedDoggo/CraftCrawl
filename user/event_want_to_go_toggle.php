@@ -3,6 +3,7 @@ require '../login_check.php';
 include '../db.php';
 require_once '../lib/leveling.php';
 require_once '../lib/quests.php';
+require_once '../lib/quest_chains.php';
 
 header('Content-Type: application/json');
 
@@ -63,14 +64,34 @@ if ($is_saved) {
 
         if ($insert_stmt->affected_rows > 0) {
             $quest_rewards = craftcrawl_award_eligible_quest_rewards($conn, $user_id);
-            if (!empty($quest_rewards)) {
+
+            $event_loc_stmt = $conn->prepare("SELECT location_id FROM events WHERE id = ? LIMIT 1");
+            $event_loc_stmt->bind_param("i", $event_id);
+            $event_loc_stmt->execute();
+            $event_loc = $event_loc_stmt->get_result()->fetch_assoc();
+            $chain_xp_items = [];
+            $chain_badges = [];
+            if ($event_loc) {
+                $chain_results = craftcrawl_check_chain_step_completion($conn, $user_id, 'event_want_to_go', (int) $event_loc['location_id'], $event_id);
+                if (!empty($chain_results)) {
+                    foreach ($chain_results as $cr) {
+                        if (!empty($cr['chain_completed']) && !empty($cr['completion_data'])) {
+                            $chain_xp_items = array_merge($chain_xp_items, craftcrawl_chain_xp_items($cr['completion_data']));
+                            $chain_badges = array_merge($chain_badges, $cr['completion_data']['badges'] ?? []);
+                        }
+                    }
+                }
+            }
+
+            $all_xp_items = array_merge(craftcrawl_quest_xp_items($quest_rewards), $chain_xp_items);
+            if (!empty($all_xp_items)) {
                 $reward_payload = craftcrawl_xp_reward_payload(
                     $conn,
                     $user_id,
                     $progress_before,
-                    [],
+                    $chain_badges,
                     'Quest Complete',
-                    craftcrawl_quest_xp_items($quest_rewards)
+                    $all_xp_items
                 );
             }
         }

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../lib/quests.php';
+require_once __DIR__ . '/../lib/quest_chains.php';
 
 $craftcrawl_portal_active = $craftcrawl_portal_active ?? 'map';
 $quest_rows = isset($conn, $user_id) ? craftcrawl_user_quest_rows($conn, (int) $user_id) : [];
@@ -8,6 +9,8 @@ $weekly_quests = array_values(array_filter($quest_rows, fn($quest) => $quest['pe
 $daily_claimed = count(array_filter($daily_quests, fn($quest) => $quest['claimed']));
 $weekly_claimed = count(array_filter($weekly_quests, fn($quest) => $quest['claimed']));
 $awarded_quests = $awarded_quests ?? [];
+$active_chain = isset($conn, $user_id) ? craftcrawl_active_chain_for_user($conn, (int) $user_id) : null;
+$pending_chain_invites = isset($conn, $user_id) ? craftcrawl_pending_chain_invites($conn, (int) $user_id) : [];
 
 if (!function_exists('craftcrawl_render_portal_quest_card')) {
     function craftcrawl_render_portal_quest_card($quest) {
@@ -155,11 +158,11 @@ if (!function_exists('craftcrawl_render_portal_quest_card')) {
     </div>
 
     <div data-user-tab-panel="quests" <?php echo $craftcrawl_portal_active !== 'quests' ? 'hidden' : ''; ?>>
-        <section class="portal-panel quests-panel">
+        <section class="portal-panel quests-panel" data-quest-chains-panel data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
             <div class="quests-header">
                 <div>
                     <h2>Quests</h2>
-                    <p>Daily and weekly goals for check-ins, reviews, plans, and events.</p>
+                    <p>Complete challenges to earn XP and climb the ranks.</p>
                 </div>
                 <?php if (!empty($awarded_quests)) : ?>
                     <p class="quest-award-message">
@@ -168,40 +171,123 @@ if (!function_exists('craftcrawl_render_portal_quest_card')) {
                 <?php endif; ?>
             </div>
 
-            <div class="quest-summary-grid">
-                <article>
-                    <strong><?php echo escape_output($daily_claimed); ?> / <?php echo escape_output(count($daily_quests)); ?></strong>
-                    <span>Daily claimed</span>
-                </article>
-                <article>
-                    <strong><?php echo escape_output($weekly_claimed); ?> / <?php echo escape_output(count($weekly_quests)); ?></strong>
-                    <span>Weekly claimed</span>
-                </article>
-            </div>
+            <nav class="quest-subtab-nav" role="tablist">
+                <button type="button" class="quest-subtab is-active" role="tab" data-quest-subtab="daily" aria-selected="true">Daily</button>
+                <button type="button" class="quest-subtab" role="tab" data-quest-subtab="weekly" aria-selected="false">Weekly</button>
+                <button type="button" class="quest-subtab" role="tab" data-quest-subtab="chains" aria-selected="false">
+                    Quest Chains
+                    <?php if (!empty($pending_chain_invites)) : ?>
+                        <span class="quest-subtab-badge"><?php echo escape_output(count($pending_chain_invites)); ?></span>
+                    <?php endif; ?>
+                </button>
+            </nav>
 
-            <section class="quest-group">
-                <div class="quest-group-heading">
-                    <h3>Daily</h3>
-                    <span><?php echo escape_output(craftcrawl_quest_reset_label('daily')); ?></span>
+            <div data-quest-subtab-panel="daily">
+                <div class="quest-summary-grid">
+                    <article>
+                        <strong><?php echo escape_output($daily_claimed); ?> / <?php echo escape_output(count($daily_quests)); ?></strong>
+                        <span>Claimed</span>
+                    </article>
+                    <article>
+                        <span class="quest-summary-timer"><?php echo escape_output(craftcrawl_quest_reset_label('daily')); ?></span>
+                    </article>
                 </div>
                 <div class="quest-list">
                     <?php foreach ($daily_quests as $quest) : ?>
                         <?php craftcrawl_render_portal_quest_card($quest); ?>
                     <?php endforeach; ?>
                 </div>
-            </section>
+            </div>
 
-            <section class="quest-group">
-                <div class="quest-group-heading">
-                    <h3>Weekly</h3>
-                    <span><?php echo escape_output(craftcrawl_quest_reset_label('weekly')); ?></span>
+            <div data-quest-subtab-panel="weekly" hidden>
+                <div class="quest-summary-grid">
+                    <article>
+                        <strong><?php echo escape_output($weekly_claimed); ?> / <?php echo escape_output(count($weekly_quests)); ?></strong>
+                        <span>Claimed</span>
+                    </article>
+                    <article>
+                        <span class="quest-summary-timer"><?php echo escape_output(craftcrawl_quest_reset_label('weekly')); ?></span>
+                    </article>
                 </div>
                 <div class="quest-list">
                     <?php foreach ($weekly_quests as $quest) : ?>
                         <?php craftcrawl_render_portal_quest_card($quest); ?>
                     <?php endforeach; ?>
                 </div>
-            </section>
+            </div>
+
+            <div data-quest-subtab-panel="chains" hidden>
+                <?php if (!empty($pending_chain_invites)) : ?>
+                    <div class="chain-invites" data-chain-invites>
+                        <h3 class="chain-section-heading">Pending Invites</h3>
+                        <?php foreach ($pending_chain_invites as $invite) : ?>
+                            <article class="chain-invite-card" data-chain-invite="<?php echo escape_output($invite['chain_id']); ?>">
+                                <div class="chain-invite-header">
+                                    <strong><?php echo escape_output($invite['chain_name']); ?></strong>
+                                    <small>from <?php echo escape_output($invite['invited_by']['name']); ?></small>
+                                </div>
+                                <p><?php echo escape_output($invite['chain_description']); ?></p>
+                                <small><?php echo escape_output($invite['step_count']); ?> steps · +<?php echo escape_output($invite['xp_reward']); ?> XP</small>
+                                <div class="chain-invite-actions">
+                                    <button type="button" data-chain-invite-accept="<?php echo escape_output($invite['chain_id']); ?>">Accept</button>
+                                    <button type="button" data-chain-invite-decline="<?php echo escape_output($invite['chain_id']); ?>" class="chain-btn-secondary">Decline</button>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($active_chain) : ?>
+                    <div class="chain-active" data-chain-active>
+                        <h3 class="chain-section-heading">Active Quest Chain</h3>
+                        <article class="chain-card is-active">
+                            <div class="chain-card-header">
+                                <div>
+                                    <strong><?php echo escape_output($active_chain['name']); ?></strong>
+                                    <p><?php echo escape_output($active_chain['description']); ?></p>
+                                </div>
+                                <span class="chain-xp-badge">+<?php echo escape_output($active_chain['xp_reward']); ?> XP</span>
+                            </div>
+                            <div class="chain-progress-bar">
+                                <span style="width: <?php echo escape_output($active_chain['progress_percent']); ?>%;"></span>
+                            </div>
+                            <small class="chain-progress-label"><?php echo escape_output($active_chain['completed_count']); ?> / <?php echo escape_output($active_chain['step_count']); ?> steps complete</small>
+                            <ol class="chain-steps-list">
+                                <?php foreach ($active_chain['steps'] as $step) : ?>
+                                    <li class="chain-step<?php echo $step['completed'] ? ' is-complete' : ''; ?>">
+                                        <span class="chain-step-dot" aria-hidden="true"></span>
+                                        <div class="chain-step-content">
+                                            <strong><?php echo escape_output(craftcrawl_chain_action_label($step['action_type'])); ?></strong>
+                                            <span><?php echo escape_output($step['location_name']); ?><?php echo $step['location_city'] ? ' · ' . escape_output($step['location_city']) : ''; ?></span>
+                                        </div>
+                                        <?php if ($step['completed']) : ?>
+                                            <span class="chain-step-check" aria-label="Completed">
+                                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            </span>
+                                        <?php endif; ?>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ol>
+                            <div class="chain-actions">
+                                <button type="button" data-chain-invite-friends="<?php echo escape_output($active_chain['id']); ?>" class="chain-btn-primary">Invite Friends</button>
+                                <button type="button" data-chain-abandon="<?php echo escape_output($active_chain['id']); ?>" class="chain-btn-danger">Abandon Quest</button>
+                            </div>
+                        </article>
+                    </div>
+                <?php else : ?>
+                    <div class="chain-discover" data-chain-discover>
+                        <div class="chain-discover-header">
+                            <h3 class="chain-section-heading">Quest Chains</h3>
+                            <p>Multi-step adventures through locations near you. Check in, leave reviews, and explore new spots to earn bonus XP.</p>
+                        </div>
+                        <div class="chain-options" data-chain-options></div>
+                        <div class="chain-discover-actions">
+                            <button type="button" data-chain-generate class="chain-btn-primary">Discover Quest Chains</button>
+                        </div>
+                        <p class="chain-status-message" data-chain-status hidden></p>
+                    </div>
+                <?php endif; ?>
+            </div>
         </section>
     </div>
 </main>
