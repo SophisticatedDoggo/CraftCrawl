@@ -170,16 +170,19 @@
 
     function renderActiveChain(chain, members) {
         var actionLabels = { checkin: 'Check in', review: 'Leave a review', event_want_to_go: 'RSVP to an event', feed_reaction: 'React to a post' };
-        var otherMembers = members.filter(function (m) { return m.role !== 'owner' || members.length === 1; });
+        var nonOwnerMembers = members.filter(function (m) { return m.role !== 'owner'; });
+        var hasParty = nonOwnerMembers.length > 0;
         var memberStepMap = {};
-        members.forEach(function (m) {
-            if (m.step_progress) {
-                m.step_progress.forEach(function (sp) {
-                    if (!memberStepMap[sp.step_id]) memberStepMap[sp.step_id] = [];
-                    memberStepMap[sp.step_id].push({ name: m.name, completed: sp.completed, role: m.role });
-                });
-            }
-        });
+        if (hasParty) {
+            nonOwnerMembers.forEach(function (m) {
+                if (m.step_progress) {
+                    m.step_progress.forEach(function (sp) {
+                        if (!memberStepMap[sp.step_id]) memberStepMap[sp.step_id] = [];
+                        memberStepMap[sp.step_id].push({ name: m.name, completed: sp.completed });
+                    });
+                }
+            });
+        }
 
         var html = '<div class="chain-active">';
         html += '<h3 class="chain-section-heading">Active Quest Chain</h3>';
@@ -205,13 +208,13 @@
             html += '<div class="chain-step-content"><strong>' + escapeHtml(label) + '</strong><span>' + loc + '</span>';
 
             var stepMembers = memberStepMap[step.id];
-            if (stepMembers && members.length > 1) {
-                var dots = stepMembers.filter(function (sm) { return sm.role !== 'owner'; }).map(function (sm) {
+            if (stepMembers && stepMembers.length > 0) {
+                var dots = stepMembers.map(function (sm) {
                     var initial = (sm.name || '?').charAt(0).toUpperCase();
                     var dotCls = 'chain-step-member-dot' + (sm.completed ? ' is-done' : '');
                     return '<span class="' + dotCls + '" aria-label="' + escapeHtml(sm.name) + (sm.completed ? ' (done)' : '') + '">' + initial + '</span>';
                 }).join('');
-                if (dots) html += '<span class="chain-step-member-dots">' + dots + '</span>';
+                html += '<span class="chain-step-member-dots">' + dots + '</span>';
             }
 
             html += '</div>';
