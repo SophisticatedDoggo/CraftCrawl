@@ -309,6 +309,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
         window.requestAnimationFrame(() => {
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.classList.remove('notification-focus-target');
+            void element.offsetWidth;
             element.classList.add('notification-focus-target');
         });
     }

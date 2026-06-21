@@ -90,6 +90,7 @@ feed_notification_assert(strpos($client_source, 'while (!item && hasMore)') !== 
 feed_notification_assert(strpos($client_source, "const notificationTypes = ['comment'];") !== false, 'opening combined activity must clear comment notifications');
 feed_notification_assert(strpos($client_source, "notificationTypes.push('reaction');") !== false, 'opening owned combined activity must also clear reaction notifications');
 feed_notification_assert(strpos($style_source, '.friends-feed-item.has-unread-notifications::before') !== false, 'unread cards must render an edge glow');
+feed_notification_assert(strpos($style_source, 'animation: feed-notification-focus-glow 3s ease-out forwards;') !== false, 'notification focus animation must use the full-width glow layer');
 feed_notification_assert(
     !preg_match('/\.friends-feed-item\.is-new,\s*\.friends-feed-item\.has-unread-notifications\s*\{[^}]*border-left/s', $style_source),
     'unread cards must not use the broken split left border'
