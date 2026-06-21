@@ -3028,14 +3028,13 @@ window.CraftCrawlInitFriends = function (scope = document) {
         const feedCard = feed?.querySelector(`[data-feed-item-key="${CSS.escape(itemKey)}"]`);
         if (!feedCard || !csrfToken || feedCard.dataset.markingSocialSeen === 'true') return;
 
-        const notificationTypes = [];
-        if (feedCard.querySelector('.feed-comments-link .feed-action-unread-badge')) {
-            notificationTypes.push('comment');
-        }
-        if (feedCard.dataset.feedIsSelf === 'true' && feedCard.querySelector('[data-reaction-disclosure] .feed-action-unread-badge')) {
+        const activityBadge = feedCard.querySelector('.feed-comments-link .feed-action-unread-badge');
+        if (!activityBadge) return;
+
+        const notificationTypes = ['comment'];
+        if (feedCard.dataset.feedIsSelf === 'true') {
             notificationTypes.push('reaction');
         }
-        if (!notificationTypes.length) return;
 
         feedCard.dataset.markingSocialSeen = 'true';
 
