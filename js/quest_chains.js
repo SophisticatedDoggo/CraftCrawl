@@ -416,13 +416,28 @@
             subtitle.textContent = count + ' / 4 friends invited' + (atLimit ? ' — party full (5 max)' : '');
         }
 
-        modal.querySelectorAll('[data-chain-send-invite]').forEach(function (btn) {
-            if (atLimit) {
-                btn.disabled = true;
-                btn.style.opacity = '0.4';
-            } else {
-                btn.disabled = false;
-                btn.style.opacity = '';
+        modal.querySelectorAll('.chain-invite-friend-item').forEach(function (item) {
+            var hasAction = item.querySelector('[data-chain-send-invite], [data-chain-cancel-invite], .chain-invite-status');
+            if (hasAction) {
+                var inviteBtn = item.querySelector('[data-chain-send-invite]');
+                if (inviteBtn) {
+                    inviteBtn.disabled = atLimit;
+                    inviteBtn.style.opacity = atLimit ? '0.4' : '';
+                }
+                return;
+            }
+
+            if (!atLimit) {
+                var friendInfo = item.querySelector('.chain-invite-friend-info');
+                var friendId = item.dataset.chainFriendId;
+                if (friendId) {
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'chain-btn-invite';
+                    btn.dataset.chainSendInvite = friendId;
+                    btn.textContent = 'Invite';
+                    item.appendChild(btn);
+                }
             }
         });
     }
@@ -478,7 +493,7 @@
                                 action = '<button type="button" class="chain-btn-invite" data-chain-send-invite="' + friend.id + '">Invite</button>';
                             }
 
-                            return '<div class="chain-invite-friend-item">' +
+                            return '<div class="chain-invite-friend-item" data-chain-friend-id="' + friend.id + '">' +
                                 avatar +
                                 '<div class="chain-invite-friend-info">' +
                                     '<span class="chain-invite-friend-name">' + escapeHtml(friend.name) + '</span>' +
