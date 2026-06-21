@@ -19,6 +19,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     const count = panel?.querySelector('[data-friends-count]');
     const menuBadges = document.querySelectorAll('[data-friends-menu-badge]');
     const tabBadges = document.querySelectorAll('[data-friends-tab-badge]');
+    const questsTabBadges = document.querySelectorAll('[data-quests-tab-badge]');
     const menuToggleBadges = document.querySelectorAll('[data-friends-menu-toggle-badge]');
     const csrfToken = panel?.dataset.csrfToken || managerPage?.dataset.csrfToken || profilePage?.dataset.csrfToken || '';
     let currentStatus = {
@@ -544,6 +545,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         const socialNotifications = Number(counts.social_notifications || 0);
         const newFriends = Number(counts.new_friends || 0);
         const newFeedItems = Number(counts.new_feed_items || 0);
+        const pendingChainInvites = Number(counts.pending_chain_invites || 0);
         const friendsBadgeCount = pendingInvites + pendingRecommendations + newFriends;
         const feedBadgeCount = newFeedItems + socialNotifications;
         const badgeCount = Number(counts.badge_count || 0);
@@ -554,6 +556,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             socialNotifications,
             newFriends,
             newFeedItems,
+            pendingChainInvites,
             friendsBadgeCount,
             feedBadgeCount,
             badgeCount
@@ -561,6 +564,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         menuBadges.forEach((badge) => setBadge(badge, friendsBadgeCount));
         menuToggleBadges.forEach((badge) => setBadge(badge, friendsBadgeCount));
         tabBadges.forEach((badge) => setBadge(badge, feedBadgeCount));
+        questsTabBadges.forEach((badge) => setBadge(badge, pendingChainInvites));
         syncNativeAppBadge(badgeCount);
 
         if (newFeedItems < 1 && feed) {

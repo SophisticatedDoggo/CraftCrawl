@@ -3693,6 +3693,20 @@ a.text-link:focus {
     color: var(--color-on-primary, #fff);
 }
 
+.chain-btn-cancel-invite {
+    flex: 0 0 auto;
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-muted);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
 .chain-invite-status {
     flex: 0 0 auto;
     font-size: 13px;

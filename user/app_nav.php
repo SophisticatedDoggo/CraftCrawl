@@ -43,6 +43,7 @@ $craftcrawl_user_logout_action = $craftcrawl_user_logout_action ?? '/logout.php'
     <a class="mobile-app-tab<?php echo $craftcrawl_portal_active === 'quests' ? ' is-active' : ''; ?>" href="<?php echo $craftcrawl_user_nav_prefix; ?>quests.php">
         <span class="mobile-app-tab-icon mobile-app-tab-icon-quests" aria-hidden="true"></span>
         <span>Quests</span>
+        <span class="mobile-tab-badge" data-quests-tab-badge hidden></span>
     </a>
     <button type="button" class="mobile-app-tab mobile-app-menu-tab" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
         <span class="mobile-app-tab-icon mobile-app-tab-icon-menu" aria-hidden="true">

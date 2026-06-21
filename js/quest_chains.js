@@ -89,6 +89,12 @@
             return;
         }
 
+        btn = e.target.closest('[data-chain-cancel-invite]');
+        if (btn && !btn.disabled) {
+            cancelChainInvite(btn);
+            return;
+        }
+
         if (e.target.closest('.chain-invite-modal-scrim') || e.target.closest('[data-chain-invite-close]')) {
             var modal = document.querySelector('.chain-invite-modal');
             if (modal) modal.remove();
@@ -170,20 +176,6 @@
 
     function renderActiveChain(chain, members) {
         var actionLabels = { checkin: 'Check in', review: 'Leave a review', event_want_to_go: 'RSVP to an event', feed_reaction: 'React to a post' };
-        var nonOwnerMembers = members.filter(function (m) { return m.role !== 'owner'; });
-        var hasParty = nonOwnerMembers.length > 0;
-        var memberStepMap = {};
-        if (hasParty) {
-            nonOwnerMembers.forEach(function (m) {
-                if (m.step_progress) {
-                    m.step_progress.forEach(function (sp) {
-                        if (!memberStepMap[sp.step_id]) memberStepMap[sp.step_id] = [];
-                        memberStepMap[sp.step_id].push({ name: m.name, completed: sp.completed });
-                    });
-                }
-            });
-        }
-
         var html = '<div class="chain-active">';
         html += '<h3 class="chain-section-heading">Active Quest Chain</h3>';
         html += '<article class="chain-card is-active">';
@@ -205,19 +197,7 @@
 
             html += '<li class="chain-step' + cls + '">';
             html += '<span class="chain-step-dot" aria-hidden="true"></span>';
-            html += '<div class="chain-step-content"><strong>' + escapeHtml(label) + '</strong><span>' + loc + '</span>';
-
-            var stepMembers = memberStepMap[step.id];
-            if (stepMembers && stepMembers.length > 0) {
-                var dots = stepMembers.map(function (sm) {
-                    var initial = (sm.name || '?').charAt(0).toUpperCase();
-                    var dotCls = 'chain-step-member-dot' + (sm.completed ? ' is-done' : '');
-                    return '<span class="' + dotCls + '" aria-label="' + escapeHtml(sm.name) + (sm.completed ? ' (done)' : '') + '">' + initial + '</span>';
-                }).join('');
-                html += '<span class="chain-step-member-dots">' + dots + '</span>';
-            }
-
-            html += '</div>';
+            html += '<div class="chain-step-content"><strong>' + escapeHtml(label) + '</strong><span>' + loc + '</span></div>';
             if (step.completed) {
                 html += '<span class="chain-step-check" aria-label="Completed"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
             }
@@ -384,12 +364,45 @@
             .catch(function () { btn.textContent = 'Error'; btn.disabled = false; });
     }
 
+    function cancelChainInvite(btn) {
+        var friendId = parseInt(btn.dataset.chainCancelInvite, 10);
+        btn.disabled = true;
+        btn.textContent = 'Canceling...';
+
+        var activeFriendsBtn = document.querySelector('[data-chain-invite-friends]');
+        var activeChainId = activeFriendsBtn ? parseInt(activeFriendsBtn.dataset.chainInviteFriends, 10) : 0;
+
+        postJSON('quest_chain_invite_cancel.php', { chain_id: activeChainId, friend_user_id: friendId })
+            .then(function (data) {
+                if (data.ok) {
+                    btn.textContent = 'Canceled';
+                    btn.style.opacity = '0.5';
+                    setTimeout(function () {
+                        var item = btn.closest('.chain-invite-friend-item');
+                        if (item) {
+                            var newBtn = document.createElement('button');
+                            newBtn.type = 'button';
+                            newBtn.className = 'chain-btn-invite';
+                            newBtn.dataset.chainSendInvite = friendId;
+                            newBtn.textContent = 'Invite';
+                            btn.replaceWith(newBtn);
+                        }
+                    }, 600);
+                } else {
+                    btn.textContent = 'Cancel';
+                    btn.disabled = false;
+                }
+            })
+            .catch(function () { btn.textContent = 'Cancel'; btn.disabled = false; });
+    }
+
     function loadFriendsForInvite(chainId, container) {
         postJSON('quest_chain_status.php', {})
             .then(function (statusData) {
                 var memberIds = (statusData.members || []).map(function (m) { return m.user_id; });
-                var memberCount = memberIds.length > 0 ? memberIds.length - 1 : 0;
-                var atLimit = memberCount >= 4;
+                var pendingIds = (statusData.sent_invites || []).map(function (s) { return s.user_id; });
+                var totalInvited = memberIds.length - 1 + pendingIds.length;
+                var atLimit = totalInvited >= 4;
 
                 return fetch('friends_list.php', { credentials: 'same-origin' })
                     .then(function (res) { return res.json(); })
@@ -407,6 +420,7 @@
 
                         html += friends.map(function (friend) {
                             var isMember = memberIds.indexOf(friend.id) >= 0;
+                            var isPending = pendingIds.indexOf(friend.id) >= 0;
                             var avatar = friend.profile_photo_url
                                 ? '<img class="chain-invite-avatar" src="' + escapeHtml(friend.profile_photo_url) + '" alt="">'
                                 : '<span class="chain-invite-avatar-placeholder">' + (friend.name || '?').charAt(0).toUpperCase() + '</span>';
@@ -419,7 +433,9 @@
 
                             var action;
                             if (isMember) {
-                                action = '<span class="chain-invite-status">Invited</span>';
+                                action = '<span class="chain-invite-status">Joined</span>';
+                            } else if (isPending) {
+                                action = '<button type="button" class="chain-btn-cancel-invite" data-chain-cancel-invite="' + friend.id + '">Cancel</button>';
                             } else if (atLimit) {
                                 action = '';
                             } else {

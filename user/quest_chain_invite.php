@@ -3,6 +3,7 @@ require '../login_check.php';
 include '../db.php';
 require_once '../lib/leveling.php';
 require_once '../lib/quest_chains.php';
+require_once '../lib/onesignal.php';
 
 header('Content-Type: application/json');
 

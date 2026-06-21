@@ -1363,6 +1363,36 @@ function craftcrawl_invite_to_chain($conn, $owner_user_id, $chain_id, $friend_us
     return ['ok' => true];
 }
 
+function craftcrawl_cancel_chain_invite($conn, $owner_user_id, $chain_id, $friend_user_id) {
+    if (!craftcrawl_chain_storage_ready($conn)) {
+        return ['ok' => false, 'message' => 'Quest chains are not available yet.'];
+    }
+
+    $chain_stmt = $conn->prepare("SELECT id, owner_user_id, status FROM quest_chains WHERE id = ? LIMIT 1");
+    $chain_stmt->bind_param("i", $chain_id);
+    $chain_stmt->execute();
+    $chain = $chain_stmt->get_result()->fetch_assoc();
+
+    if (!$chain || (int) $chain['owner_user_id'] !== $owner_user_id || $chain['status'] !== 'active') {
+        return ['ok' => false, 'message' => 'You can only manage invites on your active quest chain.'];
+    }
+
+    $member_stmt = $conn->prepare("SELECT id, status FROM quest_chain_members WHERE chain_id = ? AND user_id = ? AND status = 'pending' LIMIT 1");
+    $member_stmt->bind_param("ii", $chain_id, $friend_user_id);
+    $member_stmt->execute();
+    $member = $member_stmt->get_result()->fetch_assoc();
+
+    if (!$member) {
+        return ['ok' => false, 'message' => 'No pending invitation found for this friend.'];
+    }
+
+    $delete_stmt = $conn->prepare("DELETE FROM quest_chain_members WHERE id = ?");
+    $delete_stmt->bind_param("i", $member['id']);
+    $delete_stmt->execute();
+
+    return ['ok' => true];
+}
+
 function craftcrawl_respond_to_chain_invite($conn, $user_id, $chain_id, $accept) {
     if (!craftcrawl_chain_storage_ready($conn)) {
         return ['ok' => false, 'message' => 'Quest chains are not available yet.'];

@@ -26,9 +26,26 @@ $active_chain = craftcrawl_active_chain_for_user($conn, $user_id);
 $available_chains = craftcrawl_available_chains_for_user($conn, $user_id);
 $pending_invites = craftcrawl_pending_chain_invites($conn, $user_id);
 $members = [];
+$sent_invites = [];
 
 if ($active_chain) {
     $members = craftcrawl_chain_member_progress($conn, $active_chain['id']);
+
+    $sent_stmt = $conn->prepare("
+        SELECT qcm.user_id, u.fName, u.lName
+        FROM quest_chain_members qcm
+        INNER JOIN users u ON u.id = qcm.user_id
+        WHERE qcm.chain_id = ? AND qcm.status = 'pending'
+    ");
+    $sent_stmt->bind_param("i", $active_chain['id']);
+    $sent_stmt->execute();
+    $sent_result = $sent_stmt->get_result();
+    while ($row = $sent_result->fetch_assoc()) {
+        $sent_invites[] = [
+            'user_id' => (int) $row['user_id'],
+            'name' => trim(($row['fName'] ?? '') . ' ' . ($row['lName'] ?? '')),
+        ];
+    }
 }
 
 echo json_encode([
@@ -37,4 +54,5 @@ echo json_encode([
     'available_chains' => $available_chains,
     'pending_invites' => $pending_invites,
     'members' => $members,
+    'sent_invites' => $sent_invites,
 ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
