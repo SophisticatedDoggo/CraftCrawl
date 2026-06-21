@@ -91,3 +91,5 @@ CREATE TABLE IF NOT EXISTS quest_chain_members (
     CONSTRAINT fk_chain_member_invitedByUserId FOREIGN KEY (invited_by_user_id)
     REFERENCES users(id)
 );
+
+ALTER TABLE users ADD COLUMN chainInvitesSeenAt DATETIME AFTER socialNotificationsSeenAt;

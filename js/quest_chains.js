@@ -31,8 +31,9 @@
             p.hidden = p.dataset.questSubtabPanel !== target;
         });
 
-        if (target === 'chains' && chainsNeedLoad(panel) && !chainsLoading) {
+        if (target === 'chains' && !chainsLoading) {
             loadChainsTab(panel);
+            markChainInvitesSeen();
         }
     });
 
@@ -358,8 +359,17 @@
 
         postJSON('quest_chain_invite.php', { chain_id: activeChainId, friend_user_id: friendId })
             .then(function (data) {
-                if (data.ok) { btn.textContent = 'Invited'; btn.style.opacity = '0.5'; }
-                else { btn.textContent = data.message || 'Failed'; btn.disabled = false; }
+                if (data.ok) {
+                    var cancelBtn = document.createElement('button');
+                    cancelBtn.type = 'button';
+                    cancelBtn.className = 'chain-btn-cancel-invite';
+                    cancelBtn.dataset.chainCancelInvite = friendId;
+                    cancelBtn.textContent = 'Cancel';
+                    btn.replaceWith(cancelBtn);
+                } else {
+                    btn.textContent = data.message || 'Failed';
+                    btn.disabled = false;
+                }
             })
             .catch(function () { btn.textContent = 'Error'; btn.disabled = false; });
     }
@@ -489,6 +499,32 @@
         return fetch(endpoint, { method: 'POST', credentials: 'same-origin', body: formData })
             .then(function (res) { return res.json(); });
     }
+
+    function markChainInvitesSeen() {
+        var token = getCsrfToken();
+        if (!token) return;
+        var formData = new FormData();
+        formData.append('csrf_token', token);
+        fetch('quest_chain_invites_seen.php', { method: 'POST', credentials: 'same-origin', body: formData }).catch(function () {});
+        document.querySelectorAll('[data-quests-tab-badge]').forEach(function (badge) {
+            badge.hidden = true;
+        });
+        var subtabBadge = document.querySelector('[data-quest-subtab="chains"] .quest-subtab-badge');
+        if (subtabBadge) subtabBadge.hidden = true;
+    }
+
+    window.addEventListener('craftcrawl:user-tab-changed', function (e) {
+        if (e.detail && e.detail.tab === 'quests') {
+            var panel = document.querySelector('[data-quest-chains-panel]');
+            var chainsSubtab = panel && panel.querySelector('[data-quest-subtab="chains"].is-active');
+            if (chainsSubtab) {
+                if (chainsNeedLoad(panel) && !chainsLoading) {
+                    loadChainsTab(panel);
+                }
+                markChainInvitesSeen();
+            }
+        }
+    });
 
     function escapeHtml(str) {
         if (!str) return '';

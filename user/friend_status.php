@@ -17,12 +17,27 @@ $counts = craftcrawl_user_notification_counts($conn, $user_id);
 
 $pending_chain_invites = 0;
 if (craftcrawl_chain_storage_ready($conn)) {
-    $chain_invite_stmt = $conn->prepare("
-        SELECT COUNT(*) AS cnt FROM quest_chain_members qcm
-        INNER JOIN quest_chains qc ON qc.id = qcm.chain_id AND qc.status = 'active'
-        WHERE qcm.user_id = ? AND qcm.status = 'pending'
-    ");
-    $chain_invite_stmt->bind_param("i", $user_id);
+    $seen_stmt = $conn->prepare("SELECT chainInvitesSeenAt FROM users WHERE id = ? LIMIT 1");
+    $seen_stmt->bind_param("i", $user_id);
+    $seen_stmt->execute();
+    $seen_row = $seen_stmt->get_result()->fetch_assoc();
+    $chain_seen_at = $seen_row['chainInvitesSeenAt'] ?? null;
+
+    if ($chain_seen_at) {
+        $chain_invite_stmt = $conn->prepare("
+            SELECT COUNT(*) AS cnt FROM quest_chain_members qcm
+            INNER JOIN quest_chains qc ON qc.id = qcm.chain_id AND qc.status = 'active'
+            WHERE qcm.user_id = ? AND qcm.status = 'pending' AND qcm.createdAt > ?
+        ");
+        $chain_invite_stmt->bind_param("is", $user_id, $chain_seen_at);
+    } else {
+        $chain_invite_stmt = $conn->prepare("
+            SELECT COUNT(*) AS cnt FROM quest_chain_members qcm
+            INNER JOIN quest_chains qc ON qc.id = qcm.chain_id AND qc.status = 'active'
+            WHERE qcm.user_id = ? AND qcm.status = 'pending'
+        ");
+        $chain_invite_stmt->bind_param("i", $user_id);
+    }
     $chain_invite_stmt->execute();
     $pending_chain_invites = (int) ($chain_invite_stmt->get_result()->fetch_assoc()['cnt'] ?? 0);
 }
