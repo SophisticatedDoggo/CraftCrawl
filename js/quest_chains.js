@@ -1,39 +1,100 @@
-window.CraftCrawlInitQuestChains = function (root) {
+(function () {
     'use strict';
 
-    var panel = (root || document).querySelector('[data-quest-chains-panel]');
-    if (!panel) return;
-    if (panel.dataset.questChainsReady === 'true') return;
-    panel.dataset.questChainsReady = 'true';
-
-    var csrfToken = panel.dataset.csrfToken || window.CRAFTCRAWL_CSRF_TOKEN || '';
     var chainsTabLoaded = false;
 
-    var subtabs = panel.querySelectorAll('[data-quest-subtab]');
-    var subtabPanels = panel.querySelectorAll('[data-quest-subtab-panel]');
+    function getCsrfToken() {
+        var panel = document.querySelector('[data-quest-chains-panel]');
+        return (panel && panel.dataset.csrfToken) || window.CRAFTCRAWL_CSRF_TOKEN || '';
+    }
 
-    subtabs.forEach(function (tab) {
-        tab.addEventListener('click', function () {
-            var target = tab.dataset.questSubtab;
+    document.addEventListener('click', function (e) {
+        var tab = e.target.closest('[data-quest-subtab]');
+        if (!tab) return;
 
-            subtabs.forEach(function (t) {
-                t.classList.toggle('is-active', t === tab);
-                t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
-            });
+        var panel = tab.closest('[data-quest-chains-panel]');
+        if (!panel) return;
 
-            subtabPanels.forEach(function (p) {
-                p.hidden = p.dataset.questSubtabPanel !== target;
-            });
+        var target = tab.dataset.questSubtab;
 
-            if (target === 'chains' && !chainsTabLoaded) {
-                chainsTabLoaded = true;
-                loadChainsTab();
-            }
+        panel.querySelectorAll('[data-quest-subtab]').forEach(function (t) {
+            t.classList.toggle('is-active', t === tab);
+            t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
         });
+
+        panel.querySelectorAll('[data-quest-subtab-panel]').forEach(function (p) {
+            p.hidden = p.dataset.questSubtabPanel !== target;
+        });
+
+        if (target === 'chains' && !chainsTabLoaded) {
+            chainsTabLoaded = true;
+            loadChainsTab(panel);
+        }
     });
 
-    function loadChainsTab() {
-        var container = panel.querySelector('[data-chain-content]');
+    document.addEventListener('click', function (e) {
+        var btn;
+
+        btn = e.target.closest('[data-chain-generate]');
+        if (btn && !btn.disabled) {
+            generateChainOptions(btn);
+            return;
+        }
+
+        btn = e.target.closest('[data-chain-activate]');
+        if (btn) {
+            e.stopPropagation();
+            activateChain(parseInt(btn.dataset.chainActivate, 10));
+            return;
+        }
+
+        btn = e.target.closest('[data-chain-abandon]');
+        if (btn) {
+            if (!confirm('Abandon this quest chain? All progress will be lost.')) return;
+            var chainId = parseInt(btn.dataset.chainAbandon, 10);
+            postJSON('quest_chain_abandon.php', { chain_id: chainId })
+                .then(function (data) {
+                    if (!data.ok) { alert(data.message || 'Could not abandon quest chain.'); return; }
+                    chainsTabLoaded = false;
+                    loadChainsTab(document.querySelector('[data-quest-chains-panel]'));
+                })
+                .catch(function () { alert('Failed to abandon quest chain.'); });
+            return;
+        }
+
+        btn = e.target.closest('[data-chain-invite-accept]');
+        if (btn) {
+            respondToInvite(parseInt(btn.dataset.chainInviteAccept, 10), true, btn);
+            return;
+        }
+
+        btn = e.target.closest('[data-chain-invite-decline]');
+        if (btn) {
+            respondToInvite(parseInt(btn.dataset.chainInviteDecline, 10), false, btn);
+            return;
+        }
+
+        btn = e.target.closest('[data-chain-invite-friends]');
+        if (btn) {
+            openInviteModal(parseInt(btn.dataset.chainInviteFriends, 10));
+            return;
+        }
+
+        btn = e.target.closest('[data-chain-send-invite]');
+        if (btn && !btn.disabled) {
+            sendChainInvite(btn);
+            return;
+        }
+
+        if (e.target.closest('.chain-invite-modal-scrim') || e.target.closest('[data-chain-invite-close]')) {
+            var modal = document.querySelector('.chain-invite-modal');
+            if (modal) modal.remove();
+            return;
+        }
+    });
+
+    function loadChainsTab(panel) {
+        var container = panel && panel.querySelector('[data-chain-content]');
         if (!container) return;
 
         container.innerHTML = '<p class="chain-status-message">Loading quest chains...</p>';
@@ -44,7 +105,6 @@ window.CraftCrawlInitQuestChains = function (root) {
                     container.innerHTML = '<p class="chain-status-message">Could not load quest chains.</p>';
                     return;
                 }
-
                 renderChainsTab(container, data);
             })
             .catch(function () {
@@ -57,7 +117,7 @@ window.CraftCrawlInitQuestChains = function (root) {
         var html = '';
 
         if (data.pending_invites && data.pending_invites.length > 0) {
-            html += '<div class="chain-invites" data-chain-invites>';
+            html += '<div class="chain-invites">';
             html += '<h3 class="chain-section-heading">Pending Invites</h3>';
             data.pending_invites.forEach(function (invite) {
                 html += '<article class="chain-invite-card" data-chain-invite="' + invite.chain_id + '">' +
@@ -77,125 +137,83 @@ window.CraftCrawlInitQuestChains = function (root) {
         }
 
         if (data.active_chain) {
-            var chain = data.active_chain;
-            html += '<div class="chain-active" data-chain-active>';
-            html += '<h3 class="chain-section-heading">Active Quest Chain</h3>';
-            html += '<article class="chain-card is-active">';
-            html += '<div class="chain-card-header"><div>';
-            html += '<strong>' + escapeHtml(chain.name) + '</strong>';
-            html += '<p>' + escapeHtml(chain.description) + '</p>';
-            html += '</div>';
-            html += '<span class="chain-xp-badge">+' + chain.xp_reward + ' XP</span>';
-            html += '</div>';
-            html += '<div class="chain-progress-bar"><span style="width:' + chain.progress_percent + '%;"></span></div>';
-            html += '<small class="chain-progress-label">' + chain.completed_count + ' / ' + chain.step_count + ' steps complete</small>';
-            html += '<ol class="chain-steps-list">';
-
-            (chain.steps || []).forEach(function (step) {
-                var completeClass = step.completed ? ' is-complete' : '';
-                var actionLabels = { checkin: 'Check in', review: 'Leave a review', event_want_to_go: 'RSVP to an event', feed_reaction: 'React to a post' };
-                var actionLabel = actionLabels[step.action_type] || step.action_type;
-                var locationInfo = escapeHtml(step.location_name);
-                if (step.location_city) locationInfo += ' · ' + escapeHtml(step.location_city);
-
-                html += '<li class="chain-step' + completeClass + '">';
-                html += '<span class="chain-step-dot" aria-hidden="true"></span>';
-                html += '<div class="chain-step-content">';
-                html += '<strong>' + escapeHtml(actionLabel) + '</strong>';
-                html += '<span>' + locationInfo + '</span>';
-                html += '</div>';
-                if (step.completed) {
-                    html += '<span class="chain-step-check" aria-label="Completed"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
-                }
-                html += '</li>';
-            });
-
-            html += '</ol>';
-
-            if (data.members && data.members.length > 1) {
-                html += '<div class="chain-member-avatars">';
-                data.members.forEach(function (member) {
-                    if (member.profile_photo_url) {
-                        html += '<img class="chain-member-avatar" src="' + escapeHtml(member.profile_photo_url) + '" alt="' + escapeHtml(member.name) + '" title="' + escapeHtml(member.name) + ' (' + member.completed_count + '/' + chain.step_count + ')">';
-                    } else {
-                        var initials = (member.name || '?').charAt(0).toUpperCase();
-                        html += '<span class="chain-member-avatar-placeholder" title="' + escapeHtml(member.name) + ' (' + member.completed_count + '/' + chain.step_count + ')">' + initials + '</span>';
-                    }
-                });
-                html += '</div>';
-            }
-
-            html += '<div class="chain-actions">';
-            if (chain.is_owner) {
-                html += '<button type="button" data-chain-invite-friends="' + chain.id + '" class="chain-btn-primary">Invite Friends</button>';
-            }
-            html += '<button type="button" data-chain-abandon="' + chain.id + '" class="chain-btn-danger">' + (chain.is_owner ? 'Abandon Quest' : 'Leave Quest') + '</button>';
-            html += '</div>';
-            html += '</article></div>';
+            html += renderActiveChain(data.active_chain, data.members || []);
         } else {
-            html += '<div class="chain-discover" data-chain-discover>';
-            html += '<div class="chain-discover-header">';
-            html += '<h3 class="chain-section-heading">Quest Chains</h3>';
-            html += '<p>Multi-step adventures through locations near you. Check in, leave reviews, and explore new spots to earn bonus XP.</p>';
-            html += '</div>';
-            html += '<div class="chain-options" data-chain-options></div>';
-            html += '<div class="chain-discover-actions">';
-            html += '<button type="button" data-chain-generate class="chain-btn-primary">Discover Quest Chains</button>';
-            html += '</div>';
-            html += '<p class="chain-status-message" data-chain-status hidden></p>';
-            html += '</div>';
+            html += '<div class="chain-discover">' +
+                '<div class="chain-discover-header">' +
+                    '<h3 class="chain-section-heading">Quest Chains</h3>' +
+                    '<p>Multi-step adventures through locations near you. Check in, leave reviews, and explore new spots to earn bonus XP.</p>' +
+                '</div>' +
+                '<div class="chain-options" data-chain-options></div>' +
+                '<div class="chain-discover-actions">' +
+                    '<button type="button" data-chain-generate class="chain-btn-primary">Discover Quest Chains</button>' +
+                '</div>' +
+                '<p class="chain-status-message" data-chain-status hidden></p>' +
+            '</div>';
         }
 
         container.innerHTML = html;
-        bindChainActions(container);
     }
 
-    function bindChainActions(container) {
-        container.querySelectorAll('[data-chain-abandon]').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                if (!confirm('Abandon this quest chain? All progress will be lost.')) return;
-                var chainId = parseInt(btn.dataset.chainAbandon, 10);
-                postJSON('quest_chain_abandon.php', { chain_id: chainId })
-                    .then(function (data) {
-                        if (!data.ok) { alert(data.message || 'Could not abandon quest chain.'); return; }
-                        chainsTabLoaded = false;
-                        loadChainsTab();
-                    })
-                    .catch(function () { alert('Failed to abandon quest chain.'); });
-            });
+    function renderActiveChain(chain, members) {
+        var actionLabels = { checkin: 'Check in', review: 'Leave a review', event_want_to_go: 'RSVP to an event', feed_reaction: 'React to a post' };
+        var html = '<div class="chain-active">';
+        html += '<h3 class="chain-section-heading">Active Quest Chain</h3>';
+        html += '<article class="chain-card is-active">';
+        html += '<div class="chain-card-header"><div>';
+        html += '<strong>' + escapeHtml(chain.name) + '</strong>';
+        html += '<p>' + escapeHtml(chain.description) + '</p>';
+        html += '</div>';
+        html += '<span class="chain-xp-badge">+' + chain.xp_reward + ' XP</span>';
+        html += '</div>';
+        html += '<div class="chain-progress-bar"><span style="width:' + chain.progress_percent + '%;"></span></div>';
+        html += '<small class="chain-progress-label">' + chain.completed_count + ' / ' + chain.step_count + ' steps complete</small>';
+        html += '<ol class="chain-steps-list">';
+
+        (chain.steps || []).forEach(function (step) {
+            var cls = step.completed ? ' is-complete' : '';
+            var label = actionLabels[step.action_type] || step.action_type;
+            var loc = escapeHtml(step.location_name);
+            if (step.location_city) loc += ' · ' + escapeHtml(step.location_city);
+
+            html += '<li class="chain-step' + cls + '">';
+            html += '<span class="chain-step-dot" aria-hidden="true"></span>';
+            html += '<div class="chain-step-content"><strong>' + escapeHtml(label) + '</strong><span>' + loc + '</span></div>';
+            if (step.completed) {
+                html += '<span class="chain-step-check" aria-label="Completed"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+            }
+            html += '</li>';
         });
 
-        container.querySelectorAll('[data-chain-invite-accept]').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                respondToInvite(parseInt(btn.dataset.chainInviteAccept, 10), true, btn);
-            });
-        });
+        html += '</ol>';
 
-        container.querySelectorAll('[data-chain-invite-decline]').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                respondToInvite(parseInt(btn.dataset.chainInviteDecline, 10), false, btn);
+        if (members.length > 1) {
+            html += '<div class="chain-member-avatars">';
+            members.forEach(function (m) {
+                var title = escapeHtml(m.name) + ' (' + m.completed_count + '/' + chain.step_count + ')';
+                if (m.profile_photo_url) {
+                    html += '<img class="chain-member-avatar" src="' + escapeHtml(m.profile_photo_url) + '" alt="' + escapeHtml(m.name) + '" title="' + title + '">';
+                } else {
+                    html += '<span class="chain-member-avatar-placeholder" title="' + title + '">' + (m.name || '?').charAt(0).toUpperCase() + '</span>';
+                }
             });
-        });
-
-        container.querySelectorAll('[data-chain-invite-friends]').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                openInviteModal(parseInt(btn.dataset.chainInviteFriends, 10));
-            });
-        });
-
-        var generateBtn = container.querySelector('[data-chain-generate]');
-        var optionsContainer = container.querySelector('[data-chain-options]');
-        var statusEl = container.querySelector('[data-chain-status]');
-
-        if (generateBtn) {
-            generateBtn.addEventListener('click', function () {
-                if (generateBtn.disabled) return;
-                generateChainOptions(generateBtn, optionsContainer, statusEl);
-            });
+            html += '</div>';
         }
+
+        html += '<div class="chain-actions">';
+        if (chain.is_owner) {
+            html += '<button type="button" data-chain-invite-friends="' + chain.id + '" class="chain-btn-primary">Invite Friends</button>';
+        }
+        html += '<button type="button" data-chain-abandon="' + chain.id + '" class="chain-btn-danger">' + (chain.is_owner ? 'Abandon Quest' : 'Leave Quest') + '</button>';
+        html += '</div></article></div>';
+        return html;
     }
 
-    function generateChainOptions(btn, optionsEl, statusEl) {
+    function generateChainOptions(btn) {
+        var container = btn.closest('.chain-discover');
+        var optionsEl = container && container.querySelector('[data-chain-options]');
+        var statusEl = container && container.querySelector('[data-chain-status]');
+
         btn.textContent = 'Finding locations...';
         btn.disabled = true;
         if (statusEl) { statusEl.textContent = ''; statusEl.hidden = true; }
@@ -215,7 +233,6 @@ window.CraftCrawlInitQuestChains = function (root) {
                     btn.disabled = false;
                     return;
                 }
-
                 renderChainOptions(data.chains || [], optionsEl, statusEl);
                 btn.textContent = 'Refresh Options';
                 btn.disabled = false;
@@ -237,71 +254,48 @@ window.CraftCrawlInitQuestChains = function (root) {
         }
 
         optionsEl.innerHTML = chains.map(function (chain) {
-            var stepPills = (chain.steps || []).map(function (step) {
+            var pills = (chain.steps || []).map(function (step) {
                 return '<span class="chain-option-step-pill">' + escapeHtml(step.description) + '</span>';
             }).join('');
 
-            return '<article class="chain-option-card" data-chain-option="' + chain.id + '">' +
-                '<div class="chain-option-header">' +
-                    '<div>' +
-                        '<strong>' + escapeHtml(chain.name) + '</strong>' +
-                        '<p>' + escapeHtml(chain.description) + '</p>' +
-                    '</div>' +
-                    '<span class="chain-xp-badge">+' + chain.xp_reward + ' XP</span>' +
+            return '<article class="chain-option-card">' +
+                '<div class="chain-option-header"><div>' +
+                    '<strong>' + escapeHtml(chain.name) + '</strong>' +
+                    '<p>' + escapeHtml(chain.description) + '</p>' +
                 '</div>' +
-                '<div class="chain-option-steps">' + stepPills + '</div>' +
+                '<span class="chain-xp-badge">+' + chain.xp_reward + ' XP</span></div>' +
+                '<div class="chain-option-steps">' + pills + '</div>' +
                 '<div class="chain-option-footer">' +
                     '<small>' + chain.step_count + ' steps</small>' +
                     '<button type="button" class="chain-btn-primary" data-chain-activate="' + chain.id + '" style="flex:0;padding:8px 16px;">Start Quest</button>' +
                 '</div>' +
             '</article>';
         }).join('');
-
-        optionsEl.querySelectorAll('[data-chain-activate]').forEach(function (btn) {
-            btn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                activateChain(parseInt(btn.dataset.chainActivate, 10));
-            });
-        });
     }
 
     function activateChain(chainId) {
         postJSON('quest_chain_activate.php', { chain_id: chainId })
             .then(function (data) {
-                if (!data.ok) {
-                    alert(data.message || 'Could not activate quest chain.');
-                    return;
-                }
+                if (!data.ok) { alert(data.message || 'Could not activate quest chain.'); return; }
                 chainsTabLoaded = false;
-                loadChainsTab();
+                loadChainsTab(document.querySelector('[data-quest-chains-panel]'));
             })
-            .catch(function () {
-                alert('Failed to activate quest chain.');
-            });
+            .catch(function () { alert('Failed to activate quest chain.'); });
     }
 
     function respondToInvite(chainId, accept, btn) {
         var card = btn.closest('[data-chain-invite]');
-
-        postJSON('quest_chain_invite_respond.php', {
-            chain_id: chainId,
-            accept: accept ? 1 : 0
-        })
-        .then(function (data) {
-            if (!data.ok) {
-                alert(data.message || 'Could not respond to invite.');
-                return;
-            }
-            if (accept) {
-                chainsTabLoaded = false;
-                loadChainsTab();
-            } else if (card) {
-                card.remove();
-            }
-        })
-        .catch(function () {
-            alert('Failed to respond to invite.');
-        });
+        postJSON('quest_chain_invite_respond.php', { chain_id: chainId, accept: accept ? 1 : 0 })
+            .then(function (data) {
+                if (!data.ok) { alert(data.message || 'Could not respond to invite.'); return; }
+                if (accept) {
+                    chainsTabLoaded = false;
+                    loadChainsTab(document.querySelector('[data-quest-chains-panel]'));
+                } else if (card) {
+                    card.remove();
+                }
+            })
+            .catch(function () { alert('Failed to respond to invite.'); });
     }
 
     function openInviteModal(chainId) {
@@ -318,30 +312,39 @@ window.CraftCrawlInitQuestChains = function (root) {
                 '<div data-chain-friend-list><p style="color:var(--color-muted);">Loading friends...</p></div>' +
                 '<button type="button" class="chain-btn-secondary" data-chain-invite-close>Close</button>' +
             '</div>';
-
         document.body.appendChild(modal);
-
-        modal.querySelector('.chain-invite-modal-scrim').addEventListener('click', function () { modal.remove(); });
-        modal.querySelector('[data-chain-invite-close]').addEventListener('click', function () { modal.remove(); });
-
         loadFriendsForInvite(chainId, modal.querySelector('[data-chain-friend-list]'));
+    }
+
+    function sendChainInvite(btn) {
+        var chainId = parseInt(btn.closest('.chain-invite-modal-body').querySelector('[data-chain-invite-close]') ? btn.dataset.chainSendInvite : '0', 10);
+        var friendId = parseInt(btn.dataset.chainSendInvite, 10);
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+
+        var activeFriendsBtn = document.querySelector('[data-chain-invite-friends]');
+        var activeChainId = activeFriendsBtn ? parseInt(activeFriendsBtn.dataset.chainInviteFriends, 10) : 0;
+
+        postJSON('quest_chain_invite.php', { chain_id: activeChainId, friend_user_id: friendId })
+            .then(function (data) {
+                if (data.ok) { btn.textContent = 'Invited'; btn.style.opacity = '0.5'; }
+                else { btn.textContent = data.message || 'Failed'; btn.disabled = false; }
+            })
+            .catch(function () { btn.textContent = 'Error'; btn.disabled = false; });
     }
 
     function loadFriendsForInvite(chainId, container) {
         postJSON('quest_chain_status.php', {})
             .then(function (statusData) {
                 var memberIds = (statusData.members || []).map(function (m) { return m.user_id; });
-
                 return fetch('friends_list.php', { credentials: 'same-origin' })
                     .then(function (res) { return res.json(); })
                     .then(function (friendsData) {
                         var friends = friendsData.friends || [];
-
                         if (friends.length === 0) {
                             container.innerHTML = '<p style="color:var(--color-muted);">No friends to invite.</p>';
                             return;
                         }
-
                         container.innerHTML = friends.map(function (friend) {
                             var isMember = memberIds.indexOf(friend.id) >= 0;
                             return '<div class="chain-invite-friend-item">' +
@@ -352,24 +355,6 @@ window.CraftCrawlInitQuestChains = function (root) {
                                 ) +
                             '</div>';
                         }).join('');
-
-                        container.querySelectorAll('[data-chain-send-invite]').forEach(function (btn) {
-                            btn.addEventListener('click', function () {
-                                var friendId = parseInt(btn.dataset.chainSendInvite, 10);
-                                btn.disabled = true;
-                                btn.textContent = 'Sending...';
-
-                                postJSON('quest_chain_invite.php', {
-                                    chain_id: chainId,
-                                    friend_user_id: friendId
-                                })
-                                .then(function (data) {
-                                    if (data.ok) { btn.textContent = 'Invited'; btn.style.opacity = '0.5'; }
-                                    else { btn.textContent = 'Failed'; btn.disabled = false; }
-                                })
-                                .catch(function () { btn.textContent = 'Error'; btn.disabled = false; });
-                            });
-                        });
                     });
             })
             .catch(function () {
@@ -382,18 +367,15 @@ window.CraftCrawlInitQuestChains = function (root) {
             if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.Geolocation) {
                 Capacitor.Plugins.Geolocation.getCurrentPosition({ enableHighAccuracy: true })
                     .then(function (pos) { resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }); })
-                    .catch(function () { fallbackBrowserGeolocation(resolve, reject); });
+                    .catch(function () { fallbackGeo(resolve, reject); });
             } else {
-                fallbackBrowserGeolocation(resolve, reject);
+                fallbackGeo(resolve, reject);
             }
         });
     }
 
-    function fallbackBrowserGeolocation(resolve, reject) {
-        if (!navigator.geolocation) {
-            reject(new Error('Location services are not available.'));
-            return;
-        }
+    function fallbackGeo(resolve, reject) {
+        if (!navigator.geolocation) { reject(new Error('Location services are not available.')); return; }
         navigator.geolocation.getCurrentPosition(
             function (pos) { resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }); },
             function () { reject(new Error('Could not determine your location. Please enable location services.')); },
@@ -403,22 +385,16 @@ window.CraftCrawlInitQuestChains = function (root) {
 
     function postJSON(endpoint, data) {
         var formData = new FormData();
-        formData.append('csrf_token', csrfToken);
-        Object.keys(data).forEach(function (key) {
-            formData.append(key, data[key]);
-        });
-        return fetch(endpoint, {
-            method: 'POST',
-            credentials: 'same-origin',
-            body: formData
-        }).then(function (res) { return res.json(); });
+        formData.append('csrf_token', getCsrfToken());
+        Object.keys(data).forEach(function (key) { formData.append(key, data[key]); });
+        return fetch(endpoint, { method: 'POST', credentials: 'same-origin', body: formData })
+            .then(function (res) { return res.json(); });
     }
 
     function escapeHtml(str) {
         if (!str) return '';
-        var div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
+        var d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
     }
-};
-window.CraftCrawlInitQuestChains();
+})();
