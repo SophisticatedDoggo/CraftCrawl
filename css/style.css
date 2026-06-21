@@ -3592,16 +3592,17 @@ a.text-link:focus {
     box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    color: var(--color-border);
+    color: var(--color-primary);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: color 0.15s;
+    opacity: 0.5;
+    transition: opacity 0.15s;
 }
 
 .chain-btn-promote:active {
-    color: var(--color-primary);
+    opacity: 1;
     background: none;
     box-shadow: none;
 }
