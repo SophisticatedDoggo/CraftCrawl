@@ -83,6 +83,7 @@ window.CraftCrawlInitUserTabShell = function (root = document) {
                 shell.dataset.questPanelStale = 'false';
                 questPanelLastRefresh = Date.now();
                 window.CraftCrawlInitPullToRefresh?.(currentPanel);
+                window.CraftCrawlInitQuestChains?.(currentPanel);
                 return true;
             })
             .catch(() => false)
