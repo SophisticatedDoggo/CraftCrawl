@@ -626,7 +626,7 @@ if (!empty($checkin_visit_ids)) {
     $visit_bind_types = str_repeat('i', count($checkin_visit_ids));
 
     $linked_badge_stmt = $conn->prepare("
-        SELECT id, visit_id, badge_name, badge_tier, xp_awarded
+        SELECT id, visit_id, badge_name, badge_description, badge_tier, xp_awarded
         FROM user_badges
         WHERE visit_id IN ($visit_ph)
         ORDER BY earnedAt
@@ -639,12 +639,17 @@ if (!empty($checkin_visit_ids)) {
     while ($lb = $lb_result->fetch_assoc()) {
         $fi = $checkin_index_by_visit_id[(int) $lb['visit_id']] ?? null;
         if ($fi !== null) {
-            $feed[$fi]['linked_badges'][] = ['name' => $lb['badge_name'], 'tier' => $lb['badge_tier'], 'xp' => (int) $lb['xp_awarded']];
+            $feed[$fi]['linked_badges'][] = [
+                'name' => $lb['badge_name'],
+                'description' => $lb['badge_description'],
+                'tier' => $lb['badge_tier'],
+                'xp' => (int) $lb['xp_awarded']
+            ];
         }
     }
 
     $linked_quest_stmt = $conn->prepare("
-        SELECT id, visit_id, quest_key, xp_awarded
+        SELECT id, visit_id, quest_key, period_type, xp_awarded
         FROM user_quest_completions
         WHERE visit_id IN ($visit_ph)
         ORDER BY completedAt
@@ -657,7 +662,12 @@ if (!empty($checkin_visit_ids)) {
     while ($lq = $lq_result->fetch_assoc()) {
         $fi = $checkin_index_by_visit_id[(int) $lq['visit_id']] ?? null;
         if ($fi !== null) {
-            $feed[$fi]['linked_quests'][] = ['name' => craftcrawl_quest_name($lq['quest_key']), 'xp' => (int) $lq['xp_awarded']];
+            $feed[$fi]['linked_quests'][] = [
+                'name' => craftcrawl_quest_name($lq['quest_key']),
+                'description' => craftcrawl_quest_description($lq['quest_key']),
+                'period_type' => $lq['period_type'],
+                'xp' => (int) $lq['xp_awarded']
+            ];
         }
     }
 }

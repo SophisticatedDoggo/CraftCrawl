@@ -27,6 +27,51 @@ function format_feed_date($value) {
     return $timestamp ? date('M j, g:i A', $timestamp) : '';
 }
 
+function feed_thread_accomplishments($item) {
+    $accomplishments = [];
+
+    foreach (($item['linked_badges'] ?? []) as $badge) {
+        $accomplishments[] = [
+            'title' => 'Badge earned: ' . ($badge['name'] ?? ''),
+            'description' => $badge['description'] ?? '',
+            'xp' => (int) ($badge['xp'] ?? 0)
+        ];
+    }
+
+    foreach (($item['linked_quests'] ?? []) as $quest) {
+        $period_type = trim((string) ($quest['period_type'] ?? ''));
+        $quest_label = $period_type !== '' ? ucfirst($period_type) . ' quest' : 'Quest';
+        $accomplishments[] = [
+            'title' => $quest_label . ' completed: ' . ($quest['name'] ?? ''),
+            'description' => $quest['description'] ?? '',
+            'xp' => (int) ($quest['xp'] ?? 0)
+        ];
+    }
+
+    if (empty($accomplishments)) {
+        return '';
+    }
+
+    $html = '';
+    foreach ($accomplishments as $accomplishment) {
+        $description_html = $accomplishment['description'] !== ''
+            ? '<p class="feed-accomplishment-description">' . escape_output($accomplishment['description']) . '</p>'
+            : '';
+        $html .= '
+            <div class="feed-accomplishment-item">
+                <p class="feed-accomplishment-title">
+                    <strong>' . escape_output($accomplishment['title']) . '</strong>
+                    <span aria-hidden="true">·</span>
+                    <span>+' . escape_output($accomplishment['xp']) . ' XP</span>
+                </p>
+                ' . $description_html . '
+            </div>
+        ';
+    }
+
+    return '<div class="feed-accomplishment-list">' . $html . '</div>';
+}
+
 function feed_thread_attrs($item) {
     return 'data-feed-item-type="' . escape_output($item['type'] ?? '') . '" data-feed-is-self="' . (!empty($item['is_self']) ? 'true' : 'false') . '"';
 }
@@ -393,18 +438,7 @@ function render_feed_thread_post($item, $actions_html = '') {
         if (!empty($item['caption'])) {
             $caption_html = '<p class="feed-thread-caption"><strong>' . escape_output($actor_name) . '</strong> ' . escape_output($item['caption']) . '</p>';
         }
-        $reward_parts = [];
-        if (!empty($item['linked_badges'])) {
-            foreach ($item['linked_badges'] as $badge) {
-                $reward_parts[] = 'Badge earned: ' . escape_output($badge['name']);
-            }
-        }
-        if (!empty($item['linked_quests'])) {
-            foreach ($item['linked_quests'] as $quest) {
-                $reward_parts[] = 'Quest completed: ' . escape_output($quest['name']);
-            }
-        }
-        $reward_html = !empty($reward_parts) ? '<p class="feed-reward-line">' . implode(' · ', $reward_parts) . '</p>' : '';
+        $reward_html = feed_thread_accomplishments($item);
         return '
             <article class="friends-feed-item feed-thread-post feed-checkin-post" ' . feed_thread_attrs($item) . '>
                 ' . $avatar . '

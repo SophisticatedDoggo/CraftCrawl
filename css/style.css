@@ -4642,33 +4642,48 @@ body:not(.feed-page-body) .feed-scroll-to-notification-fab {
     overflow: visible;
 }
 
-.feed-caption-content.has-text-overflow:not(.is-expanded) .feed-caption-text {
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
+.feed-caption-preview-row {
+    display: flex;
+    align-items: baseline;
+    min-width: 0;
+}
+
+.feed-caption-preview {
+    min-width: 0;
+    max-width: 100%;
+    white-space: nowrap;
     overflow: hidden;
+    word-break: normal;
 }
 
-.feed-caption-content.is-expanded {
-    overflow: visible;
+.feed-caption-preview-row .feed-caption-more {
+    flex: 0 0 auto;
+    margin-left: 4px;
 }
 
-.feed-caption-content.is-expanded .feed-caption-text {
-    display: inline;
-    overflow: visible;
-    -webkit-line-clamp: unset;
-}
-
-.feed-caption-content:not(.is-expanded) .feed-reward-line {
+.feed-caption-expanded {
     display: none;
 }
 
-.feed-caption-content.is-expanded .feed-reward-line {
-    display: inline;
+.feed-caption-content.is-expanded .feed-caption-preview-row {
+    display: none;
 }
 
-.feed-caption-text {
+.feed-caption-content.is-expanded .feed-caption-expanded {
+    display: block;
+}
+
+.feed-caption-content .feed-caption-full-text {
+    margin: 0;
     word-break: break-word;
+}
+
+.feed-caption-full-text + .feed-accomplishment-list {
+    margin-top: 8px;
+}
+
+.feed-thread-caption + .feed-accomplishment-list {
+    margin-top: 8px;
 }
 
 .feed-caption-more {
@@ -4704,9 +4719,33 @@ body:not(.feed-page-body) .feed-scroll-to-notification-fab {
     vertical-align: middle;
 }
 
-.feed-reward-line {
+.feed-accomplishment-list {
+    display: grid;
+    gap: 8px;
+}
+
+.feed-accomplishment-item {
+    margin: 0;
+}
+
+.feed-accomplishment-list .feed-accomplishment-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 4px;
+    margin: 0;
+    color: var(--color-text);
+    font-size: 13px;
+}
+
+.feed-accomplishment-list .feed-accomplishment-description {
+    margin: 2px 0 0;
     color: var(--color-muted);
     font-size: 13px;
+}
+
+.feed-caption-less {
+    margin-top: 6px;
 }
 
 

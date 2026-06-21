@@ -124,29 +124,16 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
     function syncCaptionToggleVisibility(scope = document) {
         scope.querySelectorAll('[data-feed-caption-content]').forEach((content) => {
-            const text = content.querySelector('.feed-caption-text');
-            const button = content.querySelector('[data-feed-caption-more]');
-            if (!text || !button || content.classList.contains('is-expanded')) {
+            const preview = content.querySelector('[data-feed-caption-preview]');
+            const collapsedButton = content.querySelector('[data-feed-caption-toggle-collapsed]');
+            if (!preview || !collapsedButton || content.classList.contains('is-expanded')) {
                 return;
             }
 
-            content.classList.remove('has-text-overflow');
-            button.hidden = true;
-            const range = document.createRange();
-            range.selectNodeContents(text);
-            const lineTops = [];
-            Array.from(range.getClientRects()).forEach((rect) => {
-                if (rect.width <= 0 || rect.height <= 0) return;
-                if (!lineTops.some((top) => Math.abs(top - rect.top) < 1)) {
-                    lineTops.push(rect.top);
-                }
-            });
-            range.detach();
-            const hasTextOverflow = lineTops.length > 1;
-
-            const hasAccomplishments = content.dataset.hasAccomplishments === 'true';
-            content.classList.toggle('has-text-overflow', hasTextOverflow);
-            button.hidden = !hasTextOverflow && !hasAccomplishments;
+            collapsedButton.hidden = true;
+            const hasTextOverflow = preview.scrollWidth > preview.clientWidth + 1;
+            const hasHiddenDetails = content.dataset.hasHiddenDetails === 'true';
+            collapsedButton.hidden = !hasTextOverflow && !hasHiddenDetails;
         });
     }
 
@@ -390,7 +377,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 openCommentsSheet(requestedFocusItemKey);
             }, 350);
         } else if (requestedFocusSection === 'reactions') {
-            const captionMore = item.querySelector('[data-feed-caption-more]');
+            const captionMore = item.querySelector('[data-feed-caption-toggle-collapsed]:not([hidden])');
             const toggle = captionMore || item.querySelector('[data-reaction-disclosure-toggle]');
             if (toggle && (captionMore || toggle.getAttribute('aria-expanded') !== 'true')) {
                 window.setTimeout(() => {
@@ -1102,27 +1089,67 @@ window.CraftCrawlInitFriends = function (scope = document) {
             + '</div>';
     }
 
-    function buildRewardSummary(item) {
-        const parts = [];
-        if (item.linked_badges && item.linked_badges.length) {
-            item.linked_badges.forEach(function (b) { parts.push('Badge earned: ' + b.name); });
+    function buildAccomplishments(item) {
+        const accomplishments = [];
+
+        (item.linked_badges || []).forEach(function (badge) {
+            accomplishments.push({
+                title: 'Badge earned: ' + badge.name,
+                description: badge.description || '',
+                xp: Number(badge.xp) || 0
+            });
+        });
+
+        (item.linked_quests || []).forEach(function (quest) {
+            const period = quest.period_type ? capitalize(quest.period_type) + ' quest' : 'Quest';
+            accomplishments.push({
+                title: period + ' completed: ' + quest.name,
+                description: quest.description || '',
+                xp: Number(quest.xp) || 0
+            });
+        });
+
+        return accomplishments;
+    }
+
+    function accomplishmentPreview(accomplishment) {
+        if (!accomplishment) {
+            return '';
         }
-        if (item.linked_quests && item.linked_quests.length) {
-            item.linked_quests.forEach(function (q) { parts.push('Quest completed: ' + q.name); });
+
+        const requirement = accomplishment.description ? ' — ' + accomplishment.description : '';
+        return accomplishment.title + ' · +' + accomplishment.xp + ' XP' + requirement;
+    }
+
+    function renderAccomplishmentList(accomplishments) {
+        if (!accomplishments.length) {
+            return '';
         }
-        const totalXp = ((item.linked_badges || []).reduce(function (s, b) { return s + b.xp; }, 0))
-            + ((item.linked_quests || []).reduce(function (s, q) { return s + q.xp; }, 0));
-        if (totalXp > 0) {
-            parts.push('+' + totalXp + ' XP');
-        }
-        return parts.join(' · ');
+
+        const items = accomplishments.map(function (accomplishment) {
+            const description = accomplishment.description
+                ? `<p class="feed-accomplishment-description">${escapeHtml(accomplishment.description)}</p>`
+                : '';
+            return `
+                <div class="feed-accomplishment-item">
+                    <p class="feed-accomplishment-title">
+                        <strong>${escapeHtml(accomplishment.title)}</strong>
+                        <span aria-hidden="true">·</span>
+                        <span>+${escapeHtml(accomplishment.xp)} XP</span>
+                    </p>
+                    ${description}
+                </div>
+            `;
+        }).join('');
+
+        return `<div class="feed-accomplishment-list">${items}</div>`;
     }
 
     function renderCaptionArea(item) {
         const caption = item.caption || '';
-        const rewardSummary = buildRewardSummary(item);
+        const accomplishments = buildAccomplishments(item);
         const hasCaption = caption.length > 0;
-        const hasRewards = rewardSummary.length > 0;
+        const hasRewards = accomplishments.length > 0;
 
         if (!hasCaption && !hasRewards) {
             return '';
@@ -1135,17 +1162,25 @@ window.CraftCrawlInitFriends = function (scope = document) {
             ? '<span class="feed-caption-unread-badge">' + (totalUnread > 9 ? '9+' : totalUnread) + '</span>'
             : '';
 
-        const captionText = hasCaption ? escapeHtml(caption) : '';
-        const accomplishmentText = hasRewards
-            ? `<span class="feed-reward-line">${escapeHtml(rewardSummary)}</span>`
+        const previewText = hasCaption ? caption : accomplishmentPreview(accomplishments[0]);
+        const hasHiddenDetails = hasCaption ? hasRewards : accomplishments.length > 1;
+        const fullCaption = hasCaption
+            ? `<p class="feed-caption-full-text">${escapeHtml(caption)}</p>`
             : '';
+        const accomplishmentList = renderAccomplishmentList(accomplishments);
 
         return `
             <div class="feed-caption-area" data-feed-caption>
-                <div class="feed-caption-content" data-feed-caption-content data-has-accomplishments="${hasRewards ? 'true' : 'false'}">
-                    <span class="feed-caption-text">${captionText}</span>
-                    ${accomplishmentText}
-                    <button type="button" class="feed-caption-more" data-feed-caption-more aria-expanded="false"${hasRewards ? '' : ' hidden'}><span data-feed-caption-toggle-label>more</span>${unreadBadge}</button>
+                <div class="feed-caption-content" data-feed-caption-content data-has-hidden-details="${hasHiddenDetails ? 'true' : 'false'}">
+                    <div class="feed-caption-preview-row">
+                        <span class="feed-caption-preview" data-feed-caption-preview>${escapeHtml(previewText)}</span>
+                        <button type="button" class="feed-caption-more" data-feed-caption-more data-feed-caption-toggle-collapsed aria-expanded="false" hidden><span data-feed-caption-toggle-label>more</span>${unreadBadge}</button>
+                    </div>
+                    <div class="feed-caption-expanded">
+                        ${fullCaption}
+                        ${accomplishmentList}
+                        <button type="button" class="feed-caption-more feed-caption-less" data-feed-caption-more aria-expanded="true"><span data-feed-caption-toggle-label>less</span></button>
+                    </div>
                 </div>
             </div>
         `;
@@ -1819,11 +1854,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 const content = captionArea?.querySelector('[data-feed-caption-content]');
                 if (content) {
                     const isExpanded = content.classList.toggle('is-expanded');
-                    moreButton.setAttribute('aria-expanded', String(isExpanded));
-                    const label = moreButton.querySelector('[data-feed-caption-toggle-label]');
-                    if (label) {
-                        label.textContent = isExpanded ? 'less' : 'more';
-                    }
+                    content.querySelectorAll('[data-feed-caption-more]').forEach((button) => {
+                        button.setAttribute('aria-expanded', String(isExpanded));
+                    });
                     if (!isExpanded && captionArea) {
                         syncCaptionToggleVisibility(captionArea);
                     }

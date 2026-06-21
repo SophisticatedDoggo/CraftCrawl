@@ -242,20 +242,30 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
         }
         $item['caption'] = $visit['caption'] ?? null;
 
-        $lb_stmt = $conn->prepare("SELECT badge_name, badge_tier, xp_awarded FROM user_badges WHERE visit_id=? ORDER BY earnedAt");
+        $lb_stmt = $conn->prepare("SELECT badge_name, badge_description, badge_tier, xp_awarded FROM user_badges WHERE visit_id=? ORDER BY earnedAt");
         $lb_stmt->bind_param("i", $visit_id);
         $lb_stmt->execute();
         $lb_result = $lb_stmt->get_result();
         while ($lb = $lb_result->fetch_assoc()) {
-            $item['linked_badges'][] = ['name' => $lb['badge_name'], 'tier' => $lb['badge_tier'], 'xp' => (int) $lb['xp_awarded']];
+            $item['linked_badges'][] = [
+                'name' => $lb['badge_name'],
+                'description' => $lb['badge_description'],
+                'tier' => $lb['badge_tier'],
+                'xp' => (int) $lb['xp_awarded']
+            ];
         }
 
-        $lq_stmt = $conn->prepare("SELECT quest_key, xp_awarded FROM user_quest_completions WHERE visit_id=? ORDER BY completedAt");
+        $lq_stmt = $conn->prepare("SELECT quest_key, period_type, xp_awarded FROM user_quest_completions WHERE visit_id=? ORDER BY completedAt");
         $lq_stmt->bind_param("i", $visit_id);
         $lq_stmt->execute();
         $lq_result = $lq_stmt->get_result();
         while ($lq = $lq_result->fetch_assoc()) {
-            $item['linked_quests'][] = ['name' => craftcrawl_quest_name($lq['quest_key']), 'xp' => (int) $lq['xp_awarded']];
+            $item['linked_quests'][] = [
+                'name' => craftcrawl_quest_name($lq['quest_key']),
+                'description' => craftcrawl_quest_description($lq['quest_key']),
+                'period_type' => $lq['period_type'],
+                'xp' => (int) $lq['xp_awarded']
+            ];
         }
 
         return $item;
