@@ -18,6 +18,7 @@ $sql = "
     FROM locations l
     LEFT JOIN businesses b ON b.id = l.legacy_business_id
     WHERE l.visibility_status IN ('public_unclaimed', 'public_claimed')
+      AND l.approvedAt IS NOT NULL
       AND l.disabledAt IS NULL
 ";
 
