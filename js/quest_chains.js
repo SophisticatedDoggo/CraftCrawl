@@ -78,6 +78,12 @@
             return;
         }
 
+        btn = e.target.closest('[data-chain-promote]');
+        if (btn && !btn.disabled) {
+            promoteToLeader(btn);
+            return;
+        }
+
         btn = e.target.closest('[data-chain-invite-friends]');
         if (btn) {
             openInviteModal(parseInt(btn.dataset.chainInviteFriends, 10));
@@ -223,7 +229,11 @@
                 html += '<span class="chain-member-name">' + escapeHtml(m.name) + (m.role === 'owner' ? ' <small>(party leader)</small>' : '') + '</span>';
                 html += '<div class="chain-member-bar"><span style="width:' + pct + '%;"></span></div>';
                 html += '<small>' + m.completed_count + ' / ' + chain.step_count + ' steps</small>';
-                html += '</div></div>';
+                html += '</div>';
+                if (chain.is_owner && m.role !== 'owner') {
+                    html += '<button type="button" class="chain-btn-promote" data-chain-promote="' + m.user_id + '" data-chain-id="' + chain.id + '" title="Make party leader">&#9733;</button>';
+                }
+                html += '</div>';
             });
             html += '</div>';
         }
@@ -329,6 +339,23 @@
                 }
             })
             .catch(function () { alert('Failed to respond to invite.'); });
+    }
+
+    function promoteToLeader(btn) {
+        var newOwnerId = parseInt(btn.dataset.chainPromote, 10);
+        var chainId = parseInt(btn.dataset.chainId, 10);
+        var memberName = btn.closest('.chain-member-row').querySelector('.chain-member-name');
+        var name = memberName ? memberName.textContent.trim() : 'this member';
+
+        if (!confirm('Make ' + name + ' the party leader? You will become a regular member.')) return;
+
+        btn.disabled = true;
+        postJSON('quest_chain_transfer.php', { chain_id: chainId, new_owner_id: newOwnerId })
+            .then(function (data) {
+                if (!data.ok) { alert(data.message || 'Could not transfer leadership.'); btn.disabled = false; return; }
+                reloadChainsTab();
+            })
+            .catch(function () { alert('Failed to transfer leadership.'); btn.disabled = false; });
     }
 
     function openInviteModal(chainId) {

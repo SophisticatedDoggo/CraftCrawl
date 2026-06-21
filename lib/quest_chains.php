@@ -1363,6 +1363,55 @@ function craftcrawl_invite_to_chain($conn, $owner_user_id, $chain_id, $friend_us
     return ['ok' => true];
 }
 
+function craftcrawl_transfer_chain_ownership($conn, $current_owner_id, $chain_id, $new_owner_id) {
+    if (!craftcrawl_chain_storage_ready($conn)) {
+        return ['ok' => false, 'message' => 'Quest chains are not available yet.'];
+    }
+
+    $chain_stmt = $conn->prepare("SELECT id, owner_user_id, status FROM quest_chains WHERE id = ? LIMIT 1");
+    $chain_stmt->bind_param("i", $chain_id);
+    $chain_stmt->execute();
+    $chain = $chain_stmt->get_result()->fetch_assoc();
+
+    if (!$chain || (int) $chain['owner_user_id'] !== $current_owner_id || $chain['status'] !== 'active') {
+        return ['ok' => false, 'message' => 'You can only transfer leadership on your active quest chain.'];
+    }
+
+    $member_stmt = $conn->prepare("SELECT id FROM quest_chain_members WHERE chain_id = ? AND user_id = ? AND status = 'accepted' LIMIT 1");
+    $member_stmt->bind_param("ii", $chain_id, $new_owner_id);
+    $member_stmt->execute();
+
+    if (!$member_stmt->get_result()->fetch_assoc()) {
+        return ['ok' => false, 'message' => 'That user is not an active member of this quest chain.'];
+    }
+
+    $conn->begin_transaction();
+
+    try {
+        $transfer_stmt = $conn->prepare("UPDATE quest_chains SET owner_user_id = ? WHERE id = ?");
+        $transfer_stmt->bind_param("ii", $new_owner_id, $chain_id);
+        $transfer_stmt->execute();
+
+        $remove_new_owner = $conn->prepare("DELETE FROM quest_chain_members WHERE chain_id = ? AND user_id = ?");
+        $remove_new_owner->bind_param("ii", $chain_id, $new_owner_id);
+        $remove_new_owner->execute();
+
+        $add_old_owner = $conn->prepare("
+            INSERT INTO quest_chain_members (chain_id, user_id, invited_by_user_id, status, joinedAt, createdAt)
+            VALUES (?, ?, ?, 'accepted', NOW(), NOW())
+        ");
+        $add_old_owner->bind_param("iii", $chain_id, $current_owner_id, $current_owner_id);
+        $add_old_owner->execute();
+
+        $conn->commit();
+    } catch (Throwable $error) {
+        $conn->rollback();
+        return ['ok' => false, 'message' => 'Failed to transfer leadership.'];
+    }
+
+    return ['ok' => true];
+}
+
 function craftcrawl_cancel_chain_invite($conn, $owner_user_id, $chain_id, $friend_user_id) {
     if (!craftcrawl_chain_storage_ready($conn)) {
         return ['ok' => false, 'message' => 'Quest chains are not available yet.'];

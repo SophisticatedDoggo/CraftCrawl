@@ -3578,6 +3578,28 @@ a.text-link:focus {
     font-size: 11px;
 }
 
+.chain-btn-promote {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-muted);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.chain-btn-promote:active {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
 /* Friend invite modal for chains */
 .chain-invite-modal {
     position: fixed;
