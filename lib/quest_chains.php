@@ -297,7 +297,6 @@ function craftcrawl_generate_chain_options($conn, $user_id, $latitude, $longitud
 
     $generation_batch = bin2hex(random_bytes(16));
     $chains_built = [];
-    $used_location_sets = [];
 
     foreach ($template_keys as $template_key) {
         if (count($chains_built) >= CRAFTCRAWL_CHAIN_OPTIONS_COUNT) {
@@ -312,15 +311,13 @@ function craftcrawl_generate_chain_options($conn, $user_id, $latitude, $longitud
             $visited_ids,
             $review_counts,
             $rating_avgs,
-            $visit_counts,
-            $used_location_sets
+            $visit_counts
         );
 
         if ($chain === null) {
             continue;
         }
 
-        $used_location_sets[] = array_unique(array_column($chain['steps'], 'location_id'));
         $chains_built[] = $chain;
     }
 
@@ -393,7 +390,7 @@ function craftcrawl_generate_chain_options($conn, $user_id, $latitude, $longitud
     ];
 }
 
-function craftcrawl_build_chain_from_template($template_key, $template, $nearby, $visited_ids, $review_counts, $rating_avgs, $visit_counts, $used_location_sets) {
+function craftcrawl_build_chain_from_template($template_key, $template, $nearby, $visited_ids, $review_counts, $rating_avgs, $visit_counts) {
     $all_preferred = array_map('strtolower', $template['preferred_types']);
     $all_fallback = array_map('strtolower', $template['fallback_types'] ?? []);
 
@@ -419,13 +416,6 @@ function craftcrawl_build_chain_from_template($template_key, $template, $nearby,
 
     if (count($candidates) < ($template['min_locations'] ?? 2)) {
         return null;
-    }
-
-    foreach ($used_location_sets as $used_set) {
-        $overlap = count(array_intersect(array_column($candidates, 'id'), $used_set));
-        if ($overlap >= count($used_set) && count($used_set) >= 2) {
-            return null;
-        }
     }
 
     if (!empty($template['prefer_unvisited'])) {
@@ -540,13 +530,113 @@ function craftcrawl_build_chain_from_template($template_key, $template, $nearby,
         $steps[] = $step;
     }
 
+    $location_types = [];
+    foreach ($steps as $step) {
+        $loc_id = $step['location_id'];
+        foreach ($selected_locations as $loc) {
+            if ((int) $loc['id'] === $loc_id && !empty($loc['location_type'])) {
+                $location_types[strtolower($loc['location_type'])] = true;
+            }
+        }
+    }
+
+    $chain_name = craftcrawl_generate_chain_name($template_key, array_keys($location_types));
+    $chain_description = craftcrawl_generate_chain_description($template_key, array_keys($location_types));
+
     return [
         'template_key' => $template_key,
-        'name' => $template['name'],
-        'description' => $template['description'],
+        'name' => $chain_name,
+        'description' => $chain_description,
         'icon' => $template['icon'] ?? 'default',
         'steps' => $steps,
     ];
+}
+
+function craftcrawl_generate_chain_name($template_key, $location_types) {
+    $type_names = [
+        'brewery' => ['Brewery', 'Brew', 'Tap', 'Hops', 'Pint'],
+        'winery' => ['Winery', 'Wine', 'Vine', 'Vineyard', 'Pour'],
+        'distillery' => ['Distillery', 'Spirit', 'Barrel', 'Still'],
+        'distilery' => ['Distillery', 'Spirit', 'Barrel', 'Still'],
+        'cidery' => ['Cidery', 'Cider', 'Orchard', 'Apple'],
+        'bar' => ['Bar', 'Taproom', 'Lounge', 'Pub'],
+        'meadery' => ['Meadery', 'Mead', 'Honey'],
+    ];
+
+    $trail_words = ['Trail', 'Crawl', 'Run', 'Circuit', 'Tour', 'Route', 'Quest', 'Journey', 'Path', 'Trek', 'Loop', 'Expedition'];
+
+    $template_flavor = [
+        'hop_highway' => ['Hop Highway', 'Brewer\'s Mile', 'Taproom Trek', 'Pint Path', 'Ale Trail', 'Brewers\' Run'],
+        'vine_and_dine' => ['Vine & Dine', 'Wine Wander', 'Grape Escape', 'Cellar Circuit', 'Tasting Tour', 'Pour Patrol'],
+        'barrel_run' => ['Barrel Run', 'Spirit Sprint', 'Still Chase', 'Proof Pursuit', 'Distiller\'s Path', 'Copper Trail'],
+        'cider_trail' => ['Cider Trail', 'Orchard Run', 'Apple Route', 'Pressing Path', 'Cider Circuit'],
+        'craft_circuit' => ['Craft Circuit', 'Maker\'s Mile', 'Artisan Loop', 'Craft Crawl', 'Mixed Flight'],
+        'local_legends' => ['Local Legends', 'Best of the Best', 'Top Shelf Tour', 'Crowd Favorites', 'Star Route'],
+        'first_timer_trail' => ['First Timer Trail', 'New Horizons', 'Fresh Finds', 'Discovery Run', 'Uncharted Path', 'Trailblazer'],
+        'social_crawl' => ['Social Crawl', 'Group Pour', 'Crew Crawl', 'Party Route', 'Night Out Trail'],
+        'weekend_warrior' => ['Weekend Warrior', 'Quick Sip', 'Express Run', 'Fast Flight', 'Day Trip'],
+        'grand_tour' => ['Grand Tour', 'Ultimate Crawl', 'Full Send', 'Epic Route', 'Marathon Run'],
+        'city_hopper' => ['City Hopper', 'Cross-Town Crawl', 'Neighborhood Run', 'Borough Bounce', 'Town Trek'],
+        'hidden_gems' => ['Hidden Gems', 'Off the Map', 'Secret Stops', 'Under the Radar', 'Deep Cuts'],
+    ];
+
+    if (isset($template_flavor[$template_key])) {
+        $options = $template_flavor[$template_key];
+        return $options[array_rand($options)];
+    }
+
+    $primary_type = !empty($location_types) ? $location_types[0] : 'brewery';
+    $type_words = $type_names[$primary_type] ?? ['Craft'];
+    $type_word = $type_words[array_rand($type_words)];
+    $trail_word = $trail_words[array_rand($trail_words)];
+
+    return $type_word . ' ' . $trail_word;
+}
+
+function craftcrawl_generate_chain_description($template_key, $location_types) {
+    $type_label_map = [
+        'brewery' => 'breweries',
+        'winery' => 'wineries',
+        'distillery' => 'distilleries',
+        'distilery' => 'distilleries',
+        'cidery' => 'cideries',
+        'bar' => 'bars',
+        'meadery' => 'meaderies',
+    ];
+
+    $template_descriptions = [
+        'hop_highway' => ['Blaze a trail through the local brewery scene.', 'Hop from tap to tap across the best local brews.', 'Follow the hops to your next favorite brewery.'],
+        'vine_and_dine' => ['Savor the local wine trail one pour at a time.', 'Sip your way through nearby wineries.', 'Uncork something new on the local vine trail.'],
+        'barrel_run' => ['Chase the spirit through local distilleries.', 'Follow the copper stills to craft cocktail country.', 'Explore the local spirits scene one stop at a time.'],
+        'cider_trail' => ['Follow the orchard road through local cideries.', 'Crisp, refreshing, and waiting to be explored.', 'Trace the cider trail through your area.'],
+        'craft_circuit' => ['Sample the best of every craft category nearby.', 'A little bit of everything the craft scene offers.', 'Mix it up across breweries, wineries, and more.'],
+        'local_legends' => ['Visit the top-rated spots in your area.', 'The locals love these spots — find out why.', 'Hit the highest-rated locations near you.'],
+        'first_timer_trail' => ['Discover spots you\'ve never been to before.', 'Break new ground and explore fresh locations.', 'Step off the beaten path and try something new.'],
+        'social_crawl' => ['Hit the town and share the experience with friends.', 'Crawl together and keep the feed buzzing.', 'Make it a group adventure — check in and share.'],
+        'weekend_warrior' => ['A quick adventure for a great day out.', 'Short, sweet, and packed with stops.', 'Perfect for a quick outing.'],
+        'grand_tour' => ['The ultimate crawl through your region.', 'Go big — the full tour of your local scene.', 'A proper crawl for the committed explorer.'],
+        'city_hopper' => ['Cross city lines and explore different neighborhoods.', 'Bounce between towns and discover new scenes.', 'Expand your range across multiple cities.'],
+        'hidden_gems' => ['Seek out lesser-known spots that deserve more love.', 'Find the places hiding in plain sight.', 'Go off the beaten path to discover something special.'],
+    ];
+
+    if (isset($template_descriptions[$template_key])) {
+        $options = $template_descriptions[$template_key];
+        return $options[array_rand($options)];
+    }
+
+    $type_labels = [];
+    foreach ($location_types as $type) {
+        if (isset($type_label_map[$type])) {
+            $type_labels[$type_label_map[$type]] = true;
+        }
+    }
+    $type_labels = array_keys($type_labels);
+
+    if (empty($type_labels)) {
+        return 'Explore the local craft scene.';
+    }
+
+    return 'Check out local ' . implode(', ', array_slice($type_labels, 0, 2)) . ' in your area.';
 }
 
 function craftcrawl_activate_chain($conn, $user_id, $chain_id) {
