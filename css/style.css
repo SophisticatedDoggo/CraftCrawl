@@ -4486,6 +4486,19 @@ a.feed-event-link:not(.mapboxgl-ctrl-logo) {
     align-items: center;
 }
 
+.friend-request-item button.is-loading {
+    font-size: 0;
+    gap: 0;
+    min-width: 0;
+    padding-left: 14px;
+    padding-right: 14px;
+}
+
+.friend-request-item button.is-loading::before {
+    font-size: 14px;
+    margin-right: 0;
+}
+
 .friend-current-item {
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;

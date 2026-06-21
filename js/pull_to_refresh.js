@@ -48,6 +48,10 @@
                     return window.CraftCrawlRefreshPortalEvents();
                 }
 
+                if (action === 'quests' && typeof window.CraftCrawlRefreshQuestPanel === 'function') {
+                    return window.CraftCrawlRefreshQuestPanel({ force: true });
+                }
+
                 if (action === 'shell' && typeof window.CraftCrawlRefreshUserShell === 'function') {
                     return window.CraftCrawlRefreshUserShell();
                 }

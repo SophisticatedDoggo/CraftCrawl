@@ -220,7 +220,7 @@
                     html += '<span class="chain-member-avatar-placeholder">' + (m.name || '?').charAt(0).toUpperCase() + '</span>';
                 }
                 html += '<div class="chain-member-info">';
-                html += '<span class="chain-member-name">' + escapeHtml(m.name) + (m.role === 'owner' ? ' <small>(host)</small>' : '') + '</span>';
+                html += '<span class="chain-member-name">' + escapeHtml(m.name) + (m.role === 'owner' ? ' <small>(party leader)</small>' : '') + '</span>';
                 html += '<div class="chain-member-bar"><span style="width:' + pct + '%;"></span></div>';
                 html += '<small>' + m.completed_count + ' / ' + chain.step_count + ' steps</small>';
                 html += '</div></div>';
@@ -341,7 +341,7 @@
             '<div class="chain-invite-modal-scrim"></div>' +
             '<div class="chain-invite-modal-body">' +
                 '<h3>Invite Friends</h3>' +
-                '<p style="color:var(--color-muted);font-size:14px;">Select friends to invite to this quest chain.</p>' +
+                '<p class="chain-invite-subtitle" data-chain-invite-subtitle style="color:var(--color-muted);font-size:14px;">Loading...</p>' +
                 '<div data-chain-friend-list><p style="color:var(--color-muted);">Loading friends...</p></div>' +
                 '<button type="button" class="chain-btn-secondary" data-chain-invite-close>Close</button>' +
             '</div>';
@@ -367,6 +367,7 @@
                     cancelBtn.dataset.chainCancelInvite = friendId;
                     cancelBtn.textContent = 'Cancel';
                     btn.replaceWith(cancelBtn);
+                    updateInviteSlotCount(1);
                 } else {
                     btn.textContent = data.message || 'Failed';
                     btn.disabled = false;
@@ -386,25 +387,44 @@
         postJSON('quest_chain_invite_cancel.php', { chain_id: activeChainId, friend_user_id: friendId })
             .then(function (data) {
                 if (data.ok) {
-                    btn.textContent = 'Canceled';
-                    btn.style.opacity = '0.5';
-                    setTimeout(function () {
-                        var item = btn.closest('.chain-invite-friend-item');
-                        if (item) {
-                            var newBtn = document.createElement('button');
-                            newBtn.type = 'button';
-                            newBtn.className = 'chain-btn-invite';
-                            newBtn.dataset.chainSendInvite = friendId;
-                            newBtn.textContent = 'Invite';
-                            btn.replaceWith(newBtn);
-                        }
-                    }, 600);
+                    var newBtn = document.createElement('button');
+                    newBtn.type = 'button';
+                    newBtn.className = 'chain-btn-invite';
+                    newBtn.dataset.chainSendInvite = friendId;
+                    newBtn.textContent = 'Invite';
+                    btn.replaceWith(newBtn);
+                    updateInviteSlotCount(-1);
                 } else {
                     btn.textContent = 'Cancel';
                     btn.disabled = false;
                 }
             })
             .catch(function () { btn.textContent = 'Cancel'; btn.disabled = false; });
+    }
+
+    function updateInviteSlotCount(delta) {
+        var modal = document.querySelector('.chain-invite-modal-body');
+        if (!modal) return;
+
+        var count = parseInt(modal.dataset.chainInviteCount || '0', 10) + delta;
+        if (count < 0) count = 0;
+        modal.dataset.chainInviteCount = count;
+
+        var subtitle = modal.querySelector('[data-chain-invite-subtitle]');
+        var atLimit = count >= 4;
+        if (subtitle) {
+            subtitle.textContent = count + ' / 4 slots filled' + (atLimit ? ' — party is full' : '');
+        }
+
+        modal.querySelectorAll('[data-chain-send-invite]').forEach(function (btn) {
+            if (atLimit) {
+                btn.disabled = true;
+                btn.style.opacity = '0.4';
+            } else {
+                btn.disabled = false;
+                btn.style.opacity = '';
+            }
+        });
     }
 
     function loadFriendsForInvite(chainId, container) {
@@ -414,6 +434,14 @@
                 var pendingIds = (statusData.sent_invites || []).map(function (s) { return s.user_id; });
                 var totalInvited = memberIds.length - 1 + pendingIds.length;
                 var atLimit = totalInvited >= 4;
+
+                var modal = container.closest('.chain-invite-modal-body');
+                if (modal) modal.dataset.chainInviteCount = totalInvited;
+
+                var subtitle = document.querySelector('[data-chain-invite-subtitle]');
+                if (subtitle) {
+                    subtitle.textContent = totalInvited + ' / 4 slots filled' + (atLimit ? ' — party is full' : '');
+                }
 
                 return fetch('friends_list.php', { credentials: 'same-origin' })
                     .then(function (res) { return res.json(); })
@@ -425,9 +453,6 @@
                         }
 
                         var html = '';
-                        if (atLimit) {
-                            html += '<p class="chain-invite-limit">Party is full (4 friends max).</p>';
-                        }
 
                         html += friends.map(function (friend) {
                             var isMember = memberIds.indexOf(friend.id) >= 0;

@@ -168,7 +168,11 @@ if (!function_exists('craftcrawl_render_portal_quest_card')) {
     </div>
 
     <div data-user-tab-panel="quests" <?php echo $craftcrawl_portal_active !== 'quests' ? 'hidden' : ''; ?>>
-        <section class="portal-panel quests-panel" data-quest-chains-panel data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
+        <section class="portal-panel quests-panel pull-refresh-surface" data-quest-chains-panel data-pull-refresh data-refresh-action="quests" data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
+            <div class="pull-refresh-indicator" data-refresh-indicator aria-live="polite">
+                <span aria-hidden="true"></span>
+                <strong data-refresh-label>Pull to refresh</strong>
+            </div>
             <div class="quests-header">
                 <div>
                     <h2>Quests</h2>

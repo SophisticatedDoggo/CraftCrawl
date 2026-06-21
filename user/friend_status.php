@@ -45,6 +45,27 @@ if (craftcrawl_chain_storage_ready($conn)) {
     }
     $chain_invite_stmt->execute();
     $pending_chain_invites = (int) ($chain_invite_stmt->get_result()->fetch_assoc()['cnt'] ?? 0);
+
+    $new_chain_members = 0;
+    if ($chain_seen_at) {
+        $new_members_stmt = $conn->prepare("
+            SELECT COUNT(*) AS cnt FROM quest_chain_members qcm
+            INNER JOIN quest_chains qc ON qc.id = qcm.chain_id AND qc.status = 'active'
+            WHERE qc.owner_user_id = ? AND qcm.status = 'accepted' AND qcm.joinedAt > ?
+        ");
+        $new_members_stmt->bind_param("is", $user_id, $chain_seen_at);
+    } else {
+        $new_members_stmt = $conn->prepare("
+            SELECT COUNT(*) AS cnt FROM quest_chain_members qcm
+            INNER JOIN quest_chains qc ON qc.id = qcm.chain_id AND qc.status = 'active'
+            WHERE qc.owner_user_id = ? AND qcm.status = 'accepted'
+        ");
+        $new_members_stmt->bind_param("i", $user_id);
+    }
+    $new_members_stmt->execute();
+    $new_chain_members = (int) ($new_members_stmt->get_result()->fetch_assoc()['cnt'] ?? 0);
+
+    $pending_chain_invites += $new_chain_members;
 }
 
 echo json_encode([
