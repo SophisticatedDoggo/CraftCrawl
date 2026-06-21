@@ -413,7 +413,7 @@
         var subtitle = modal.querySelector('[data-chain-invite-subtitle]');
         var atLimit = count >= 4;
         if (subtitle) {
-            subtitle.textContent = count + ' / 4 slots filled' + (atLimit ? ' — party is full' : '');
+            subtitle.textContent = count + ' / 4 friends invited' + (atLimit ? ' — party full (5 max)' : '');
         }
 
         modal.querySelectorAll('[data-chain-send-invite]').forEach(function (btn) {
@@ -440,7 +440,7 @@
 
                 var subtitle = document.querySelector('[data-chain-invite-subtitle]');
                 if (subtitle) {
-                    subtitle.textContent = totalInvited + ' / 4 slots filled' + (atLimit ? ' — party is full' : '');
+                    subtitle.textContent = totalInvited + ' / 4 friends invited' + (atLimit ? ' — party full (5 max)' : '');
                 }
 
                 return fetch('friends_list.php', { credentials: 'same-origin' })

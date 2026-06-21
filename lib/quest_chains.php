@@ -1327,7 +1327,7 @@ function craftcrawl_invite_to_chain($conn, $owner_user_id, $chain_id, $friend_us
     $member_count = (int) ($member_count_stmt->get_result()->fetch_assoc()['cnt'] ?? 0);
 
     if ($member_count >= 4) {
-        return ['ok' => false, 'message' => 'Quest chains are limited to 4 friends.'];
+        return ['ok' => false, 'message' => 'Party is full (5 members max).'];
     }
 
     $friend_stmt = $conn->prepare("SELECT id FROM user_friends WHERE user_id = ? AND friend_user_id = ? LIMIT 1");
