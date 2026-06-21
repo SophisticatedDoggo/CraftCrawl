@@ -3302,6 +3302,25 @@ a.text-link:focus {
     color: var(--color-text);
 }
 
+.chain-btn-start {
+    width: 100%;
+    padding: 10px 16px;
+    border: 2px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-primary);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.chain-btn-start:active {
+    background: var(--color-primary);
+    color: var(--color-on-primary, #fff);
+}
+
 .chain-btn-danger {
     background: transparent;
     color: var(--color-muted);

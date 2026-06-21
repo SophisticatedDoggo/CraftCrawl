@@ -235,11 +235,13 @@
                 }
                 renderChainOptions(data.chains || [], optionsEl, statusEl);
                 btn.textContent = 'Refresh Options';
+                btn.className = 'chain-btn-secondary';
                 btn.disabled = false;
             })
             .catch(function (err) {
                 if (statusEl) { statusEl.textContent = err.message || 'Failed to generate quest chains.'; statusEl.hidden = false; }
                 btn.textContent = 'Discover Quest Chains';
+                btn.className = 'chain-btn-primary';
                 btn.disabled = false;
             });
     }
@@ -272,7 +274,7 @@
                 '<span class="chain-xp-badge">+' + chain.xp_reward + ' XP</span></div>' +
                 '<ol class="chain-option-step-list">' + stepsList + '</ol>' +
                 '<div class="chain-option-footer">' +
-                    '<button type="button" class="chain-btn-primary" data-chain-activate="' + chain.id + '" style="width:100%;">Start Quest</button>' +
+                    '<button type="button" class="chain-btn-start" data-chain-activate="' + chain.id + '">Start Quest</button>' +
                 '</div>' +
             '</article>';
         }).join('');
