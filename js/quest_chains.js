@@ -420,7 +420,7 @@
                             } else if (atLimit) {
                                 action = '';
                             } else {
-                                action = '<button type="button" class="chain-btn-start" data-chain-send-invite="' + friend.id + '" style="flex:0 0 auto;padding:6px 14px;font-size:13px;">Invite</button>';
+                                action = '<button type="button" class="chain-btn-invite" data-chain-send-invite="' + friend.id + '">Invite</button>';
                             }
 
                             return '<div class="chain-invite-friend-item">' +

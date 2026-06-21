@@ -3674,6 +3674,25 @@ a.text-link:focus {
     font-weight: 600;
 }
 
+.chain-btn-invite {
+    flex: 0 0 auto;
+    padding: 6px 16px;
+    border: 2px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-primary);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.chain-btn-invite:active {
+    background: var(--color-primary);
+    color: var(--color-on-primary, #fff);
+}
+
 .chain-invite-status {
     flex: 0 0 auto;
     font-size: 13px;
