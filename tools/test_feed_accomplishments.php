@@ -37,8 +37,12 @@ feed_accomplishment_assert(
     'expanded accomplishments must render their requirements'
 );
 feed_accomplishment_assert(
-    strpos($client_source, 'const previewText = hasCaption ? caption : accomplishmentPreview(accomplishments[0]);') !== false,
+    strpos($client_source, 'renderAccomplishmentPreview(accomplishments[0])') !== false,
     'captionless check-ins must use the first accomplishment to fill the collapsed preview'
+);
+feed_accomplishment_assert(
+    strpos($client_source, 'feed-caption-preview-title') !== false,
+    'condensed accomplishments must preserve the bold title hierarchy'
 );
 feed_accomplishment_assert(
     strpos($client_source, 'const hasHiddenDetails = hasCaption ? hasRewards : accomplishments.length > 1;') !== false,
@@ -61,6 +65,11 @@ feed_accomplishment_assert(
     strpos($style_source, ".feed-caption-preview {\n") !== false
         && strpos($style_source, 'white-space: nowrap;') !== false,
     'collapsed accomplishment and caption previews must stay on one line'
+);
+feed_accomplishment_assert(
+    strpos($style_source, '.feed-caption-preview .feed-caption-preview-title') !== false
+        && substr_count($style_source, 'font-size: 13px;') >= 3,
+    'caption text and condensed accomplishment titles must match the accomplishment title scale'
 );
 feed_accomplishment_assert(
     strpos($style_source, '.feed-accomplishment-list') !== false,

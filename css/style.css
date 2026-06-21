@@ -4654,6 +4654,16 @@ body:not(.feed-page-body) .feed-scroll-to-notification-fab {
     white-space: nowrap;
     overflow: hidden;
     word-break: normal;
+    font-size: 13px;
+}
+
+.feed-caption-preview .feed-caption-preview-title {
+    display: inline;
+    font-weight: 700;
+}
+
+.feed-caption-preview-description {
+    color: var(--color-muted);
 }
 
 .feed-caption-preview-row .feed-caption-more {
@@ -4676,6 +4686,7 @@ body:not(.feed-page-body) .feed-scroll-to-notification-fab {
 .feed-caption-content .feed-caption-full-text {
     margin: 0;
     word-break: break-word;
+    font-size: 13px;
 }
 
 .feed-caption-full-text + .feed-accomplishment-list {

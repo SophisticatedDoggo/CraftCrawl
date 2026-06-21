@@ -1112,13 +1112,17 @@ window.CraftCrawlInitFriends = function (scope = document) {
         return accomplishments;
     }
 
-    function accomplishmentPreview(accomplishment) {
+    function renderAccomplishmentPreview(accomplishment) {
         if (!accomplishment) {
             return '';
         }
 
-        const requirement = accomplishment.description ? ' — ' + accomplishment.description : '';
-        return accomplishment.title + ' · +' + accomplishment.xp + ' XP' + requirement;
+        const requirement = accomplishment.description
+            ? `<span class="feed-caption-preview-description"> — ${escapeHtml(accomplishment.description)}</span>`
+            : '';
+        return `<strong class="feed-caption-preview-title">${escapeHtml(accomplishment.title)}</strong>`
+            + `<span> · +${escapeHtml(accomplishment.xp)} XP</span>`
+            + requirement;
     }
 
     function renderAccomplishmentList(accomplishments) {
@@ -1162,7 +1166,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
             ? '<span class="feed-caption-unread-badge">' + (totalUnread > 9 ? '9+' : totalUnread) + '</span>'
             : '';
 
-        const previewText = hasCaption ? caption : accomplishmentPreview(accomplishments[0]);
+        const previewContent = hasCaption
+            ? escapeHtml(caption)
+            : renderAccomplishmentPreview(accomplishments[0]);
         const hasHiddenDetails = hasCaption ? hasRewards : accomplishments.length > 1;
         const fullCaption = hasCaption
             ? `<p class="feed-caption-full-text">${escapeHtml(caption)}</p>`
@@ -1173,7 +1179,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             <div class="feed-caption-area" data-feed-caption>
                 <div class="feed-caption-content" data-feed-caption-content data-has-hidden-details="${hasHiddenDetails ? 'true' : 'false'}">
                     <div class="feed-caption-preview-row">
-                        <span class="feed-caption-preview" data-feed-caption-preview>${escapeHtml(previewText)}</span>
+                        <span class="feed-caption-preview" data-feed-caption-preview>${previewContent}</span>
                         <button type="button" class="feed-caption-more" data-feed-caption-more data-feed-caption-toggle-collapsed aria-expanded="false" hidden><span data-feed-caption-toggle-label>more</span>${unreadBadge}</button>
                     </div>
                     <div class="feed-caption-expanded">
