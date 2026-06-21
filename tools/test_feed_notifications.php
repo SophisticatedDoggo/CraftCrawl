@@ -80,6 +80,7 @@ $feed_source = file_get_contents(__DIR__ . '/../user/friends_feed.php');
 $client_source = file_get_contents(__DIR__ . '/../js/friends.js');
 $style_source = file_get_contents(__DIR__ . '/../css/style.css');
 $friend_seen_source = file_get_contents(__DIR__ . '/../user/friend_seen.php');
+$reaction_toggle_source = file_get_contents(__DIR__ . '/../user/feed_reaction_toggle.php');
 $schema_source = file_get_contents(__DIR__ . '/../schema.sql');
 
 feed_notification_assert(strpos($feed_source, "notification_type='feed_item'") !== false, 'feed payload must load per-item read state');
@@ -97,6 +98,8 @@ feed_notification_assert(
     'unread cards must not use the broken split left border'
 );
 feed_notification_assert(strpos($friend_seen_source, 'feedSeenAt=NOW()') === false, 'legacy seen endpoint must not advance the feed cutoff');
+feed_notification_assert(strpos($reaction_toggle_source, '$insert_stmt->affected_rows !== 1') !== false, 'reaction rewards must require a persisted reaction');
 feed_notification_assert(strpos($schema_source, "ENUM('feed_item', 'comment', 'reaction')") !== false, 'schema must allow feed-item reads');
+feed_notification_assert(strpos($schema_source, "'heart', 'yuck'") !== false, 'schema must allow heart and yuck reactions');
 
 echo "Feed notification regression checks passed.\n";

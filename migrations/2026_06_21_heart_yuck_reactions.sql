@@ -1,3 +1,6 @@
+DELETE FROM feed_reactions
+WHERE reaction_type = '';
+
 ALTER TABLE feed_reactions
     MODIFY COLUMN reaction_type ENUM(
         'cheers',

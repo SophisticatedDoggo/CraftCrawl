@@ -379,7 +379,13 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user
         $reaction_stage = 'insert_reaction';
         $insert_stmt = $conn->prepare("INSERT INTO feed_reactions (user_id, feed_item_key, reaction_type, createdAt) VALUES (?, ?, ?, NOW())");
         $insert_stmt->bind_param("iss", $user_id, $item_key, $reaction_type);
-        $insert_stmt->execute();
+        $inserted = $insert_stmt->execute();
+
+        if (!$inserted || $insert_stmt->affected_rows !== 1) {
+            throw new RuntimeException(
+                'Reaction insert failed: ' . ($insert_stmt->error ?: 'unexpected affected row count')
+            );
+        }
 
         try {
             $reaction_stage = 'load_progress_before_reward';
