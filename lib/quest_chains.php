@@ -224,7 +224,7 @@ function craftcrawl_nearby_chain_locations($conn, $latitude, $longitude) {
         }
     }
 
-    usort($nearby, fn($a, $b) => $a['distance_meters'] <=> $b['distance_meters']);
+    shuffle($nearby);
 
     return $nearby;
 }
@@ -472,6 +472,8 @@ function craftcrawl_build_chain_from_template($template_key, $template, $nearby,
             }
         }
     }
+
+    shuffle($candidates);
 
     $step_pattern = $template['step_pattern'];
     $step_count = count($step_pattern);
