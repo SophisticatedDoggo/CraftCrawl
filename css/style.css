@@ -8002,7 +8002,6 @@ body.feed-comments-sheet-open {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity 140ms ease, visibility 140ms ease;
 }
 
 .event-feed-floating-day-header::before,
