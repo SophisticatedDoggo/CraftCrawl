@@ -7198,7 +7198,7 @@ a.mobile-context-back.feed-thread-back-link:focus {
 
 @media (prefers-reduced-motion: reduce) {
     .friends-feed-item,
-    .event-feed-item,
+    .event-feed-entry,
     .feed-thread-page-entering,
     .event-detail-page-entering,
     .feed-thread-page-entering .feed-thread-panel:not(:first-of-type),
@@ -7929,42 +7929,29 @@ body.feed-comments-sheet-open {
     padding-left: 12px;
 }
 
-.event-feed-item {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 14px;
-    align-items: center;
-    padding: 16px 0;
-    border: 0;
+.event-feed-entry {
     border-bottom: 1px solid var(--color-border);
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    padding: 16px 0;
+    cursor: pointer;
     transform-origin: center top;
     transition: transform 240ms cubic-bezier(.2, .82, .2, 1), background-color 180ms ease, opacity 180ms ease, box-shadow 180ms ease;
-    cursor: pointer;
 }
 
-.event-feed-item.is-opening-event {
+.event-feed-entry.is-opening-event {
     position: relative;
     z-index: 3;
     background: color-mix(in srgb, var(--color-primary) 6%, transparent);
 }
 
-.event-feed-item:has(a:hover, button:hover, input:hover, textarea:hover, select:hover) {
+.event-feed-entry:has(a:hover, button:hover, input:hover, textarea:hover, select:hover) {
     cursor: default;
 }
 
-.event-feed-item-with-cover {
+.event-feed-item {
+    display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
+    gap: 14px;
     align-items: center;
-}
-
-.event-feed-item-with-cover .event-feed-cover {
-    grid-column: 1 / -1;
-    grid-row: 1;
 }
 
 .event-feed-day-header {
@@ -8008,7 +7995,6 @@ body.feed-comments-sheet-open {
     object-fit: contain;
     background: #000;
     box-shadow: none;
-    margin-top: 10px;
     margin-bottom: 6px;
     overflow: hidden;
     line-height: 0;
@@ -12420,23 +12406,8 @@ a.event-calendar-event:focus .event-calendar-event-name {
         grid-template-columns: 1fr 1fr;
     }
 
-    .event-feed-item:not(.event-feed-item-with-cover) {
+    .event-feed-item {
         grid-template-columns: 1fr;
-    }
-
-    .event-feed-item-with-cover {
-        grid-template-columns: 1fr;
-        align-items: center;
-    }
-
-    .event-feed-item-with-cover .event-feed-cover {
-        grid-column: 1;
-        grid-row: 1;
-    }
-
-    .event-feed-item-with-cover .event-feed-details,
-    .event-feed-item-with-cover .event-feed-actions {
-        grid-column: 1 / -1;
     }
 
     .event-feed-actions {
@@ -12449,12 +12420,12 @@ a.event-calendar-event:focus .event-calendar-event-name {
         margin-left: -14px;
     }
 
-    .events-page-body .event-feed-item {
+    .events-page-body .event-feed-entry {
         position: relative;
         border-bottom: 0;
     }
 
-    .events-page-body .event-feed-item::after {
+    .events-page-body .event-feed-entry::after {
         content: "";
         position: absolute;
         right: -14px;
@@ -12483,12 +12454,6 @@ a.event-calendar-event:focus .event-calendar-event-name {
         margin-left: auto;
     }
 
-    .event-feed-item:not(.event-feed-item-with-cover) .event-feed-cover {
-        width: 100%;
-        height: auto;
-        min-height: 0;
-        aspect-ratio: 16 / 9;
-    }
 
     #business-location-map {
         height: 340px;
@@ -13156,10 +13121,6 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .business-list-details span {
         display: block;
         line-height: 1.35;
-    }
-
-    .event-feed-item:not(.event-feed-item-with-cover) {
-        grid-template-columns: 1fr;
     }
 
     .event-feed-cover {

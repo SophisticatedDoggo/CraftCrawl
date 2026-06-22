@@ -67,30 +67,32 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
 
             return `
                 ${dayHeader}
-                <article class="event-feed-item ${event.coverPhotoUrl ? 'event-feed-item-with-cover' : ''}" data-event-feed-item data-event-id="${event.id}" data-occurrence-date="${escapeHtml(event.date)}" data-event-detail-url="${eventUrl}" role="link" tabindex="0">
+                <div class="event-feed-entry" data-event-feed-item data-event-id="${event.id}" data-occurrence-date="${escapeHtml(event.date)}" data-event-detail-url="${eventUrl}" role="link" tabindex="0">
                     ${coverPhoto}
-                    <div class="event-feed-details">
-                        <h3>${eventName}</h3>
-                        <p>${formatEventTime(event.startTime)}${endTime} &middot; ${businessName}</p>
-                        <p>${formatBusinessType(event.businessType)} &middot; ${city}, ${state}</p>
-                        ${description ? `<p>${description}</p>` : ''}
-                    </div>
-                    <div class="event-feed-actions">
-                        <a href="${eventUrl}" data-event-detail-link>View event</a>
-                        <a href="../business_details.php?id=${event.businessId}">View business</a>
-                        <a class="event-comments-link" href="${commentsUrl}">${commentLabel}</a>
-                        <button
-                            type="button"
-                            class="event-want-button ${event.isWantToGo ? 'is-active' : ''}"
-                            data-event-want
-                            data-event-id="${event.id}"
-                            data-occurrence-date="${escapeHtml(event.date)}"
-                            data-is-saved="${event.isWantToGo ? '1' : '0'}"
-                        >
-                            <span class="pin-icon" aria-hidden="true"></span> Want to Go ${Number(event.wantToGoCount || 0)}
-                        </button>
-                    </div>
-                </article>
+                    <article class="event-feed-item ${event.coverPhotoUrl ? 'event-feed-item-with-cover' : ''}">
+                        <div class="event-feed-details">
+                            <h3>${eventName}</h3>
+                            <p>${formatEventTime(event.startTime)}${endTime} &middot; ${businessName}</p>
+                            <p>${formatBusinessType(event.businessType)} &middot; ${city}, ${state}</p>
+                            ${description ? `<p>${description}</p>` : ''}
+                        </div>
+                        <div class="event-feed-actions">
+                            <a href="${eventUrl}" data-event-detail-link>View event</a>
+                            <a href="../business_details.php?id=${event.businessId}">View business</a>
+                            <a class="event-comments-link" href="${commentsUrl}">${commentLabel}</a>
+                            <button
+                                type="button"
+                                class="event-want-button ${event.isWantToGo ? 'is-active' : ''}"
+                                data-event-want
+                                data-event-id="${event.id}"
+                                data-occurrence-date="${escapeHtml(event.date)}"
+                                data-is-saved="${event.isWantToGo ? '1' : '0'}"
+                            >
+                                <span class="pin-icon" aria-hidden="true"></span> Want to Go ${Number(event.wantToGoCount || 0)}
+                            </button>
+                        </div>
+                    </article>
+                </div>
             `;
         }).join('');
 
