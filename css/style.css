@@ -378,7 +378,7 @@ h1 {
 
 .business-portal-header h1,
 .settings-header h1,
-.business-details-hero h1,
+.business-hero-panel h1,
 .event-detail-card h1,
 .calendar-header h1 {
     position: relative;
@@ -394,7 +394,7 @@ h1 {
 
 .business-portal-header h1::after,
 .settings-header h1::after,
-.business-details-hero h1::after,
+.business-hero-panel h1::after,
 .event-detail-card h1::after,
 .calendar-header h1::after {
     content: "";
@@ -6391,7 +6391,8 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
 
 /* Profile subtab navigation */
 
-.profile-subtab-nav {
+.profile-subtab-nav,
+.business-subtab-nav {
     display: flex;
     gap: 4px;
     padding: 4px;
@@ -6412,7 +6413,10 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
 
 .profile-subtab-nav > .profile-subtab,
 .profile-subtab-nav > .profile-subtab:hover,
-.profile-subtab-nav > .profile-subtab:focus {
+.profile-subtab-nav > .profile-subtab:focus,
+.business-subtab-nav > .business-subtab,
+.business-subtab-nav > .business-subtab:hover,
+.business-subtab-nav > .business-subtab:focus {
     flex: 1;
     padding: 10px 12px;
     border: none;
@@ -6432,7 +6436,10 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
 
 .profile-subtab-nav > .profile-subtab.is-active,
 .profile-subtab-nav > .profile-subtab.is-active:hover,
-.profile-subtab-nav > .profile-subtab.is-active:focus {
+.profile-subtab-nav > .profile-subtab.is-active:focus,
+.business-subtab-nav > .business-subtab.is-active,
+.business-subtab-nav > .business-subtab.is-active:hover,
+.business-subtab-nav > .business-subtab.is-active:focus {
     color: var(--color-on-primary);
     background:
         var(--glass-button),
@@ -7736,6 +7743,39 @@ body.feed-comments-sheet-open {
     }
 }
 
+.business-hero-panel {
+    display: grid;
+    gap: 18px;
+}
+
+.business-action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.business-action-bar a,
+.business-action-bar button {
+    border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
+    background: color-mix(in srgb, var(--color-surface-muted) 72%, transparent);
+    box-shadow: none;
+}
+
+.business-action-bar a:hover,
+.business-action-bar a:focus,
+.business-action-bar button:hover,
+.business-action-bar button:focus {
+    border-color: color-mix(in srgb, var(--color-primary) 46%, var(--color-border));
+    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+    box-shadow: none;
+}
+
+[data-business-subtab-panel] {
+    display: grid;
+    gap: 16px;
+}
+
 .follow-business-form {
     margin: 0;
 }
@@ -8575,7 +8615,6 @@ body.feed-comments-sheet-open {
     -webkit-backdrop-filter: blur(14px) saturate(1.08);
 }
 
-.business-details-hero,
 .business-location-panel,
 .business-gallery-panel,
 .business-events-panel,
@@ -9676,13 +9715,15 @@ body.feed-comments-sheet-open {
 }
 
 .business-details-page {
+    display: grid;
+    gap: 16px;
     max-width: var(--content-max);
     margin: 0 auto;
     padding: 32px var(--space-page);
 }
 
-.business-details-hero {
-    margin: 24px 0 28px;
+.business-hero-panel {
+    margin: 24px 0 0;
 }
 
 .business-cover-photo {
@@ -9696,7 +9737,7 @@ body.feed-comments-sheet-open {
 }
 
 .business-location-panel {
-    margin-bottom: 28px;
+    margin-bottom: 0;
 }
 
 .business-location-map-shell {
@@ -9726,8 +9767,8 @@ body.feed-comments-sheet-open {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.business-details-hero h1 {
-    margin: 0 0 12px;
+.business-hero-panel h1 {
+    margin: 0;
 }
 
 .business-preview-type {
@@ -9854,7 +9895,7 @@ body.feed-comments-sheet-open {
 }
 
 .business-gallery-panel {
-    margin-top: 28px;
+    margin-top: 0;
 }
 
 .business-gallery-carousel {
@@ -9967,12 +10008,7 @@ body.feed-comments-sheet-open {
 }
 
 .review-form-panel {
-    margin-top: 28px;
-    padding: 20px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
+    margin-top: 0;
 }
 
 .review-form-panel form {
@@ -10252,7 +10288,7 @@ body.lightbox-open {
 }
 
 .business-events-panel {
-    margin-top: 28px;
+    margin-top: 0;
 }
 
 .business-event-preview {
@@ -11877,7 +11913,6 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .portal-panel,
     .settings-panel,
     .business-preview-card,
-    .business-details-hero,
     .business-location-panel,
     .business-gallery-panel,
     .business-events-panel,
@@ -11904,7 +11939,6 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .portal-panel::before,
     .settings-panel::before,
     .business-preview-card::before,
-    .business-details-hero::before,
     .business-location-panel::before,
     .business-gallery-panel::before,
     .business-events-panel::before,
@@ -11939,7 +11973,6 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .portal-panel h2,
     .settings-panel h2,
     .business-preview-card h2,
-    .business-details-hero h1,
     .business-location-panel h2,
     .business-gallery-panel h2,
     .business-events-panel h2,

@@ -37,12 +37,14 @@ if (!$location) {
 }
 
 $business_id = !empty($location['legacy_business_id']) ? (int) $location['legacy_business_id'] : null;
+$current_tab = $_POST['current_tab'] ?? '';
+$tab_param = $current_tab !== '' && $current_tab !== 'info' ? '&tab=' . urlencode($current_tab) : '';
 
 if ($is_saved) {
     $stmt = $conn->prepare("DELETE FROM want_to_go_locations WHERE user_id=? AND location_id=?");
     $stmt->bind_param("ii", $user_id, $location_id);
     $stmt->execute();
-    craftcrawl_redirect('business_details.php?id=' . $location_id . '&message=want_removed');
+    craftcrawl_redirect('business_details.php?id=' . $location_id . '&message=want_removed' . $tab_param);
 }
 
 $pref_stmt = $conn->prepare("SELECT show_want_to_go FROM users WHERE id=? LIMIT 1");
@@ -87,12 +89,12 @@ try {
 } catch (Throwable $error) {
     $conn->rollback();
     error_log('Want to Go toggle failed: ' . $error->getMessage());
-    craftcrawl_redirect('business_details.php?id=' . $location_id . '&message=want_error');
+    craftcrawl_redirect('business_details.php?id=' . $location_id . '&message=want_error' . $tab_param);
 }
 
 if ($xp_reward_popup) {
     $_SESSION['craftcrawl_xp_reward_popup'] = $xp_reward_popup;
 }
 
-craftcrawl_redirect('business_details.php?id=' . $location_id . '&message=want_saved');
+craftcrawl_redirect('business_details.php?id=' . $location_id . '&message=want_saved' . $tab_param);
 ?>

@@ -211,6 +211,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
 
     $form_action = $_POST['form_action'] ?? 'review';
+    $current_tab = $_POST['current_tab'] ?? '';
+    $tab_param = $current_tab !== '' && $current_tab !== 'info' ? '&tab=' . urlencode($current_tab) : '';
 
     if ($form_action === 'toggle_follow') {
         require_once 'lib/leveling.php';
@@ -222,7 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $conn->prepare("DELETE FROM liked_businesses WHERE user_id=? AND location_id=?");
             $stmt->bind_param("ii", $user_id, $location_id);
             $stmt->execute();
-            header("Location: business_details.php?id=" . $business_id . "&message=unfollowed");
+            header("Location: business_details.php?id=" . $business_id . "&message=unfollowed" . $tab_param);
             exit();
         }
 
@@ -261,7 +263,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['craftcrawl_xp_reward_popup'] = $xp_reward_popup;
         }
 
-        header("Location: business_details.php?id=" . $business_id . "&message=followed");
+        header("Location: business_details.php?id=" . $business_id . "&message=followed" . $tab_param);
         exit();
     }
 
@@ -279,7 +281,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $update_stmt = $conn->prepare("UPDATE reviews SET rating=?, notes=? WHERE user_id=? AND location_id=?");
             $update_stmt->bind_param("isii", $rating, $notes, $user_id, $location_id);
             $update_stmt->execute();
-            header("Location: business_details.php?id=" . $business_id . "&message=review_updated");
+            header("Location: business_details.php?id=" . $business_id . "&message=review_updated&tab=reviews");
             exit();
         }
     }
@@ -346,7 +348,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($reward_payload) {
                     $_SESSION['craftcrawl_xp_reward_popup'] = $reward_payload;
                 }
-                header("Location: business_details.php?id=" . $business_id . "&message=" . $review_message);
+                header("Location: business_details.php?id=" . $business_id . "&message=" . $review_message . "&tab=reviews");
                 exit();
             } catch (Throwable $error) {
                 $conn->rollback();
@@ -666,7 +668,11 @@ function format_event_time_range($event) {
             <p class="form-message form-message-error">Please add a few details for that report type.</p>
         <?php endif; ?>
 
-        <section class="business-details-hero">
+        <?php
+            $review_count = (int) ($rating_summary['review_count'] ?? 0);
+            $event_count = count($upcoming_events);
+        ?>
+        <section class="settings-panel business-hero-panel">
             <?php if ($business_cover_photo) : ?>
                 <?php $cover_url = craftcrawl_cloudinary_delivery_url($business_cover_photo['object_key'], 'f_auto,q_auto,c_fill,w_1200,h_520'); ?>
                 <img class="business-cover-photo" src="<?php echo escape_output($cover_url); ?>" alt="<?php echo escape_output($business['bName']); ?> cover photo">
@@ -687,230 +693,240 @@ function format_event_time_range($event) {
             <?php else : ?>
                 <div class="unclaimed-listing-notice">
                     <strong>Unclaimed Listing</strong>
-                    <p>This page is maintained by Craft Crawl and is not currently managed by the business itself. Details may be incomplete or need confirmation.</p>
+                    <p>Details may be incomplete or need confirmation.</p>
                 </div>
-                <p class="business-claim-prompt"><a href="business_claim_start.php?location_id=<?php echo escape_output($location_id); ?>">Own or manage this business? Claim this listing.</a></p>
-                <p class="form-help business-claim-help">Claiming lets you update your profile, add photos, post updates, and respond to reviews after admin approval.</p>
             <?php endif; ?>
 
             <p class="business-review-summary">
-                <?php if ((int) $rating_summary['review_count'] > 0) : ?>
+                <?php if ($review_count > 0) : ?>
                     <span class="rating-summary">
                         <?php echo render_star_rating($rating_summary['average_rating']); ?>
-                        <span><?php echo escape_output(number_format((float) $rating_summary['average_rating'], 1)); ?> / 5 from <?php echo escape_output($rating_summary['review_count']); ?> reviews</span>
+                        <span><?php echo escape_output(number_format((float) $rating_summary['average_rating'], 1)); ?> / 5 from <?php echo escape_output($review_count); ?> reviews</span>
                     </span>
                 <?php else : ?>
                     No reviews yet
                 <?php endif; ?>
             </p>
 
-            <?php if (!empty($business['bAbout'])) : ?>
-                <p class="business-about-text"><?php echo nl2br(escape_output($business['bAbout'])); ?></p>
-            <?php endif; ?>
+            <div class="profile-stat-grid">
+                <article>
+                    <strong><?php echo number_format($follower_count); ?></strong>
+                    <span>Followers</span>
+                </article>
+                <article>
+                    <strong><?php echo number_format($save_count); ?></strong>
+                    <span>Saves</span>
+                </article>
+                <article>
+                    <strong><?php echo number_format($review_count); ?></strong>
+                    <span>Reviews</span>
+                </article>
+                <article>
+                    <strong><?php echo number_format($event_count); ?></strong>
+                    <span>Events</span>
+                </article>
+            </div>
+        </section>
 
-            <p class="business-address-line">
-                <?php echo escape_output($business['street_address']); ?><br>
-                <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?> <?php echo escape_output($business['zip']); ?>
-            </p>
-
-            <?php if (!empty($business['bPhone'])) : ?>
-                <p class="business-phone-line">
-                    <?php if ($business_phone_href !== '') : ?>
-                        <a href="tel:<?php echo escape_output($business_phone_href); ?>"><?php echo escape_output($business['bPhone']); ?></a>
-                    <?php else : ?>
-                        <?php echo escape_output($business['bPhone']); ?>
-                    <?php endif; ?>
-                </p>
-            <?php endif; ?>
-
-            <?php if ($business_hours_text !== '' || !empty($business['bHours'])) : ?>
-                <div class="business-hours">
-                    <strong>Hours</strong>
-                    <?php if ($business_hours_text !== '') : ?>
-                        <p><?php echo nl2br(escape_output($business_hours_text)); ?></p>
-                    <?php endif; ?>
-                    <?php if (!empty($business['bHours'])) : ?>
-                        <p><?php echo nl2br(escape_output($business['bHours'])); ?></p>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
-
-            <div class="business-details-actions">
-                <?php if ($is_admin_preview) : ?>
-                    <a href="admin/location_hours.php?id=<?php echo escape_output($location_id); ?>">Edit Hours</a>
-                    <a href="admin/review_center.php">Review Reports</a>
-                    <?php if (!empty($business['bWebsite'])) : ?>
-                        <a href="<?php echo escape_output($business['bWebsite']); ?>" target="_blank" rel="noopener">Visit Website</a>
-                    <?php endif; ?>
-                <?php else : ?>
-                <form method="POST" action="check_in.php" class="check-in-form" data-check-in-form
-                      data-business-name="<?php echo escape_output($business['bName']); ?>"
-                      data-city="<?php echo escape_output($business['city'] ?? ''); ?>"
-                      data-state="<?php echo escape_output($business['state'] ?? ''); ?>">
-                    <?php echo craftcrawl_csrf_input(); ?>
-                    <input type="hidden" name="business_id" value="<?php echo escape_output($legacy_business_id); ?>">
-                    <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
-                    <input type="hidden" name="latitude" value="">
-                    <input type="hidden" name="longitude" value="">
-                    <input type="file" name="checkin_photo" accept="image/jpeg,image/png,image/webp"
-                           capture data-checkin-photo-input class="visually-hidden">
-                    <?php if ($checkin_on_cooldown) : ?>
-                    <button type="submit" disabled class="checkin-cooldown-btn" data-checkin-cooldown-btn
-                            <?php if ($checkin_session_closes_at) : ?>data-cooldown-until="<?php echo escape_output($checkin_session_closes_at); ?>"<?php endif; ?>>
-                        <span data-checkin-cooldown-label>On Cooldown</span>
-                    </button>
-                    <?php else : ?>
-                    <button type="submit">Check In</button>
-                    <?php endif; ?>
-                </form>
-                <div class="checkin-modal" data-checkin-modal hidden>
-                    <div class="checkin-modal-scrim"></div>
-                    <div class="checkin-modal-body">
-                        <div class="checkin-modal-prompt" data-checkin-prompt>
-                            <button type="button" class="checkin-modal-close" data-checkin-close aria-label="Close">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M15 5L5 15M5 5l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                            </button>
-                            <svg class="checkin-prompt-icon" width="48" height="48" viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.5"/></svg>
-                            <h3 data-checkin-prompt-name></h3>
-                            <p class="checkin-prompt-location" data-checkin-prompt-location></p>
-                            <div class="checkin-prompt-xp" data-checkin-prompt-xp></div>
-                            <p class="checkin-prompt-hint">Snap a photo to complete your check-in</p>
-                            <button type="button" data-checkin-take-photo>Take Photo</button>
-                        </div>
-                        <div class="checkin-preview" data-checkin-preview hidden>
-                            <div class="checkin-preview-card">
-                                <div class="checkin-preview-header">
-                                    <strong data-checkin-preview-title></strong>
-                                    <p data-checkin-preview-detail></p>
-                                </div>
-                                <div class="checkin-preview-photo">
-                                    <img data-checkin-preview-img alt="Check-in photo preview">
-                                </div>
-                                <textarea data-checkin-caption class="checkin-caption-input" placeholder="Write a caption..." maxlength="360" rows="2"></textarea>
-                            </div>
-                            <div class="checkin-preview-actions">
-                                <button type="button" data-checkin-retake>Retake</button>
-                                <button type="button" data-checkin-confirm>Post Check-in</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <div class="business-action-bar">
+            <?php if ($is_admin_preview) : ?>
+                <a href="admin/location_hours.php?id=<?php echo escape_output($location_id); ?>">Edit Hours</a>
+                <a href="admin/review_center.php">Review Reports</a>
                 <?php if (!empty($business['bWebsite'])) : ?>
                     <a href="<?php echo escape_output($business['bWebsite']); ?>" target="_blank" rel="noopener">Visit Website</a>
                 <?php endif; ?>
-
-                <form method="POST" action="" class="follow-business-form">
-                    <?php echo craftcrawl_csrf_input(); ?>
-                    <input type="hidden" name="form_action" value="toggle_follow">
-                    <input type="hidden" name="is_following" value="<?php echo $is_following ? '1' : '0'; ?>">
-                    <button type="submit" class="follow-button <?php echo $is_following ? 'is-followed' : ''; ?>">
-                        <svg class="follow-icon" viewBox="0 0 24 24" fill="<?php echo $is_following ? 'currentColor' : 'none'; ?>" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.7 4C18.87 4 21 6.98 21 9.76C21 15.39 12.16 20 12 20C11.84 20 3 15.39 3 9.76C3 6.98 5.13 4 8.3 4C10.12 4 11.31 4.91 12 5.71C12.69 4.91 13.88 4 15.7 4Z"/></svg>
-                        <span><?php echo $is_following ? 'Unfollow' : 'Follow'; ?></span>
-                        <?php if ($follower_count > 0) : ?>
-                            <span class="action-count"><?php echo number_format($follower_count); ?></span>
-                        <?php endif; ?>
-                    </button>
-                </form>
-                <form method="POST" action="user/want_to_go_toggle.php" class="want-to-go-form">
-                    <?php echo craftcrawl_csrf_input(); ?>
-                    <input type="hidden" name="business_id" value="<?php echo escape_output($legacy_business_id); ?>">
-                    <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
-                    <input type="hidden" name="is_saved" value="<?php echo $is_want_to_go ? '1' : '0'; ?>">
-                    <button type="submit" class="want-to-go-button<?php echo $is_want_to_go ? ' is-saved' : ''; ?>">
-                        <span class="pin-icon" aria-hidden="true"></span>
-                        <span><?php echo $is_want_to_go ? 'Saved' : 'Save'; ?></span>
-                        <?php if ($save_count > 0) : ?>
-                            <span class="action-count"><?php echo number_format($save_count); ?></span>
-                        <?php endif; ?>
-                    </button>
-                </form>
-                <?php
-                    $social_proof_lines = [];
-                    if (!empty($friends_who_follow)) {
-                        $friend_count = count($friends_who_follow);
-                        $others = $follower_count - $friend_count;
-                        if ($others > 0) {
-                            $social_proof_lines[] = escape_output($friends_who_follow[0]) . ' and ' . number_format($others) . ' other' . ($others === 1 ? '' : 's') . ' follow this';
-                        } elseif ($friend_count > 1) {
-                            $social_proof_lines[] = escape_output($friends_who_follow[0]) . ' and ' . ($friend_count - 1) . ' other friend' . (($friend_count - 1) === 1 ? '' : 's') . ' follow this';
-                        } else {
-                            $social_proof_lines[] = escape_output($friends_who_follow[0]) . ' follows this';
-                        }
-                    }
-                    if (!empty($friends_who_saved)) {
-                        $friend_save_count = count($friends_who_saved);
-                        $save_others = $save_count - $friend_save_count;
-                        if ($save_others > 0) {
-                            $social_proof_lines[] = escape_output($friends_who_saved[0]) . ' and ' . number_format($save_others) . ' other' . ($save_others === 1 ? '' : 's') . ' saved this';
-                        } elseif ($friend_save_count > 1) {
-                            $social_proof_lines[] = escape_output($friends_who_saved[0]) . ' and ' . ($friend_save_count - 1) . ' other friend' . (($friend_save_count - 1) === 1 ? '' : 's') . ' saved this';
-                        } else {
-                            $social_proof_lines[] = escape_output($friends_who_saved[0]) . ' saved this';
-                        }
-                    }
-                ?>
-                <?php if (!empty($social_proof_lines)) : ?>
-                    <p class="action-social-proof"><?php echo implode(' · ', $social_proof_lines); ?></p>
+            <?php else : ?>
+            <form method="POST" action="check_in.php" class="check-in-form" data-check-in-form
+                  data-business-name="<?php echo escape_output($business['bName']); ?>"
+                  data-city="<?php echo escape_output($business['city'] ?? ''); ?>"
+                  data-state="<?php echo escape_output($business['state'] ?? ''); ?>">
+                <?php echo craftcrawl_csrf_input(); ?>
+                <input type="hidden" name="business_id" value="<?php echo escape_output($legacy_business_id); ?>">
+                <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
+                <input type="hidden" name="latitude" value="">
+                <input type="hidden" name="longitude" value="">
+                <input type="file" name="checkin_photo" accept="image/jpeg,image/png,image/webp"
+                       capture data-checkin-photo-input class="visually-hidden">
+                <?php if ($checkin_on_cooldown) : ?>
+                <button type="submit" disabled class="checkin-cooldown-btn" data-checkin-cooldown-btn
+                        <?php if ($checkin_session_closes_at) : ?>data-cooldown-until="<?php echo escape_output($checkin_session_closes_at); ?>"<?php endif; ?>>
+                    <span data-checkin-cooldown-label>On Cooldown</span>
+                </button>
+                <?php else : ?>
+                <button type="submit">Check In</button>
                 <?php endif; ?>
-                <?php endif; ?>
-            </div>
-
-            <?php if (!$is_admin_preview) : ?>
-            <div class="report-listing-section">
-                <button type="button" class="report-listing-toggle" data-report-toggle>Report this listing</button>
-            </div>
+            </form>
+            <?php if (!empty($business['bWebsite'])) : ?>
+                <a href="<?php echo escape_output($business['bWebsite']); ?>" target="_blank" rel="noopener">Visit Website</a>
             <?php endif; ?>
-
-            <?php if (!$is_admin_preview && $user_has_checked_in && $friend_options && $friend_options->num_rows > 0) : ?>
-                <form method="POST" action="user/recommend_location.php" class="recommend-location-form">
-                    <?php echo craftcrawl_csrf_input(); ?>
-                    <input type="hidden" name="business_id" value="<?php echo escape_output($legacy_business_id); ?>">
-                    <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
-                    <label for="recommend_friend">Recommend to a friend</label>
-                    <div>
-                        <select id="recommend_friend" name="friend_id" required>
-                            <option value="">Choose a friend</option>
-                            <?php while ($friend_option = $friend_options->fetch_assoc()) : ?>
-                                <option value="<?php echo escape_output($friend_option['id']); ?>"><?php echo escape_output(trim($friend_option['fName'] . ' ' . $friend_option['lName'])); ?></option>
-                            <?php endwhile; ?>
-                        </select>
-                        <input type="text" name="message" maxlength="255" placeholder="Optional note">
-                        <button type="submit">Recommend</button>
+            <form method="POST" action="" class="follow-business-form">
+                <?php echo craftcrawl_csrf_input(); ?>
+                <input type="hidden" name="form_action" value="toggle_follow">
+                <input type="hidden" name="current_tab" value="info">
+                <input type="hidden" name="is_following" value="<?php echo $is_following ? '1' : '0'; ?>">
+                <button type="submit" class="follow-button <?php echo $is_following ? 'is-followed' : ''; ?>">
+                    <svg class="follow-icon" viewBox="0 0 24 24" fill="<?php echo $is_following ? 'currentColor' : 'none'; ?>" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.7 4C18.87 4 21 6.98 21 9.76C21 15.39 12.16 20 12 20C11.84 20 3 15.39 3 9.76C3 6.98 5.13 4 8.3 4C10.12 4 11.31 4.91 12 5.71C12.69 4.91 13.88 4 15.7 4Z"/></svg>
+                    <span><?php echo $is_following ? 'Unfollow' : 'Follow'; ?></span>
+                    <?php if ($follower_count > 0) : ?>
+                        <span class="action-count"><?php echo number_format($follower_count); ?></span>
+                    <?php endif; ?>
+                </button>
+            </form>
+            <form method="POST" action="user/want_to_go_toggle.php" class="want-to-go-form">
+                <?php echo craftcrawl_csrf_input(); ?>
+                <input type="hidden" name="business_id" value="<?php echo escape_output($legacy_business_id); ?>">
+                <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
+                <input type="hidden" name="current_tab" value="info">
+                <input type="hidden" name="is_saved" value="<?php echo $is_want_to_go ? '1' : '0'; ?>">
+                <button type="submit" class="want-to-go-button<?php echo $is_want_to_go ? ' is-saved' : ''; ?>">
+                    <span class="pin-icon" aria-hidden="true"></span>
+                    <span><?php echo $is_want_to_go ? 'Saved' : 'Save'; ?></span>
+                    <?php if ($save_count > 0) : ?>
+                        <span class="action-count"><?php echo number_format($save_count); ?></span>
+                    <?php endif; ?>
+                </button>
+            </form>
+            <?php
+                $social_proof_lines = [];
+                if (!empty($friends_who_follow)) {
+                    $friend_count = count($friends_who_follow);
+                    $others = $follower_count - $friend_count;
+                    if ($others > 0) {
+                        $social_proof_lines[] = escape_output($friends_who_follow[0]) . ' and ' . number_format($others) . ' other' . ($others === 1 ? '' : 's') . ' follow this';
+                    } elseif ($friend_count > 1) {
+                        $social_proof_lines[] = escape_output($friends_who_follow[0]) . ' and ' . ($friend_count - 1) . ' other friend' . (($friend_count - 1) === 1 ? '' : 's') . ' follow this';
+                    } else {
+                        $social_proof_lines[] = escape_output($friends_who_follow[0]) . ' follows this';
+                    }
+                }
+                if (!empty($friends_who_saved)) {
+                    $friend_save_count = count($friends_who_saved);
+                    $save_others = $save_count - $friend_save_count;
+                    if ($save_others > 0) {
+                        $social_proof_lines[] = escape_output($friends_who_saved[0]) . ' and ' . number_format($save_others) . ' other' . ($save_others === 1 ? '' : 's') . ' saved this';
+                    } elseif ($friend_save_count > 1) {
+                        $social_proof_lines[] = escape_output($friends_who_saved[0]) . ' and ' . ($friend_save_count - 1) . ' other friend' . (($friend_save_count - 1) === 1 ? '' : 's') . ' saved this';
+                    } else {
+                        $social_proof_lines[] = escape_output($friends_who_saved[0]) . ' saved this';
+                    }
+                }
+            ?>
+            <?php if (!empty($social_proof_lines)) : ?>
+                <p class="action-social-proof"><?php echo implode(' · ', $social_proof_lines); ?></p>
+            <?php endif; ?>
+            <?php endif; ?>
+        </div>
+        <div class="checkin-modal" data-checkin-modal hidden>
+            <div class="checkin-modal-scrim"></div>
+            <div class="checkin-modal-body">
+                <div class="checkin-modal-prompt" data-checkin-prompt>
+                    <button type="button" class="checkin-modal-close" data-checkin-close aria-label="Close">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M15 5L5 15M5 5l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
+                    <svg class="checkin-prompt-icon" width="48" height="48" viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.5"/></svg>
+                    <h3 data-checkin-prompt-name></h3>
+                    <p class="checkin-prompt-location" data-checkin-prompt-location></p>
+                    <div class="checkin-prompt-xp" data-checkin-prompt-xp></div>
+                    <p class="checkin-prompt-hint">Snap a photo to complete your check-in</p>
+                    <button type="button" data-checkin-take-photo>Take Photo</button>
+                </div>
+                <div class="checkin-preview" data-checkin-preview hidden>
+                    <div class="checkin-preview-card">
+                        <div class="checkin-preview-header">
+                            <strong data-checkin-preview-title></strong>
+                            <p data-checkin-preview-detail></p>
+                        </div>
+                        <div class="checkin-preview-photo">
+                            <img data-checkin-preview-img alt="Check-in photo preview">
+                        </div>
+                        <textarea data-checkin-caption class="checkin-caption-input" placeholder="Write a caption..." maxlength="360" rows="2"></textarea>
                     </div>
-                </form>
-            <?php elseif (!$is_admin_preview && !$user_has_checked_in && $friend_options && $friend_options->num_rows > 0) : ?>
-                <p class="form-message">Check in at this location to recommend it to friends.</p>
+                    <div class="checkin-preview-actions">
+                        <button type="button" data-checkin-retake>Retake</button>
+                        <button type="button" data-checkin-confirm>Post Check-in</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="form-message" data-check-in-feedback hidden></p>
+
+        <nav class="business-subtab-nav" role="tablist">
+            <button type="button" class="business-subtab is-active" role="tab" data-business-subtab="info" aria-selected="true">Info</button>
+            <button type="button" class="business-subtab" role="tab" data-business-subtab="activity" aria-selected="false">Activity</button>
+            <button type="button" class="business-subtab" role="tab" data-business-subtab="reviews" aria-selected="false">Reviews</button>
+        </nav>
+
+        <div data-business-subtab-panel="info">
+            <section class="settings-panel">
+                <div class="profile-about-section">
+                    <?php if (!empty($business['bAbout'])) : ?>
+                    <div class="profile-about-detail">
+                        <h3>About</h3>
+                        <p><?php echo nl2br(escape_output($business['bAbout'])); ?></p>
+                    </div>
+                    <?php endif; ?>
+                    <div class="profile-about-detail">
+                        <h3>Address</h3>
+                        <strong><?php echo escape_output($business['street_address']); ?></strong>
+                        <span><?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?> <?php echo escape_output($business['zip']); ?></span>
+                    </div>
+                    <?php if (!empty($business['bPhone'])) : ?>
+                    <div class="profile-about-detail">
+                        <h3>Phone</h3>
+                        <strong>
+                            <?php if ($business_phone_href !== '') : ?>
+                                <a href="tel:<?php echo escape_output($business_phone_href); ?>"><?php echo escape_output($business['bPhone']); ?></a>
+                            <?php else : ?>
+                                <?php echo escape_output($business['bPhone']); ?>
+                            <?php endif; ?>
+                        </strong>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($business_hours_text !== '' || !empty($business['bHours'])) : ?>
+                    <div class="profile-about-detail">
+                        <h3>Hours</h3>
+                        <?php if ($business_hours_text !== '') : ?>
+                            <p><?php echo nl2br(escape_output($business_hours_text)); ?></p>
+                        <?php endif; ?>
+                        <?php if (!empty($business['bHours'])) : ?>
+                            <p><?php echo nl2br(escape_output($business['bHours'])); ?></p>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </section>
+
+            <?php if (!$is_claimed_location) : ?>
+                <p class="business-claim-prompt"><a href="business_claim_start.php?location_id=<?php echo escape_output($location_id); ?>">Own or manage this business? Claim this listing.</a></p>
             <?php endif; ?>
-            <p class="form-message" data-check-in-feedback hidden></p>
-        </section>
 
-        <section class="business-location-panel">
-            <div class="business-section-header">
-                <h2>Location</h2>
-            </div>
-            <div class="business-location-map-shell">
-                <div
-                    id="business-location-map"
-                    data-business-name="<?php echo escape_output($business['bName']); ?>"
-                    data-business-type="<?php echo escape_output($business['bType']); ?>"
-                    data-business-latitude="<?php echo escape_output($business['latitude']); ?>"
-                    data-business-longitude="<?php echo escape_output($business['longitude']); ?>"
-                    aria-label="Map showing <?php echo escape_output($business['bName']); ?> location"
-                ></div>
-                <a
-                    class="map-action-button business-location-directions-button"
-                    href="https://www.google.com/maps/dir/?api=1&destination=<?php echo escape_output(rawurlencode($business['latitude'] . ',' . $business['longitude'])); ?>"
-                    data-directions-address="<?php echo escape_output($business['street_address'] . ', ' . $business['city'] . ', ' . $business['state'] . ' ' . $business['zip']); ?>"
-                    data-directions-latitude="<?php echo escape_output($business['latitude']); ?>"
-                    data-directions-longitude="<?php echo escape_output($business['longitude']); ?>"
-                    target="_blank"
-                    rel="noopener"
-                >Get Directions</a>
-            </div>
-        </section>
+            <section class="settings-panel business-location-panel">
+                <div class="business-section-header">
+                    <h2>Location</h2>
+                </div>
+                <div class="business-location-map-shell">
+                    <div
+                        id="business-location-map"
+                        data-business-name="<?php echo escape_output($business['bName']); ?>"
+                        data-business-type="<?php echo escape_output($business['bType']); ?>"
+                        data-business-latitude="<?php echo escape_output($business['latitude']); ?>"
+                        data-business-longitude="<?php echo escape_output($business['longitude']); ?>"
+                        aria-label="Map showing <?php echo escape_output($business['bName']); ?> location"
+                    ></div>
+                    <a
+                        class="map-action-button business-location-directions-button"
+                        href="https://www.google.com/maps/dir/?api=1&destination=<?php echo escape_output(rawurlencode($business['latitude'] . ',' . $business['longitude'])); ?>"
+                        data-directions-address="<?php echo escape_output($business['street_address'] . ', ' . $business['city'] . ', ' . $business['state'] . ' ' . $business['zip']); ?>"
+                        data-directions-latitude="<?php echo escape_output($business['latitude']); ?>"
+                        data-directions-longitude="<?php echo escape_output($business['longitude']); ?>"
+                        target="_blank"
+                        rel="noopener"
+                    >Get Directions</a>
+                </div>
+            </section>
 
-        <?php if (!empty($business_gallery_photos)) : ?>
-            <section class="business-gallery-panel">
+            <?php if (!empty($business_gallery_photos)) : ?>
+            <section class="settings-panel business-gallery-panel">
                 <h2>Photos</h2>
                 <div class="business-gallery-carousel" data-business-gallery>
                     <div class="business-gallery-track">
@@ -949,178 +965,212 @@ function format_event_time_range($event) {
                     <?php endif; ?>
                 </div>
             </section>
-        <?php endif; ?>
-
-        <section class="business-events-panel">
-            <div class="business-section-header">
-                <h2>Upcoming Events</h2>
-                <a href="business_calendar.php?id=<?php echo escape_output($location_id); ?>">View Calendar</a>
-            </div>
-
-            <?php if (empty($upcoming_events)) : ?>
-                <p>No upcoming events yet.</p>
             <?php endif; ?>
 
-            <?php foreach ($upcoming_events as $event) : ?>
-                <article class="business-event-preview">
-                    <?php if (!empty($event['cover_photo_key'])) : ?>
-                        <?php $event_cover_url = craftcrawl_cloudinary_delivery_url($event['cover_photo_key'], 'f_auto,q_auto,c_fill,w_640,h_280'); ?>
-                        <img class="business-event-cover" src="<?php echo escape_output($event_cover_url); ?>" alt="<?php echo escape_output($event['eName']); ?> cover photo" loading="lazy">
-                    <?php endif; ?>
-                    <time><?php echo escape_output(date('M j, Y', strtotime($event['occurrenceDate']))); ?> at <?php echo escape_output(format_event_time_range($event)); ?></time>
-                    <h3><?php echo escape_output($event['eName']); ?></h3>
-                    <?php if (!empty($event['eDescription'])) : ?>
-                        <p><?php echo escape_output($event['eDescription']); ?></p>
-                    <?php endif; ?>
-                    <a href="event_details.php?id=<?php echo escape_output($event['id']); ?>&date=<?php echo escape_output($event['occurrenceDate']); ?>">View Event</a>
-                </article>
-            <?php endforeach; ?>
-        </section>
-
-        <?php if ($is_claimed_location) : ?>
-        <section
-            class="business-posts-panel"
-            data-business-posts-panel
-            data-business-id="<?php echo escape_output($location_id); ?>"
-            data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>"
-        >
-            <div class="business-section-header">
-                <h2>Posts</h2>
-                <?php if (!empty($posts)) : ?>
-                    <a href="posts.php?id=<?php echo escape_output($location_id); ?>">More Posts</a>
-                <?php endif; ?>
-            </div>
-            <?php if (empty($posts)) : ?>
-                <p>No posts yet.</p>
-            <?php else : ?>
-                <div class="business-posts-list" data-posts-list>
-                    <?php echo craftcrawl_render_business_post($posts[0]); ?>
-                </div>
-                <?php if ($has_more_posts) : ?>
-                    <a class="business-posts-more-link" href="posts.php?id=<?php echo escape_output($location_id); ?>">More Posts</a>
-                <?php endif; ?>
-            <?php endif; ?>
-        </section>
-        <?php endif; ?>
-
-        <?php if (!$is_admin_preview) : ?>
-        <section class="review-form-panel">
-            <h2><?php echo $user_has_reviewed ? 'Edit Your Review' : 'Leave a Review'; ?></h2>
-            <?php if (!$user_has_checked_in) : ?>
-                <p class="form-help">Check in at this location before leaving a review.</p>
-            <?php elseif ($user_has_reviewed) : ?>
-                <div class="current-review-preview" data-review-edit-preview>
-                    <span class="rating-summary">
-                        <?php echo render_star_rating($user_review['rating'] ?? 0, ($user_review['rating'] ?? 0) . ' out of 5'); ?>
-                        <span><?php echo escape_output(number_format((float) ($user_review['rating'] ?? 0), 1)); ?></span>
-                    </span>
-                    <?php if (!empty($user_review['notes'])) : ?>
-                        <p><?php echo nl2br(escape_output($user_review['notes'])); ?></p>
-                    <?php endif; ?>
-                    <button type="button" data-review-edit-toggle>Edit Review</button>
-                </div>
-                <form method="POST" action="" data-review-edit-form hidden>
+            <?php if (!$is_admin_preview && $user_has_checked_in && $friend_options && $friend_options->num_rows > 0) : ?>
+                <form method="POST" action="user/recommend_location.php" class="recommend-location-form">
                     <?php echo craftcrawl_csrf_input(); ?>
-                    <input type="hidden" name="form_action" value="review_edit">
-                    <label for="edit_rating">Rating</label>
-                    <select id="edit_rating" name="rating" required>
-                        <option value="">Choose a rating</option>
-                        <?php for ($rating_option = 5; $rating_option >= 1; $rating_option--) : ?>
-                            <option value="<?php echo escape_output($rating_option); ?>" <?php echo (int) ($user_review['rating'] ?? 0) === $rating_option ? 'selected' : ''; ?>>
-                                <?php echo escape_output($rating_option); ?> - <?php echo escape_output(['', 'Bad', 'Poor', 'Okay', 'Good', 'Excellent'][$rating_option]); ?>
-                            </option>
-                        <?php endfor; ?>
-                    </select>
-
-                    <label for="edit_notes">Review</label>
-                    <textarea id="edit_notes" name="notes" rows="5"><?php echo escape_output($user_review['notes'] ?? ''); ?></textarea>
-                    <p class="form-help">Editing your review does not award additional XP.</p>
-
-                    <div class="review-edit-actions">
-                        <button type="submit">Update Review</button>
-                        <button type="button" class="button-link-secondary" data-review-edit-cancel>Cancel</button>
+                    <input type="hidden" name="business_id" value="<?php echo escape_output($legacy_business_id); ?>">
+                    <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
+                    <label for="recommend_friend">Recommend to a friend</label>
+                    <div>
+                        <select id="recommend_friend" name="friend_id" required>
+                            <option value="">Choose a friend</option>
+                            <?php while ($friend_option = $friend_options->fetch_assoc()) : ?>
+                                <option value="<?php echo escape_output($friend_option['id']); ?>"><?php echo escape_output(trim($friend_option['fName'] . ' ' . $friend_option['lName'])); ?></option>
+                            <?php endwhile; ?>
+                        </select>
+                        <input type="text" name="message" maxlength="255" placeholder="Optional note">
+                        <button type="submit">Recommend</button>
                     </div>
                 </form>
-            <?php else : ?>
-                <form method="POST" action="" enctype="multipart/form-data" data-review-form>
-                    <?php echo craftcrawl_csrf_input(); ?>
-                    <input type="hidden" name="form_action" value="review">
-                    <label for="rating">Rating</label>
-                    <select id="rating" name="rating" required>
-                        <option value="">Choose a rating</option>
-                        <option value="5">5 - Excellent</option>
-                        <option value="4">4 - Good</option>
-                        <option value="3">3 - Okay</option>
-                        <option value="2">2 - Poor</option>
-                        <option value="1">1 - Bad</option>
-                    </select>
-
-                    <label for="notes">Review</label>
-                    <textarea id="notes" name="notes" rows="5"></textarea>
-                    <p class="form-help">Reviews earn 25 XP once per location after you have checked in.</p>
-
-                    <label for="review_photos">Photos</label>
-                    <input type="file" id="review_photos" name="review_photos[]" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple data-review-photo-input>
-                    <p class="form-help">Add up to 3 photos. Phone photos are resized before upload.</p>
-                    <p class="form-message" data-review-photo-status hidden></p>
-
-                    <button type="submit">Post Review</button>
-                </form>
-            <?php endif; ?>
-        </section>
-        <?php endif; ?>
-
-        <section class="business-reviews-panel">
-            <h2>User Reviews</h2>
-
-            <?php if (empty($reviews)) : ?>
-                <p>No reviews yet.</p>
+            <?php elseif (!$is_admin_preview && !$user_has_checked_in && $friend_options && $friend_options->num_rows > 0) : ?>
+                <p class="form-message">Check in at this location to recommend it to friends.</p>
             <?php endif; ?>
 
-            <?php foreach ($reviews as $review) : ?>
-                <article class="business-review-card">
-                    <div class="business-review-header">
-                        <div class="business-review-author">
-                            <?php echo craftcrawl_render_user_avatar($review, 'small'); ?>
-                            <strong><?php echo escape_output($review['fName'] . ' ' . $review['lName']); ?></strong>
-                        </div>
+            <?php if (!$is_admin_preview) : ?>
+            <div class="report-listing-section">
+                <button type="button" class="report-listing-toggle" data-report-toggle>Report this listing</button>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <div data-business-subtab-panel="activity" hidden>
+            <section class="settings-panel business-events-panel">
+                <div class="business-section-header">
+                    <h2>Upcoming Events</h2>
+                    <a href="business_calendar.php?id=<?php echo escape_output($location_id); ?>">View Calendar</a>
+                </div>
+
+                <?php if (empty($upcoming_events)) : ?>
+                    <p>No upcoming events yet.</p>
+                <?php endif; ?>
+
+                <?php foreach ($upcoming_events as $event) : ?>
+                    <article class="business-event-preview">
+                        <?php if (!empty($event['cover_photo_key'])) : ?>
+                            <?php $event_cover_url = craftcrawl_cloudinary_delivery_url($event['cover_photo_key'], 'f_auto,q_auto,c_fill,w_640,h_280'); ?>
+                            <img class="business-event-cover" src="<?php echo escape_output($event_cover_url); ?>" alt="<?php echo escape_output($event['eName']); ?> cover photo" loading="lazy">
+                        <?php endif; ?>
+                        <time><?php echo escape_output(date('M j, Y', strtotime($event['occurrenceDate']))); ?> at <?php echo escape_output(format_event_time_range($event)); ?></time>
+                        <h3><?php echo escape_output($event['eName']); ?></h3>
+                        <?php if (!empty($event['eDescription'])) : ?>
+                            <p><?php echo escape_output($event['eDescription']); ?></p>
+                        <?php endif; ?>
+                        <a href="event_details.php?id=<?php echo escape_output($event['id']); ?>&date=<?php echo escape_output($event['occurrenceDate']); ?>">View Event</a>
+                    </article>
+                <?php endforeach; ?>
+            </section>
+
+            <?php if ($is_claimed_location) : ?>
+            <section
+                class="settings-panel business-posts-panel"
+                data-business-posts-panel
+                data-business-id="<?php echo escape_output($location_id); ?>"
+                data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>"
+            >
+                <div class="business-section-header">
+                    <h2>Posts</h2>
+                    <?php if (!empty($posts)) : ?>
+                        <a href="posts.php?id=<?php echo escape_output($location_id); ?>">More Posts</a>
+                    <?php endif; ?>
+                </div>
+                <?php if (empty($posts)) : ?>
+                    <p>No posts yet.</p>
+                <?php else : ?>
+                    <div class="business-posts-list" data-posts-list>
+                        <?php echo craftcrawl_render_business_post($posts[0]); ?>
+                    </div>
+                    <?php if ($has_more_posts) : ?>
+                        <a class="business-posts-more-link" href="posts.php?id=<?php echo escape_output($location_id); ?>">More Posts</a>
+                    <?php endif; ?>
+                <?php endif; ?>
+            </section>
+            <?php endif; ?>
+        </div>
+
+        <div data-business-subtab-panel="reviews" hidden>
+            <?php if (!$is_admin_preview) : ?>
+            <section class="settings-panel review-form-panel">
+                <h2><?php echo $user_has_reviewed ? 'Edit Your Review' : 'Leave a Review'; ?></h2>
+                <?php if (!$user_has_checked_in) : ?>
+                    <p class="form-help">Check in at this location before leaving a review.</p>
+                <?php elseif ($user_has_reviewed) : ?>
+                    <div class="current-review-preview" data-review-edit-preview>
                         <span class="rating-summary">
-                            <?php echo render_star_rating($review['rating'], $review['rating'] . ' out of 5'); ?>
-                            <span><?php echo escape_output(number_format((float) $review['rating'], 1)); ?></span>
+                            <?php echo render_star_rating($user_review['rating'] ?? 0, ($user_review['rating'] ?? 0) . ' out of 5'); ?>
+                            <span><?php echo escape_output(number_format((float) ($user_review['rating'] ?? 0), 1)); ?></span>
                         </span>
+                        <?php if (!empty($user_review['notes'])) : ?>
+                            <p><?php echo nl2br(escape_output($user_review['notes'])); ?></p>
+                        <?php endif; ?>
+                        <button type="button" data-review-edit-toggle>Edit Review</button>
                     </div>
+                    <form method="POST" action="" data-review-edit-form hidden>
+                        <?php echo craftcrawl_csrf_input(); ?>
+                        <input type="hidden" name="form_action" value="review_edit">
+                        <input type="hidden" name="current_tab" value="reviews">
+                        <label for="edit_rating">Rating</label>
+                        <select id="edit_rating" name="rating" required>
+                            <option value="">Choose a rating</option>
+                            <?php for ($rating_option = 5; $rating_option >= 1; $rating_option--) : ?>
+                                <option value="<?php echo escape_output($rating_option); ?>" <?php echo (int) ($user_review['rating'] ?? 0) === $rating_option ? 'selected' : ''; ?>>
+                                    <?php echo escape_output($rating_option); ?> - <?php echo escape_output(['', 'Bad', 'Poor', 'Okay', 'Good', 'Excellent'][$rating_option]); ?>
+                                </option>
+                            <?php endfor; ?>
+                        </select>
 
-                    <?php if (!empty($review['notes'])) : ?>
-                        <p><?php echo nl2br(escape_output($review['notes'])); ?></p>
-                    <?php endif; ?>
+                        <label for="edit_notes">Review</label>
+                        <textarea id="edit_notes" name="notes" rows="5"><?php echo escape_output($user_review['notes'] ?? ''); ?></textarea>
+                        <p class="form-help">Editing your review does not award additional XP.</p>
 
-                    <?php if (!empty($review['photos'])) : ?>
-                        <div class="review-photo-grid">
-                            <?php foreach ($review['photos'] as $photo_index => $photo) : ?>
-                                <?php $photo_thumb_url = craftcrawl_cloudinary_delivery_url($photo['object_key'], 'f_auto,q_auto,c_fill,w_180,h_132'); ?>
-                                <?php $photo_large_url = craftcrawl_cloudinary_delivery_url($photo['object_key'], 'f_auto,q_auto,c_limit,w_1600,h_1200'); ?>
-                                <button
-                                    type="button"
-                                    class="review-photo-button"
-                                    data-review-photo-url="<?php echo escape_output($photo_large_url); ?>"
-                                    data-review-photo-index="<?php echo escape_output($photo_index); ?>"
-                                    aria-label="Open review photo <?php echo escape_output($photo_index + 1); ?>"
-                                >
-                                    <img src="<?php echo escape_output($photo_thumb_url); ?>" alt="Review photo" loading="lazy">
-                                </button>
-                            <?php endforeach; ?>
+                        <div class="review-edit-actions">
+                            <button type="submit">Update Review</button>
+                            <button type="button" class="button-link-secondary" data-review-edit-cancel>Cancel</button>
                         </div>
-                    <?php endif; ?>
+                    </form>
+                <?php else : ?>
+                    <form method="POST" action="" enctype="multipart/form-data" data-review-form>
+                        <?php echo craftcrawl_csrf_input(); ?>
+                        <input type="hidden" name="form_action" value="review">
+                        <input type="hidden" name="current_tab" value="reviews">
+                        <label for="rating">Rating</label>
+                        <select id="rating" name="rating" required>
+                            <option value="">Choose a rating</option>
+                            <option value="5">5 - Excellent</option>
+                            <option value="4">4 - Good</option>
+                            <option value="3">3 - Okay</option>
+                            <option value="2">2 - Poor</option>
+                            <option value="1">1 - Bad</option>
+                        </select>
 
-                    <?php if (!empty($review['business_response'])) : ?>
-                        <div class="business-owner-response">
-                            <strong>Business response</strong>
-                            <p><?php echo nl2br(escape_output($review['business_response'])); ?></p>
+                        <label for="notes">Review</label>
+                        <textarea id="notes" name="notes" rows="5"></textarea>
+                        <p class="form-help">Reviews earn 25 XP once per location after you have checked in.</p>
+
+                        <label for="review_photos">Photos</label>
+                        <input type="file" id="review_photos" name="review_photos[]" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple data-review-photo-input>
+                        <p class="form-help">Add up to 3 photos. Phone photos are resized before upload.</p>
+                        <p class="form-message" data-review-photo-status hidden></p>
+
+                        <button type="submit">Post Review</button>
+                    </form>
+                <?php endif; ?>
+            </section>
+            <?php endif; ?>
+
+            <section class="settings-panel business-reviews-panel">
+                <h2>User Reviews <span class="profile-section-count"><?php echo $review_count; ?></span></h2>
+
+                <?php if (empty($reviews)) : ?>
+                    <p>No reviews yet.</p>
+                <?php endif; ?>
+
+                <?php foreach ($reviews as $review) : ?>
+                    <article class="business-review-card">
+                        <div class="business-review-header">
+                            <div class="business-review-author">
+                                <?php echo craftcrawl_render_user_avatar($review, 'small'); ?>
+                                <strong><?php echo escape_output($review['fName'] . ' ' . $review['lName']); ?></strong>
+                            </div>
+                            <span class="rating-summary">
+                                <?php echo render_star_rating($review['rating'], $review['rating'] . ' out of 5'); ?>
+                                <span><?php echo escape_output(number_format((float) $review['rating'], 1)); ?></span>
+                            </span>
                         </div>
-                    <?php endif; ?>
-                </article>
-            <?php endforeach; ?>
-        </section>
+
+                        <?php if (!empty($review['notes'])) : ?>
+                            <p><?php echo nl2br(escape_output($review['notes'])); ?></p>
+                        <?php endif; ?>
+
+                        <?php if (!empty($review['photos'])) : ?>
+                            <div class="review-photo-grid">
+                                <?php foreach ($review['photos'] as $photo_index => $photo) : ?>
+                                    <?php $photo_thumb_url = craftcrawl_cloudinary_delivery_url($photo['object_key'], 'f_auto,q_auto,c_fill,w_180,h_132'); ?>
+                                    <?php $photo_large_url = craftcrawl_cloudinary_delivery_url($photo['object_key'], 'f_auto,q_auto,c_limit,w_1600,h_1200'); ?>
+                                    <button
+                                        type="button"
+                                        class="review-photo-button"
+                                        data-review-photo-url="<?php echo escape_output($photo_large_url); ?>"
+                                        data-review-photo-index="<?php echo escape_output($photo_index); ?>"
+                                        aria-label="Open review photo <?php echo escape_output($photo_index + 1); ?>"
+                                    >
+                                        <img src="<?php echo escape_output($photo_thumb_url); ?>" alt="Review photo" loading="lazy">
+                                    </button>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($review['business_response'])) : ?>
+                            <div class="business-owner-response">
+                                <strong>Business response</strong>
+                                <p><?php echo nl2br(escape_output($review['business_response'])); ?></p>
+                            </div>
+                        <?php endif; ?>
+                    </article>
+                <?php endforeach; ?>
+            </section>
+        </div>
     </main>
     <div class="review-photo-lightbox" id="review-photo-lightbox" hidden>
         <div class="photo-lightbox-backdrop review-photo-lightbox-backdrop" data-lightbox-close></div>
@@ -1251,6 +1301,7 @@ function format_event_time_range($event) {
 <script src="js/photo_resize.js?v=<?php echo filemtime(__DIR__ . '/js/photo_resize.js'); ?>"></script>
 <script src="js/cooldown_timer.js?v=<?php echo filemtime(__DIR__ . '/js/cooldown_timer.js'); ?>"></script>
 <script src="js/check_in.js?v=<?php echo filemtime(__DIR__ . '/js/check_in.js'); ?>"></script>
+<script src="js/business_subtabs.js?v=<?php echo filemtime(__DIR__ . '/js/business_subtabs.js'); ?>"></script>
 <script src="js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/js/business_posts.js'); ?>"></script>
 <script src="js/business_gallery.js?v=<?php echo filemtime(__DIR__ . '/js/business_gallery.js'); ?>"></script>
 <script src="js/review_photos.js?v=<?php echo filemtime(__DIR__ . '/js/review_photos.js'); ?>"></script>
