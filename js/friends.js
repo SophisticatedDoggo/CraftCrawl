@@ -17,21 +17,10 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let feedSentinel = feed?.querySelector('[data-feed-sentinel]') || null;
     const status = root.querySelector('[data-friends-status]');
     const count = panel?.querySelector('[data-friends-count]');
-    const menuBadges = document.querySelectorAll('[data-friends-menu-badge]');
-    const tabBadges = document.querySelectorAll('[data-friends-tab-badge]');
-    const questsTabBadges = document.querySelectorAll('[data-quests-tab-badge]');
-    const menuToggleBadges = document.querySelectorAll('[data-friends-menu-toggle-badge]');
     const csrfToken = panel?.dataset.csrfToken || managerPage?.dataset.csrfToken || profilePage?.dataset.csrfToken || '';
-    let currentStatus = {
-        pendingInvites: 0,
-        pendingRecommendations: 0,
-        socialNotifications: 0,
-        newFriends: 0,
-        newFeedItems: 0,
-        friendsBadgeCount: 0,
-        feedBadgeCount: 0,
-        badgeCount: 0
-    };
+    let currentStatus = window.CraftCrawlNotificationService
+        ? window.CraftCrawlNotificationService.getStatus()
+        : { pendingInvites: 0, pendingRecommendations: 0, socialNotifications: 0, newFriends: 0, newFeedItems: 0, pendingChainInvites: 0, friendsBadgeCount: 0, feedBadgeCount: 0, badgeCount: 0 };
     let currentFriendsCache = [];
     let friendSearchTimer = null;
     let friendSearchRequestId = 0;
@@ -45,8 +34,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
     let scrollToNotificationButton = null;
     let notificationSearchPromise = null;
     let notificationSeenQueue = Promise.resolve();
-    let notificationStatusVersion = 0;
-    let statusPollInterval = null;
     const feedPageSize = 40;
     const feedPaginationDelayMs = 1300;
     const reactionLabels = {
@@ -250,7 +237,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
     installFeedReactionHandler();
 
-    if (!panel && !managerPage && !profileFriendButtons.length && !suggestedFriendButtons.length && !menuBadges.length && !tabBadges.length && !menuToggleBadges.length) {
+    if (!panel && !managerPage && !profileFriendButtons.length && !suggestedFriendButtons.length) {
         return;
     }
 
@@ -438,7 +425,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     function postNotificationSeen(values) {
-        const mutationVersion = ++notificationStatusVersion;
+        const svc = window.CraftCrawlNotificationService;
+        const mutationVersion = svc ? svc.bumpVersion() : 0;
         const request = notificationSeenQueue
             .then(() => postForm(userEndpoint('feed_notification_seen.php'), values))
             .then((data) => {
@@ -450,8 +438,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     function applyNotificationMutationCounts(data) {
-        if (data?.notificationStatusVersion === notificationStatusVersion) {
-            applyStatusCounts(data);
+        const svc = window.CraftCrawlNotificationService;
+        if (svc && data?.notificationStatusVersion === svc.getVersion()) {
+            svc.applyServerCounts(data);
         }
     }
 
@@ -539,47 +528,16 @@ window.CraftCrawlInitFriends = function (scope = document) {
         return types;
     }
 
-    function applyStatusCounts(data) {
-        const counts = data?.counts || data || {};
-        const pendingInvites = Number(counts.pending_invites || 0);
-        const pendingRecommendations = Number(counts.pending_recommendations || 0);
-        const socialNotifications = Number(counts.social_notifications || 0);
-        const newFriends = Number(counts.new_friends || 0);
-        const newFeedItems = Number(counts.new_feed_items || 0);
-        const pendingChainInvites = Number(counts.pending_chain_invites || 0);
-        const friendsBadgeCount = pendingInvites + pendingRecommendations + newFriends;
-        const feedBadgeCount = newFeedItems + socialNotifications;
-        const badgeCount = Number(counts.badge_count || 0);
+    function onNotificationCountsChanged(event) {
+        currentStatus = event.detail;
 
-        currentStatus = {
-            pendingInvites,
-            pendingRecommendations,
-            socialNotifications,
-            newFriends,
-            newFeedItems,
-            pendingChainInvites,
-            friendsBadgeCount,
-            feedBadgeCount,
-            badgeCount
-        };
-        menuBadges.forEach((badge) => setBadge(badge, friendsBadgeCount));
-        menuToggleBadges.forEach((badge) => setBadge(badge, friendsBadgeCount));
-        tabBadges.forEach((badge) => setBadge(badge, feedBadgeCount));
-        if (pendingChainInvites > 0 && !window._chainInvitesSuppressed) {
-            questsTabBadges.forEach((badge) => setBadge(badge, pendingChainInvites));
-        } else if (pendingChainInvites === 0) {
-            window._chainInvitesSuppressed = false;
-            questsTabBadges.forEach((badge) => setBadge(badge, 0));
-        }
-        syncNativeAppBadge(badgeCount);
-
-        if (newFeedItems < 1 && feed) {
+        if (currentStatus.newFeedItems < 1 && feed) {
             feed.querySelectorAll('.is-new').forEach((item) => {
                 item.classList.remove('is-new');
             });
             teardownNewItemObserver();
         }
-        if (socialNotifications < 1 && feed) {
+        if (currentStatus.socialNotifications < 1 && feed) {
             feed.querySelectorAll('.has-unread-notifications').forEach((item) => {
                 item.classList.remove('has-unread-notifications');
             });
@@ -594,41 +552,12 @@ window.CraftCrawlInitFriends = function (scope = document) {
         }
         updateScrollToNotificationButton();
     }
+    window.addEventListener('craftcrawl:notification-counts-changed', onNotificationCountsChanged);
 
     function loadStatus() {
-        const requestVersion = notificationStatusVersion;
-        return fetch(userEndpoint('friend_status.php'), { credentials: 'same-origin' })
-            .then((response) => response.json())
-            .then((data) => {
-                if (!data.ok) {
-                    return;
-                }
-
-                if (requestVersion !== notificationStatusVersion) {
-                    return;
-                }
-
-                applyStatusCounts(data);
-            })
-            .catch(() => {});
-    }
-
-    function startStatusPolling() {
-        if (statusPollInterval) {
-            return;
-        }
-        statusPollInterval = setInterval(function () {
-            if (!document.hidden) {
-                loadStatus();
-            }
-        }, 45000);
-    }
-
-    function stopStatusPolling() {
-        if (statusPollInterval) {
-            clearInterval(statusPollInterval);
-            statusPollInterval = null;
-        }
+        return window.CraftCrawlNotificationService
+            ? window.CraftCrawlNotificationService.loadStatus()
+            : Promise.resolve();
     }
 
     function markFriendsSeen(scope = 'all') {
@@ -680,37 +609,10 @@ window.CraftCrawlInitFriends = function (scope = document) {
             });
     }
 
-    function setBadge(element, value) {
-        if (!element) {
-            return;
-        }
-
+    function setSubtabBadge(element, value) {
+        if (!element) return;
         element.textContent = value > 9 ? '9+' : String(value);
         element.hidden = value < 1;
-    }
-
-    function getNativeBadgePlugin() {
-        const capacitor = window.Capacitor;
-        if (!capacitor
-            || typeof capacitor.isNativePlatform !== 'function'
-            || !capacitor.isNativePlatform()
-            || (typeof capacitor.getPlatform === 'function' && capacitor.getPlatform() !== 'ios')) {
-            return null;
-        }
-
-        return capacitor.Plugins?.CraftCrawlBadge
-            || (typeof capacitor.registerPlugin === 'function'
-                ? capacitor.registerPlugin('CraftCrawlBadge')
-                : null);
-    }
-
-    function syncNativeAppBadge(value) {
-        const badgePlugin = getNativeBadgePlugin();
-        if (!badgePlugin || typeof badgePlugin.setBadgeCount !== 'function') {
-            return;
-        }
-
-        badgePlugin.setBadgeCount({ count: Math.max(0, Number(value || 0)) }).catch(() => {});
     }
 
     function renderSearchResults(users) {
@@ -3245,10 +3147,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
         loadFeed();
     });
 
-    window.addEventListener('craftcrawl:push-received', () => {
-        loadStatus();
-    });
-
     window.addEventListener('craftcrawl:user-tab-changed', (event) => {
         if (event.detail?.tab === 'feed') {
             updateFocusRequestFromUrl(event.detail?.url || window.location.href);
@@ -3263,11 +3161,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     });
 
     document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            stopStatusPolling();
-        } else {
-            loadStatus();
-            startStatusPolling();
+        if (!document.hidden) {
             if (managerPage) {
                 loadRequests();
             }
@@ -3575,20 +3469,20 @@ window.CraftCrawlInitFriends = function (scope = document) {
         if (!managerPage) return;
         var findBadge = managerPage.querySelector('[data-friends-subtab-badge-find]');
         var friendsBadge = managerPage.querySelector('[data-friends-subtab-badge-friends]');
-        if (findBadge) setBadge(findBadge, currentStatus.pendingInvites);
-        if (friendsBadge) setBadge(friendsBadge, 0);
+        if (findBadge) setSubtabBadge(findBadge, currentStatus.pendingInvites);
+        if (friendsBadge) setSubtabBadge(friendsBadge, 0);
     }
 
-    var originalApplyStatusCounts = applyStatusCounts;
-    applyStatusCounts = function (data) {
-        originalApplyStatusCounts(data);
-        if (managerPage) {
+    if (managerPage) {
+        window.addEventListener('craftcrawl:notification-counts-changed', function (event) {
+            if (!document.contains(managerPage)) return;
+            currentStatus = event.detail;
             updateFindSummaryGrid();
             updateSubtabBadges();
             var newEl = managerPage.querySelector('[data-new-friends-count]');
             if (newEl) newEl.textContent = String(currentStatus.newFriends);
-        }
-    };
+        });
+    }
 
     // --- Leaderboard client-side mode switching ---
 
@@ -3724,11 +3618,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
         ensureScrollToNotificationButton();
         loadRequests();
         loadFeed();
-        loadStatus();
-    } else {
-        loadStatus();
     }
-
-    startStatusPolling();
 };
 window.CraftCrawlInitFriends();
