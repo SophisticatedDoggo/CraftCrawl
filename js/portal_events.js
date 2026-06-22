@@ -38,7 +38,6 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
 
     function renderEventsFeed(events) {
         if (!events.length) {
-            removeEventStickyDayHeader();
             feedContainer.innerHTML = '<p>No upcoming events yet.</p>';
             return;
         }
@@ -96,7 +95,6 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
         }).join('');
 
         feedContainer.innerHTML = eventsMarkup;
-        setupEventStickyDayHeader(feedContainer);
 
         feedContainer.querySelectorAll('[data-event-want]').forEach((button) => {
             button.addEventListener('click', () => {
@@ -303,78 +301,6 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
             closeEventDetailOverlay({ useHistory: false });
         }
     });
-
-    function setupEventStickyDayHeader(container) {
-        removeEventStickyDayHeader();
-
-        const stickyHeader = document.createElement('div');
-        stickyHeader.className = 'event-feed-floating-day-header';
-        stickyHeader.setAttribute('aria-hidden', 'true');
-        stickyHeader.innerHTML = '<span></span>';
-        document.body.appendChild(stickyHeader);
-
-        const label = stickyHeader.querySelector('span');
-        const state = container.eventStickyDayState || {
-            activeDate: '',
-            ticking: false
-        };
-        state.header = stickyHeader;
-        state.label = label;
-        state.activeDate = '';
-        container.eventStickyDayState = state;
-
-        function updateStickyHeader() {
-            state.ticking = false;
-            const headers = Array.from(container.querySelectorAll('[data-event-day-header]'));
-            if (!headers.length || !state.header || !state.label) {
-                return;
-            }
-
-            const feedRect = container.getBoundingClientRect();
-            const shouldShow = window.matchMedia('(max-width: 760px)').matches
-                && feedRect.top <= 68
-                && feedRect.bottom > 96;
-            state.header.classList.toggle('is-visible', shouldShow);
-
-            const threshold = 74;
-            let activeHeader = headers[0];
-            headers.forEach((header) => {
-                if (header.getBoundingClientRect().top <= threshold) {
-                    activeHeader = header;
-                }
-            });
-
-            const nextDate = activeHeader.dataset.dateKey || '';
-            if (nextDate && nextDate !== state.activeDate) {
-                state.activeDate = nextDate;
-                state.label.textContent = activeHeader.dataset.dateLabel || '';
-                state.header.classList.remove('is-changing');
-                window.requestAnimationFrame(() => state.header?.classList.add('is-changing'));
-            }
-        }
-
-        function requestUpdate() {
-            if (state.ticking) {
-                return;
-            }
-            state.ticking = true;
-            window.requestAnimationFrame(updateStickyHeader);
-        }
-
-        if (container.dataset.eventStickyDayReady !== 'true') {
-            container.dataset.eventStickyDayReady = 'true';
-            window.addEventListener('scroll', requestUpdate, { passive: true });
-            window.addEventListener('resize', requestUpdate);
-            document.addEventListener('scroll', requestUpdate, { capture: true, passive: true });
-        }
-
-        updateStickyHeader();
-        window.setTimeout(updateStickyHeader, 80);
-    }
-
-    function removeEventStickyDayHeader() {
-        document.querySelectorAll('.event-feed-floating-day-header').forEach((header) => header.remove());
-    }
 
     function formatBusinessType(type) {
         const labels = {
