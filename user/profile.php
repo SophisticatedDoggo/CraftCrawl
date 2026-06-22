@@ -115,25 +115,6 @@ if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && craftcrawl_reque
     craftcrawl_redirect('user/profile.php?message=profile_photo_size_error');
 }
 
-if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form_action'] ?? '') === 'change_username') {
-    craftcrawl_verify_csrf();
-
-    $new_username = craftcrawl_normalize_username($_POST['username'] ?? '');
-
-    if (!$username_can_change) {
-        $message = 'username_wait';
-    } elseif ($new_username === $current_username) {
-        craftcrawl_redirect('user/profile.php?message=username_saved');
-    } elseif (($username_error = craftcrawl_username_available_message($conn, $new_username, $viewer_id)) !== null) {
-        $message = 'username_error';
-    } else {
-        $username_stmt = $conn->prepare("UPDATE users SET username=?, usernameChangedAt=NOW() WHERE id=?");
-        $username_stmt->bind_param("si", $new_username, $viewer_id);
-        $username_stmt->execute();
-        craftcrawl_redirect('user/profile.php?message=username_saved');
-    }
-}
-
 if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form_action'] ?? '') === 'profile') {
     craftcrawl_verify_csrf();
 
@@ -190,7 +171,20 @@ if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form_ac
             $profile_update_stmt->bind_param("sssssi", $new_first_name, $new_last_name, $new_title_index, $new_frame, $new_frame_style, $viewer_id);
         }
         $profile_update_stmt->execute();
-        craftcrawl_redirect('user/profile.php?message=profile_saved');
+
+        $new_username = craftcrawl_normalize_username($_POST['username'] ?? '');
+        if ($new_username !== '' && $new_username !== $current_username && $username_can_change) {
+            $username_error = craftcrawl_username_available_message($conn, $new_username, $viewer_id);
+            if ($username_error !== null) {
+                $message = 'username_error';
+            } else {
+                $username_stmt = $conn->prepare("UPDATE users SET username=?, usernameChangedAt=NOW() WHERE id=?");
+                $username_stmt->bind_param("si", $new_username, $viewer_id);
+                $username_stmt->execute();
+            }
+        }
+
+        craftcrawl_redirect('user/profile.php?message=' . ($message === 'username_error' ? 'username_error' : 'profile_saved'));
     } catch (Throwable $error) {
         $message = $message === 'profile_name_error'
             ? 'profile_name_error'
@@ -270,9 +264,10 @@ if (!$profile) {
             (SELECT COUNT(*) FROM user_visits WHERE user_id=?) AS total_checkins,
             (SELECT COUNT(DISTINCT location_id) FROM user_visits WHERE user_id=?) AS unique_locations,
             (SELECT COUNT(*) FROM reviews WHERE user_id=?) AS review_count,
-            (SELECT COUNT(*) FROM user_badges WHERE user_id=?) AS badge_count
+            (SELECT COUNT(*) FROM user_badges WHERE user_id=?) AS badge_count,
+            (SELECT COUNT(*) FROM user_friends WHERE user_id=?) AS friend_count
     ");
-    $stats_stmt->bind_param("iiii", $profile_id, $profile_id, $profile_id, $profile_id);
+    $stats_stmt->bind_param("iiiii", $profile_id, $profile_id, $profile_id, $profile_id, $profile_id);
     $stats_stmt->execute();
     $profile_stats = $stats_stmt->get_result()->fetch_assoc();
 
@@ -349,15 +344,6 @@ if (!$profile) {
         array_pop($past_checkins_rows);
     }
 
-    $photo_count_stmt = $conn->prepare("
-        SELECT COUNT(*) AS photo_count
-        FROM user_visits uv
-        INNER JOIN photos vp ON vp.id = uv.photo_id AND vp.deletedAt IS NULL AND vp.status = 'approved'
-        WHERE uv.user_id=?
-    ");
-    $photo_count_stmt->bind_param("i", $profile_id);
-    $photo_count_stmt->execute();
-    $photo_count = (int) ($photo_count_stmt->get_result()->fetch_assoc()['photo_count'] ?? 0);
 
     if (!$is_own_profile) {
         $shared_stmt = $conn->prepare("
@@ -459,22 +445,6 @@ if (!$profile) {
 <body>
     <div data-user-page-content>
     <main class="settings-page profile-page" data-profile-friends-page data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
-        <div class="friends-header">
-            <div>
-                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
-                <div>
-                    <h1><?php echo escape_output($page_title); ?></h1>
-                    <p><?php echo $profile ? 'XP, badges, and CraftCrawl milestones.' : 'This profile is not available.'; ?></p>
-                </div>
-            </div>
-            <div class="friends-header-actions">
-                <a href="portal.php" data-back-link>&lt;</a>
-                <a href="friends.php">Friends</a>
-                <?php if ($is_own_profile) : ?>
-                    <a href="settings.php">Settings</a>
-                <?php endif; ?>
-            </div>
-        </div>
 
         <?php if (!$profile) : ?>
             <section class="settings-panel">
@@ -484,8 +454,6 @@ if (!$profile) {
         <?php else : ?>
             <?php if ($is_own_profile && $message === 'profile_saved') : ?>
                 <p class="form-message form-message-success">Profile updated.</p>
-            <?php elseif ($is_own_profile && $message === 'username_saved') : ?>
-                <p class="form-message form-message-success">Username updated.</p>
             <?php elseif ($is_own_profile && $message === 'username_error') : ?>
                 <p class="form-message form-message-error">Username is not available. Please choose another.</p>
             <?php elseif ($is_own_profile && $message === 'username_wait') : ?>
@@ -503,7 +471,7 @@ if (!$profile) {
             <?php endif; ?>
             <section class="settings-panel profile-hero-panel">
                 <?php if ($is_own_profile) : ?>
-                    <details class="profile-edit-disclosure"<?php echo in_array($message, ['profile_name_error', 'profile_photo_error', 'profile_photo_size_error', 'username_error', 'username_wait', 'username_saved'], true) ? ' open' : ''; ?>>
+                    <details class="profile-edit-disclosure"<?php echo in_array($message, ['profile_name_error', 'profile_photo_error', 'profile_photo_size_error', 'username_error', 'username_wait'], true) ? ' open' : ''; ?>>
                         <summary>
                             <span class="profile-edit-label-closed">Edit Profile</span>
                             <span class="profile-edit-label-open">Close Editor</span>
@@ -513,6 +481,7 @@ if (!$profile) {
                             <input type="hidden" name="form_action" value="profile">
                             <input type="hidden" name="profile_photo_cropped_data" data-profile-photo-cropped-data>
                             <input type="hidden" name="remove_profile_photo" value="" data-remove-profile-photo>
+
                             <div class="profile-edit-identity">
                                 <?php echo craftcrawl_render_user_avatar($profile, 'large', 'profile-photo-preview'); ?>
                                 <div class="profile-edit-primary-fields">
@@ -524,29 +493,41 @@ if (!$profile) {
                                             <button type="button" class="button-link-secondary" data-profile-photo-remove>Remove Photo</button>
                                         <?php endif; ?>
                                     </div>
-
-                                    <div class="profile-edit-title-field">
-                                        <label for="first_name">First Name</label>
-                                        <input type="text" id="first_name" name="first_name" required value="<?php echo escape_output($profile['fName']); ?>">
-                                    </div>
-
-                                    <div class="profile-edit-title-field">
-                                        <label for="last_name">Last Name</label>
-                                        <input type="text" id="last_name" name="last_name" required value="<?php echo escape_output($profile['lName']); ?>">
-                                    </div>
-
-                                    <div class="profile-edit-title-field">
-                                        <label for="selected_title_index">Display Title</label>
-                                        <select id="selected_title_index" name="selected_title_index">
-                                            <option value="">Auto (current level title)</option>
-                                            <?php for ($i = 0; $i < $unlocked_title_count; $i++) : ?>
-                                                <option value="<?php echo $i; ?>" <?php echo $selected_title_index === $i ? 'selected' : ''; ?>>
-                                                    <?php echo escape_output($all_titles[$i]); ?>
-                                                </option>
-                                            <?php endfor; ?>
-                                        </select>
-                                    </div>
                                 </div>
+                            </div>
+
+                            <div class="profile-edit-title-field">
+                                <label for="first_name">First Name</label>
+                                <input type="text" id="first_name" name="first_name" required value="<?php echo escape_output($profile['fName']); ?>">
+                            </div>
+
+                            <div class="profile-edit-title-field">
+                                <label for="last_name">Last Name</label>
+                                <input type="text" id="last_name" name="last_name" required value="<?php echo escape_output($profile['lName']); ?>">
+                            </div>
+
+                            <div class="profile-edit-title-field">
+                                <label for="username">Username</label>
+                                <input type="text" id="username" name="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" autocomplete="username" aria-describedby="username_helper" data-username-field data-username-endpoint="../username_check.php" value="<?php echo escape_output($current_username); ?>" <?php echo $username_can_change ? '' : 'disabled'; ?>>
+                                <p id="username_helper" class="username-helper" aria-live="polite">
+                                    <?php if ($username_can_change) : ?>
+                                        Letters, numbers, and underscores.
+                                    <?php else : ?>
+                                        You can change your username again<?php echo $username_can_change_at ? ' on ' . escape_output($username_can_change_at) : ' after 30 days'; ?>.
+                                    <?php endif; ?>
+                                </p>
+                            </div>
+
+                            <div class="profile-edit-title-field">
+                                <label for="selected_title_index">Display Title</label>
+                                <select id="selected_title_index" name="selected_title_index">
+                                    <option value="">Auto (current level title)</option>
+                                    <?php for ($i = 0; $i < $unlocked_title_count; $i++) : ?>
+                                        <option value="<?php echo $i; ?>" <?php echo $selected_title_index === $i ? 'selected' : ''; ?>>
+                                            <?php echo escape_output($all_titles[$i]); ?>
+                                        </option>
+                                    <?php endfor; ?>
+                                </select>
                             </div>
 
                             <?php if (!empty($allowed_frames_map)) : ?>
@@ -571,21 +552,8 @@ if (!$profile) {
                             <?php else : ?>
                                 <p class="form-help">Profile frames unlock at Level 5.</p>
                             <?php endif; ?>
+
                             <button type="submit">Save Profile</button>
-                        </form>
-                        <form method="POST" action="" class="settings-form profile-username-form">
-                            <?php echo craftcrawl_csrf_input(); ?>
-                            <input type="hidden" name="form_action" value="change_username">
-                            <label for="username">Username</label>
-                            <input type="text" id="username" name="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" autocomplete="username" aria-describedby="username_helper" data-username-field data-username-endpoint="../username_check.php" value="<?php echo escape_output($current_username); ?>" <?php echo $username_can_change ? '' : 'disabled'; ?>>
-                            <p id="username_helper" class="username-helper" aria-live="polite">
-                                <?php if ($username_can_change) : ?>
-                                    Username can use letters, numbers, and underscores.
-                                <?php else : ?>
-                                    You can change your username again<?php echo $username_can_change_at ? ' on ' . escape_output($username_can_change_at) : ' after 30 days'; ?>.
-                                <?php endif; ?>
-                            </p>
-                            <button type="submit" <?php echo $username_can_change ? '' : 'disabled'; ?>>Update Username</button>
                         </form>
                     </details>
                 <?php endif; ?>
@@ -632,6 +600,10 @@ if (!$profile) {
                             <span>Badges</span>
                         </article>
                     <?php endif; ?>
+                    <article>
+                        <strong><?php echo escape_output($profile_stats['friend_count'] ?? 0); ?></strong>
+                        <span>Friends</span>
+                    </article>
                 </div>
             </section>
 
@@ -643,17 +615,6 @@ if (!$profile) {
 
             <!-- Posts Panel -->
             <div data-profile-subtab-panel="posts">
-                <div class="profile-summary-grid">
-                    <article>
-                        <strong><?php echo escape_output($profile_stats['total_checkins'] ?? 0); ?></strong>
-                        <span>Check-ins</span>
-                    </article>
-                    <article>
-                        <strong><?php echo escape_output($photo_count); ?></strong>
-                        <span>Photos</span>
-                    </article>
-                </div>
-
                 <div class="profile-photo-grid" data-profile-photo-grid data-profile-id="<?php echo escape_output($profile_id); ?>" data-profile-username="<?php echo escape_output($profile['username'] ?? ''); ?>">
                     <?php if (empty($past_checkins_rows)) : ?>
                         <p style="grid-column: 1 / -1; text-align: center; padding: 24px 0; color: var(--color-muted);">No check-ins yet.</p>

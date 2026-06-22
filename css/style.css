@@ -2752,12 +2752,12 @@ a.text-link:focus {
 
 .profile-stat-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
 }
 
 .profile-stat-grid article {
-    padding: 14px;
+    padding: 10px 14px;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     background: var(--color-surface-muted);
@@ -2770,12 +2770,13 @@ a.text-link:focus {
 
 .profile-stat-grid strong {
     color: var(--color-heading);
-    font-size: 1.6rem;
+    font-size: 1.3rem;
     line-height: 1.1;
 }
 
 .profile-stat-grid span {
     color: var(--color-muted);
+    font-size: 13px;
 }
 
 .palette-switcher {
@@ -6366,14 +6367,29 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
     aspect-ratio: 1 / 1;
     overflow: hidden;
     border: none;
+    border-radius: 0;
     padding: 0;
     margin: 0;
+    min-height: 0;
     background: var(--color-surface-muted);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     cursor: pointer;
     -webkit-appearance: none;
     appearance: none;
     font: inherit;
     color: inherit;
+}
+
+.profile-grid-cell:hover,
+.profile-grid-cell:focus {
+    border: none;
+    border-radius: 0;
+    background: var(--color-surface-muted);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 .profile-grid-cell img {
@@ -13227,7 +13243,7 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .profile-stat-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .business-portal {

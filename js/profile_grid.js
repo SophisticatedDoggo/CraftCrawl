@@ -57,6 +57,13 @@
     // --- Subtab switching ---
 
     function switchProfileSubtab(target) {
+        if (feedView && feedView.classList.contains('is-active')) {
+            feedView.classList.remove('is-active');
+            if (grid) grid.style.display = '';
+            if (gridLoadMore) gridLoadMore.style.display = '';
+            if (feedLoadMore) feedLoadMore.hidden = true;
+        }
+
         profilePage.querySelectorAll('[data-profile-subtab]').forEach(function (tab) {
             var isTarget = tab.dataset.profileSubtab === target;
             tab.classList.toggle('is-active', isTarget);
@@ -313,6 +320,49 @@
             hideFeedView();
         }
     });
+
+    // --- Swipe right to dismiss feed view ---
+
+    var swipeStartX = 0;
+    var swipeStartY = 0;
+    var swipeTracking = false;
+
+    feedView.addEventListener('touchstart', function (e) {
+        if (!feedView.classList.contains('is-active')) return;
+        var touch = e.touches[0];
+        swipeStartX = touch.clientX;
+        swipeStartY = touch.clientY;
+        swipeTracking = swipeStartX < 60;
+    }, { passive: true });
+
+    feedView.addEventListener('touchmove', function (e) {
+        if (!swipeTracking) return;
+        var touch = e.touches[0];
+        var dx = touch.clientX - swipeStartX;
+        var dy = Math.abs(touch.clientY - swipeStartY);
+        if (dx > 10 && dx > dy * 1.5) {
+            feedView.style.transform = 'translateX(' + dx + 'px)';
+            feedView.style.opacity = String(Math.max(0.3, 1 - dx / 300));
+        }
+    }, { passive: true });
+
+    feedView.addEventListener('touchend', function (e) {
+        if (!swipeTracking) return;
+        swipeTracking = false;
+        var touch = e.changedTouches[0];
+        var dx = touch.clientX - swipeStartX;
+        var dy = Math.abs(touch.clientY - swipeStartY);
+
+        feedView.style.transform = '';
+        feedView.style.opacity = '';
+
+        if (dx > 80 && dx > dy * 1.5) {
+            hideFeedView();
+            if (history.state && history.state.profileFeedView) {
+                history.back();
+            }
+        }
+    }, { passive: true });
 
     // --- Feed "Load More" ---
 
