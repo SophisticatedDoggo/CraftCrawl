@@ -2964,8 +2964,19 @@ a.text-link:focus {
     display: flex;
     gap: 4px;
     padding: 4px;
-    border-radius: var(--radius-md);
-    background: color-mix(in srgb, var(--color-border) 40%, var(--color-surface));
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.055) 34%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.045) 46%, rgba(255, 255, 255, 0.015)),
+        color-mix(in srgb, var(--color-surface) 18%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.26),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.055),
+        0 7px 16px color-mix(in srgb, var(--color-text) 12%, transparent);
+    backdrop-filter: blur(22px) saturate(1.45);
+    -webkit-backdrop-filter: blur(22px) saturate(1.45);
 }
 
 .quest-subtab-nav > .quest-subtab,
@@ -2974,9 +2985,9 @@ a.text-link:focus {
     flex: 1;
     padding: 10px 12px;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: 999px;
     background: transparent;
-    color: var(--color-muted);
+    color: var(--color-primary);
     font: inherit;
     font-size: 14px;
     font-weight: 700;
@@ -2991,9 +3002,11 @@ a.text-link:focus {
 .quest-subtab-nav > .quest-subtab.is-active,
 .quest-subtab-nav > .quest-subtab.is-active:hover,
 .quest-subtab-nav > .quest-subtab.is-active:focus {
-    background: var(--color-primary);
-    color: #fff;
-    box-shadow: var(--shadow-sm);
+    color: var(--color-on-primary);
+    background:
+        var(--glass-button),
+        var(--color-primary);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 5px 14px color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
 .quest-subtab-badge {
@@ -4325,8 +4338,19 @@ body.map-expanded-open {
     display: flex;
     gap: 4px;
     padding: 4px;
-    border-radius: var(--radius-md);
-    background: color-mix(in srgb, var(--color-border) 40%, var(--color-surface));
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.055) 34%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.045) 46%, rgba(255, 255, 255, 0.015)),
+        color-mix(in srgb, var(--color-surface) 18%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.26),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.055),
+        0 7px 16px color-mix(in srgb, var(--color-text) 12%, transparent);
+    backdrop-filter: blur(22px) saturate(1.45);
+    -webkit-backdrop-filter: blur(22px) saturate(1.45);
 }
 
 .friends-subtab-nav > .friends-subtab,
@@ -4335,9 +4359,9 @@ body.map-expanded-open {
     flex: 1;
     padding: 10px 12px;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: 999px;
     background: transparent;
-    color: var(--color-muted);
+    color: var(--color-primary);
     font: inherit;
     font-size: 14px;
     font-weight: 700;
@@ -4352,9 +4376,11 @@ body.map-expanded-open {
 .friends-subtab-nav > .friends-subtab.is-active,
 .friends-subtab-nav > .friends-subtab.is-active:hover,
 .friends-subtab-nav > .friends-subtab.is-active:focus {
-    background: var(--color-primary);
-    color: #fff;
-    box-shadow: var(--shadow-sm);
+    color: var(--color-on-primary);
+    background:
+        var(--glass-button),
+        var(--color-primary);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 5px 14px color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
 .friends-subtab-badge {
@@ -5272,7 +5298,9 @@ a.feed-event-link:not(.mapboxgl-ctrl-logo) {
     mask: url('../images/SVG/comment.svg') center / contain no-repeat;
 }
 
-.feed-compose-fab {
+.feed-compose-fab,
+.feed-compose-fab:hover,
+.feed-compose-fab:focus {
     position: fixed;
     right: max(20px, env(safe-area-inset-right));
     bottom: calc(92px + env(safe-area-inset-bottom));
@@ -5283,10 +5311,13 @@ a.feed-event-link:not(.mapboxgl-ctrl-logo) {
     height: 54px;
     min-height: 54px;
     padding: 0;
+    border: none;
     border-radius: 999px;
     color: var(--color-on-primary);
     background: var(--color-primary);
     box-shadow: 0 10px 22px color-mix(in srgb, var(--color-primary) 36%, transparent);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 .feed-compose-fab svg {
@@ -6315,8 +6346,19 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
     display: flex;
     gap: 4px;
     padding: 4px;
-    border-radius: var(--radius-md);
-    background: color-mix(in srgb, var(--color-border) 40%, var(--color-surface));
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.055) 34%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.045) 46%, rgba(255, 255, 255, 0.015)),
+        color-mix(in srgb, var(--color-surface) 18%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.26),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.055),
+        0 7px 16px color-mix(in srgb, var(--color-text) 12%, transparent);
+    backdrop-filter: blur(22px) saturate(1.45);
+    -webkit-backdrop-filter: blur(22px) saturate(1.45);
 }
 
 .profile-subtab-nav > .profile-subtab,
@@ -6325,9 +6367,9 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
     flex: 1;
     padding: 10px 12px;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: 999px;
     background: transparent;
-    color: var(--color-muted);
+    color: var(--color-primary);
     font: inherit;
     font-size: 14px;
     font-weight: 700;
@@ -6342,9 +6384,11 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
 .profile-subtab-nav > .profile-subtab.is-active,
 .profile-subtab-nav > .profile-subtab.is-active:hover,
 .profile-subtab-nav > .profile-subtab.is-active:focus {
-    background: var(--color-primary);
-    color: #fff;
-    box-shadow: var(--shadow-sm);
+    color: var(--color-on-primary);
+    background:
+        var(--glass-button),
+        var(--color-primary);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 5px 14px color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
 /* Profile summary grid */
@@ -15396,8 +15440,6 @@ a.mobile-context-back.feed-thread-back-link:focus {
         0 10px 22px color-mix(in srgb, var(--color-text) 17%, transparent);
 }
 
-:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo),
-:root[data-palette$="-dark"] button:not([class*="chain-btn"]):not([class*="subtab"]),
 :root[data-palette$="-dark"] input[type="submit"],
 :root[data-palette$="-dark"] input[type="button"],
 :root[data-palette$="-dark"] .button-link,
@@ -15413,11 +15455,6 @@ a.mobile-context-back.feed-thread-back-link:focus {
         0 7px 16px rgba(0, 0, 0, 0.26);
 }
 
-
-:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):hover,
-:root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):focus,
-:root[data-palette$="-dark"] button:not([class*="chain-btn"]):not([class*="subtab"]):hover,
-:root[data-palette$="-dark"] button:not([class*="chain-btn"]):not([class*="subtab"]):focus,
 :root[data-palette$="-dark"] input[type="submit"]:hover,
 :root[data-palette$="-dark"] input[type="submit"]:focus,
 :root[data-palette$="-dark"] input[type="button"]:hover,
@@ -15858,15 +15895,6 @@ a.text-link:focus,
     color: color-mix(in srgb, #ffffff 72%, var(--color-muted));
     background: color-mix(in srgb, var(--color-danger) 48%, var(--color-surface-muted));
     box-shadow: none;
-}
-
-:root[data-palette$="-dark"] .feed-compose-fab,
-:root[data-palette$="-dark"] .feed-compose-fab:hover,
-:root[data-palette$="-dark"] .feed-compose-fab:focus {
-    border-color: var(--color-primary);
-    color: var(--color-on-primary);
-    background: var(--color-primary);
-    box-shadow: 0 10px 22px color-mix(in srgb, var(--color-primary) 36%, transparent);
 }
 
 :root[data-palette$="-dark"] .feed-scroll-to-notification-fab {

@@ -1,6 +1,7 @@
 function setMobileActionsMenuOpen(isOpen) {
     const menus = document.querySelectorAll('[data-mobile-actions-menu]');
     const toggles = document.querySelectorAll('[data-mobile-actions-toggle]');
+    const tabbars = new Set();
 
     menus.forEach((menu) => {
         menu.classList.toggle('is-open', isOpen);
@@ -12,12 +13,19 @@ function setMobileActionsMenuOpen(isOpen) {
         const tabbar = toggle.closest('.mobile-app-tabbar');
 
         if (tabbar) {
-            if (isOpen) {
-                setMobileTabThumb(tabbar, toggle);
-            } else {
-                setMobileTabThumb(tabbar, tabbar.querySelector('.mobile-app-tab.is-active'));
-            }
+            tabbars.add(tabbar);
         }
+
+        if (!isOpen && typeof toggle.blur === 'function') {
+            toggle.blur();
+        }
+    });
+
+    tabbars.forEach((tabbar) => {
+        const menuToggle = tabbar.querySelector('[data-mobile-actions-toggle]');
+        const activeTab = tabbar.querySelector('.mobile-app-tab.is-active');
+
+        setMobileTabThumb(tabbar, isOpen ? menuToggle : activeTab);
     });
 }
 
@@ -167,11 +175,14 @@ function setupMomentumSafeMobileTabs() {
 function setMobileTabThumb(tabbar, tab, options = {}) {
     const shouldAnimate = options.animate !== false;
 
+    if (tabbar) {
+        tabbar.querySelectorAll('.mobile-app-tab.is-thumb-target').forEach((targetTab) => {
+            targetTab.classList.remove('is-thumb-target');
+        });
+    }
+
     if (!tabbar || !tab) {
         if (tabbar) {
-            tabbar.querySelectorAll('.mobile-app-tab.is-thumb-target').forEach((targetTab) => {
-                targetTab.classList.remove('is-thumb-target');
-            });
             tabbar.style.setProperty('--mobile-tab-thumb-opacity', '0');
             tabbar.classList.remove('has-mobile-tab-thumb');
             tabbar.classList.remove('is-mobile-tab-thumb-ready');
@@ -184,6 +195,9 @@ function setMobileTabThumb(tabbar, tab, options = {}) {
     const tabRect = tab.getBoundingClientRect();
 
     if (!tabbarRect.width || !tabRect.width) {
+        tabbar.style.setProperty('--mobile-tab-thumb-opacity', '0');
+        tabbar.classList.remove('has-mobile-tab-thumb');
+        tabbar.classList.remove('is-mobile-tab-thumb-ready');
         return;
     }
 
@@ -198,9 +212,6 @@ function setMobileTabThumb(tabbar, tab, options = {}) {
     tabbar.style.setProperty('--mobile-tab-thumb-opacity', '1');
     tabbar.classList.add('has-mobile-tab-thumb');
 
-    tabbar.querySelectorAll('.mobile-app-tab.is-thumb-target').forEach((targetTab) => {
-        targetTab.classList.remove('is-thumb-target');
-    });
     tab.classList.add('is-thumb-target');
 
     if (shouldAnimate) {
