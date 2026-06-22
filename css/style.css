@@ -7988,8 +7988,9 @@ body.feed-comments-sheet-open {
     display: none;
     align-items: center;
     gap: 12px;
-    min-height: calc(54px + env(safe-area-inset-top, 0px));
-    padding: calc(14px + env(safe-area-inset-top, 0px)) 14px 16px;
+    height: calc(var(--event-feed-day-height, 49px) + env(safe-area-inset-top, 0px));
+    min-height: 0;
+    padding: calc(18px + env(safe-area-inset-top, 0px)) 14px 8px;
     border-bottom: 1px solid color-mix(in srgb, var(--color-border) 82%, var(--color-primary));
     color: var(--color-heading);
     background: var(--color-primary);

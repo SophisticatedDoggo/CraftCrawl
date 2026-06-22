@@ -222,10 +222,11 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
             return;
         }
 
-        const floatingHeaderRect = eventStickyDayHeader.getBoundingClientRect();
-        const floatingHeaderHeight = floatingHeaderRect.height;
         const feedRect = feedContainer.getBoundingClientRect();
         const headerRects = headers.map((header) => header.getBoundingClientRect());
+        eventStickyDayHeader.style.setProperty('--event-feed-day-height', `${headerRects[0].height}px`);
+        const floatingHeaderRect = eventStickyDayHeader.getBoundingClientRect();
+        const floatingHeaderHeight = floatingHeaderRect.height;
         const shouldShow = headerRects[0].top <= 0 && feedRect.bottom > 0;
         eventStickyDayHeader.classList.toggle('is-visible', shouldShow);
 
@@ -252,10 +253,13 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
             return;
         }
 
+        const shouldAnimateDateChange = activeStickyDate !== '';
         activeStickyDate = nextDate;
         eventStickyDayLabel.textContent = activeHeader.dataset.dateLabel || '';
         eventStickyDayHeader.classList.remove('is-changing');
-        window.requestAnimationFrame(() => eventStickyDayHeader?.classList.add('is-changing'));
+        if (shouldAnimateDateChange) {
+            window.requestAnimationFrame(() => eventStickyDayHeader?.classList.add('is-changing'));
+        }
     }
 
     function requestEventStickyDayUpdate() {
