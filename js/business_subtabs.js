@@ -1,6 +1,7 @@
-(function () {
-    var page = document.querySelector('.business-details-page');
-    if (!page) return;
+window.CraftCrawlInitBusinessSubtabs = function (root = document) {
+    var page = root.querySelector('.business-details-page');
+    if (!page || page.dataset.businessSubtabsReady === 'true') return;
+    page.dataset.businessSubtabsReady = 'true';
 
     function switchTab(target) {
         page.querySelectorAll('[data-business-subtab]').forEach(function (tab) {
@@ -13,6 +14,10 @@
             panel.hidden = panel.dataset.businessSubtabPanel !== target;
         });
 
+        page.querySelectorAll('input[name="current_tab"]').forEach(function (input) {
+            input.value = target;
+        });
+
         var url = new URL(window.location.href);
         if (target === 'info') {
             url.searchParams.delete('tab');
@@ -20,10 +25,6 @@
             url.searchParams.set('tab', target);
         }
         history.replaceState(null, '', url.toString());
-
-        page.querySelectorAll('input[name="current_tab"]').forEach(function (input) {
-            input.value = target;
-        });
     }
 
     page.addEventListener('click', function (e) {
@@ -36,4 +37,6 @@
     if (initialTab && page.querySelector('[data-business-subtab="' + initialTab + '"]')) {
         switchTab(initialTab);
     }
-}());
+};
+
+CraftCrawlInitBusinessSubtabs();

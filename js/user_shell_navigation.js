@@ -120,6 +120,7 @@
         window.CraftCrawlInitUserTabShell?.(root);
         window.CraftCrawlInitFriends?.(root);
         window.CraftCrawlInitPortalEvents?.(root);
+        window.CraftCrawlInitBusinessSubtabs?.(root);
         window.CraftCrawlInitBusinessDetailsMap?.(root);
         window.CraftCrawlInitBusinessGallery?.(root);
         window.CraftCrawlInitBusinessPosts?.(root);

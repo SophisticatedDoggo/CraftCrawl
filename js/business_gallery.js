@@ -110,7 +110,15 @@ window.CraftCrawlInitBusinessGallery = function (root = document) {
 
         slides.forEach((slide, slideIndex) => {
             slide.classList.toggle('is-active', slideIndex === activeIndex);
-            slide.style.transform = '';
+
+            let relativeIndex = slideIndex - activeIndex;
+            if (relativeIndex > slides.length / 2) {
+                relativeIndex -= slides.length;
+            } else if (relativeIndex < -slides.length / 2) {
+                relativeIndex += slides.length;
+            }
+
+            slide.style.transform = `translateX(${relativeIndex * 100}%)`;
         });
 
         dots.forEach((dot, dotIndex) => {
@@ -288,8 +296,8 @@ window.CraftCrawlInitBusinessGallery = function (root = document) {
                 nextIndex = activeIndex - 1;
             }
 
+            element.classList.remove('is-dragging');
             showSlide(nextIndex);
-            positionSlides(0, true);
             startAutoplay();
         }
 
@@ -360,11 +368,9 @@ window.CraftCrawlInitBusinessGallery = function (root = document) {
             startY = null;
             isDragging = false;
             dragAxisLocked = false;
-            positionSlides(0, true);
+            showSlide(activeIndex);
             startAutoplay();
         }, { passive: true });
-
-        positionSlides(0, true);
     }
 
     addDragFollowCarousel(track);
