@@ -12060,6 +12060,10 @@ a.event-calendar-event:focus .event-calendar-event-name {
         padding-left: 0;
     }
 
+    .feed-page-body .portal-header {
+        display: none;
+    }
+
     .feed-page-body .portal-main {
         width: 100%;
     }
@@ -12070,6 +12074,14 @@ a.event-calendar-event:focus .event-calendar-event-name {
         border-left: 0;
         border-radius: 0;
         box-shadow: none;
+    }
+
+    .feed-page-body .feed-panel::before {
+        display: none;
+    }
+
+    .feed-page-body .friends-feed-header h3 {
+        margin-top: 0;
     }
 
     .business-portal {
