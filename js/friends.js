@@ -3285,8 +3285,16 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
     function refreshFriendsData() {
         loadRequests();
-        const feedRequest = (feed || currentFriendsList || count) ? loadFeed() : Promise.resolve();
-        return feedRequest
+
+        var dataRequest;
+        if (managerPage) {
+            loadCurrentFriendsTab();
+            dataRequest = Promise.resolve();
+        } else {
+            dataRequest = (feed || currentFriendsList || count) ? loadFeed() : Promise.resolve();
+        }
+
+        return dataRequest
             .then(() => loadStatus())
             .then(() => {
                 if (managerPage && currentStatus.newFriends > 0) {
@@ -3295,6 +3303,18 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
                 return null;
             });
+    }
+
+    function loadCurrentFriendsTab() {
+        fetch(userEndpoint('friends_list.php'), { credentials: 'same-origin' })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (!data.ok) return;
+                currentFriendsCache = data.friends || [];
+                renderCurrentFriends(currentFriendsCache);
+                updateFriendsSummaryGrid(currentFriendsCache.length);
+            })
+            .catch(function () {});
     }
 
     function runFriendSearch(query, { showShortQueryMessage = false } = {}) {
@@ -3487,8 +3507,205 @@ window.CraftCrawlInitFriends = function (scope = document) {
         });
     });
 
+    // --- Subtab switching for friends manager page ---
+
+    let friendsSubtabLoaded = { leaderboard: true, friends: false, find: false };
+    let leaderboardMode = null;
+
+    function getActiveSubtab() {
+        if (!managerPage) return null;
+        const active = managerPage.querySelector('[data-friends-subtab].is-active');
+        return active ? active.dataset.friendsSubtab : 'leaderboard';
+    }
+
+    function switchToSubtab(target) {
+        if (!managerPage) return;
+
+        managerPage.querySelectorAll('[data-friends-subtab]').forEach(function (t) {
+            const isTarget = t.dataset.friendsSubtab === target;
+            t.classList.toggle('is-active', isTarget);
+            t.setAttribute('aria-selected', isTarget ? 'true' : 'false');
+        });
+
+        managerPage.querySelectorAll('[data-friends-subtab-panel]').forEach(function (p) {
+            p.hidden = p.dataset.friendsSubtabPanel !== target;
+        });
+
+        if (target === 'friends' && !friendsSubtabLoaded.friends) {
+            friendsSubtabLoaded.friends = true;
+            loadCurrentFriendsTab();
+        } else if (target === 'find' && !friendsSubtabLoaded.find) {
+            friendsSubtabLoaded.find = true;
+            loadRequests();
+        }
+
+        const url = new URL(window.location.href);
+        if (target === 'leaderboard') {
+            url.searchParams.delete('tab');
+        } else {
+            url.searchParams.set('tab', target);
+        }
+        history.replaceState(null, '', url.toString());
+    }
+
+    function updateFriendsSummaryGrid(totalFriends) {
+        var el = managerPage && managerPage.querySelector('[data-total-friends-count]');
+        if (el) el.textContent = String(totalFriends);
+    }
+
+    function updateFindSummaryGrid() {
+        var el = managerPage && managerPage.querySelector('[data-pending-requests-count]');
+        if (el) el.textContent = String(currentStatus.pendingInvites);
+    }
+
+    function updateSubtabBadges() {
+        if (!managerPage) return;
+        var findBadge = managerPage.querySelector('[data-friends-subtab-badge-find]');
+        var friendsBadge = managerPage.querySelector('[data-friends-subtab-badge-friends]');
+        if (findBadge) setBadge(findBadge, currentStatus.pendingInvites);
+        if (friendsBadge) setBadge(friendsBadge, currentStatus.newFriends);
+    }
+
+    var originalApplyStatusCounts = applyStatusCounts;
+    applyStatusCounts = function (data) {
+        originalApplyStatusCounts(data);
+        if (managerPage) {
+            updateFindSummaryGrid();
+            updateSubtabBadges();
+            var newEl = managerPage.querySelector('[data-new-friends-count]');
+            if (newEl) newEl.textContent = String(currentStatus.newFriends);
+        }
+    };
+
+    // --- Leaderboard client-side mode switching ---
+
+    function loadLeaderboard(mode) {
+        if (!managerPage) return;
+        leaderboardMode = mode;
+
+        var content = managerPage.querySelector('[data-leaderboard-content]');
+        var desc = managerPage.querySelector('[data-leaderboard-description]');
+        if (!content) return;
+
+        managerPage.querySelectorAll('[data-leaderboard-mode]').forEach(function (btn) {
+            btn.classList.toggle('is-active', btn.dataset.leaderboardMode === mode);
+        });
+
+        content.style.opacity = '0.5';
+
+        fetch(userEndpoint('friends_leaderboard.php') + '?mode=' + encodeURIComponent(mode), { credentials: 'same-origin' })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (!data.ok) return;
+                if (desc) desc.textContent = data.description || '';
+                renderLeaderboard(data.rows || [], data);
+                content.style.opacity = '';
+
+                var rankEl = managerPage.querySelector('[data-leaderboard-viewer-rank]');
+                var countEl = managerPage.querySelector('[data-leaderboard-friend-count]');
+                if (rankEl) rankEl.textContent = data.viewer_rank ? ordinalRank(data.viewer_rank) : '—';
+                if (countEl) countEl.textContent = String(data.total_count || 0);
+            })
+            .catch(function () {
+                content.style.opacity = '';
+            });
+    }
+
+    function ordinalRank(rank) {
+        rank = parseInt(rank, 10);
+        var mod100 = rank % 100;
+        if (mod100 >= 11 && mod100 <= 13) return rank + 'th';
+        switch (rank % 10) {
+            case 1: return rank + 'st';
+            case 2: return rank + 'nd';
+            case 3: return rank + 'rd';
+            default: return rank + 'th';
+        }
+    }
+
+    function renderLeaderboard(rows) {
+        var content = managerPage && managerPage.querySelector('[data-leaderboard-content]');
+        if (!content) return;
+
+        if (!rows.length) {
+            content.innerHTML = '<p>No leaderboard data available.</p>';
+            return;
+        }
+
+        content.innerHTML = rows.map(function (leader) {
+            var avatarHtml = renderAvatar(leader.actor, leader.name);
+            var metricHtml = leader.metric_text ? '<strong>' + escapeHtml(leader.metric_text) + '</strong>' : '';
+            var progressAttrs = leader.is_viewer ? 'data-user-progress-summary' : '';
+            var levelAttrs = leader.is_viewer ? 'data-user-progress-level' : '';
+            var titleAttrs = leader.is_viewer ? 'data-user-progress-title' : '';
+
+            return '<article class="leaderboard-card" ' + progressAttrs + '>'
+                + '<strong>' + escapeHtml(ordinalRank(leader.rank)) + '</strong>'
+                + avatarHtml
+                + '<div>'
+                + '<div class="leaderboard-row-top">'
+                + '<h3>' + escapeHtml(leader.name) + '</h3>'
+                + metricHtml
+                + '</div>'
+                + '<span ' + levelAttrs + '>Level ' + escapeHtml(String(leader.level))
+                + (leader.title ? ' &middot; ' : '')
+                + '<span ' + titleAttrs + '>' + escapeHtml(leader.title || '') + '</span></span>'
+                + '<span class="leaderboard-username">@' + escapeHtml(leader.username) + '</span>'
+                + '</div>'
+                + '<a class="leaderboard-card-link" href="profile.php?id=' + encodeURIComponent(leader.id) + '" aria-label="View ' + escapeHtml(leader.name) + '\'s profile"></a>'
+                + '</article>';
+        }).join('');
+    }
+
+    // --- Event delegation for subtab and leaderboard mode clicks ---
+
     if (managerPage) {
-        refreshFriendsData();
+        document.addEventListener('click', function (e) {
+            var subtab = e.target.closest('[data-friends-subtab]');
+            if (subtab && subtab.closest('[data-friends-manager-page]')) {
+                switchToSubtab(subtab.dataset.friendsSubtab);
+                return;
+            }
+
+            var modeBtn = e.target.closest('[data-leaderboard-mode]');
+            if (modeBtn && modeBtn.closest('[data-friends-manager-page]')) {
+                loadLeaderboard(modeBtn.dataset.leaderboardMode);
+            }
+        });
+    }
+
+    // --- Auto-switch subtab for deep links ---
+
+    function handleInitialSubtab() {
+        if (!managerPage) return;
+
+        var params = new URLSearchParams(window.location.search);
+        var tab = params.get('tab');
+
+        if (requestedFocusRequestId) {
+            switchToSubtab('find');
+        } else if (requestedFocusFriendId) {
+            switchToSubtab('friends');
+        } else if (tab === 'friends' || tab === 'find') {
+            switchToSubtab(tab);
+        }
+    }
+
+    // --- Init ---
+
+    if (managerPage) {
+        handleInitialSubtab();
+        friendsSubtabLoaded.friends = true;
+        friendsSubtabLoaded.find = true;
+        loadRequests();
+        loadCurrentFriendsTab();
+        loadStatus().then(function () {
+            updateFindSummaryGrid();
+            updateSubtabBadges();
+            if (currentStatus.newFriends > 0) {
+                markFriendsSeen('friends');
+            }
+        });
     } else if (panel) {
         ensureFeedComposer();
         ensureScrollToNotificationButton();
