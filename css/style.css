@@ -9724,6 +9724,7 @@ body.feed-comments-sheet-open {
     max-width: var(--content-max);
     margin: 0 auto;
     padding: 32px var(--space-page);
+    overflow-x: hidden;
 }
 
 .business-hero-panel {
@@ -10182,15 +10183,18 @@ body.lightbox-open {
 @media (max-width: 760px) {
     .review-photo-lightbox {
         padding: 48px 0 0;
+        overflow: hidden;
     }
 
     .photo-lightbox-image,
     .review-photo-lightbox-image {
-        max-width: 100vw;
+        width: 100vw;
+        max-width: none;
         max-height: calc(100vh - 48px);
         max-height: calc(100dvh - 48px);
         border-radius: 0;
         box-shadow: none;
+        object-fit: contain;
     }
 
     .photo-lightbox-nav,
