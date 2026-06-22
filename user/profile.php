@@ -332,18 +332,32 @@ if (!$profile) {
     }
 
     $past_checkins_stmt = $conn->prepare("
-        SELECT uv.id, uv.visit_type, uv.xp_awarded, uv.checkedInAt, l.id AS business_id, l.name AS bName, l.location_type AS bType, l.city, l.state,
+        SELECT uv.id AS visit_id, uv.visit_type, uv.xp_awarded, uv.caption, uv.checkedInAt, l.id AS business_id, l.name AS bName, l.location_type AS bType, l.city, l.state,
             vp.object_key AS visit_photo_object_key
         FROM user_visits uv
         INNER JOIN locations l ON l.id = uv.location_id
         LEFT JOIN photos vp ON vp.id = uv.photo_id AND vp.deletedAt IS NULL AND vp.status = 'approved'
         WHERE uv.user_id=? AND l.visibility_status IN ('public_unclaimed', 'public_claimed') AND l.disabledAt IS NULL
         ORDER BY uv.checkedInAt DESC, uv.id DESC
-        LIMIT 20
+        LIMIT 21
     ");
     $past_checkins_stmt->bind_param("i", $profile_id);
     $past_checkins_stmt->execute();
-    $past_checkins = $past_checkins_stmt->get_result();
+    $past_checkins_rows = $past_checkins_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $past_checkins_has_more = count($past_checkins_rows) > 20;
+    if ($past_checkins_has_more) {
+        array_pop($past_checkins_rows);
+    }
+
+    $photo_count_stmt = $conn->prepare("
+        SELECT COUNT(*) AS photo_count
+        FROM user_visits uv
+        INNER JOIN photos vp ON vp.id = uv.photo_id AND vp.deletedAt IS NULL AND vp.status = 'approved'
+        WHERE uv.user_id=?
+    ");
+    $photo_count_stmt->bind_param("i", $profile_id);
+    $photo_count_stmt->execute();
+    $photo_count = (int) ($photo_count_stmt->get_result()->fetch_assoc()['photo_count'] ?? 0);
 
     if (!$is_own_profile) {
         $shared_stmt = $conn->prepare("
@@ -445,7 +459,7 @@ if (!$profile) {
 <body>
     <div data-user-page-content>
     <main class="settings-page profile-page" data-profile-friends-page data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>">
-        <header class="settings-header">
+        <div class="friends-header">
             <div>
                 <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
                 <div>
@@ -453,17 +467,14 @@ if (!$profile) {
                     <p><?php echo $profile ? 'XP, badges, and CraftCrawl milestones.' : 'This profile is not available.'; ?></p>
                 </div>
             </div>
-            <div class="business-header-actions user-subpage-header-actions">
+            <div class="friends-header-actions">
                 <a href="portal.php" data-back-link>&lt;</a>
                 <a href="friends.php">Friends</a>
                 <?php if ($is_own_profile) : ?>
                     <a href="settings.php">Settings</a>
                 <?php endif; ?>
             </div>
-            <?php if (!$is_own_profile) : ?>
-                <a class="mobile-context-back" href="friends.php" data-back-link>&lt;</a>
-            <?php endif; ?>
-        </header>
+        </div>
 
         <?php if (!$profile) : ?>
             <section class="settings-panel">
@@ -624,344 +635,390 @@ if (!$profile) {
                 </div>
             </section>
 
-            <?php if ($can_view_profile_rewards) : ?>
-                <section class="settings-panel" id="badge-showcase-section" data-badge-showcase data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>" data-slot-count="<?php echo escape_output($slot_count); ?>">
-                    <div class="badge-showcase-header">
-                        <div>
-                            <h2>Badge Showcase</h2>
-                            <p class="form-help"><?php echo escape_output($slot_count); ?> of 4 slot<?php echo $slot_count !== 1 ? 's' : ''; ?> unlocked<?php if ($slot_count < 4) : ?> · Additional showcase slots unlock at Levels 8, 16, and 24<?php endif; ?></p>
+            <nav class="profile-subtab-nav" role="tablist">
+                <button type="button" class="profile-subtab is-active" role="tab" data-profile-subtab="posts" aria-selected="true">Posts</button>
+                <button type="button" class="profile-subtab" role="tab" data-profile-subtab="activity" aria-selected="false">Activity</button>
+                <button type="button" class="profile-subtab" role="tab" data-profile-subtab="about" aria-selected="false">About</button>
+            </nav>
+
+            <!-- Posts Panel -->
+            <div data-profile-subtab-panel="posts">
+                <div class="profile-summary-grid">
+                    <article>
+                        <strong><?php echo escape_output($profile_stats['total_checkins'] ?? 0); ?></strong>
+                        <span>Check-ins</span>
+                    </article>
+                    <article>
+                        <strong><?php echo escape_output($photo_count); ?></strong>
+                        <span>Photos</span>
+                    </article>
+                </div>
+
+                <div class="profile-photo-grid" data-profile-photo-grid data-profile-id="<?php echo escape_output($profile_id); ?>" data-profile-username="<?php echo escape_output($profile['username'] ?? ''); ?>">
+                    <?php if (empty($past_checkins_rows)) : ?>
+                        <p style="grid-column: 1 / -1; text-align: center; padding: 24px 0; color: var(--color-muted);">No check-ins yet.</p>
+                    <?php endif; ?>
+                    <?php foreach ($past_checkins_rows as $checkin) : ?>
+                        <?php $has_checkin_photo = !empty($checkin['visit_photo_object_key']); ?>
+                        <button type="button" class="profile-grid-cell"
+                            data-feed-item-key="<?php echo $has_checkin_photo ? 'checkin:' : 'first_visit:'; ?><?php echo escape_output($checkin['visit_id']); ?>"
+                            data-visit-id="<?php echo escape_output($checkin['visit_id']); ?>"
+                            data-business-name="<?php echo escape_output($checkin['bName']); ?>"
+                            data-business-type="<?php echo escape_output($checkin['bType']); ?>">
+                            <?php if ($has_checkin_photo) : ?>
+                                <img src="<?php echo escape_output(craftcrawl_cloudinary_delivery_url($checkin['visit_photo_object_key'], 'f_auto,q_auto,c_fill,w_400,h_400')); ?>" alt="Check-in at <?php echo escape_output($checkin['bName']); ?>" loading="lazy">
+                            <?php else : ?>
+                                <div class="profile-grid-placeholder">
+                                    <span><?php echo escape_output($checkin['bName']); ?></span>
+                                    <small><?php echo escape_output(craftcrawl_profile_business_type_label($checkin['bType'])); ?></small>
+                                </div>
+                            <?php endif; ?>
+                        </button>
+                    <?php endforeach; ?>
+                </div>
+
+                <?php if ($past_checkins_has_more) : ?>
+                    <div class="profile-grid-load-more" data-profile-grid-load-more>
+                        <button type="button" data-profile-load-more>Load More</button>
+                    </div>
+                <?php endif; ?>
+
+                <div class="profile-feed-view" data-profile-feed-view>
+                    <div class="profile-feed-header">
+                        <button type="button" class="profile-feed-back" data-profile-feed-back aria-label="Back to grid">&lt;</button>
+                        <div class="profile-feed-title">
+                            <strong>Posts</strong>
+                            <span>@<?php echo escape_output($profile['username'] ?? ''); ?></span>
+                        </div>
+                    </div>
+                    <div class="profile-feed-items" data-profile-feed-items></div>
+                    <div class="profile-grid-load-more" data-profile-feed-load-more hidden>
+                        <button type="button" data-profile-feed-load-more-btn>Load More</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Panel -->
+            <div data-profile-subtab-panel="activity" hidden>
+                <?php if ($can_view_profile_rewards) : ?>
+                    <section class="settings-panel" id="badge-showcase-section" data-badge-showcase data-csrf-token="<?php echo escape_output(craftcrawl_csrf_token()); ?>" data-slot-count="<?php echo escape_output($slot_count); ?>">
+                        <div class="badge-showcase-header">
+                            <div>
+                                <h2>Badge Showcase</h2>
+                                <p class="form-help"><?php echo escape_output($slot_count); ?> of 4 slot<?php echo $slot_count !== 1 ? 's' : ''; ?> unlocked<?php if ($slot_count < 4) : ?> · Additional showcase slots unlock at Levels 8, 16, and 24<?php endif; ?></p>
+                            </div>
+                            <?php if ($is_own_profile) : ?>
+                                <button type="button" class="button-link-secondary badge-showcase-edit-toggle" data-showcase-editor-open>Edit Badge Showcase</button>
+                            <?php endif; ?>
+                        </div>
+                        <div class="badge-showcase-grid" data-showcase-grid>
+                            <?php
+                            $showcased_by_slot = [];
+                            foreach ($showcase_rows as $row) {
+                                $showcased_by_slot[(int) $row['slot_order']] = $row;
+                            }
+                            for ($s = 1; $s <= $slot_count; $s++) :
+                                $slot_badge = $showcased_by_slot[$s] ?? null;
+                            ?>
+                                <article class="badge-showcase-slot<?php echo $slot_badge ? ' is-filled' : ''; ?>" data-showcase-slot="<?php echo $s; ?>">
+                                    <?php if ($slot_badge) : ?>
+                                        <img class="badge-icon" src="../images/badges/<?php echo escape_output($slot_badge['badge_key']); ?>.svg" alt="" loading="lazy" width="64" height="64">
+                                        <strong><?php echo escape_output($slot_badge['badge_name']); ?></strong>
+                                        <span><?php echo escape_output($slot_badge['badge_description']); ?></span>
+                                        <small><?php echo escape_output(ucfirst($slot_badge['badge_tier'])); ?></small>
+                                    <?php else : ?>
+                                        <span class="badge-showcase-empty">Empty slot</span>
+                                    <?php endif; ?>
+                                </article>
+                            <?php endfor; ?>
                         </div>
                         <?php if ($is_own_profile) : ?>
-                            <button type="button" class="button-link-secondary badge-showcase-edit-toggle" data-showcase-editor-open>Edit Badge Showcase</button>
-                        <?php endif; ?>
-                    </div>
-                    <div class="badge-showcase-grid" data-showcase-grid>
-                        <?php
-                        $showcased_by_slot = [];
-                        foreach ($showcase_rows as $row) {
-                            $showcased_by_slot[(int) $row['slot_order']] = $row;
-                        }
-                        for ($s = 1; $s <= $slot_count; $s++) :
-                            $slot_badge = $showcased_by_slot[$s] ?? null;
-                        ?>
-                            <article class="badge-showcase-slot<?php echo $slot_badge ? ' is-filled' : ''; ?>" data-showcase-slot="<?php echo $s; ?>">
-                                <?php if ($slot_badge) : ?>
-                                    <img class="badge-icon" src="../images/badges/<?php echo escape_output($slot_badge['badge_key']); ?>.svg" alt="" loading="lazy" width="64" height="64">
-                                    <strong><?php echo escape_output($slot_badge['badge_name']); ?></strong>
-                                    <span><?php echo escape_output($slot_badge['badge_description']); ?></span>
-                                    <small><?php echo escape_output(ucfirst($slot_badge['badge_tier'])); ?></small>
-                                <?php else : ?>
-                                    <span class="badge-showcase-empty">Empty slot</span>
-                                <?php endif; ?>
-                            </article>
-                        <?php endfor; ?>
-                    </div>
-                    <?php if ($is_own_profile) : ?>
-                        <div class="badge-showcase-modal" data-showcase-editor hidden>
-                            <div class="badge-showcase-modal-backdrop" data-showcase-editor-close></div>
-                            <section class="badge-showcase-modal-panel" role="dialog" aria-modal="true" aria-labelledby="badge-showcase-editor-title">
-                                <header class="badge-showcase-modal-header">
-                                    <div>
-                                        <h3 id="badge-showcase-editor-title">Edit Badge Showcase</h3>
-                                        <p class="form-help">Tap earned badges to add them to open showcase slots.</p>
-                                    </div>
-                                    <button type="button" class="badge-showcase-modal-close" data-showcase-editor-close aria-label="Close badge showcase editor">&times;</button>
-                                </header>
-                                <div class="badge-showcase-editor-status" data-showcase-editor-status hidden></div>
-                                <div class="badge-showcase-editor-layout">
-                                    <section>
-                                        <h4>Showcased Badges</h4>
-                                        <div class="badge-showcase-editor-slots" data-showcase-editor-slots>
-                                            <?php for ($s = 1; $s <= $slot_count; $s++) :
-                                                $slot_badge = $showcased_by_slot[$s] ?? null;
-                                            ?>
-                                                <div class="badge-showcase-editor-slot" data-editor-slot="<?php echo $s; ?>" data-badge-key="<?php echo escape_output($slot_badge['badge_key'] ?? ''); ?>">
-                                                    <span class="badge-showcase-editor-slot-label">Slot <?php echo $s; ?></span>
-                                                    <div class="badge-showcase-editor-slot-content" data-editor-slot-content>
-                                                        <?php if ($slot_badge) : ?>
-                                                            <img class="badge-icon" src="../images/badges/<?php echo escape_output($slot_badge['badge_key']); ?>.svg" alt="" loading="lazy" width="52" height="52">
-                                                            <strong><?php echo escape_output($slot_badge['badge_name']); ?></strong>
-                                                        <?php else : ?>
-                                                            <span class="badge-showcase-empty">Open slot</span>
-                                                        <?php endif; ?>
+                            <div class="badge-showcase-modal" data-showcase-editor hidden>
+                                <div class="badge-showcase-modal-backdrop" data-showcase-editor-close></div>
+                                <section class="badge-showcase-modal-panel" role="dialog" aria-modal="true" aria-labelledby="badge-showcase-editor-title">
+                                    <header class="badge-showcase-modal-header">
+                                        <div>
+                                            <h3 id="badge-showcase-editor-title">Edit Badge Showcase</h3>
+                                            <p class="form-help">Tap earned badges to add them to open showcase slots.</p>
+                                        </div>
+                                        <button type="button" class="badge-showcase-modal-close" data-showcase-editor-close aria-label="Close badge showcase editor">&times;</button>
+                                    </header>
+                                    <div class="badge-showcase-editor-status" data-showcase-editor-status hidden></div>
+                                    <div class="badge-showcase-editor-layout">
+                                        <section>
+                                            <h4>Showcased Badges</h4>
+                                            <div class="badge-showcase-editor-slots" data-showcase-editor-slots>
+                                                <?php for ($s = 1; $s <= $slot_count; $s++) :
+                                                    $slot_badge = $showcased_by_slot[$s] ?? null;
+                                                ?>
+                                                    <div class="badge-showcase-editor-slot" data-editor-slot="<?php echo $s; ?>" data-badge-key="<?php echo escape_output($slot_badge['badge_key'] ?? ''); ?>">
+                                                        <span class="badge-showcase-editor-slot-label">Slot <?php echo $s; ?></span>
+                                                        <div class="badge-showcase-editor-slot-content" data-editor-slot-content>
+                                                            <?php if ($slot_badge) : ?>
+                                                                <img class="badge-icon" src="../images/badges/<?php echo escape_output($slot_badge['badge_key']); ?>.svg" alt="" loading="lazy" width="52" height="52">
+                                                                <strong><?php echo escape_output($slot_badge['badge_name']); ?></strong>
+                                                            <?php else : ?>
+                                                                <span class="badge-showcase-empty">Open slot</span>
+                                                            <?php endif; ?>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            <?php endfor; ?>
-                                        </div>
-                                    </section>
-                                    <section>
-                                        <h4>Earned Badges</h4>
-                                        <?php if (!empty($earned_badges)) : ?>
-                                            <label class="visually-hidden" for="badge_showcase_earned_search">Search earned badges</label>
-                                            <input
-                                                type="search"
-                                                id="badge_showcase_earned_search"
-                                                class="badge-showcase-earned-search"
-                                                placeholder="Search earned badges"
-                                                autocomplete="off"
-                                                data-earned-badge-search
-                                            >
-                                        <?php endif; ?>
-                                        <div class="badge-showcase-earned-list" data-showcase-earned-list>
-                                            <?php if (empty($earned_badges)) : ?>
-                                                <p class="form-help">Earn a badge to start building your showcase.</p>
-                                            <?php endif; ?>
-                                            <?php foreach ($earned_badges as $badge) : ?>
-                                                <?php $badge_requirement = $badge_requirement_by_key[$badge['badge_key']] ?? $badge['badge_description']; ?>
-                                                <button
-                                                    type="button"
-                                                    class="badge-showcase-earned-badge<?php echo in_array($badge['badge_key'], $showcased_keys, true) ? ' is-showcased' : ''; ?>"
-                                                    draggable="false"
-                                                    data-earned-badge
-                                                    data-badge-key="<?php echo escape_output($badge['badge_key']); ?>"
-                                                    data-badge-name="<?php echo escape_output($badge['badge_name']); ?>"
-                                                    data-badge-description="<?php echo escape_output($badge['badge_description']); ?>"
-                                                    data-badge-requirement="<?php echo escape_output($badge_requirement); ?>"
-                                                    data-badge-tier="<?php echo escape_output($badge['badge_tier']); ?>"
-                                                >
-                                                    <img class="badge-icon" src="../images/badges/<?php echo escape_output($badge['badge_key']); ?>.svg" alt="" loading="lazy" width="46" height="46">
-                                                    <span>
-                                                        <strong><?php echo escape_output($badge['badge_name']); ?></strong>
-                                                        <em><?php echo escape_output($badge_requirement); ?></em>
-                                                        <small><?php echo escape_output(ucfirst($badge['badge_tier'])); ?></small>
-                                                    </span>
-                                                </button>
-                                            <?php endforeach; ?>
+                                                <?php endfor; ?>
+                                            </div>
+                                        </section>
+                                        <section>
+                                            <h4>Earned Badges</h4>
                                             <?php if (!empty($earned_badges)) : ?>
-                                                <p class="form-help badge-showcase-earned-empty" data-earned-badge-empty hidden>No earned badges found.</p>
+                                                <label class="visually-hidden" for="badge_showcase_earned_search">Search earned badges</label>
+                                                <input
+                                                    type="search"
+                                                    id="badge_showcase_earned_search"
+                                                    class="badge-showcase-earned-search"
+                                                    placeholder="Search earned badges"
+                                                    autocomplete="off"
+                                                    data-earned-badge-search
+                                                >
                                             <?php endif; ?>
-                                        </div>
-                                    </section>
-                                </div>
-                                <footer class="badge-showcase-modal-actions">
-                                    <button type="button" class="button-link-secondary" data-showcase-editor-close>Cancel</button>
-                                    <button type="button" data-showcase-editor-save>Save Showcase</button>
-                                </footer>
-                            </section>
-                        </div>
-                    <?php endif; ?>
-                </section>
-            <?php endif; ?>
-
-            <?php if ($can_view_liked_businesses) : ?>
-                <section class="settings-panel" data-profile-filter-list>
-                    <div class="profile-list-header">
-                        <h2><?php echo $is_own_profile ? 'Businesses You Follow' : 'Businesses They Follow'; ?></h2>
-                        <label class="profile-list-search">
-                            <span class="visually-hidden">Search followed businesses</span>
-                            <input type="search" placeholder="Search" autocomplete="off" data-profile-filter-input>
-                        </label>
-                    </div>
-                    <div class="friend-location-grid" data-profile-filter-items>
-                        <?php if ($followed_businesses->num_rows === 0) : ?>
-                            <p>Not following any businesses yet.</p>
-                        <?php endif; ?>
-                        <?php while ($business = $followed_businesses->fetch_assoc()) : ?>
-                            <article class="friend-location-card" data-profile-filter-item>
-                                <strong><?php echo escape_output($business['bName']); ?></strong>
-                                <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
-                                <div class="profile-location-actions">
-                                    <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View Business</a>
-                                    <?php if ($is_own_profile) : ?>
-                                        <form method="POST" action="">
-                                            <?php echo craftcrawl_csrf_input(); ?>
-                                            <input type="hidden" name="form_action" value="unfollow_business">
-                                            <input type="hidden" name="location_id" value="<?php echo escape_output($business['id']); ?>">
-                                            <button type="submit" class="button-link-secondary profile-location-remove">Unfollow</button>
-                                        </form>
-                                    <?php endif; ?>
-                                </div>
-                            </article>
-                        <?php endwhile; ?>
-                        <p class="profile-list-empty" data-profile-filter-empty hidden>No followed businesses match your search.</p>
-                    </div>
-                </section>
-            <?php endif; ?>
-
-            <?php if ($want_to_go_businesses->num_rows > 0 || $is_own_profile) : ?>
-                <section class="settings-panel" data-profile-filter-list>
-                    <div class="profile-list-header">
-                        <h2>Want to Go</h2>
-                        <label class="profile-list-search">
-                            <span class="visually-hidden">Search Want to Go locations</span>
-                            <input type="search" placeholder="Search" autocomplete="off" data-profile-filter-input>
-                        </label>
-                    </div>
-                    <div class="friend-location-grid" data-profile-filter-items>
-                        <?php if ($want_to_go_businesses->num_rows === 0) : ?>
-                            <p>No saved locations yet.</p>
-                        <?php endif; ?>
-                        <?php while ($business = $want_to_go_businesses->fetch_assoc()) : ?>
-                            <article class="friend-location-card" data-profile-filter-item>
-                                <strong><?php echo escape_output($business['bName']); ?></strong>
-                                <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
-                                <div class="profile-location-actions">
-                                    <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View Business</a>
-                                    <?php if ($is_own_profile) : ?>
-                                        <form method="POST" action="">
-                                            <?php echo craftcrawl_csrf_input(); ?>
-                                            <input type="hidden" name="form_action" value="remove_want_to_go">
-                                            <input type="hidden" name="location_id" value="<?php echo escape_output($business['id']); ?>">
-                                            <button type="submit" class="button-link-secondary profile-location-remove">Remove</button>
-                                        </form>
-                                    <?php endif; ?>
-                                </div>
-                            </article>
-                        <?php endwhile; ?>
-                        <p class="profile-list-empty" data-profile-filter-empty hidden>No Want to Go locations match your search.</p>
-                    </div>
-                </section>
-            <?php endif; ?>
-
-            <section class="settings-panel" data-profile-filter-list>
-                <div class="profile-list-header">
-                    <h2>Past Check-ins</h2>
-                    <label class="profile-list-search">
-                        <span class="visually-hidden">Search past check-ins</span>
-                        <input type="search" placeholder="Search" autocomplete="off" data-profile-filter-input>
-                    </label>
-                </div>
-                <div class="friend-location-grid" data-profile-filter-items>
-                    <?php if ($past_checkins->num_rows === 0) : ?>
-                        <p>No check-ins yet.</p>
-                    <?php endif; ?>
-                    <?php while ($checkin = $past_checkins->fetch_assoc()) : ?>
-                        <?php
-                            $checked_in_at = strtotime($checkin['checkedInAt']);
-                            $checked_in_text = $checked_in_at ? date('M j, Y', $checked_in_at) : '';
-                            $visit_type_text = $checkin['visit_type'] === 'first_time' ? 'First-time check-in' : 'Repeat check-in';
-                            $has_checkin_photo = !empty($checkin['visit_photo_object_key']);
-                        ?>
-                        <article class="friend-location-card" data-profile-filter-item>
-                            <strong><?php echo escape_output($checkin['bName']); ?></strong>
-                            <span><?php echo escape_output(craftcrawl_profile_business_type_label($checkin['bType'])); ?> · <?php echo escape_output($checkin['city']); ?>, <?php echo escape_output($checkin['state']); ?></span>
-                            <span><?php echo escape_output($visit_type_text); ?><?php echo $checked_in_text !== '' ? ' · ' . escape_output($checked_in_text) : ''; ?><?php echo (int) $checkin['xp_awarded'] > 0 ? ' · +' . escape_output($checkin['xp_awarded']) . ' XP' : ''; ?></span>
-                            <?php if ($has_checkin_photo) : ?>
-                                <div class="checkin-card-photo"><img src="<?php echo escape_output(craftcrawl_cloudinary_delivery_url($checkin['visit_photo_object_key'], 'f_auto,q_auto,c_limit,w_1080')); ?>" alt="Check-in photo at <?php echo escape_output($checkin['bName']); ?>" loading="lazy"></div>
-                            <?php endif; ?>
-                            <a href="../business_details.php?id=<?php echo escape_output($checkin['business_id']); ?>">View Location</a>
-                        </article>
-                    <?php endwhile; ?>
-                    <p class="profile-list-empty" data-profile-filter-empty hidden>No check-ins match your search.</p>
-                </div>
-            </section>
-
-            <?php if ($is_own_profile && $suggested_friends !== null) : ?>
-                <section class="settings-panel friends-manager-section">
-                    <h2>Suggested Friends</h2>
-                    <div class="friend-recommendation-list" data-suggested-friends-list>
-                        <?php if ($suggested_friends->num_rows === 0) : ?>
-                            <p data-suggested-friends-empty>No suggested friends yet.</p>
-                        <?php endif; ?>
-                        <?php while ($suggested_friend = $suggested_friends->fetch_assoc()) : ?>
-                            <?php
-                                $suggested_level = max(1, (int) ($suggested_friend['level'] ?? 1));
-                                $suggested_selected_idx = $suggested_friend['selected_title_index'] !== null ? (int) $suggested_friend['selected_title_index'] : null;
-                                $suggested_title = craftcrawl_user_effective_title($suggested_level, $suggested_selected_idx);
-                                $suggested_name = trim($suggested_friend['fName'] . ' ' . $suggested_friend['lName']);
-                                $mutual_friend_count = (int) $suggested_friend['mutual_friend_count'];
-                            ?>
-                            <article class="friend-recommendation-card friend-suggestion-card" data-suggested-friend-id="<?php echo escape_output($suggested_friend['id']); ?>">
-                                <?php echo craftcrawl_render_user_avatar($suggested_friend, 'medium', 'friend-suggestion-avatar'); ?>
-                                <div>
-                                    <strong><?php echo escape_output($suggested_name); ?></strong>
-                                    <span>@<?php echo escape_output($suggested_friend['username']); ?></span>
-                                    <span>Level <?php echo escape_output($suggested_level); ?><?php echo $suggested_title !== '' ? ' · ' . escape_output($suggested_title) : ''; ?></span>
-                                    <span><?php echo escape_output($mutual_friend_count); ?> mutual <?php echo $mutual_friend_count === 1 ? 'friend' : 'friends'; ?></span>
-                                </div>
-                                <div>
-                                    <button type="button" data-suggested-friend-action="invite" data-friend-id="<?php echo escape_output($suggested_friend['id']); ?>">Invite</button>
-                                </div>
-                            </article>
-                        <?php endwhile; ?>
-                    </div>
-                </section>
-            <?php endif; ?>
-
-            <?php if (!$is_own_profile) : ?>
-                <section class="settings-panel" data-profile-filter-list data-profile-page-size="10">
-                    <div class="profile-list-header">
-                        <h2>Their Friends</h2>
-                        <label class="profile-list-search">
-                            <span class="visually-hidden">Search their friends</span>
-                            <input type="search" placeholder="Search" autocomplete="off" data-profile-filter-input>
-                        </label>
-                    </div>
-                    <div class="friend-current-list profile-friends-list" data-profile-filter-items>
-                        <?php if ($profile_friends->num_rows === 0) : ?>
-                            <p>No friends to show yet.</p>
-                        <?php endif; ?>
-                        <?php while ($profile_friend = $profile_friends->fetch_assoc()) : ?>
-                            <?php
-                                $profile_friend_level = max(1, (int) ($profile_friend['level'] ?? 1));
-                                $profile_friend_selected_idx = $profile_friend['selected_title_index'] !== null ? (int) $profile_friend['selected_title_index'] : null;
-                                $profile_friend_title = craftcrawl_user_effective_title($profile_friend_level, $profile_friend_selected_idx);
-                                $profile_friend_name = trim($profile_friend['fName'] . ' ' . $profile_friend['lName']);
-                                $can_open_profile_friend = (int) $profile_friend['id'] === $viewer_id || !empty($profile_friend['is_viewer_friend']);
-                            ?>
-                            <article class="friend-current-item" data-profile-filter-item>
-                                <?php echo craftcrawl_render_user_avatar($profile_friend, 'medium', 'profile-friend-avatar'); ?>
-                                <div class="friend-current-summary">
-                                    <div class="friend-current-name-row">
-                                        <strong><?php echo escape_output($profile_friend_name); ?></strong>
+                                            <div class="badge-showcase-earned-list" data-showcase-earned-list>
+                                                <?php if (empty($earned_badges)) : ?>
+                                                    <p class="form-help">Earn a badge to start building your showcase.</p>
+                                                <?php endif; ?>
+                                                <?php foreach ($earned_badges as $badge) : ?>
+                                                    <?php $badge_requirement = $badge_requirement_by_key[$badge['badge_key']] ?? $badge['badge_description']; ?>
+                                                    <button
+                                                        type="button"
+                                                        class="badge-showcase-earned-badge<?php echo in_array($badge['badge_key'], $showcased_keys, true) ? ' is-showcased' : ''; ?>"
+                                                        draggable="false"
+                                                        data-earned-badge
+                                                        data-badge-key="<?php echo escape_output($badge['badge_key']); ?>"
+                                                        data-badge-name="<?php echo escape_output($badge['badge_name']); ?>"
+                                                        data-badge-description="<?php echo escape_output($badge['badge_description']); ?>"
+                                                        data-badge-requirement="<?php echo escape_output($badge_requirement); ?>"
+                                                        data-badge-tier="<?php echo escape_output($badge['badge_tier']); ?>"
+                                                    >
+                                                        <img class="badge-icon" src="../images/badges/<?php echo escape_output($badge['badge_key']); ?>.svg" alt="" loading="lazy" width="46" height="46">
+                                                        <span>
+                                                            <strong><?php echo escape_output($badge['badge_name']); ?></strong>
+                                                            <em><?php echo escape_output($badge_requirement); ?></em>
+                                                            <small><?php echo escape_output(ucfirst($badge['badge_tier'])); ?></small>
+                                                        </span>
+                                                    </button>
+                                                <?php endforeach; ?>
+                                                <?php if (!empty($earned_badges)) : ?>
+                                                    <p class="form-help badge-showcase-earned-empty" data-earned-badge-empty hidden>No earned badges found.</p>
+                                                <?php endif; ?>
+                                            </div>
+                                        </section>
                                     </div>
-                                    <p class="friend-current-meta">Level <?php echo escape_output($profile_friend_level); ?><?php echo $profile_friend_title !== '' ? ' · ' . escape_output($profile_friend_title) : ''; ?></p>
-                                </div>
-                                <div class="friend-current-actions">
-                                    <?php if ($can_open_profile_friend) : ?>
-                                        <a href="profile.php?id=<?php echo escape_output($profile_friend['id']); ?>">View Profile</a>
-                                    <?php elseif (!empty($profile_friend['received_request_id'])) : ?>
-                                        <button type="button" data-profile-friend-action="accept" data-request-id="<?php echo escape_output($profile_friend['received_request_id']); ?>" data-friend-id="<?php echo escape_output($profile_friend['id']); ?>">Accept Invite</button>
-                                    <?php elseif (!empty($profile_friend['sent_request_id'])) : ?>
-                                        <button type="button" disabled>Request Pending</button>
-                                    <?php else : ?>
-                                        <button type="button" data-profile-friend-action="invite" data-friend-id="<?php echo escape_output($profile_friend['id']); ?>">Add Friend</button>
-                                    <?php endif; ?>
-                                </div>
-                            </article>
-                        <?php endwhile; ?>
-                        <p class="profile-list-empty" data-profile-filter-empty hidden>No friends match your search.</p>
-                    </div>
-                    <nav class="profile-list-pagination" data-profile-pagination hidden aria-label="Their friends pages">
-                        <button type="button" data-profile-page-prev>Previous</button>
-                        <span data-profile-page-status></span>
-                        <button type="button" data-profile-page-next>Next</button>
-                    </nav>
-                </section>
-
-                <section class="settings-panel">
-                    <h2>Shared Locations</h2>
-                    <div class="friend-location-grid">
-                        <?php if ($shared_locations->num_rows === 0) : ?>
-                            <p>No shared visited locations yet.</p>
+                                    <footer class="badge-showcase-modal-actions">
+                                        <button type="button" class="button-link-secondary" data-showcase-editor-close>Cancel</button>
+                                        <button type="button" data-showcase-editor-save>Save Showcase</button>
+                                    </footer>
+                                </section>
+                            </div>
                         <?php endif; ?>
-                        <?php while ($location = $shared_locations->fetch_assoc()) : ?>
-                            <article class="friend-location-card">
-                                <strong><?php echo escape_output($location['bName']); ?></strong>
-                                <span><?php echo escape_output(craftcrawl_profile_business_type_label($location['bType'])); ?> · <?php echo escape_output($location['city']); ?>, <?php echo escape_output($location['state']); ?></span>
-                                <a href="../business_details.php?id=<?php echo escape_output($location['id']); ?>">View Location</a>
-                            </article>
-                        <?php endwhile; ?>
-                    </div>
-                </section>
+                    </section>
+                <?php endif; ?>
 
-                <section class="settings-panel">
-                    <h2>Places They Visited That You Have Not</h2>
-                    <div class="friend-location-grid">
-                        <?php if ($friend_unvisited_locations->num_rows === 0) : ?>
-                            <p>No new-to-you locations yet.</p>
-                        <?php endif; ?>
-                        <?php while ($location = $friend_unvisited_locations->fetch_assoc()) : ?>
-                            <article class="friend-location-card">
-                                <strong><?php echo escape_output($location['bName']); ?></strong>
-                                <span><?php echo escape_output(craftcrawl_profile_business_type_label($location['bType'])); ?> · <?php echo escape_output($location['city']); ?>, <?php echo escape_output($location['state']); ?></span>
-                                <a href="../business_details.php?id=<?php echo escape_output($location['id']); ?>">View Location</a>
-                            </article>
-                        <?php endwhile; ?>
-                    </div>
-                </section>
+                <?php if ($can_view_liked_businesses) : ?>
+                    <section class="settings-panel" data-profile-filter-list>
+                        <div class="profile-list-header">
+                            <h2><?php echo $is_own_profile ? 'Businesses You Follow' : 'Businesses They Follow'; ?></h2>
+                            <label class="profile-list-search">
+                                <span class="visually-hidden">Search followed businesses</span>
+                                <input type="search" placeholder="Search" autocomplete="off" data-profile-filter-input>
+                            </label>
+                        </div>
+                        <div class="friend-location-grid" data-profile-filter-items>
+                            <?php if ($followed_businesses->num_rows === 0) : ?>
+                                <p>Not following any businesses yet.</p>
+                            <?php endif; ?>
+                            <?php while ($business = $followed_businesses->fetch_assoc()) : ?>
+                                <article class="friend-location-card" data-profile-filter-item>
+                                    <strong><?php echo escape_output($business['bName']); ?></strong>
+                                    <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
+                                    <div class="profile-location-actions">
+                                        <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View Business</a>
+                                        <?php if ($is_own_profile) : ?>
+                                            <form method="POST" action="">
+                                                <?php echo craftcrawl_csrf_input(); ?>
+                                                <input type="hidden" name="form_action" value="unfollow_business">
+                                                <input type="hidden" name="location_id" value="<?php echo escape_output($business['id']); ?>">
+                                                <button type="submit" class="button-link-secondary profile-location-remove">Unfollow</button>
+                                            </form>
+                                        <?php endif; ?>
+                                    </div>
+                                </article>
+                            <?php endwhile; ?>
+                            <p class="profile-list-empty" data-profile-filter-empty hidden>No followed businesses match your search.</p>
+                        </div>
+                    </section>
+                <?php endif; ?>
 
-            <?php endif; ?>
+                <?php if ($want_to_go_businesses->num_rows > 0 || $is_own_profile) : ?>
+                    <section class="settings-panel" data-profile-filter-list>
+                        <div class="profile-list-header">
+                            <h2>Want to Go</h2>
+                            <label class="profile-list-search">
+                                <span class="visually-hidden">Search Want to Go locations</span>
+                                <input type="search" placeholder="Search" autocomplete="off" data-profile-filter-input>
+                            </label>
+                        </div>
+                        <div class="friend-location-grid" data-profile-filter-items>
+                            <?php if ($want_to_go_businesses->num_rows === 0) : ?>
+                                <p>No saved locations yet.</p>
+                            <?php endif; ?>
+                            <?php while ($business = $want_to_go_businesses->fetch_assoc()) : ?>
+                                <article class="friend-location-card" data-profile-filter-item>
+                                    <strong><?php echo escape_output($business['bName']); ?></strong>
+                                    <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
+                                    <div class="profile-location-actions">
+                                        <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View Business</a>
+                                        <?php if ($is_own_profile) : ?>
+                                            <form method="POST" action="">
+                                                <?php echo craftcrawl_csrf_input(); ?>
+                                                <input type="hidden" name="form_action" value="remove_want_to_go">
+                                                <input type="hidden" name="location_id" value="<?php echo escape_output($business['id']); ?>">
+                                                <button type="submit" class="button-link-secondary profile-location-remove">Remove</button>
+                                            </form>
+                                        <?php endif; ?>
+                                    </div>
+                                </article>
+                            <?php endwhile; ?>
+                            <p class="profile-list-empty" data-profile-filter-empty hidden>No Want to Go locations match your search.</p>
+                        </div>
+                    </section>
+                <?php endif; ?>
+
+                <?php if ($is_own_profile && $suggested_friends !== null) : ?>
+                    <section class="settings-panel friends-manager-section">
+                        <h2>Suggested Friends</h2>
+                        <div class="friend-recommendation-list" data-suggested-friends-list>
+                            <?php if ($suggested_friends->num_rows === 0) : ?>
+                                <p data-suggested-friends-empty>No suggested friends yet.</p>
+                            <?php endif; ?>
+                            <?php while ($suggested_friend = $suggested_friends->fetch_assoc()) : ?>
+                                <?php
+                                    $suggested_level = max(1, (int) ($suggested_friend['level'] ?? 1));
+                                    $suggested_selected_idx = $suggested_friend['selected_title_index'] !== null ? (int) $suggested_friend['selected_title_index'] : null;
+                                    $suggested_title = craftcrawl_user_effective_title($suggested_level, $suggested_selected_idx);
+                                    $suggested_name = trim($suggested_friend['fName'] . ' ' . $suggested_friend['lName']);
+                                    $mutual_friend_count = (int) $suggested_friend['mutual_friend_count'];
+                                ?>
+                                <article class="friend-recommendation-card friend-suggestion-card" data-suggested-friend-id="<?php echo escape_output($suggested_friend['id']); ?>">
+                                    <?php echo craftcrawl_render_user_avatar($suggested_friend, 'medium', 'friend-suggestion-avatar'); ?>
+                                    <div>
+                                        <strong><?php echo escape_output($suggested_name); ?></strong>
+                                        <span>@<?php echo escape_output($suggested_friend['username']); ?></span>
+                                        <span>Level <?php echo escape_output($suggested_level); ?><?php echo $suggested_title !== '' ? ' · ' . escape_output($suggested_title) : ''; ?></span>
+                                        <span><?php echo escape_output($mutual_friend_count); ?> mutual <?php echo $mutual_friend_count === 1 ? 'friend' : 'friends'; ?></span>
+                                    </div>
+                                    <div>
+                                        <button type="button" data-suggested-friend-action="invite" data-friend-id="<?php echo escape_output($suggested_friend['id']); ?>">Invite</button>
+                                    </div>
+                                </article>
+                            <?php endwhile; ?>
+                        </div>
+                    </section>
+                <?php endif; ?>
+            </div>
+
+            <!-- About Panel -->
+            <div data-profile-subtab-panel="about" hidden>
+                <?php if ($is_own_profile) : ?>
+                    <div class="profile-about-section">
+                        <div class="profile-about-detail">
+                            <h3>Username</h3>
+                            <strong>@<?php echo escape_output($profile['username'] ?? ''); ?></strong>
+                        </div>
+                        <div class="profile-about-detail">
+                            <h3>Member Since</h3>
+                            <strong><?php echo escape_output(date('F j, Y', strtotime($profile['createdAt'] ?? 'now'))); ?></strong>
+                        </div>
+                    </div>
+                <?php else : ?>
+                    <section class="settings-panel" data-profile-filter-list data-profile-page-size="10">
+                        <div class="profile-list-header">
+                            <h2>Their Friends</h2>
+                            <label class="profile-list-search">
+                                <span class="visually-hidden">Search their friends</span>
+                                <input type="search" placeholder="Search" autocomplete="off" data-profile-filter-input>
+                            </label>
+                        </div>
+                        <div class="friend-current-list profile-friends-list" data-profile-filter-items>
+                            <?php if ($profile_friends->num_rows === 0) : ?>
+                                <p>No friends to show yet.</p>
+                            <?php endif; ?>
+                            <?php while ($profile_friend = $profile_friends->fetch_assoc()) : ?>
+                                <?php
+                                    $profile_friend_level = max(1, (int) ($profile_friend['level'] ?? 1));
+                                    $profile_friend_selected_idx = $profile_friend['selected_title_index'] !== null ? (int) $profile_friend['selected_title_index'] : null;
+                                    $profile_friend_title = craftcrawl_user_effective_title($profile_friend_level, $profile_friend_selected_idx);
+                                    $profile_friend_name = trim($profile_friend['fName'] . ' ' . $profile_friend['lName']);
+                                    $can_open_profile_friend = (int) $profile_friend['id'] === $viewer_id || !empty($profile_friend['is_viewer_friend']);
+                                ?>
+                                <article class="friend-current-item" data-profile-filter-item>
+                                    <?php echo craftcrawl_render_user_avatar($profile_friend, 'medium', 'profile-friend-avatar'); ?>
+                                    <div class="friend-current-summary">
+                                        <div class="friend-current-name-row">
+                                            <strong><?php echo escape_output($profile_friend_name); ?></strong>
+                                        </div>
+                                        <p class="friend-current-meta">Level <?php echo escape_output($profile_friend_level); ?><?php echo $profile_friend_title !== '' ? ' · ' . escape_output($profile_friend_title) : ''; ?></p>
+                                    </div>
+                                    <div class="friend-current-actions">
+                                        <?php if ($can_open_profile_friend) : ?>
+                                            <a href="profile.php?id=<?php echo escape_output($profile_friend['id']); ?>">View Profile</a>
+                                        <?php elseif (!empty($profile_friend['received_request_id'])) : ?>
+                                            <button type="button" data-profile-friend-action="accept" data-request-id="<?php echo escape_output($profile_friend['received_request_id']); ?>" data-friend-id="<?php echo escape_output($profile_friend['id']); ?>">Accept Invite</button>
+                                        <?php elseif (!empty($profile_friend['sent_request_id'])) : ?>
+                                            <button type="button" disabled>Request Pending</button>
+                                        <?php else : ?>
+                                            <button type="button" data-profile-friend-action="invite" data-friend-id="<?php echo escape_output($profile_friend['id']); ?>">Add Friend</button>
+                                        <?php endif; ?>
+                                    </div>
+                                </article>
+                            <?php endwhile; ?>
+                            <p class="profile-list-empty" data-profile-filter-empty hidden>No friends match your search.</p>
+                        </div>
+                        <nav class="profile-list-pagination" data-profile-pagination hidden aria-label="Their friends pages">
+                            <button type="button" data-profile-page-prev>Previous</button>
+                            <span data-profile-page-status></span>
+                            <button type="button" data-profile-page-next>Next</button>
+                        </nav>
+                    </section>
+
+                    <section class="settings-panel">
+                        <h2>Shared Locations</h2>
+                        <div class="friend-location-grid">
+                            <?php if ($shared_locations->num_rows === 0) : ?>
+                                <p>No shared visited locations yet.</p>
+                            <?php endif; ?>
+                            <?php while ($location = $shared_locations->fetch_assoc()) : ?>
+                                <article class="friend-location-card">
+                                    <strong><?php echo escape_output($location['bName']); ?></strong>
+                                    <span><?php echo escape_output(craftcrawl_profile_business_type_label($location['bType'])); ?> · <?php echo escape_output($location['city']); ?>, <?php echo escape_output($location['state']); ?></span>
+                                    <a href="../business_details.php?id=<?php echo escape_output($location['id']); ?>">View Location</a>
+                                </article>
+                            <?php endwhile; ?>
+                        </div>
+                    </section>
+
+                    <section class="settings-panel">
+                        <h2>Places They Visited That You Have Not</h2>
+                        <div class="friend-location-grid">
+                            <?php if ($friend_unvisited_locations->num_rows === 0) : ?>
+                                <p>No new-to-you locations yet.</p>
+                            <?php endif; ?>
+                            <?php while ($location = $friend_unvisited_locations->fetch_assoc()) : ?>
+                                <article class="friend-location-card">
+                                    <strong><?php echo escape_output($location['bName']); ?></strong>
+                                    <span><?php echo escape_output(craftcrawl_profile_business_type_label($location['bType'])); ?> · <?php echo escape_output($location['city']); ?>, <?php echo escape_output($location['state']); ?></span>
+                                    <a href="../business_details.php?id=<?php echo escape_output($location['id']); ?>">View Location</a>
+                                </article>
+                            <?php endwhile; ?>
+                        </div>
+                    </section>
+                <?php endif; ?>
+            </div>
         <?php endif; ?>
     </main>
     </div>
@@ -974,6 +1031,7 @@ if (!$profile) {
     <script src="../js/app_icon_switcher.js?v=<?php echo filemtime(__DIR__ . '/../js/app_icon_switcher.js'); ?>"></script>
     <script src="../js/badge_showcase.js?v=<?php echo filemtime(__DIR__ . '/../js/badge_showcase.js'); ?>"></script>
     <script src="../js/profile_list_search.js?v=<?php echo filemtime(__DIR__ . '/../js/profile_list_search.js'); ?>"></script>
+    <script src="../js/profile_grid.js?v=<?php echo filemtime(__DIR__ . '/../js/profile_grid.js'); ?>"></script>
     <script src="../js/feed_thread.js?v=<?php echo filemtime(__DIR__ . '/../js/feed_thread.js'); ?>"></script>
     <script src="../js/username_availability.js?v=<?php echo filemtime(__DIR__ . '/../js/username_availability.js'); ?>"></script>
     <script src="../js/user_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/user_shell_navigation.js'); ?>"></script>
