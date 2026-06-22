@@ -7932,7 +7932,6 @@ body.feed-comments-sheet-open {
 .event-feed-entry {
     border-bottom: 1px solid var(--color-border);
     padding: 16px 0;
-    background: var(--color-primary);
     cursor: pointer;
     transform-origin: center top;
     transition: transform 240ms cubic-bezier(.2, .82, .2, 1), background-color 180ms ease, opacity 180ms ease, box-shadow 180ms ease;
@@ -7941,7 +7940,7 @@ body.feed-comments-sheet-open {
 .event-feed-entry.is-opening-event {
     position: relative;
     z-index: 3;
-    background: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 6%, transparent);
 }
 
 .event-feed-entry:has(a:hover, button:hover, input:hover, textarea:hover, select:hover) {
@@ -7962,7 +7961,7 @@ body.feed-comments-sheet-open {
     padding: 18px 0 8px;
     margin: 0;
     color: var(--color-heading);
-    background: var(--color-bg);
+    background: var(--color-primary);
     font-size: 15px;
     font-weight: 800;
     letter-spacing: 0.02em;
@@ -7993,7 +7992,7 @@ body.feed-comments-sheet-open {
     padding: calc(14px + env(safe-area-inset-top, 0px)) 14px 16px;
     border-bottom: 1px solid color-mix(in srgb, var(--color-border) 82%, var(--color-primary));
     color: var(--color-heading);
-    background: var(--color-bg);
+    background: var(--color-primary);
     box-shadow: 0 12px 20px color-mix(in srgb, var(--color-text) 12%, transparent);
     font-size: 15px;
     font-weight: 800;
