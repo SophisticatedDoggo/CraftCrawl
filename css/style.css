@@ -2984,8 +2984,8 @@ a.text-link:focus {
 }
 
 .quest-subtab.is-active {
-    background: var(--color-surface);
-    color: var(--color-text);
+    background: var(--color-primary);
+    color: #fff;
     box-shadow: var(--shadow-sm);
 }
 
@@ -3486,25 +3486,9 @@ a.text-link:focus {
 }
 
 .chain-member-avatar {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 2px solid var(--color-surface);
-    object-fit: cover;
-}
-
-.chain-member-avatar-placeholder {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 2px solid var(--color-surface);
-    background: color-mix(in srgb, var(--color-primary) 15%, var(--color-surface));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--color-primary);
+    --avatar-size: 28px;
+    border-width: 2px;
+    border-color: var(--color-surface);
 }
 
 .chain-step-member-dots {
@@ -3671,25 +3655,8 @@ a.text-link:focus {
 }
 
 .chain-invite-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-    flex: 0 0 40px;
-}
-
-.chain-invite-avatar-placeholder {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
-    color: var(--color-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    font-weight: 800;
-    flex: 0 0 40px;
+    --avatar-size: 40px;
+    border-width: 2px;
 }
 
 .chain-invite-friend-info {
@@ -4341,8 +4308,8 @@ body.map-expanded-open {
 }
 
 .friends-subtab.is-active {
-    background: var(--color-surface);
-    color: var(--color-text);
+    background: var(--color-primary);
+    color: #fff;
     box-shadow: var(--shadow-sm);
 }
 
@@ -6324,8 +6291,8 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
 }
 
 .profile-subtab.is-active {
-    background: var(--color-surface);
-    color: var(--color-text);
+    background: var(--color-primary);
+    color: #fff;
     box-shadow: var(--shadow-sm);
 }
 

@@ -220,11 +220,7 @@
             members.forEach(function (m) {
                 var pct = chain.step_count > 0 ? Math.round((m.completed_count / chain.step_count) * 100) : 0;
                 html += '<div class="chain-member-row">';
-                if (m.profile_photo_url) {
-                    html += '<img class="chain-member-avatar" src="' + escapeHtml(m.profile_photo_url) + '" alt="">';
-                } else {
-                    html += '<span class="chain-member-avatar-placeholder">' + (m.name || '?').charAt(0).toUpperCase() + '</span>';
-                }
+                html += renderAvatar(m.actor, m.name, 'chain-member-avatar');
                 html += '<div class="chain-member-info">';
                 html += '<span class="chain-member-name">' + escapeHtml(m.name) + (m.role === 'owner' ? ' <small>(party leader)</small>' : '') + '</span>';
                 html += '<div class="chain-member-bar"><span style="width:' + pct + '%;"></span></div>';
@@ -501,9 +497,7 @@
                         html += friends.map(function (friend) {
                             var isMember = memberIds.indexOf(friend.id) >= 0;
                             var isPending = pendingIds.indexOf(friend.id) >= 0;
-                            var avatar = friend.profile_photo_url
-                                ? '<img class="chain-invite-avatar" src="' + escapeHtml(friend.profile_photo_url) + '" alt="">'
-                                : '<span class="chain-invite-avatar-placeholder">' + (friend.name || '?').charAt(0).toUpperCase() + '</span>';
+                            var avatar = renderAvatar(friend.actor, friend.name, 'chain-invite-avatar');
 
                             var username = friend.username
                                 ? '<span class="chain-invite-username">@' + escapeHtml(friend.username) + '</span>'
@@ -625,6 +619,20 @@
             setTimeout(autoSelectChainsTab, 50);
         }
     });
+
+    function renderAvatar(actor, fallbackName, cssClass) {
+        var data = actor || {};
+        var frame = String(data.frame || '').replace(/[^a-z0-9_-]/gi, '');
+        var frameStyle = String(data.frame_style || 'solid').replace(/[^a-z0-9_-]/gi, '') || 'solid';
+        var classes = 'user-avatar user-avatar-medium ' + (cssClass || '') + (frame ? ' has-frame-' + frame + ' has-frame-style-' + frameStyle : '');
+        var name = data.name || fallbackName || '?';
+        var initials = data.initials || name.charAt(0).toUpperCase();
+
+        if (data.avatar_url) {
+            return '<span class="' + escapeHtml(classes) + '"><img src="' + escapeHtml(data.avatar_url) + '" alt=""></span>';
+        }
+        return '<span class="' + escapeHtml(classes) + '"><span>' + escapeHtml(initials) + '</span></span>';
+    }
 
     function escapeHtml(str) {
         if (!str) return '';

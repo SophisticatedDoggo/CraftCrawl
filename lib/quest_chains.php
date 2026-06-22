@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/leveling.php';
+require_once __DIR__ . '/user_avatar.php';
 
 const CRAFTCRAWL_CHAIN_OPTIONS_COUNT = 5;
 const CRAFTCRAWL_CHAIN_RADIUS_METERS = 24140; // 15 miles
@@ -1201,7 +1202,14 @@ function craftcrawl_chain_member_progress($conn, $chain_id) {
     $participants = [];
 
     $owner_id = (int) $chain['owner_user_id'];
-    $owner_stmt = $conn->prepare("SELECT id, fName, lName, profile_photo_url FROM users WHERE id = ? LIMIT 1");
+    $owner_stmt = $conn->prepare("
+        SELECT u.id, u.fName, u.lName, u.profile_photo_url,
+               u.selected_profile_frame, u.selected_profile_frame_style,
+               p.object_key AS profile_photo_object_key
+        FROM users u
+        LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+        WHERE u.id = ? LIMIT 1
+    ");
     $owner_stmt->bind_param("i", $owner_id);
     $owner_stmt->execute();
     $owner = $owner_stmt->get_result()->fetch_assoc();
@@ -1210,15 +1218,25 @@ function craftcrawl_chain_member_progress($conn, $chain_id) {
         $participants[] = [
             'user_id' => $owner_id,
             'name' => trim(($owner['fName'] ?? '') . ' ' . ($owner['lName'] ?? '')),
-            'profile_photo_url' => $owner['profile_photo_url'] ?? null,
             'role' => 'owner',
+            'actor' => [
+                'id' => $owner_id,
+                'name' => trim(($owner['fName'] ?? '') . ' ' . ($owner['lName'] ?? '')),
+                'initials' => craftcrawl_user_initials($owner),
+                'avatar_url' => craftcrawl_user_avatar_url($owner, 96),
+                'frame' => $owner['selected_profile_frame'] ?? null,
+                'frame_style' => $owner['selected_profile_frame_style'] ?? null,
+            ],
         ];
     }
 
     $members_stmt = $conn->prepare("
-        SELECT qcm.user_id, u.fName, u.lName, u.profile_photo_url
+        SELECT qcm.user_id, u.fName, u.lName, u.profile_photo_url,
+               u.selected_profile_frame, u.selected_profile_frame_style,
+               p.object_key AS profile_photo_object_key
         FROM quest_chain_members qcm
         INNER JOIN users u ON u.id = qcm.user_id
+        LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
         WHERE qcm.chain_id = ? AND qcm.status = 'accepted'
     ");
     $members_stmt->bind_param("i", $chain_id);
@@ -1229,8 +1247,15 @@ function craftcrawl_chain_member_progress($conn, $chain_id) {
         $participants[] = [
             'user_id' => (int) $member['user_id'],
             'name' => trim(($member['fName'] ?? '') . ' ' . ($member['lName'] ?? '')),
-            'profile_photo_url' => $member['profile_photo_url'] ?? null,
             'role' => 'member',
+            'actor' => [
+                'id' => (int) $member['user_id'],
+                'name' => trim(($member['fName'] ?? '') . ' ' . ($member['lName'] ?? '')),
+                'initials' => craftcrawl_user_initials($member),
+                'avatar_url' => craftcrawl_user_avatar_url($member, 96),
+                'frame' => $member['selected_profile_frame'] ?? null,
+                'frame_style' => $member['selected_profile_frame_style'] ?? null,
+            ],
         ];
     }
 
