@@ -4127,8 +4127,6 @@ body.map-expanded-open {
 .events-feed {
     position: relative;
     width: 100%;
-    display: grid;
-    gap: 0;
     margin-top: 14px;
 }
 
@@ -8000,13 +7998,17 @@ body.feed-comments-sheet-open {
 }
 
 .event-feed-cover {
-    align-self: center;
+    display: block;
     width: 100%;
     aspect-ratio: 2 / 1;
     border-radius: 0;
     object-fit: contain;
     background: #000;
     box-shadow: none;
+    margin-top: 10px;
+    margin-bottom: 6px;
+    overflow: hidden;
+    line-height: 0;
 }
 
 .event-feed-details p {
@@ -12018,7 +12020,10 @@ a.event-calendar-event:focus .event-calendar-event-name {
         display: none;
     }
 
-    #events-panel::before,
+    #events-panel::before {
+        display: none;
+    }
+
     #friends-panel::before {
         background: var(--color-primary);
     }
@@ -12420,6 +12425,11 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .event-feed-actions {
         justify-content: flex-start;
         flex-wrap: wrap;
+    }
+
+    .events-page-body .event-feed-cover {
+        width: calc(100% + 28px);
+        margin-left: -14px;
     }
 
     .events-page-body .event-feed-item {
