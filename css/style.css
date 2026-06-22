@@ -2968,12 +2968,15 @@ a.text-link:focus {
     background: color-mix(in srgb, var(--color-border) 40%, var(--color-surface));
 }
 
-.quest-subtab-nav > .quest-subtab {
+.quest-subtab-nav > .quest-subtab,
+.quest-subtab-nav > .quest-subtab:hover,
+.quest-subtab-nav > .quest-subtab:focus {
     flex: 1;
     padding: 10px 12px;
     border: none;
     border-radius: var(--radius-sm);
     background: transparent;
+    background-image: none;
     color: var(--color-muted);
     font: inherit;
     font-size: 14px;
@@ -2983,12 +2986,14 @@ a.text-link:focus {
     position: relative;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    box-shadow: none;
 }
 
 .quest-subtab-nav > .quest-subtab.is-active,
 .quest-subtab-nav > .quest-subtab.is-active:hover,
 .quest-subtab-nav > .quest-subtab.is-active:focus {
     background: var(--color-primary);
+    background-image: none;
     color: #fff;
     box-shadow: var(--shadow-sm);
 }
@@ -4326,12 +4331,15 @@ body.map-expanded-open {
     background: color-mix(in srgb, var(--color-border) 40%, var(--color-surface));
 }
 
-.friends-subtab-nav > .friends-subtab {
+.friends-subtab-nav > .friends-subtab,
+.friends-subtab-nav > .friends-subtab:hover,
+.friends-subtab-nav > .friends-subtab:focus {
     flex: 1;
     padding: 10px 12px;
     border: none;
     border-radius: var(--radius-sm);
     background: transparent;
+    background-image: none;
     color: var(--color-muted);
     font: inherit;
     font-size: 14px;
@@ -4341,12 +4349,14 @@ body.map-expanded-open {
     position: relative;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    box-shadow: none;
 }
 
 .friends-subtab-nav > .friends-subtab.is-active,
 .friends-subtab-nav > .friends-subtab.is-active:hover,
 .friends-subtab-nav > .friends-subtab.is-active:focus {
     background: var(--color-primary);
+    background-image: none;
     color: #fff;
     box-shadow: var(--shadow-sm);
 }
@@ -6313,12 +6323,15 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
     background: color-mix(in srgb, var(--color-border) 40%, var(--color-surface));
 }
 
-.profile-subtab-nav > .profile-subtab {
+.profile-subtab-nav > .profile-subtab,
+.profile-subtab-nav > .profile-subtab:hover,
+.profile-subtab-nav > .profile-subtab:focus {
     flex: 1;
     padding: 10px 12px;
     border: none;
     border-radius: var(--radius-sm);
     background: transparent;
+    background-image: none;
     color: var(--color-muted);
     font: inherit;
     font-size: 14px;
@@ -6328,12 +6341,14 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
     position: relative;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    box-shadow: none;
 }
 
 .profile-subtab-nav > .profile-subtab.is-active,
 .profile-subtab-nav > .profile-subtab.is-active:hover,
 .profile-subtab-nav > .profile-subtab.is-active:focus {
     background: var(--color-primary);
+    background-image: none;
     color: #fff;
     box-shadow: var(--shadow-sm);
 }
