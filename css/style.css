@@ -7955,10 +7955,6 @@ body.feed-comments-sheet-open {
 }
 
 .event-feed-day-header {
-    position: -webkit-sticky;
-    position: sticky;
-    top: 0;
-    z-index: 10;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -7987,12 +7983,88 @@ body.feed-comments-sheet-open {
     flex: 0 0 auto;
 }
 
+.event-feed-floating-day-header {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 60;
+    display: none;
+    align-items: center;
+    gap: 12px;
+    min-height: calc(54px + env(safe-area-inset-top, 0px));
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 14px 16px;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-border) 82%, var(--color-primary));
+    color: var(--color-heading);
+    background: var(--color-bg);
+    box-shadow: 0 12px 20px color-mix(in srgb, var(--color-text) 12%, transparent);
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 140ms ease, visibility 140ms ease;
+}
+
+.event-feed-floating-day-header::before,
+.event-feed-floating-day-header::after {
+    content: "";
+    flex: 1 1 auto;
+    height: 1px;
+    background: linear-gradient(90deg, var(--color-primary), color-mix(in srgb, var(--color-border) 50%, transparent));
+}
+
+.event-feed-floating-day-header::after {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--color-border) 50%, transparent), var(--color-primary));
+}
+
+.event-feed-floating-day-header span {
+    flex: 0 0 auto;
+}
+
+.event-feed-floating-day-header.is-changing span {
+    animation: event-floating-day-change 180ms ease-out;
+}
+
+@keyframes event-floating-day-change {
+    0% {
+        opacity: 0.55;
+        transform: translateY(6px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 760px) {
+    .event-feed-floating-day-header {
+        display: flex;
+    }
+
+    .event-feed-floating-day-header.is-visible {
+        opacity: 1;
+        visibility: visible;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .event-feed-floating-day-header {
+        transition: none;
+    }
+
+    .event-feed-floating-day-header.is-changing span {
+        animation: none;
+    }
+}
+
 .event-feed-cover {
     display: block;
     width: 100%;
     aspect-ratio: 2 / 1;
     border-radius: 0;
-    object-fit: contain;
+    object-fit: cover;
     background: #000;
     box-shadow: none;
     margin-bottom: 6px;
@@ -12415,8 +12487,9 @@ a.event-calendar-event:focus .event-calendar-event-name {
         flex-wrap: wrap;
     }
 
-    .events-page-body .event-feed-cover {
+    .events-page-body .event-feed-entry > .event-feed-cover {
         width: calc(100% + 28px);
+        max-width: none;
         margin-left: -14px;
     }
 
