@@ -3,6 +3,10 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
     const likedEventsOnly = root.querySelector('#liked-events-only');
     let eventDetailOverlay = null;
     let eventDetailOverlayContent = null;
+    let eventStickyDayHeader = null;
+    let eventStickyDayLabel = null;
+    let activeStickyDate = '';
+    let stickyDayUpdatePending = false;
 
     if (!feedContainer || feedContainer.dataset.portalEventsReady === 'true') {
         return false;
@@ -23,7 +27,9 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
     }
 
     function isEventsTabActive() {
-        return !feedContainer.closest('[data-user-tab-panel]')?.hidden;
+        return feedContainer.isConnected
+            && !feedContainer.closest('[data-user-page-content]')?.hidden
+            && !feedContainer.closest('[data-user-tab-panel]')?.hidden;
     }
 
     function refreshVisibleEvents() {
@@ -38,6 +44,7 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
 
     function renderEventsFeed(events) {
         if (!events.length) {
+            removeEventStickyDayHeader();
             feedContainer.innerHTML = '<p>No upcoming events yet.</p>';
             return;
         }
@@ -97,6 +104,7 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
         }).join('');
 
         feedContainer.innerHTML = eventsMarkup;
+        setupEventStickyDayHeader();
 
         feedContainer.querySelectorAll('[data-event-want]').forEach((button) => {
             button.addEventListener('click', () => {
@@ -156,6 +164,80 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
                 openEventDetailOverlay(item.dataset.eventDetailUrl, item);
             });
         });
+    }
+
+    function setupEventStickyDayHeader() {
+        removeEventStickyDayHeader();
+
+        eventStickyDayHeader = document.createElement('div');
+        eventStickyDayHeader.className = 'event-feed-floating-day-header';
+        eventStickyDayHeader.setAttribute('aria-hidden', 'true');
+        eventStickyDayHeader.innerHTML = '<span></span>';
+        document.body.appendChild(eventStickyDayHeader);
+        eventStickyDayLabel = eventStickyDayHeader.querySelector('span');
+        activeStickyDate = '';
+
+        requestEventStickyDayUpdate();
+        window.setTimeout(requestEventStickyDayUpdate, 80);
+    }
+
+    function removeEventStickyDayHeader() {
+        document.querySelectorAll('.event-feed-floating-day-header').forEach((header) => header.remove());
+        eventStickyDayHeader = null;
+        eventStickyDayLabel = null;
+        activeStickyDate = '';
+    }
+
+    function updateEventStickyDayHeader() {
+        stickyDayUpdatePending = false;
+
+        if (!eventStickyDayHeader || !eventStickyDayLabel) {
+            return;
+        }
+
+        const headers = Array.from(feedContainer.querySelectorAll('[data-event-day-header]'));
+        const isMobile = window.matchMedia('(max-width: 760px)').matches;
+
+        if (!headers.length || !isMobile || !isEventsTabActive()) {
+            eventStickyDayHeader.classList.remove('is-visible');
+            return;
+        }
+
+        const headerBottom = eventStickyDayHeader.getBoundingClientRect().bottom;
+        const threshold = Math.max(74, headerBottom);
+        const feedRect = feedContainer.getBoundingClientRect();
+        const shouldShow = feedRect.top <= threshold && feedRect.bottom > threshold;
+        eventStickyDayHeader.classList.toggle('is-visible', shouldShow);
+
+        if (!shouldShow) {
+            return;
+        }
+
+        let activeHeader = headers[0];
+        headers.forEach((header) => {
+            if (header.getBoundingClientRect().top <= threshold) {
+                activeHeader = header;
+            }
+        });
+
+        const nextDate = activeHeader.dataset.dateKey || '';
+        if (!nextDate || nextDate === activeStickyDate) {
+            return;
+        }
+
+        activeStickyDate = nextDate;
+        eventStickyDayLabel.textContent = activeHeader.dataset.dateLabel || '';
+        eventStickyDayHeader.classList.remove('is-changing');
+        window.requestAnimationFrame(() => eventStickyDayHeader?.classList.add('is-changing'));
+    }
+
+    function requestEventStickyDayUpdate() {
+        if (stickyDayUpdatePending) {
+            return;
+        }
+
+        stickyDayUpdatePending = true;
+        window.requestAnimationFrame(updateEventStickyDayHeader);
     }
 
     function normalizeEventDetailUrl(url) {
@@ -346,7 +428,12 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
         getAllEvents(likedEventsOnly.checked);
     });
 
+    window.addEventListener('scroll', requestEventStickyDayUpdate, { passive: true });
+    window.addEventListener('resize', requestEventStickyDayUpdate);
+    document.addEventListener('scroll', requestEventStickyDayUpdate, { capture: true, passive: true });
+
     window.addEventListener('craftcrawl:user-tab-changed', (event) => {
+        requestEventStickyDayUpdate();
         if (event.detail?.tab === 'events') {
             refreshVisibleEvents();
         }
@@ -355,6 +442,7 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
             refreshVisibleEvents();
+            requestEventStickyDayUpdate();
         }
     });
 
