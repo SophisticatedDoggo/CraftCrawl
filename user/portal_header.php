@@ -43,7 +43,7 @@ if ($craftcrawl_portal_show_level_summary && isset($conn, $user_id)) {
         <div class="mobile-actions-panel" data-mobile-actions-panel>
             <a href="friends.php">
                 Friends
-                <span class="notification-badge" data-friends-menu-badge hidden></span>
+                <span class="notification-badge friends-menu-inline-badge" data-friends-menu-badge hidden></span>
             </a>
             <a href="profile.php">Profile</a>
             <a class="settings-icon-link" href="settings.php" aria-label="Settings">
