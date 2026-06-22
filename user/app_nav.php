@@ -46,11 +46,7 @@ $craftcrawl_user_logout_action = $craftcrawl_user_logout_action ?? '/logout.php'
         <span class="mobile-tab-badge" data-quests-tab-badge hidden></span>
     </a>
     <button type="button" class="mobile-app-tab mobile-app-menu-tab" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
-        <span class="mobile-app-tab-icon mobile-app-tab-icon-menu" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-        </span>
+        <span class="mobile-app-tab-icon mobile-app-tab-icon-menu" aria-hidden="true"></span>
         <span>Menu</span>
         <span class="mobile-tab-badge" data-friends-menu-toggle-badge hidden></span>
     </button>
