@@ -9741,8 +9741,9 @@ body.feed-comments-sheet-open {
 
 @media (max-width: 760px) {
     .business-cover-photo {
+        width: 100vw;
+        max-width: none;
         margin-left: calc(-1 * var(--space-page));
-        width: calc(100% + 2 * var(--space-page));
         border-radius: 0;
         aspect-ratio: 16 / 9;
     }
@@ -9912,8 +9913,9 @@ body.feed-comments-sheet-open {
 
 @media (max-width: 760px) {
     .business-gallery-panel {
+        width: 100vw;
+        max-width: none;
         margin-left: calc(-1 * var(--space-page));
-        margin-right: calc(-1 * var(--space-page));
         padding-left: 0;
         padding-right: 0;
     }
