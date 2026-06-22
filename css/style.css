@@ -15388,7 +15388,7 @@ a.mobile-context-back.feed-thread-back-link:focus {
 }
 
 :root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo),
-:root[data-palette$="-dark"] button,
+:root[data-palette$="-dark"] button:not([class*="chain-btn"]),
 :root[data-palette$="-dark"] input[type="submit"],
 :root[data-palette$="-dark"] input[type="button"],
 :root[data-palette$="-dark"] .button-link,
@@ -15407,8 +15407,8 @@ a.mobile-context-back.feed-thread-back-link:focus {
 
 :root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):hover,
 :root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):focus,
-:root[data-palette$="-dark"] button:hover,
-:root[data-palette$="-dark"] button:focus,
+:root[data-palette$="-dark"] button:not([class*="chain-btn"]):hover,
+:root[data-palette$="-dark"] button:not([class*="chain-btn"]):focus,
 :root[data-palette$="-dark"] input[type="submit"]:hover,
 :root[data-palette$="-dark"] input[type="submit"]:focus,
 :root[data-palette$="-dark"] input[type="button"]:hover,
