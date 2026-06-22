@@ -223,12 +223,9 @@ $suggested_friends_count = $suggested_friends->num_rows;
             </div>
 
             <div class="friends-find-section">
-                <div class="friends-find-section-header">
-                    <h3>Add New Friends</h3>
-                    <button type="submit" form="friend-search-form">Search</button>
-                </div>
+                <h3>Add New Friends</h3>
                 <form class="friends-search-form" id="friend-search-form" data-friends-search-form>
-                    <label for="friend-search-input">Search friend accounts</label>
+                    <label for="friend-search-input" class="visually-hidden">Search friend accounts</label>
                     <div>
                         <input type="search" id="friend-search-input" name="q" placeholder="Search by name or username" autocomplete="off">
                     </div>

@@ -4731,6 +4731,8 @@ a.feed-event-link:not(.mapboxgl-ctrl-logo) {
     grid-column: 3;
     grid-row: 1;
     align-self: end;
+    position: relative;
+    z-index: 2;
     pointer-events: auto;
 }
 
