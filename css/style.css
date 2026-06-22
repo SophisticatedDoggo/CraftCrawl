@@ -7800,21 +7800,16 @@ body.feed-comments-sheet-open {
     height: 15px;
 }
 
-.business-action-group {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-}
-
 .action-count {
-    font-size: 13px;
-    color: var(--color-text-muted);
+    font-size: inherit;
+    font-weight: inherit;
+    opacity: 0.7;
 }
 
 .action-social-proof {
     width: 100%;
-    font-size: 12px;
+    margin: 0;
+    font-size: 13px;
     color: var(--color-text-muted);
 }
 

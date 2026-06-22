@@ -799,61 +799,59 @@ function format_event_time_range($event) {
                     <a href="<?php echo escape_output($business['bWebsite']); ?>" target="_blank" rel="noopener">Visit Website</a>
                 <?php endif; ?>
 
-                <div class="business-action-group">
-                    <form method="POST" action="" class="follow-business-form">
-                        <?php echo craftcrawl_csrf_input(); ?>
-                        <input type="hidden" name="form_action" value="toggle_follow">
-                        <input type="hidden" name="is_following" value="<?php echo $is_following ? '1' : '0'; ?>">
-                        <button type="submit" class="follow-button <?php echo $is_following ? 'is-followed' : ''; ?>">
-                            <svg class="follow-icon" viewBox="0 0 24 24" fill="<?php echo $is_following ? 'currentColor' : 'none'; ?>" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.7 4C18.87 4 21 6.98 21 9.76C21 15.39 12.16 20 12 20C11.84 20 3 15.39 3 9.76C3 6.98 5.13 4 8.3 4C10.12 4 11.31 4.91 12 5.71C12.69 4.91 13.88 4 15.7 4Z"/></svg>
-                            <span><?php echo $is_following ? 'Unfollow' : 'Follow'; ?></span>
-                        </button>
-                    </form>
-                    <?php if ($follower_count > 0) : ?>
-                        <span class="action-count"><?php echo number_format($follower_count); ?> <?php echo $follower_count === 1 ? 'follower' : 'followers'; ?></span>
-                    <?php endif; ?>
-                    <?php if (!empty($friends_who_follow)) :
+                <form method="POST" action="" class="follow-business-form">
+                    <?php echo craftcrawl_csrf_input(); ?>
+                    <input type="hidden" name="form_action" value="toggle_follow">
+                    <input type="hidden" name="is_following" value="<?php echo $is_following ? '1' : '0'; ?>">
+                    <button type="submit" class="follow-button <?php echo $is_following ? 'is-followed' : ''; ?>">
+                        <svg class="follow-icon" viewBox="0 0 24 24" fill="<?php echo $is_following ? 'currentColor' : 'none'; ?>" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.7 4C18.87 4 21 6.98 21 9.76C21 15.39 12.16 20 12 20C11.84 20 3 15.39 3 9.76C3 6.98 5.13 4 8.3 4C10.12 4 11.31 4.91 12 5.71C12.69 4.91 13.88 4 15.7 4Z"/></svg>
+                        <span><?php echo $is_following ? 'Unfollow' : 'Follow'; ?></span>
+                        <?php if ($follower_count > 0) : ?>
+                            <span class="action-count"><?php echo number_format($follower_count); ?></span>
+                        <?php endif; ?>
+                    </button>
+                </form>
+                <form method="POST" action="user/want_to_go_toggle.php" class="want-to-go-form">
+                    <?php echo craftcrawl_csrf_input(); ?>
+                    <input type="hidden" name="business_id" value="<?php echo escape_output($legacy_business_id); ?>">
+                    <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
+                    <input type="hidden" name="is_saved" value="<?php echo $is_want_to_go ? '1' : '0'; ?>">
+                    <button type="submit" class="want-to-go-button<?php echo $is_want_to_go ? ' is-saved' : ''; ?>">
+                        <span class="pin-icon" aria-hidden="true"></span>
+                        <span><?php echo $is_want_to_go ? 'Saved' : 'Save'; ?></span>
+                        <?php if ($save_count > 0) : ?>
+                            <span class="action-count"><?php echo number_format($save_count); ?></span>
+                        <?php endif; ?>
+                    </button>
+                </form>
+                <?php
+                    $social_proof_lines = [];
+                    if (!empty($friends_who_follow)) {
                         $friend_count = count($friends_who_follow);
                         $others = $follower_count - $friend_count;
                         if ($others > 0) {
-                            $friend_text = escape_output($friends_who_follow[0]) . ' and ' . number_format($others) . ' other' . ($others === 1 ? '' : 's') . ' follow this';
+                            $social_proof_lines[] = escape_output($friends_who_follow[0]) . ' and ' . number_format($others) . ' other' . ($others === 1 ? '' : 's') . ' follow this';
                         } elseif ($friend_count > 1) {
-                            $friend_text = escape_output($friends_who_follow[0]) . ' and ' . ($friend_count - 1) . ' other friend' . (($friend_count - 1) === 1 ? '' : 's') . ' follow this';
+                            $social_proof_lines[] = escape_output($friends_who_follow[0]) . ' and ' . ($friend_count - 1) . ' other friend' . (($friend_count - 1) === 1 ? '' : 's') . ' follow this';
                         } else {
-                            $friend_text = escape_output($friends_who_follow[0]) . ' follows this';
+                            $social_proof_lines[] = escape_output($friends_who_follow[0]) . ' follows this';
                         }
-                    ?>
-                        <span class="action-social-proof"><?php echo $friend_text; ?></span>
-                    <?php endif; ?>
-                </div>
-                <div class="business-action-group">
-                    <form method="POST" action="user/want_to_go_toggle.php" class="want-to-go-form">
-                        <?php echo craftcrawl_csrf_input(); ?>
-                        <input type="hidden" name="business_id" value="<?php echo escape_output($legacy_business_id); ?>">
-                        <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
-                        <input type="hidden" name="is_saved" value="<?php echo $is_want_to_go ? '1' : '0'; ?>">
-                        <button type="submit" class="want-to-go-button<?php echo $is_want_to_go ? ' is-saved' : ''; ?>">
-                            <span class="pin-icon" aria-hidden="true"></span>
-                            <span><?php echo $is_want_to_go ? 'Saved' : 'Save'; ?></span>
-                        </button>
-                    </form>
-                    <?php if ($save_count > 0) : ?>
-                        <span class="action-count"><?php echo number_format($save_count); ?> <?php echo $save_count === 1 ? 'save' : 'saves'; ?></span>
-                    <?php endif; ?>
-                    <?php if (!empty($friends_who_saved)) :
+                    }
+                    if (!empty($friends_who_saved)) {
                         $friend_save_count = count($friends_who_saved);
                         $save_others = $save_count - $friend_save_count;
                         if ($save_others > 0) {
-                            $save_friend_text = escape_output($friends_who_saved[0]) . ' and ' . number_format($save_others) . ' other' . ($save_others === 1 ? '' : 's') . ' saved this';
+                            $social_proof_lines[] = escape_output($friends_who_saved[0]) . ' and ' . number_format($save_others) . ' other' . ($save_others === 1 ? '' : 's') . ' saved this';
                         } elseif ($friend_save_count > 1) {
-                            $save_friend_text = escape_output($friends_who_saved[0]) . ' and ' . ($friend_save_count - 1) . ' other friend' . (($friend_save_count - 1) === 1 ? '' : 's') . ' saved this';
+                            $social_proof_lines[] = escape_output($friends_who_saved[0]) . ' and ' . ($friend_save_count - 1) . ' other friend' . (($friend_save_count - 1) === 1 ? '' : 's') . ' saved this';
                         } else {
-                            $save_friend_text = escape_output($friends_who_saved[0]) . ' saved this';
+                            $social_proof_lines[] = escape_output($friends_who_saved[0]) . ' saved this';
                         }
-                    ?>
-                        <span class="action-social-proof"><?php echo $save_friend_text; ?></span>
-                    <?php endif; ?>
-                </div>
+                    }
+                ?>
+                <?php if (!empty($social_proof_lines)) : ?>
+                    <p class="action-social-proof"><?php echo implode(' · ', $social_proof_lines); ?></p>
+                <?php endif; ?>
                 <?php endif; ?>
             </div>
 
