@@ -12510,8 +12510,8 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .mobile-app-tab-icon-quests {
         -webkit-mask-image: url("../images/SVG/quests.svg");
         mask-image: url("../images/SVG/quests.svg");
-        width: 28px;
-        height: 28px;
+        width: 36px;
+        height: 36px;
     }
 
     .mobile-app-tab-icon-menu {
