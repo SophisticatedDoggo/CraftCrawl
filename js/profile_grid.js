@@ -58,7 +58,7 @@
 
     function switchProfileSubtab(target) {
         if (feedView && feedView.classList.contains('is-active')) {
-            hideFeedView(false);
+            hideFeedView();
         }
 
         profilePage.querySelectorAll('[data-profile-subtab]').forEach(function (tab) {
@@ -283,20 +283,15 @@
                 feedLoading = false;
             });
 
-        history.pushState({ profileFeedView: true, visitId: targetVisitId }, '', '');
     }
 
-    function hideFeedView(useHistory) {
+    function hideFeedView() {
         feedView.classList.remove('is-active');
         if (grid) grid.style.display = '';
         if (gridLoadMore) gridLoadMore.style.display = '';
         if (feedLoadMore) feedLoadMore.hidden = true;
 
         window.scrollTo(0, gridScrollPosition);
-
-        if (useHistory !== false && history.state && history.state.profileFeedView) {
-            history.back();
-        }
     }
 
     grid.addEventListener('click', function (e) {
@@ -312,12 +307,6 @@
             hideFeedView();
         });
     }
-
-    window.addEventListener('popstate', function () {
-        if (feedView.classList.contains('is-active')) {
-            hideFeedView(false);
-        }
-    });
 
     // --- Swipe right to dismiss feed view ---
 
