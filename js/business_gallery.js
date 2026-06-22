@@ -118,7 +118,17 @@ window.CraftCrawlInitBusinessGallery = function (root = document) {
                 relativeIndex += slides.length;
             }
 
+            const isAdjacent = Math.abs(relativeIndex) <= 1;
+            if (!isAdjacent) {
+                slide.style.transition = 'none';
+            }
+
             slide.style.transform = `translateX(${relativeIndex * 100}%)`;
+
+            if (!isAdjacent) {
+                void slide.offsetWidth;
+                slide.style.transition = '';
+            }
         });
 
         dots.forEach((dot, dotIndex) => {

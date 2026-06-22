@@ -591,7 +591,6 @@ function format_event_time_range($event) {
         <div class="details-nav">
             <a href="<?php echo $is_admin_preview ? 'admin/review_center.php' : 'user/portal.php'; ?>" data-back-link>Back</a>
             <div class="business-header-actions">
-                <button type="button" class="refresh-page-button" data-refresh-button>Refresh</button>
                 <?php if ($is_admin_preview) : ?>
                     <a href="admin/review_center.php">Approval Center</a>
                 <?php else : ?>
