@@ -3338,12 +3338,17 @@ a.text-link:focus {
 .chain-actions > .chain-btn-primary,
 .chain-actions > .chain-btn-primary:hover,
 .chain-actions > .chain-btn-primary:focus {
-    background: var(--color-primary);
     color: var(--color-on-primary, #fff);
-    border: none;
+    border: 1px solid color-mix(in srgb, var(--color-primary) 74%, rgba(255, 255, 255, 0.22));
+    background:
+        var(--glass-button),
+        var(--color-primary);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    box-shadow: none;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.28),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+        0 6px 16px color-mix(in srgb, var(--color-primary) 28%, transparent);
 }
 
 .chain-actions > .chain-btn-secondary,
@@ -3382,12 +3387,17 @@ a.text-link:focus {
 .chain-actions > .chain-btn-danger,
 .chain-actions > .chain-btn-danger:hover,
 .chain-actions > .chain-btn-danger:focus {
-    background: transparent;
     color: var(--color-primary);
     border: 1px solid var(--color-primary);
+    background:
+        var(--glass-button),
+        color-mix(in srgb, var(--color-primary) 8%, transparent);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    box-shadow: none;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.16),
+        inset 0 -1px 0 color-mix(in srgb, var(--color-primary) 12%, transparent),
+        0 5px 14px color-mix(in srgb, var(--color-primary) 20%, transparent);
 }
 
 .chain-discover-actions {
@@ -5314,8 +5324,13 @@ a.feed-event-link:not(.mapboxgl-ctrl-logo) {
     border: none;
     border-radius: 999px;
     color: var(--color-on-primary);
-    background: var(--color-primary);
-    box-shadow: 0 10px 22px color-mix(in srgb, var(--color-primary) 36%, transparent);
+    background:
+        var(--glass-button),
+        var(--color-primary);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.28),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+        0 10px 22px color-mix(in srgb, var(--color-primary) 38%, transparent);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
@@ -5991,28 +6006,46 @@ a.feed-detail-link:not(.mapboxgl-ctrl-logo) {
     flex: 0 0 auto;
     min-height: 34px;
     padding: 7px 10px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    color: var(--color-heading);
-    background: var(--color-surface);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    color: var(--color-primary);
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.055) 34%, transparent 66%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.045) 46%, rgba(255, 255, 255, 0.015)),
+        color-mix(in srgb, var(--color-surface) 18%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.26),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.055),
+        0 5px 14px color-mix(in srgb, var(--color-text) 10%, transparent);
+    backdrop-filter: blur(18px) saturate(1.35);
+    -webkit-backdrop-filter: blur(18px) saturate(1.35);
     font: inherit;
     font-size: 13px;
     font-weight: 800;
     white-space: nowrap;
     text-decoration: none;
     cursor: pointer;
+    transition: border-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
 }
 
 .leaderboard-mode-tabs a.is-active,
 .leaderboard-mode-tabs button.is-active {
-    color: #ffffff;
-    background: var(--color-primary);
+    color: var(--color-on-primary);
     border-color: var(--color-primary);
+    background:
+        var(--glass-button),
+        var(--color-primary);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.28),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+        0 6px 16px color-mix(in srgb, var(--color-primary) 28%, transparent);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 :root[data-palette$="-dark"] .leaderboard-mode-tabs a.is-active,
 :root[data-palette$="-dark"] .leaderboard-mode-tabs button.is-active {
-    color: #000000;
+    color: var(--color-on-primary);
 }
 
 .leaderboard-row-top {
@@ -15499,8 +15532,14 @@ a.mobile-context-back.feed-thread-back-link:focus {
 :root[data-palette$="-dark"] .leaderboard-mode-tabs a.is-active:not(.mapboxgl-ctrl-logo):hover,
 :root[data-palette$="-dark"] .leaderboard-mode-tabs a.is-active:not(.mapboxgl-ctrl-logo):focus {
     border-color: var(--color-primary);
-    color: #000000;
-    background: var(--color-primary);
+    color: var(--color-on-primary);
+    background:
+        var(--glass-button),
+        var(--color-primary);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.28),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+        0 6px 16px color-mix(in srgb, var(--color-primary) 28%, transparent);
 }
 
 :root[data-palette$="-dark"] a[data-back-link]:not(.mapboxgl-ctrl-logo),
