@@ -1035,11 +1035,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
                         ${friend.is_new ? '<span class="friend-current-new-badge">New</span>' : ''}
                     </div>
                     <p class="friend-current-meta">Level ${escapeHtml(friend.level || 1)}${friend.title ? ` &middot; ${escapeHtml(friend.title)}` : ''}</p>
-                    <div class="friend-current-action-row">
-                        <p class="friend-current-meta friend-current-username">@${escapeHtml(friend.username || '')}</p>
-                        <button type="button" class="danger-button friend-remove-button" data-remove-friend-id="${friend.id}" data-remove-friend-name="${escapeHtml(friend.name)}">Remove</button>
-                    </div>
+                    <p class="friend-current-meta friend-current-username">@${escapeHtml(friend.username || '')}</p>
                 </div>
+                <button type="button" class="danger-button friend-remove-button" data-remove-friend-id="${friend.id}" data-remove-friend-name="${escapeHtml(friend.name)}">Remove</button>
                 <a class="friend-card-link" href="profile.php?id=${encodeURIComponent(friend.id)}" aria-label="View ${escapeHtml(friend.name)}'s profile"></a>
             </article>
         `).join('');
