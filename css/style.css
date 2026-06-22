@@ -9742,19 +9742,18 @@ body.feed-comments-sheet-open {
 @media (max-width: 760px) {
     .business-hero-panel {
         margin-top: 0;
-    }
-
-    .business-cover-photo {
-        margin-top: -24px;
-        margin-left: calc(-1 * var(--space-page));
-        margin-right: calc(-1 * var(--space-page));
-        width: calc(100% + 2 * var(--space-page));
-        border-radius: 0;
-        aspect-ratio: 16 / 9;
+        padding-top: 0;
     }
 
     .business-hero-panel::before {
         display: none;
+    }
+
+    .business-cover-photo {
+        margin-left: calc(-1 * var(--space-page));
+        width: calc(100% + 2 * var(--space-page));
+        border-radius: 0;
+        aspect-ratio: 16 / 9;
     }
 }
 
