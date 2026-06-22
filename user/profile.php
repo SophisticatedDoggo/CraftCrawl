@@ -378,6 +378,7 @@ if (!$profile) {
                 u.id,
                 u.fName,
                 u.lName,
+                u.username,
                 " . craftcrawl_level_sql('u.total_xp') . " AS level,
                 u.selected_title_index,
                 u.selected_profile_frame, u.selected_profile_frame_style,
@@ -783,7 +784,10 @@ if (!$profile) {
                 <?php if ($can_view_liked_businesses) : ?>
                     <section class="settings-panel" data-profile-filter-list>
                         <div class="profile-list-header">
-                            <h2><?php echo $is_own_profile ? 'Businesses You Follow' : 'Businesses They Follow'; ?></h2>
+                            <div>
+                                <h2><?php echo $is_own_profile ? 'Following' : 'Following'; ?></h2>
+                                <p class="form-help"><?php echo $is_own_profile ? 'Businesses you follow for updates and posts.' : 'Businesses they follow for updates and posts.'; ?></p>
+                            </div>
                             <label class="profile-list-search">
                                 <span class="visually-hidden">Search followed businesses</span>
                                 <input type="search" placeholder="Search" autocomplete="off" data-profile-filter-input>
@@ -791,14 +795,14 @@ if (!$profile) {
                         </div>
                         <div class="friend-location-grid" data-profile-filter-items>
                             <?php if ($followed_businesses->num_rows === 0) : ?>
-                                <p>Not following any businesses yet.</p>
+                                <p class="form-help">Not following any businesses yet.</p>
                             <?php endif; ?>
                             <?php while ($business = $followed_businesses->fetch_assoc()) : ?>
                                 <article class="friend-location-card" data-profile-filter-item>
                                     <strong><?php echo escape_output($business['bName']); ?></strong>
                                     <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
                                     <div class="profile-location-actions">
-                                        <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View Business</a>
+                                        <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View</a>
                                         <?php if ($is_own_profile) : ?>
                                             <form method="POST" action="">
                                                 <?php echo craftcrawl_csrf_input(); ?>
@@ -818,7 +822,10 @@ if (!$profile) {
                 <?php if ($want_to_go_businesses->num_rows > 0 || $is_own_profile) : ?>
                     <section class="settings-panel" data-profile-filter-list>
                         <div class="profile-list-header">
-                            <h2>Want to Go</h2>
+                            <div>
+                                <h2>Want to Go</h2>
+                                <p class="form-help"><?php echo $is_own_profile ? 'Locations saved for your next crawl.' : 'Locations saved for a future visit.'; ?></p>
+                            </div>
                             <label class="profile-list-search">
                                 <span class="visually-hidden">Search Want to Go locations</span>
                                 <input type="search" placeholder="Search" autocomplete="off" data-profile-filter-input>
@@ -826,14 +833,14 @@ if (!$profile) {
                         </div>
                         <div class="friend-location-grid" data-profile-filter-items>
                             <?php if ($want_to_go_businesses->num_rows === 0) : ?>
-                                <p>No saved locations yet.</p>
+                                <p class="form-help">No saved locations yet.</p>
                             <?php endif; ?>
                             <?php while ($business = $want_to_go_businesses->fetch_assoc()) : ?>
                                 <article class="friend-location-card" data-profile-filter-item>
                                     <strong><?php echo escape_output($business['bName']); ?></strong>
                                     <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
                                     <div class="profile-location-actions">
-                                        <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View Business</a>
+                                        <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View</a>
                                         <?php if ($is_own_profile) : ?>
                                             <form method="POST" action="">
                                                 <?php echo craftcrawl_csrf_input(); ?>
@@ -853,9 +860,10 @@ if (!$profile) {
                 <?php if ($is_own_profile && $suggested_friends !== null) : ?>
                     <section class="settings-panel friends-manager-section">
                         <h2>Suggested Friends</h2>
+                        <p class="form-help">People you may know based on mutual friends.</p>
                         <div class="friend-recommendation-list" data-suggested-friends-list>
                             <?php if ($suggested_friends->num_rows === 0) : ?>
-                                <p data-suggested-friends-empty>No suggested friends yet.</p>
+                                <p class="form-help" data-suggested-friends-empty>No suggestions right now. Add more friends to get recommendations.</p>
                             <?php endif; ?>
                             <?php while ($suggested_friend = $suggested_friends->fetch_assoc()) : ?>
                                 <?php
@@ -884,22 +892,45 @@ if (!$profile) {
             </div>
 
             <!-- About Panel -->
+            <?php
+                $member_since_timestamp = strtotime($profile['createdAt'] ?? 'now');
+                $member_since_formatted = date('F j, Y', $member_since_timestamp);
+                $member_days = max(1, (int) ((time() - $member_since_timestamp) / 86400));
+                if ($member_days < 30) {
+                    $member_duration = $member_days . ' day' . ($member_days !== 1 ? 's' : '');
+                } elseif ($member_days < 365) {
+                    $member_months = (int) ($member_days / 30);
+                    $member_duration = $member_months . ' month' . ($member_months !== 1 ? 's' : '');
+                } else {
+                    $member_years = round($member_days / 365, 1);
+                    $member_duration = rtrim(rtrim(number_format($member_years, 1), '0'), '.') . ' year' . ($member_years != 1 ? 's' : '');
+                }
+            ?>
             <div data-profile-subtab-panel="about" hidden>
-                <?php if ($is_own_profile) : ?>
-                    <div class="profile-about-section">
-                        <div class="profile-about-detail">
-                            <h3>Username</h3>
-                            <strong>@<?php echo escape_output($profile['username'] ?? ''); ?></strong>
-                        </div>
-                        <div class="profile-about-detail">
-                            <h3>Member Since</h3>
-                            <strong><?php echo escape_output(date('F j, Y', strtotime($profile['createdAt'] ?? 'now'))); ?></strong>
-                        </div>
+                <div class="profile-about-section">
+                    <div class="profile-about-detail">
+                        <h3>Username</h3>
+                        <strong>@<?php echo escape_output($profile['username'] ?? ''); ?></strong>
                     </div>
-                <?php else : ?>
+                    <div class="profile-about-detail">
+                        <h3>Member Since</h3>
+                        <strong><?php echo escape_output($member_since_formatted); ?></strong>
+                        <span>Crawling for <?php echo escape_output($member_duration); ?></span>
+                    </div>
+                    <div class="profile-about-detail">
+                        <h3>Level</h3>
+                        <strong>Level <?php echo escape_output($user_progress['level']); ?> · <?php echo escape_output($user_progress['title']); ?></strong>
+                        <span><?php echo escape_output(number_format($user_progress['total_xp'] ?? 0)); ?> total XP earned</span>
+                    </div>
+                </div>
+
+                <?php if (!$is_own_profile) : ?>
                     <section class="settings-panel" data-profile-filter-list data-profile-page-size="10">
                         <div class="profile-list-header">
-                            <h2>Their Friends</h2>
+                            <div>
+                                <h2>Their Friends</h2>
+                                <p class="form-help">People <?php echo escape_output($profile['fName']); ?> is connected with on CraftCrawl.</p>
+                            </div>
                             <label class="profile-list-search">
                                 <span class="visually-hidden">Search their friends</span>
                                 <input type="search" placeholder="Search" autocomplete="off" data-profile-filter-input>
@@ -924,18 +955,18 @@ if (!$profile) {
                                             <strong><?php echo escape_output($profile_friend_name); ?></strong>
                                         </div>
                                         <p class="friend-current-meta">Level <?php echo escape_output($profile_friend_level); ?><?php echo $profile_friend_title !== '' ? ' · ' . escape_output($profile_friend_title) : ''; ?></p>
+                                        <p class="friend-current-meta friend-current-username">@<?php echo escape_output($profile_friend['username'] ?? ''); ?></p>
                                     </div>
-                                    <div class="friend-current-actions">
-                                        <?php if ($can_open_profile_friend) : ?>
-                                            <a href="profile.php?id=<?php echo escape_output($profile_friend['id']); ?>">View Profile</a>
-                                        <?php elseif (!empty($profile_friend['received_request_id'])) : ?>
+                                    <?php if (!$can_open_profile_friend) : ?>
+                                        <?php if (!empty($profile_friend['received_request_id'])) : ?>
                                             <button type="button" data-profile-friend-action="accept" data-request-id="<?php echo escape_output($profile_friend['received_request_id']); ?>" data-friend-id="<?php echo escape_output($profile_friend['id']); ?>">Accept Invite</button>
                                         <?php elseif (!empty($profile_friend['sent_request_id'])) : ?>
                                             <button type="button" disabled>Request Pending</button>
                                         <?php else : ?>
                                             <button type="button" data-profile-friend-action="invite" data-friend-id="<?php echo escape_output($profile_friend['id']); ?>">Add Friend</button>
                                         <?php endif; ?>
-                                    </div>
+                                    <?php endif; ?>
+                                    <a class="friend-card-link" href="profile.php?id=<?php echo escape_output($profile_friend['id']); ?>" aria-label="View <?php echo escape_output($profile_friend_name); ?>'s profile"></a>
                                 </article>
                             <?php endwhile; ?>
                             <p class="profile-list-empty" data-profile-filter-empty hidden>No friends match your search.</p>
@@ -948,32 +979,34 @@ if (!$profile) {
                     </section>
 
                     <section class="settings-panel">
-                        <h2>Shared Locations</h2>
+                        <h2>Places in Common</h2>
+                        <p class="form-help">Locations you and <?php echo escape_output($profile['fName']); ?> have both visited.</p>
                         <div class="friend-location-grid">
                             <?php if ($shared_locations->num_rows === 0) : ?>
-                                <p>No shared visited locations yet.</p>
+                                <p class="form-help">You haven't visited any of the same spots yet.</p>
                             <?php endif; ?>
                             <?php while ($location = $shared_locations->fetch_assoc()) : ?>
                                 <article class="friend-location-card">
                                     <strong><?php echo escape_output($location['bName']); ?></strong>
                                     <span><?php echo escape_output(craftcrawl_profile_business_type_label($location['bType'])); ?> · <?php echo escape_output($location['city']); ?>, <?php echo escape_output($location['state']); ?></span>
-                                    <a href="../business_details.php?id=<?php echo escape_output($location['id']); ?>">View Location</a>
+                                    <a href="../business_details.php?id=<?php echo escape_output($location['id']); ?>">View</a>
                                 </article>
                             <?php endwhile; ?>
                         </div>
                     </section>
 
                     <section class="settings-panel">
-                        <h2>Places They Visited That You Have Not</h2>
+                        <h2>New to You</h2>
+                        <p class="form-help">Places <?php echo escape_output($profile['fName']); ?> has been that you haven't checked out yet.</p>
                         <div class="friend-location-grid">
                             <?php if ($friend_unvisited_locations->num_rows === 0) : ?>
-                                <p>No new-to-you locations yet.</p>
+                                <p class="form-help">No new-to-you locations yet.</p>
                             <?php endif; ?>
                             <?php while ($location = $friend_unvisited_locations->fetch_assoc()) : ?>
                                 <article class="friend-location-card">
                                     <strong><?php echo escape_output($location['bName']); ?></strong>
                                     <span><?php echo escape_output(craftcrawl_profile_business_type_label($location['bType'])); ?> · <?php echo escape_output($location['city']); ?>, <?php echo escape_output($location['state']); ?></span>
-                                    <a href="../business_details.php?id=<?php echo escape_output($location['id']); ?>">View Location</a>
+                                    <a href="../business_details.php?id=<?php echo escape_output($location['id']); ?>">View</a>
                                 </article>
                             <?php endwhile; ?>
                         </div>

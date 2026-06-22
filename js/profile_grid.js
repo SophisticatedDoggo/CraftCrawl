@@ -236,14 +236,10 @@ window.CraftCrawlInitProfileGrid = function (scope) {
     function showFeedView(targetVisitId) {
         gridScrollPosition = window.scrollY;
 
-        if (grid) grid.style.display = 'none';
-        if (gridLoadMore) gridLoadMore.style.display = 'none';
-        feedView.classList.add('is-active');
-
-        feedItems.innerHTML = '<p style="text-align: center; padding: 24px 0; color: var(--color-muted);">Loading...</p>';
+        feedItems.innerHTML = '';
+        feedLoading = true;
 
         var url = 'profile_checkins.php?mode=feed&user_id=' + encodeURIComponent(profileId);
-        feedLoading = true;
 
         fetch(url, { credentials: 'same-origin' })
             .then(function (res) { return res.json(); })
@@ -271,19 +267,28 @@ window.CraftCrawlInitProfileGrid = function (scope) {
                     window.CraftCrawlInitFeedThread(feedView);
                 }
 
-                if (targetVisitId) {
-                    var targetCard = feedItems.querySelector('[data-feed-item-key$=":' + CSS.escape(targetVisitId) + '"]');
-                    if (targetCard) {
-                        requestAnimationFrame(function () {
+                if (grid) grid.style.display = 'none';
+                if (gridLoadMore) gridLoadMore.style.display = 'none';
+                feedView.classList.add('is-active');
+
+                requestAnimationFrame(function () {
+                    if (targetVisitId) {
+                        var targetCard = feedItems.querySelector('[data-feed-item-key$=":' + CSS.escape(targetVisitId) + '"]');
+                        if (targetCard) {
                             targetCard.scrollIntoView({ behavior: 'instant', block: 'start' });
                             window.scrollBy(0, -60);
-                        });
+                        } else {
+                            window.scrollTo(0, 0);
+                        }
+                    } else {
+                        window.scrollTo(0, 0);
                     }
-                } else {
-                    window.scrollTo(0, 0);
-                }
+                });
             })
             .catch(function () {
+                if (grid) grid.style.display = 'none';
+                if (gridLoadMore) gridLoadMore.style.display = 'none';
+                feedView.classList.add('is-active');
                 feedItems.innerHTML = '<p style="text-align: center; padding: 24px 0; color: var(--color-muted);">Could not load posts.</p>';
             })
             .finally(function () {
