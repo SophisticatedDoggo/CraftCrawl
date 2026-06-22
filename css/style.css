@@ -4245,6 +4245,9 @@ body.map-expanded-open {
 .friends-panel {
     display: grid;
     gap: 18px;
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: 32px var(--space-page);
 }
 
 .friends-header {
@@ -4725,6 +4728,8 @@ a.feed-event-link:not(.mapboxgl-ctrl-logo) {
 }
 
 .friend-current-item .friend-remove-button {
+    grid-column: 3;
+    grid-row: 1;
     align-self: end;
     pointer-events: auto;
 }
