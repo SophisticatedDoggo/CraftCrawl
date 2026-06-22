@@ -6043,7 +6043,8 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
 }
 
 .friend-card-action-row,
-.friend-current-action-row {
+.friend-current-action-row,
+.friend-current-item > .friend-remove-button {
     pointer-events: auto;
 }
 
