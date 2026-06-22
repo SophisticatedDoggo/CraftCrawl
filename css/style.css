@@ -2976,7 +2976,6 @@ a.text-link:focus {
     border: none;
     border-radius: var(--radius-sm);
     background: transparent;
-    background-image: none;
     color: var(--color-muted);
     font: inherit;
     font-size: 14px;
@@ -2993,7 +2992,6 @@ a.text-link:focus {
 .quest-subtab-nav > .quest-subtab.is-active:hover,
 .quest-subtab-nav > .quest-subtab.is-active:focus {
     background: var(--color-primary);
-    background-image: none;
     color: #fff;
     box-shadow: var(--shadow-sm);
 }
@@ -4339,7 +4337,6 @@ body.map-expanded-open {
     border: none;
     border-radius: var(--radius-sm);
     background: transparent;
-    background-image: none;
     color: var(--color-muted);
     font: inherit;
     font-size: 14px;
@@ -4356,7 +4353,6 @@ body.map-expanded-open {
 .friends-subtab-nav > .friends-subtab.is-active:hover,
 .friends-subtab-nav > .friends-subtab.is-active:focus {
     background: var(--color-primary);
-    background-image: none;
     color: #fff;
     box-shadow: var(--shadow-sm);
 }
@@ -6331,7 +6327,6 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
     border: none;
     border-radius: var(--radius-sm);
     background: transparent;
-    background-image: none;
     color: var(--color-muted);
     font: inherit;
     font-size: 14px;
@@ -6348,7 +6343,6 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
 .profile-subtab-nav > .profile-subtab.is-active:hover,
 .profile-subtab-nav > .profile-subtab.is-active:focus {
     background: var(--color-primary);
-    background-image: none;
     color: #fff;
     box-shadow: var(--shadow-sm);
 }
@@ -15403,7 +15397,7 @@ a.mobile-context-back.feed-thread-back-link:focus {
 }
 
 :root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo),
-:root[data-palette$="-dark"] button:not([class*="chain-btn"]),
+:root[data-palette$="-dark"] button:not([class*="chain-btn"]):not([class*="subtab"]),
 :root[data-palette$="-dark"] input[type="submit"],
 :root[data-palette$="-dark"] input[type="button"],
 :root[data-palette$="-dark"] .button-link,
@@ -15422,8 +15416,8 @@ a.mobile-context-back.feed-thread-back-link:focus {
 
 :root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):hover,
 :root[data-palette$="-dark"] a:not(.mapboxgl-ctrl-logo):focus,
-:root[data-palette$="-dark"] button:not([class*="chain-btn"]):hover,
-:root[data-palette$="-dark"] button:not([class*="chain-btn"]):focus,
+:root[data-palette$="-dark"] button:not([class*="chain-btn"]):not([class*="subtab"]):hover,
+:root[data-palette$="-dark"] button:not([class*="chain-btn"]):not([class*="subtab"]):focus,
 :root[data-palette$="-dark"] input[type="submit"]:hover,
 :root[data-palette$="-dark"] input[type="submit"]:focus,
 :root[data-palette$="-dark"] input[type="button"]:hover,
