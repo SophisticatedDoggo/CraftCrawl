@@ -4127,7 +4127,6 @@ body.map-expanded-open {
 .events-feed {
     position: relative;
     width: 100%;
-    margin-top: 14px;
 }
 
 .events-feed-header {
@@ -7969,20 +7968,20 @@ body.feed-comments-sheet-open {
 }
 
 .event-feed-day-header {
+    position: -webkit-sticky;
     position: sticky;
     top: 0;
     z-index: 10;
-    align-self: start;
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 18px 0 8px;
     margin: 0;
-    color: var(--color-muted);
+    color: var(--color-heading);
     background: var(--color-bg);
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
 }
 
 .event-feed-day-header::before,
@@ -7990,7 +7989,11 @@ body.feed-comments-sheet-open {
     content: "";
     flex: 1 1 auto;
     height: 1px;
-    background: color-mix(in srgb, var(--color-border) 75%, transparent);
+    background: linear-gradient(90deg, var(--color-primary), color-mix(in srgb, var(--color-border) 50%, transparent));
+}
+
+.event-feed-day-header::after {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--color-border) 50%, transparent), var(--color-primary));
 }
 
 .event-feed-day-header span {
@@ -12259,6 +12262,23 @@ a.event-calendar-event:focus .event-calendar-event-name {
 
     .feed-page-body .friends-feed-header h3 {
         margin-top: 0;
+    }
+
+    .events-page-body {
+        padding-right: 0;
+        padding-left: 0;
+    }
+
+    .events-page-body .portal-header {
+        display: none;
+    }
+
+    .events-page-body .portal-main {
+        width: 100%;
+    }
+
+    .events-page-body #events-panel {
+        padding: 0 14px;
     }
 
     .business-portal {
