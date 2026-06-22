@@ -1,7 +1,8 @@
-(function () {
+window.CraftCrawlInitProfileGrid = function (scope) {
     'use strict';
 
-    var profilePage = document.querySelector('.profile-page');
+    scope = scope || document;
+    var profilePage = scope.querySelector('.profile-page');
     if (!profilePage) return;
 
     var grid = profilePage.querySelector('[data-profile-photo-grid]');
@@ -12,9 +13,7 @@
     var gridLoadMoreBtn = profilePage.querySelector('[data-profile-load-more]');
     var feedLoadMore = profilePage.querySelector('[data-profile-feed-load-more]');
     var feedLoadMoreBtn = profilePage.querySelector('[data-profile-feed-load-more-btn]');
-    var csrfToken = profilePage.dataset.csrfToken || '';
     var profileId = grid ? grid.dataset.profileId : '';
-    var profileUsername = grid ? grid.dataset.profileUsername : '';
 
     var gridScrollPosition = 0;
     var feedLoading = false;
@@ -52,6 +51,14 @@
         h = h % 12 || 12;
         var min = d.getMinutes().toString().padStart(2, '0');
         return months[d.getMonth()] + ' ' + d.getDate() + ', ' + h + ':' + min + ' ' + ampm;
+    }
+
+    function hideFeedView() {
+        feedView.classList.remove('is-active');
+        if (grid) grid.style.display = '';
+        if (gridLoadMore) gridLoadMore.style.display = '';
+        if (feedLoadMore) feedLoadMore.hidden = true;
+        window.scrollTo(0, gridScrollPosition);
     }
 
     // --- Subtab switching ---
@@ -282,16 +289,6 @@
             .finally(function () {
                 feedLoading = false;
             });
-
-    }
-
-    function hideFeedView() {
-        feedView.classList.remove('is-active');
-        if (grid) grid.style.display = '';
-        if (gridLoadMore) gridLoadMore.style.display = '';
-        if (feedLoadMore) feedLoadMore.hidden = true;
-
-        window.scrollTo(0, gridScrollPosition);
     }
 
     grid.addEventListener('click', function (e) {
@@ -315,7 +312,7 @@
     var swipeTracking = false;
     var swipeLocked = false;
 
-    document.addEventListener('touchstart', function (e) {
+    profilePage.addEventListener('touchstart', function (e) {
         if (!feedView.classList.contains('is-active')) return;
         var touch = e.touches[0];
         swipeStartX = touch.clientX;
@@ -324,7 +321,7 @@
         swipeLocked = false;
     }, { passive: true });
 
-    document.addEventListener('touchmove', function (e) {
+    profilePage.addEventListener('touchmove', function (e) {
         if (!swipeTracking || !feedView.classList.contains('is-active')) return;
         var touch = e.touches[0];
         var dx = touch.clientX - swipeStartX;
@@ -344,7 +341,7 @@
         }
     }, { passive: true });
 
-    document.addEventListener('touchend', function (e) {
+    profilePage.addEventListener('touchend', function (e) {
         if (!swipeTracking || !feedView.classList.contains('is-active')) {
             swipeTracking = false;
             return;
@@ -397,4 +394,6 @@
                 });
         });
     }
-})();
+};
+
+window.CraftCrawlInitProfileGrid();

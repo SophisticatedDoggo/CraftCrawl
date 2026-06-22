@@ -131,6 +131,7 @@
         window.CraftCrawlInitProfilePhotoCrop?.(root);
         window.CraftCrawlInitBadgeShowcase?.(root);
         window.CraftCrawlInitProfileListSearch?.(root);
+        window.CraftCrawlInitProfileGrid?.(root);
         window.CraftCrawlInitFeedThread?.(root);
         window.CraftCrawlInitSocialClubDisclaimer?.(root);
         window.CraftCrawlInitPullToRefresh?.(root);
