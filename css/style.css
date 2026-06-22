@@ -2779,6 +2779,10 @@ a.text-link:focus {
     font-size: 13px;
 }
 
+.profile-stat-full {
+    grid-column: 1 / -1;
+}
+
 .palette-switcher {
     display: flex;
     gap: 6px;

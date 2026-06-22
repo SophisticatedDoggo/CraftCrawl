@@ -58,10 +58,7 @@
 
     function switchProfileSubtab(target) {
         if (feedView && feedView.classList.contains('is-active')) {
-            feedView.classList.remove('is-active');
-            if (grid) grid.style.display = '';
-            if (gridLoadMore) gridLoadMore.style.display = '';
-            if (feedLoadMore) feedLoadMore.hidden = true;
+            hideFeedView(false);
         }
 
         profilePage.querySelectorAll('[data-profile-subtab]').forEach(function (tab) {
@@ -289,13 +286,17 @@
         history.pushState({ profileFeedView: true, visitId: targetVisitId }, '', '');
     }
 
-    function hideFeedView() {
+    function hideFeedView(useHistory) {
         feedView.classList.remove('is-active');
         if (grid) grid.style.display = '';
         if (gridLoadMore) gridLoadMore.style.display = '';
         if (feedLoadMore) feedLoadMore.hidden = true;
 
         window.scrollTo(0, gridScrollPosition);
+
+        if (useHistory !== false && history.state && history.state.profileFeedView) {
+            history.back();
+        }
     }
 
     grid.addEventListener('click', function (e) {
@@ -309,15 +310,12 @@
     if (feedBackButton) {
         feedBackButton.addEventListener('click', function () {
             hideFeedView();
-            if (history.state && history.state.profileFeedView) {
-                history.back();
-            }
         });
     }
 
     window.addEventListener('popstate', function () {
-        if (feedView.classList.contains('is-active') && !(history.state && history.state.profileFeedView)) {
-            hideFeedView();
+        if (feedView.classList.contains('is-active')) {
+            hideFeedView(false);
         }
     });
 
@@ -326,41 +324,51 @@
     var swipeStartX = 0;
     var swipeStartY = 0;
     var swipeTracking = false;
+    var swipeLocked = false;
 
-    feedView.addEventListener('touchstart', function (e) {
+    document.addEventListener('touchstart', function (e) {
         if (!feedView.classList.contains('is-active')) return;
         var touch = e.touches[0];
         swipeStartX = touch.clientX;
         swipeStartY = touch.clientY;
-        swipeTracking = swipeStartX < 60;
+        swipeTracking = true;
+        swipeLocked = false;
     }, { passive: true });
 
-    feedView.addEventListener('touchmove', function (e) {
-        if (!swipeTracking) return;
+    document.addEventListener('touchmove', function (e) {
+        if (!swipeTracking || !feedView.classList.contains('is-active')) return;
         var touch = e.touches[0];
         var dx = touch.clientX - swipeStartX;
         var dy = Math.abs(touch.clientY - swipeStartY);
-        if (dx > 10 && dx > dy * 1.5) {
+
+        if (!swipeLocked && (Math.abs(dx) > 10 || dy > 10)) {
+            swipeLocked = true;
+            if (dx <= 0 || dy > Math.abs(dx)) {
+                swipeTracking = false;
+                return;
+            }
+        }
+
+        if (swipeLocked && dx > 0) {
             feedView.style.transform = 'translateX(' + dx + 'px)';
             feedView.style.opacity = String(Math.max(0.3, 1 - dx / 300));
         }
     }, { passive: true });
 
-    feedView.addEventListener('touchend', function (e) {
-        if (!swipeTracking) return;
+    document.addEventListener('touchend', function (e) {
+        if (!swipeTracking || !feedView.classList.contains('is-active')) {
+            swipeTracking = false;
+            return;
+        }
         swipeTracking = false;
         var touch = e.changedTouches[0];
         var dx = touch.clientX - swipeStartX;
-        var dy = Math.abs(touch.clientY - swipeStartY);
 
         feedView.style.transform = '';
         feedView.style.opacity = '';
 
-        if (dx > 80 && dx > dy * 1.5) {
+        if (dx > 100) {
             hideFeedView();
-            if (history.state && history.state.profileFeedView) {
-                history.back();
-            }
         }
     }, { passive: true });
 

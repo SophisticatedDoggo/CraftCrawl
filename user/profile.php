@@ -582,7 +582,7 @@ if (!$profile) {
                 </div>
 
                 <div class="profile-stat-grid">
-                    <article>
+                    <article class="profile-stat-full">
                         <strong><?php echo escape_output($profile_stats['total_checkins'] ?? 0); ?></strong>
                         <span>Check-ins</span>
                     </article>
