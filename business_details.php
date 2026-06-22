@@ -671,12 +671,12 @@ function format_event_time_range($event) {
             $review_count = (int) ($rating_summary['review_count'] ?? 0);
             $event_count = count($upcoming_events);
         ?>
-        <section class="settings-panel business-hero-panel">
-            <?php if ($business_cover_photo) : ?>
-                <?php $cover_url = craftcrawl_cloudinary_delivery_url($business_cover_photo['object_key'], 'f_auto,q_auto,c_fill,w_1200,h_520'); ?>
-                <img class="business-cover-photo" src="<?php echo escape_output($cover_url); ?>" alt="<?php echo escape_output($business['bName']); ?> cover photo">
-            <?php endif; ?>
+        <?php if ($business_cover_photo) : ?>
+            <?php $cover_url = craftcrawl_cloudinary_delivery_url($business_cover_photo['object_key'], 'f_auto,q_auto,c_fill,w_1200,h_520'); ?>
+            <img class="business-cover-photo" src="<?php echo escape_output($cover_url); ?>" alt="<?php echo escape_output($business['bName']); ?> cover photo">
+        <?php endif; ?>
 
+        <section class="settings-panel business-hero-panel">
             <p class="business-preview-type">
                 <?php echo escape_output(format_business_type($business['bType'])); ?>
                 <?php if ($business['bType'] === 'social_club') : ?>
