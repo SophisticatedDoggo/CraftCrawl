@@ -3561,7 +3561,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         var findBadge = managerPage.querySelector('[data-friends-subtab-badge-find]');
         var friendsBadge = managerPage.querySelector('[data-friends-subtab-badge-friends]');
         if (findBadge) setBadge(findBadge, currentStatus.pendingInvites);
-        if (friendsBadge) setBadge(friendsBadge, currentStatus.newFriends);
+        if (friendsBadge) setBadge(friendsBadge, 0);
     }
 
     var originalApplyStatusCounts = applyStatusCounts;
