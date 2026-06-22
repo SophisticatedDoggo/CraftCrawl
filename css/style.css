@@ -3309,14 +3309,26 @@ a.text-link:focus {
     opacity: 0.8;
 }
 
-.chain-btn-primary {
+.chain-btn-primary,
+.chain-btn-primary:hover,
+.chain-btn-primary:focus {
     background: var(--color-primary);
     color: var(--color-on-primary, #fff);
+    border: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
 }
 
-.chain-btn-secondary {
+.chain-btn-secondary,
+.chain-btn-secondary:hover,
+.chain-btn-secondary:focus {
     background: color-mix(in srgb, var(--color-border) 40%, var(--color-surface));
     color: var(--color-text);
+    border: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
 }
 
 .chain-btn-start {
