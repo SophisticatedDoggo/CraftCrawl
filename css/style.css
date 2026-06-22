@@ -13103,6 +13103,9 @@ a.event-calendar-event:focus .event-calendar-event-name {
     .leaderboard-mode-tabs {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: visible;
+        background: transparent;
+        box-shadow: none;
     }
 
     .leaderboard-mode-tabs a {
