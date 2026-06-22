@@ -3291,7 +3291,13 @@ a.text-link:focus {
 
 .chain-btn-primary,
 .chain-btn-secondary,
-.chain-btn-danger {
+.chain-btn-danger,
+.chain-btn-primary:hover,
+.chain-btn-primary:focus,
+.chain-btn-secondary:hover,
+.chain-btn-secondary:focus,
+.chain-btn-danger:hover,
+.chain-btn-danger:focus {
     flex: 1;
     padding: 10px 16px;
     border: none;
@@ -3301,6 +3307,10 @@ a.text-link:focus {
     font-weight: 700;
     cursor: pointer;
     transition: opacity 0.15s;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+    background-image: none;
 }
 
 .chain-btn-primary:active,
