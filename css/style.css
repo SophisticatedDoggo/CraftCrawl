@@ -12490,6 +12490,14 @@ a.event-calendar-event:focus .event-calendar-event-name {
         flex-wrap: wrap;
     }
 
+    .events-page-body .event-feed-day-header {
+        width: calc(100% + 28px);
+        max-width: none;
+        margin-left: -14px;
+        padding-right: 14px;
+        padding-left: 14px;
+    }
+
     .events-page-body .event-feed-entry > .event-feed-cover {
         width: calc(100% + 28px);
         max-width: none;
