@@ -339,7 +339,7 @@ if (!empty($item_keys)) {
     }
 }
 
-$reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '📍 Want to Go'];
+$reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '<span class="feed-reaction-icon feed-reaction-icon-pin" aria-hidden="true"></span> Want to Go'];
 ?>
 <!DOCTYPE html>
 <html lang="en">

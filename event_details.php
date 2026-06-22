@@ -94,12 +94,29 @@ $want_count_stmt->bind_param("is", $event_id, $occurrence_date);
 $want_count_stmt->execute();
 $event_want_count = (int) ($want_count_stmt->get_result()->fetch_assoc()['total'] ?? 0);
 
+$friends_who_want = [];
+
 if (isset($_SESSION['user_id'])) {
     $want_user_id = (int) $_SESSION['user_id'];
     $want_stmt = $conn->prepare("SELECT id FROM event_want_to_go WHERE user_id=? AND event_id=? AND occurrence_date=? LIMIT 1");
     $want_stmt->bind_param("iis", $want_user_id, $event_id, $occurrence_date);
     $want_stmt->execute();
     $event_is_wanted = (bool) $want_stmt->get_result()->fetch_assoc();
+
+    $friends_want_stmt = $conn->prepare("
+        SELECT u.fName
+        FROM event_want_to_go ew
+        INNER JOIN user_friends uf ON uf.friend_user_id = ew.user_id AND uf.user_id = ?
+        INNER JOIN users u ON u.id = ew.user_id AND u.disabledAt IS NULL
+        WHERE ew.event_id = ? AND ew.occurrence_date = ?
+        LIMIT 3
+    ");
+    $friends_want_stmt->bind_param("iis", $want_user_id, $event_id, $occurrence_date);
+    $friends_want_stmt->execute();
+    $friends_want_result = $friends_want_stmt->get_result();
+    while ($row = $friends_want_result->fetch_assoc()) {
+        $friends_who_want[] = $row['fName'];
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -167,8 +184,21 @@ if (isset($_SESSION['user_id'])) {
                         <input type="hidden" name="event_id" value="<?php echo escape_output($event_id); ?>">
                         <input type="hidden" name="occurrence_date" value="<?php echo escape_output($occurrence_date); ?>">
                         <input type="hidden" name="is_saved" value="<?php echo $event_is_wanted ? '1' : '0'; ?>">
-                        <button type="submit" class="event-want-button <?php echo $event_is_wanted ? 'is-active' : ''; ?>">📍 Want to Go <?php echo escape_output($event_want_count); ?></button>
+                        <button type="submit" class="event-want-button <?php echo $event_is_wanted ? 'is-active' : ''; ?>"><span class="pin-icon" aria-hidden="true"></span> Want to Go <?php echo escape_output($event_want_count); ?></button>
                     </form>
+                    <?php if (!empty($friends_who_want)) :
+                        $fw_count = count($friends_who_want);
+                        $fw_others = $event_want_count - $fw_count;
+                        if ($fw_others > 0) {
+                            $fw_text = escape_output($friends_who_want[0]) . ' and ' . number_format($fw_others) . ' other' . ($fw_others === 1 ? '' : 's') . ' want to go';
+                        } elseif ($fw_count > 1) {
+                            $fw_text = escape_output($friends_who_want[0]) . ' and ' . ($fw_count - 1) . ' other friend' . (($fw_count - 1) === 1 ? '' : 's') . ' want to go';
+                        } else {
+                            $fw_text = escape_output($friends_who_want[0]) . ' wants to go';
+                        }
+                    ?>
+                        <span class="action-social-proof"><?php echo $fw_text; ?></span>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
         </article>

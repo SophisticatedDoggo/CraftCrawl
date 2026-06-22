@@ -66,6 +66,25 @@ $today_unique_visitors = (int) ($summary['today_unique_visitors'] ?? 0);
 $today_xp = (int) ($summary['today_xp'] ?? 0);
 $today_first_time_rate = $today_checkins > 0 ? round(($today_first_time / $today_checkins) * 100) : 0;
 
+$total_followers_stmt = $conn->prepare("SELECT COUNT(*) AS total FROM liked_businesses WHERE location_id=?");
+$total_followers_stmt->bind_param("i", $location_id);
+$total_followers_stmt->execute();
+$total_followers = (int) ($total_followers_stmt->get_result()->fetch_assoc()['total'] ?? 0);
+
+$total_saves_stmt = $conn->prepare("SELECT COUNT(*) AS total FROM want_to_go_locations WHERE location_id=?");
+$total_saves_stmt->bind_param("i", $location_id);
+$total_saves_stmt->execute();
+$total_saves = (int) ($total_saves_stmt->get_result()->fetch_assoc()['total'] ?? 0);
+
+$milestone_thresholds = [10, 25, 50, 100, 250, 500, 1000];
+$next_follower_milestone = null;
+foreach ($milestone_thresholds as $threshold) {
+    if ($total_followers < $threshold) {
+        $next_follower_milestone = $threshold;
+        break;
+    }
+}
+
 $recent_stmt = $conn->prepare("
     SELECT uv.visit_type, uv.xp_awarded, uv.distance_meters, uv.checkedInAt,
         u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
@@ -139,8 +158,31 @@ $recent_checkins = $recent_stmt->get_result();
                     <strong><?php echo escape_output(format_metric_number($today_xp)); ?></strong>
                     <span>XP awarded</span>
                 </div>
+                <div class="analytics-hero-stat">
+                    <strong><?php echo escape_output(format_metric_number($total_followers)); ?></strong>
+                    <span>followers</span>
+                </div>
+                <div class="analytics-hero-stat">
+                    <strong><?php echo escape_output(format_metric_number($total_saves)); ?></strong>
+                    <span>saves</span>
+                </div>
             </div>
         </section>
+
+        <?php if ($next_follower_milestone !== null) :
+            $milestone_progress = $total_followers / $next_follower_milestone * 100;
+            $remaining = $next_follower_milestone - $total_followers;
+        ?>
+        <section class="analytics-milestone-banner">
+            <div class="analytics-milestone-text">
+                <strong><?php echo number_format($total_followers); ?> / <?php echo number_format($next_follower_milestone); ?> followers</strong>
+                <span><?php echo number_format($remaining); ?> more to your next milestone!</span>
+            </div>
+            <div class="analytics-milestone-bar">
+                <div class="analytics-milestone-fill" style="width: <?php echo min(100, $milestone_progress); ?>%"></div>
+            </div>
+        </section>
+        <?php endif; ?>
 
         <section class="analytics-layout">
             <article class="analytics-panel analytics-interactive-panel" data-analytics-widget data-analytics-endpoint="analytics_data.php" data-analytics-mode="month">

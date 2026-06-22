@@ -213,6 +213,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $form_action = $_POST['form_action'] ?? 'review';
 
     if ($form_action === 'toggle_follow') {
+        require_once 'lib/leveling.php';
+        require_once 'lib/quests.php';
+
         $is_following = (int) ($_POST['is_following'] ?? 0);
 
         if ($is_following) {
@@ -223,9 +226,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         }
 
-        $stmt = $conn->prepare("INSERT IGNORE INTO liked_businesses (user_id, business_id, location_id, createdAt) VALUES (?, ?, ?, NOW())");
-        $stmt->bind_param("iii", $user_id, $legacy_business_id, $location_id);
-        $stmt->execute();
+        $xp_reward_popup = null;
+        try {
+            $conn->begin_transaction();
+            $progress_before = craftcrawl_user_level_progress($conn, $user_id);
+
+            $stmt = $conn->prepare("INSERT IGNORE INTO liked_businesses (user_id, business_id, location_id, createdAt) VALUES (?, ?, ?, NOW())");
+            $stmt->bind_param("iii", $user_id, $legacy_business_id, $location_id);
+            $stmt->execute();
+
+            if ($stmt->affected_rows > 0) {
+                $badge_names = craftcrawl_award_eligible_badges($conn, $user_id);
+                $quest_rewards = craftcrawl_award_eligible_quest_rewards($conn, $user_id);
+                $xp_items = craftcrawl_quest_xp_items($quest_rewards);
+                if (!empty($badge_names) || !empty($xp_items)) {
+                    $xp_reward_popup = craftcrawl_xp_reward_payload(
+                        $conn,
+                        $user_id,
+                        $progress_before,
+                        $badge_names,
+                        !empty($xp_items) ? 'Quest Complete' : null,
+                        $xp_items
+                    );
+                }
+            }
+
+            $conn->commit();
+        } catch (Throwable $error) {
+            $conn->rollback();
+            error_log('Follow toggle failed: ' . $error->getMessage());
+        }
+
+        if ($xp_reward_popup) {
+            $_SESSION['craftcrawl_xp_reward_popup'] = $xp_reward_popup;
+        }
+
         header("Location: business_details.php?id=" . $business_id . "&message=followed");
         exit();
     }
@@ -381,6 +416,19 @@ if (!empty($review_ids)) {
 $is_following = false;
 $is_want_to_go = false;
 
+$follower_count_stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM liked_businesses WHERE location_id=?");
+$follower_count_stmt->bind_param("i", $location_id);
+$follower_count_stmt->execute();
+$follower_count = (int) $follower_count_stmt->get_result()->fetch_assoc()['cnt'];
+
+$save_count_stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM want_to_go_locations WHERE location_id=?");
+$save_count_stmt->bind_param("i", $location_id);
+$save_count_stmt->execute();
+$save_count = (int) $save_count_stmt->get_result()->fetch_assoc()['cnt'];
+
+$friends_who_follow = [];
+$friends_who_saved = [];
+
 if ($user_id > 0) {
     $follow_stmt = $conn->prepare("SELECT id FROM liked_businesses WHERE user_id=? AND location_id=?");
     $follow_stmt->bind_param("ii", $user_id, $location_id);
@@ -391,6 +439,38 @@ if ($user_id > 0) {
     $want_stmt->bind_param("ii", $user_id, $location_id);
     $want_stmt->execute();
     $is_want_to_go = (bool) $want_stmt->get_result()->fetch_assoc();
+
+    $friends_follow_stmt = $conn->prepare("
+        SELECT u.fName
+        FROM liked_businesses lb
+        INNER JOIN user_friends uf ON uf.friend_user_id = lb.user_id AND uf.user_id = ?
+        INNER JOIN users u ON u.id = lb.user_id AND u.disabledAt IS NULL
+        WHERE lb.location_id = ?
+        ORDER BY lb.createdAt DESC
+        LIMIT 3
+    ");
+    $friends_follow_stmt->bind_param("ii", $user_id, $location_id);
+    $friends_follow_stmt->execute();
+    $friends_follow_result = $friends_follow_stmt->get_result();
+    while ($row = $friends_follow_result->fetch_assoc()) {
+        $friends_who_follow[] = $row['fName'];
+    }
+
+    $friends_save_stmt = $conn->prepare("
+        SELECT u.fName
+        FROM want_to_go_locations wtg
+        INNER JOIN user_friends uf ON uf.friend_user_id = wtg.user_id AND uf.user_id = ?
+        INNER JOIN users u ON u.id = wtg.user_id AND u.disabledAt IS NULL
+        WHERE wtg.location_id = ? AND wtg.visibility IN ('friends_only', 'public')
+        ORDER BY wtg.createdAt DESC
+        LIMIT 3
+    ");
+    $friends_save_stmt->bind_param("ii", $user_id, $location_id);
+    $friends_save_stmt->execute();
+    $friends_save_result = $friends_save_stmt->get_result();
+    while ($row = $friends_save_result->fetch_assoc()) {
+        $friends_who_saved[] = $row['fName'];
+    }
 }
 
 require_once 'lib/business_post_render.php';
@@ -553,11 +633,11 @@ function format_event_time_range($event) {
         <?php elseif ($message === 'unfollowed') : ?>
             <p class="form-message form-message-success">You are no longer following this business.</p>
         <?php elseif ($message === 'want_saved') : ?>
-            <p class="form-message form-message-success">Location added to your want-to-go list.</p>
+            <p class="form-message form-message-success">Location saved.</p>
         <?php elseif ($message === 'want_removed') : ?>
-            <p class="form-message form-message-success">Location removed from your want-to-go list.</p>
+            <p class="form-message form-message-success">Location removed from your saved list.</p>
         <?php elseif ($message === 'want_error') : ?>
-            <p class="form-message form-message-error">Location could not be added to your want-to-go list.</p>
+            <p class="form-message form-message-error">Location could not be saved.</p>
         <?php elseif ($message === 'recommended') : ?>
             <p class="form-message form-message-success">Recommendation sent.</p>
         <?php elseif ($message === 'recommend_checkin_required') : ?>
@@ -719,24 +799,61 @@ function format_event_time_range($event) {
                     <a href="<?php echo escape_output($business['bWebsite']); ?>" target="_blank" rel="noopener">Visit Website</a>
                 <?php endif; ?>
 
-                <form method="POST" action="" class="follow-business-form">
-                    <?php echo craftcrawl_csrf_input(); ?>
-                    <input type="hidden" name="form_action" value="toggle_follow">
-                    <input type="hidden" name="is_following" value="<?php echo $is_following ? '1' : '0'; ?>">
-                    <button type="submit" class="follow-button <?php echo $is_following ? 'is-followed' : ''; ?>">
-                        <span aria-hidden="true"><?php echo $is_following ? '&#9829;' : '&#9825;'; ?></span>
-                        <span><?php echo $is_following ? 'Unfollow' : 'Follow'; ?></span>
-                    </button>
-                </form>
-                <form method="POST" action="user/want_to_go_toggle.php" class="want-to-go-form">
-                    <?php echo craftcrawl_csrf_input(); ?>
-                    <input type="hidden" name="business_id" value="<?php echo escape_output($legacy_business_id); ?>">
-                    <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
-                    <input type="hidden" name="is_saved" value="<?php echo $is_want_to_go ? '1' : '0'; ?>">
-                    <button type="submit" class="want-to-go-button<?php echo $is_want_to_go ? ' is-saved' : ''; ?>">
-                        <?php echo $is_want_to_go ? 'Remove from Want to Go' : 'Want to Go'; ?>
-                    </button>
-                </form>
+                <div class="business-action-group">
+                    <form method="POST" action="" class="follow-business-form">
+                        <?php echo craftcrawl_csrf_input(); ?>
+                        <input type="hidden" name="form_action" value="toggle_follow">
+                        <input type="hidden" name="is_following" value="<?php echo $is_following ? '1' : '0'; ?>">
+                        <button type="submit" class="follow-button <?php echo $is_following ? 'is-followed' : ''; ?>">
+                            <svg class="follow-icon" viewBox="0 0 24 24" fill="<?php echo $is_following ? 'currentColor' : 'none'; ?>" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.7 4C18.87 4 21 6.98 21 9.76C21 15.39 12.16 20 12 20C11.84 20 3 15.39 3 9.76C3 6.98 5.13 4 8.3 4C10.12 4 11.31 4.91 12 5.71C12.69 4.91 13.88 4 15.7 4Z"/></svg>
+                            <span><?php echo $is_following ? 'Unfollow' : 'Follow'; ?></span>
+                        </button>
+                    </form>
+                    <?php if ($follower_count > 0) : ?>
+                        <span class="action-count"><?php echo number_format($follower_count); ?> <?php echo $follower_count === 1 ? 'follower' : 'followers'; ?></span>
+                    <?php endif; ?>
+                    <?php if (!empty($friends_who_follow)) :
+                        $friend_count = count($friends_who_follow);
+                        $others = $follower_count - $friend_count;
+                        if ($others > 0) {
+                            $friend_text = escape_output($friends_who_follow[0]) . ' and ' . number_format($others) . ' other' . ($others === 1 ? '' : 's') . ' follow this';
+                        } elseif ($friend_count > 1) {
+                            $friend_text = escape_output($friends_who_follow[0]) . ' and ' . ($friend_count - 1) . ' other friend' . (($friend_count - 1) === 1 ? '' : 's') . ' follow this';
+                        } else {
+                            $friend_text = escape_output($friends_who_follow[0]) . ' follows this';
+                        }
+                    ?>
+                        <span class="action-social-proof"><?php echo $friend_text; ?></span>
+                    <?php endif; ?>
+                </div>
+                <div class="business-action-group">
+                    <form method="POST" action="user/want_to_go_toggle.php" class="want-to-go-form">
+                        <?php echo craftcrawl_csrf_input(); ?>
+                        <input type="hidden" name="business_id" value="<?php echo escape_output($legacy_business_id); ?>">
+                        <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
+                        <input type="hidden" name="is_saved" value="<?php echo $is_want_to_go ? '1' : '0'; ?>">
+                        <button type="submit" class="want-to-go-button<?php echo $is_want_to_go ? ' is-saved' : ''; ?>">
+                            <span class="pin-icon" aria-hidden="true"></span>
+                            <span><?php echo $is_want_to_go ? 'Saved' : 'Save'; ?></span>
+                        </button>
+                    </form>
+                    <?php if ($save_count > 0) : ?>
+                        <span class="action-count"><?php echo number_format($save_count); ?> <?php echo $save_count === 1 ? 'save' : 'saves'; ?></span>
+                    <?php endif; ?>
+                    <?php if (!empty($friends_who_saved)) :
+                        $friend_save_count = count($friends_who_saved);
+                        $save_others = $save_count - $friend_save_count;
+                        if ($save_others > 0) {
+                            $save_friend_text = escape_output($friends_who_saved[0]) . ' and ' . number_format($save_others) . ' other' . ($save_others === 1 ? '' : 's') . ' saved this';
+                        } elseif ($friend_save_count > 1) {
+                            $save_friend_text = escape_output($friends_who_saved[0]) . ' and ' . ($friend_save_count - 1) . ' other friend' . (($friend_save_count - 1) === 1 ? '' : 's') . ' saved this';
+                        } else {
+                            $save_friend_text = escape_output($friends_who_saved[0]) . ' saved this';
+                        }
+                    ?>
+                        <span class="action-social-proof"><?php echo $save_friend_text; ?></span>
+                    <?php endif; ?>
+                </div>
                 <?php endif; ?>
             </div>
 

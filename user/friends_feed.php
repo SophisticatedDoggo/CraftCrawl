@@ -318,6 +318,44 @@ while ($location_want = $location_want_result->fetch_assoc()) {
     ];
 }
 
+$before_clause_follow = $before_dt ? ' AND lb.createdAt <= ?' : '';
+$follow_sql = "
+    SELECT lb.id, lb.user_id, lb.createdAt, l.id AS business_id, l.name AS bName, l.location_type AS bType, l.city, l.state,
+        u.allow_post_interactions
+    FROM liked_businesses lb
+    INNER JOIN locations l ON l.id = lb.location_id
+    INNER JOIN users u ON u.id = lb.user_id
+    WHERE lb.user_id IN ($placeholders) AND l.visibility_status IN ('public_unclaimed', 'public_claimed')
+    $before_clause_follow
+    ORDER BY lb.createdAt DESC, lb.id DESC
+    LIMIT $feed_source_fetch_limit
+";
+$follow_stmt = $conn->prepare($follow_sql);
+$before_dt
+    ? craftcrawl_bind_feed_user_ids_before($follow_stmt, $types, $feed_user_ids, $before_dt)
+    : craftcrawl_bind_feed_user_ids($follow_stmt, $types, $feed_user_ids);
+$follow_stmt->execute();
+$follow_result = $follow_stmt->get_result();
+
+while ($follow = $follow_result->fetch_assoc()) {
+    $actor_id = (int) $follow['user_id'];
+    $feed[] = [
+        'item_key' => 'follow:' . (int) $follow['id'],
+        'type' => 'follow',
+        'created_at' => $follow['createdAt'],
+        'friend_name' => $people[$actor_id]['name'] ?? 'A friend',
+        'actor' => craftcrawl_feed_person_payload($people[$actor_id] ?? []),
+        'owner_user_id' => $actor_id,
+        'is_self' => $actor_id === $user_id,
+        'allow_interactions' => (bool) $follow['allow_post_interactions'],
+        'business_id' => (int) $follow['business_id'],
+        'business_name' => $follow['bName'],
+        'business_type' => $follow['bType'],
+        'city' => $follow['city'],
+        'state' => $follow['state']
+    ];
+}
+
 $before_clause_badge = $before_dt ? ' AND ub.earnedAt <= ?' : '';
 $badge_sql = "
     SELECT ub.id, ub.user_id, ub.badge_name, ub.badge_description, ub.badge_tier, ub.earnedAt,

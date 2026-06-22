@@ -92,13 +92,14 @@ function craftcrawl_render_business_post(array $post): string {
     $html .= '</a>';
     $html .= '</div>';
     $html .= '<div class="feed-reactions">';
-    foreach (['cheers' => ['icon' => '🍻', 'label' => 'Cheers'], 'want_to_go' => ['icon' => '📍', 'label' => 'Want to Go']] as $reaction_type => $reaction_label) {
+    foreach (['cheers' => ['icon' => '🍻', 'label' => 'Cheers'], 'want_to_go' => ['icon' => '<span class="feed-reaction-icon feed-reaction-icon-pin" aria-hidden="true"></span>', 'label' => 'Want to Go', 'icon_is_html' => true]] as $reaction_type => $reaction_label) {
         $r = $reaction_map[$reaction_type] ?? ['count' => 0, 'reacted' => false];
         $active_class = $r['reacted'] ? ' is-active' : '';
         $reaction_count = (int) $r['count'];
         $count_hidden = $reaction_count > 0 ? '' : ' hidden';
         $html .= '<button type="button" class="' . $active_class . '" data-feed-reaction data-item-key="' . $item_key . '" data-reaction-type="' . $reaction_type . '" data-reaction-count="' . $reaction_count . '" aria-label="' . htmlspecialchars($reaction_label['label'], ENT_QUOTES, 'UTF-8') . '" aria-pressed="' . ($r['reacted'] ? 'true' : 'false') . '">';
-        $html .= htmlspecialchars($reaction_label['icon'], ENT_QUOTES, 'UTF-8') . '<span class="feed-reaction-count"' . $count_hidden . '>' . ($reaction_count > 0 ? $reaction_count : '') . '</span>';
+        $icon_html = !empty($reaction_label['icon_is_html']) ? $reaction_label['icon'] : htmlspecialchars($reaction_label['icon'], ENT_QUOTES, 'UTF-8');
+        $html .= $icon_html . '<span class="feed-reaction-count"' . $count_hidden . '>' . ($reaction_count > 0 ? $reaction_count : '') . '</span>';
         $html .= '</button>';
     }
     $html .= '</div>';

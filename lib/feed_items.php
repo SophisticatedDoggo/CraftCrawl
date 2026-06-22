@@ -429,6 +429,41 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
         ];
     }
 
+    if (preg_match('/^follow:(\d+)$/', $item_key, $matches)) {
+        $follow_id = (int) $matches[1];
+        $stmt = $conn->prepare("
+            SELECT lb.id, lb.user_id, lb.createdAt, l.id AS business_id, l.name AS bName, l.location_type AS bType, l.city, l.state,
+                u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
+            FROM liked_businesses lb
+            INNER JOIN locations l ON l.id = lb.location_id
+            INNER JOIN users u ON u.id = lb.user_id
+            LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+            WHERE lb.id=? AND l.visibility_status IN ('public_unclaimed','public_claimed') AND u.disabledAt IS NULL
+            LIMIT 1
+        ");
+        $stmt->bind_param("i", $follow_id);
+        $stmt->execute();
+        $follow = $stmt->get_result()->fetch_assoc();
+
+        if (!$follow || !craftcrawl_user_can_view_feed_actor($conn, $viewer_id, (int) $follow['user_id'])) {
+            return null;
+        }
+
+        return [
+            'item_key' => $item_key,
+            'type' => 'follow',
+            'created_at' => $follow['createdAt'],
+            'friend_name' => craftcrawl_feed_actor_name($follow['user_id'], $viewer_id, $follow['fName'], $follow['lName']),
+            'actor' => craftcrawl_feed_actor_payload($follow),
+            'is_self' => (int) $follow['user_id'] === (int) $viewer_id,
+            'business_id' => (int) $follow['business_id'],
+            'business_name' => $follow['bName'],
+            'business_type' => $follow['bType'],
+            'city' => $follow['city'],
+            'state' => $follow['state']
+        ];
+    }
+
     if (preg_match('/^location_want:(\d+)$/', $item_key, $matches)) {
         $want_id = (int) $matches[1];
         $stmt = $conn->prepare("

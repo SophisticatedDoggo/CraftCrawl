@@ -199,6 +199,20 @@ if ($mode === 'lifetime') {
 $follower_stmt->execute();
 $follower_count = (int) ($follower_stmt->get_result()->fetch_assoc()['follower_count'] ?? 0);
 
+$save_count_stmt = $conn->prepare("
+    SELECT COUNT(*) AS save_count
+    FROM want_to_go_locations
+    WHERE location_id=?
+    " . ($mode === 'lifetime' ? '' : 'AND createdAt >= ? AND createdAt < ?') . "
+");
+if ($mode === 'lifetime') {
+    $save_count_stmt->bind_param('i', $location_id);
+} else {
+    $save_count_stmt->bind_param('iss', $location_id, $start_sql, $end_sql);
+}
+$save_count_stmt->execute();
+$analytics_save_count = (int) ($save_count_stmt->get_result()->fetch_assoc()['save_count'] ?? 0);
+
 $top_visitors_stmt = $conn->prepare("
     SELECT u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key,
         COUNT(*) AS visit_count, MAX(uv.checkedInAt) AS last_checkin
@@ -266,8 +280,23 @@ $summary_cards = [
         'label' => $mode === 'lifetime' ? 'Followers' : 'New Followers',
         'value' => number_format($follower_count),
         'description' => $mode === 'lifetime' ? 'Users following your business.' : 'Users who followed in this range.'
+    ],
+    [
+        'label' => $mode === 'lifetime' ? 'Saves' : 'New Saves',
+        'value' => number_format($analytics_save_count),
+        'description' => $mode === 'lifetime' ? 'Users who saved your location.' : 'Users who saved in this range.'
     ]
 ];
+
+$unique_visitors_count = (int) ($summary['unique_visitors'] ?? 0);
+if ($unique_visitors_count > 0) {
+    $follower_conversion = round(($follower_count / $unique_visitors_count) * 100, 1);
+    $summary_cards[] = [
+        'label' => 'Follower Conversion',
+        'value' => $follower_conversion . '%',
+        'description' => 'Percentage of visitors who follow your business.'
+    ];
+}
 
 echo json_encode([
     'ok' => true,

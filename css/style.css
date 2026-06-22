@@ -5234,7 +5234,8 @@ a.feed-event-link:not(.mapboxgl-ctrl-logo) {
 }
 
 .feed-reaction-icon-heart,
-.feed-reaction-icon-yuck {
+.feed-reaction-icon-yuck,
+.feed-reaction-icon-pin {
     background-color: currentColor;
     -webkit-mask-position: center;
     mask-position: center;
@@ -5252,6 +5253,11 @@ a.feed-event-link:not(.mapboxgl-ctrl-logo) {
 .feed-reaction-icon-yuck {
     -webkit-mask-image: url('../images/SVG/yuck.svg');
     mask-image: url('../images/SVG/yuck.svg');
+}
+
+.feed-reaction-icon-pin {
+    -webkit-mask-image: url('../images/SVG/pin.svg');
+    mask-image: url('../images/SVG/pin.svg');
 }
 
 .feed-reactions button.is-active .feed-reaction-icon {
@@ -6319,6 +6325,12 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
 
 .profile-list-header h2 {
     margin: 0;
+}
+
+.profile-section-count {
+    font-weight: 400;
+    color: var(--color-text-muted);
+    font-size: 0.85em;
 }
 
 .profile-list-search {
@@ -7752,17 +7764,58 @@ body.feed-comments-sheet-open {
     box-shadow: none;
 }
 
-.follow-button {
+.follow-button,
+.want-to-go-button {
     gap: 7px;
 }
 
-.follow-button span[aria-hidden="true"] {
-    font-size: 18px;
-    line-height: 1;
+.follow-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
 }
 
-.follow-button.is-followed span[aria-hidden="true"] {
-    color: #fef2f2;
+.follow-button.is-followed .follow-icon {
+    fill: currentColor;
+}
+
+.pin-icon {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    background-color: currentColor;
+    -webkit-mask-image: url('../images/SVG/pin.svg');
+    mask-image: url('../images/SVG/pin.svg');
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
+.event-want-button .pin-icon {
+    width: 15px;
+    height: 15px;
+}
+
+.business-action-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-count {
+    font-size: 13px;
+    color: var(--color-text-muted);
+}
+
+.action-social-proof {
+    width: 100%;
+    font-size: 12px;
+    color: var(--color-text-muted);
 }
 
 .rating-summary {
@@ -8604,7 +8657,7 @@ body.feed-comments-sheet-open {
 
 .analytics-hero-stats {
     display: grid;
-    grid-template-columns: repeat(3, minmax(120px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     gap: 12px;
     min-width: min(100%, 520px);
 }
@@ -8626,6 +8679,42 @@ body.feed-comments-sheet-open {
 .analytics-list-item span,
 .analytics-checkin-card span {
     color: var(--color-muted);
+}
+
+.analytics-milestone-banner {
+    padding: 14px 18px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    margin-bottom: 20px;
+}
+
+.analytics-milestone-text {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.analytics-milestone-text span {
+    color: var(--color-muted);
+    font-size: 13px;
+}
+
+.analytics-milestone-bar {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--color-surface-muted);
+    overflow: hidden;
+}
+
+.analytics-milestone-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--color-primary);
+    transition: width 400ms ease;
 }
 
 .analytics-metric-grid {

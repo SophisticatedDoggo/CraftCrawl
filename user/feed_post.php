@@ -239,7 +239,7 @@ function render_feed_thread_reactions($conn, $user_id, $item) {
     $labels = [
         'cheers' => '🍻',
         'nice_find' => '🔥',
-        'want_to_go' => '📍',
+        'want_to_go' => '<span class="feed-reaction-icon feed-reaction-icon-pin" aria-hidden="true"></span>',
         'trophy' => '🏆',
         'heart' => '<span class="feed-reaction-icon feed-reaction-icon-heart" aria-hidden="true"></span>',
         'yuck' => '<span class="feed-reaction-icon feed-reaction-icon-yuck" aria-hidden="true"></span>',

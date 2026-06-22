@@ -268,6 +268,30 @@ function craftcrawl_user_notification_counts($conn, $user_id) {
         $conn,
         "
             SELECT COUNT(*) AS total
+            FROM liked_businesses lb
+            INNER JOIN users actor ON actor.id = lb.user_id
+            INNER JOIN locations l ON l.id = lb.location_id
+            WHERE lb.createdAt > ?
+                AND lb.user_id<>?
+                AND l.visibility_status IN ('public_unclaimed','public_claimed')
+                AND actor.show_feed_activity=TRUE
+                AND actor.disabledAt IS NULL
+                AND NOT EXISTS (
+                    SELECT 1 FROM feed_notification_reads fnr
+                    WHERE fnr.user_id=?
+                        AND fnr.feed_item_key=CONCAT('follow:', lb.id)
+                        AND fnr.notification_type='feed_item'
+                )
+                AND $friend_activity_exists
+        ",
+        "siii",
+        [$feed_seen_at, $user_id, $user_id, $user_id]
+    );
+
+    $new_feed_items += craftcrawl_notification_count_value(
+        $conn,
+        "
+            SELECT COUNT(*) AS total
             FROM user_badges ub
             INNER JOIN users actor ON actor.id = ub.user_id
             WHERE ub.earnedAt > ?

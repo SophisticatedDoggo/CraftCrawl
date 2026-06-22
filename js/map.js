@@ -1468,7 +1468,7 @@ function renderEventsFeed(events) {
                         data-occurrence-date="${escapeHtml(event.date)}"
                         data-is-saved="${event.isWantToGo ? '1' : '0'}"
                     >
-                        📍 Want to Go ${Number(event.wantToGoCount || 0)}
+                        <span class="pin-icon" aria-hidden="true"></span> Want to Go ${Number(event.wantToGoCount || 0)}
                     </button>
                 </div>
             </article>
@@ -1501,7 +1501,7 @@ function renderEventsFeed(events) {
 
                     button.dataset.isSaved = data.is_saved ? '1' : '0';
                     button.classList.toggle('is-active', Boolean(data.is_saved));
-                    button.textContent = `📍 Want to Go ${Number(data.count || 0)}`;
+                    button.innerHTML = `<span class="pin-icon" aria-hidden="true"></span> Want to Go ${Number(data.count || 0)}`;
                     if (data.xp_reward && window.craftcrawlShowXpReward) {
                         window.craftcrawlShowXpReward(data.xp_reward);
                     }

@@ -71,6 +71,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         first_visit: ['heart', 'cheers', 'nice_find', 'yuck'],
         level_up: ['heart', 'cheers', 'nice_find', 'yuck', 'trophy'],
         event_want: ['heart', 'cheers', 'nice_find', 'yuck'],
+        follow: ['heart', 'cheers', 'nice_find'],
         location_want: ['heart', 'cheers', 'nice_find', 'yuck', 'want_to_go'],
         badge_earned: ['heart', 'cheers', 'nice_find', 'yuck', 'trophy'],
         quest_complete: ['heart', 'cheers', 'nice_find', 'yuck', 'trophy'],
@@ -1315,13 +1316,27 @@ window.CraftCrawlInitFriends = function (scope = document) {
             `;
         }
 
+        if (item.type === 'follow') {
+            return `
+                <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
+                    ${renderAvatar(item.actor, item.friend_name)}
+                    <div class="feed-item-content">
+                        ${renderFeedMeta(actorName, date)}
+                        <strong class="feed-item-title">Followed ${renderBusinessLink(item)}</strong>
+                        <p class="feed-item-detail">${escapeHtml(formatBusinessType(item.business_type))} · ${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
+                        ${actions}
+                    </div>
+                </article>
+            `;
+        }
+
         if (item.type === 'location_want') {
             return `
                 <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
-                        <strong class="feed-item-title">${escapeHtml(item.is_self ? 'Want' : 'Wants')} to visit ${renderBusinessLink(item)}</strong>
+                        <strong class="feed-item-title">Saved ${renderBusinessLink(item)}</strong>
                         <p class="feed-item-detail">${escapeHtml(formatBusinessType(item.business_type))} · ${escapeHtml(item.city)}, ${escapeHtml(item.state)}</p>
                         ${actions}
                     </div>

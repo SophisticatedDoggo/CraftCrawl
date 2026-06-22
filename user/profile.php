@@ -468,7 +468,7 @@ if (!$profile) {
             <?php elseif ($is_own_profile && $message === 'business_unfollowed') : ?>
                 <p class="form-message form-message-success">Business removed from your follows.</p>
             <?php elseif ($is_own_profile && $message === 'want_removed') : ?>
-                <p class="form-message form-message-success">Business removed from Want to Go.</p>
+                <p class="form-message form-message-success">Location removed from saved list.</p>
             <?php endif; ?>
             <section class="settings-panel profile-hero-panel">
                 <?php if ($is_own_profile) : ?>
@@ -785,7 +785,7 @@ if (!$profile) {
                     <section class="settings-panel" data-profile-filter-list>
                         <div class="profile-list-header">
                             <div>
-                                <h2><?php echo $is_own_profile ? 'Following' : 'Following'; ?></h2>
+                                <h2>Following <span class="profile-section-count"><?php echo $followed_businesses->num_rows; ?></span></h2>
                                 <p class="form-help"><?php echo $is_own_profile ? 'Businesses you follow for updates and posts.' : 'Businesses they follow for updates and posts.'; ?></p>
                             </div>
                             <label class="profile-list-search">
@@ -823,11 +823,11 @@ if (!$profile) {
                     <section class="settings-panel" data-profile-filter-list>
                         <div class="profile-list-header">
                             <div>
-                                <h2>Want to Go</h2>
+                                <h2>Saved <span class="profile-section-count"><?php echo $want_to_go_businesses->num_rows; ?></span></h2>
                                 <p class="form-help"><?php echo $is_own_profile ? 'Locations saved for your next crawl.' : 'Locations saved for a future visit.'; ?></p>
                             </div>
                             <label class="profile-list-search">
-                                <span class="visually-hidden">Search Want to Go locations</span>
+                                <span class="visually-hidden">Search saved locations</span>
                                 <input type="search" placeholder="Search" autocomplete="off" data-profile-filter-input>
                             </label>
                         </div>
@@ -852,7 +852,7 @@ if (!$profile) {
                                     </div>
                                 </article>
                             <?php endwhile; ?>
-                            <p class="profile-list-empty" data-profile-filter-empty hidden>No Want to Go locations match your search.</p>
+                            <p class="profile-list-empty" data-profile-filter-empty hidden>No saved locations match your search.</p>
                         </div>
                     </section>
                 <?php endif; ?>

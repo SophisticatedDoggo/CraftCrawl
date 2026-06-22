@@ -499,6 +499,42 @@ function craftcrawl_badge_definitions() {
             'description' => 'Complete 10 quest chains.',
             'xp' => 250,
             'tier' => 'major'
+        ],
+        'first_follow' => [
+            'name' => 'First Follow',
+            'description' => 'Follow your first business.',
+            'xp' => 30,
+            'tier' => 'small'
+        ],
+        'loyal_fan' => [
+            'name' => 'Loyal Fan',
+            'description' => 'Follow 10 businesses.',
+            'xp' => 100,
+            'tier' => 'medium'
+        ],
+        'super_supporter' => [
+            'name' => 'Super Supporter',
+            'description' => 'Follow 25 businesses.',
+            'xp' => 200,
+            'tier' => 'major'
+        ],
+        'first_save' => [
+            'name' => 'First Pin',
+            'description' => 'Save your first location.',
+            'xp' => 30,
+            'tier' => 'small'
+        ],
+        'trail_planner' => [
+            'name' => 'Trail Planner',
+            'description' => 'Save 10 locations.',
+            'xp' => 100,
+            'tier' => 'medium'
+        ],
+        'master_planner' => [
+            'name' => 'Master Planner',
+            'description' => 'Save 25 locations.',
+            'xp' => 200,
+            'tier' => 'major'
         ]
     ];
 }
@@ -548,7 +584,13 @@ function craftcrawl_badge_category($badge_key) {
         'local_circle' => 'friends',
         'chain_starter' => 'quest_chains',
         'chain_crawler' => 'quest_chains',
-        'chain_legend' => 'quest_chains'
+        'chain_legend' => 'quest_chains',
+        'first_follow' => 'social',
+        'loyal_fan' => 'social',
+        'super_supporter' => 'social',
+        'first_save' => 'exploration',
+        'trail_planner' => 'exploration',
+        'master_planner' => 'exploration'
     ];
 
     return $categories[$badge_key] ?? 'general';
@@ -976,6 +1018,16 @@ function craftcrawl_award_eligible_badges($conn, $user_id, $visit_id = null) {
         + min(1, (int) ($monthly_stats['cideries'] ?? 0));
     $monthly_unique_visits = (int) ($monthly_stats['unique_visits'] ?? 0);
 
+    $follow_count_stmt = $conn->prepare("SELECT COUNT(*) AS total FROM liked_businesses WHERE user_id=?");
+    $follow_count_stmt->bind_param("i", $user_id);
+    $follow_count_stmt->execute();
+    $follow_count = (int) ($follow_count_stmt->get_result()->fetch_assoc()['total'] ?? 0);
+
+    $save_count_stmt = $conn->prepare("SELECT COUNT(*) AS total FROM want_to_go_locations WHERE user_id=?");
+    $save_count_stmt->bind_param("i", $user_id);
+    $save_count_stmt->execute();
+    $save_count = (int) ($save_count_stmt->get_result()->fetch_assoc()['total'] ?? 0);
+
     $habit_stats = craftcrawl_user_habit_streak_stats($conn, $user_id);
     $event_stats = craftcrawl_user_event_attendance_stats($conn, $user_id);
     $event_attendance_count = (int) ($event_stats['total'] ?? 0);
@@ -1024,7 +1076,13 @@ function craftcrawl_award_eligible_badges($conn, $user_id, $visit_id = null) {
         'social_sipper' => $reaction_count >= 10,
         'friendly_pour' => $recommendation_count >= 1,
         'shared_stop' => $shared_location_count >= 1,
-        'local_circle' => $friend_count >= 10
+        'local_circle' => $friend_count >= 10,
+        'first_follow' => $follow_count >= 1,
+        'loyal_fan' => $follow_count >= 10,
+        'super_supporter' => $follow_count >= 25,
+        'first_save' => $save_count >= 1,
+        'trail_planner' => $save_count >= 10,
+        'master_planner' => $save_count >= 25
     ];
 
     foreach ($requirements as $badge_key => $is_eligible) {

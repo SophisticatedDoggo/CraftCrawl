@@ -47,12 +47,21 @@ function craftcrawl_quest_pool() {
         ],
         'daily_plan' => [
             'name' => 'Pick the Next Pour',
-            'description' => 'Save one location to Want to Go today.',
+            'description' => 'Save one location today.',
             'period_type' => 'daily',
             'group' => 'want_to_go',
             'metric' => 'want_to_go',
             'target' => 1,
-            'xp' => 20,
+            'xp' => 30,
+        ],
+        'daily_follow' => [
+            'name' => 'Show Some Love',
+            'description' => 'Follow one business today.',
+            'period_type' => 'daily',
+            'group' => 'follow',
+            'metric' => 'follows',
+            'target' => 1,
+            'xp' => 25,
         ],
         'daily_variety' => [
             'name' => 'Try a Different Trail',
@@ -155,12 +164,21 @@ function craftcrawl_quest_pool() {
         ],
         'weekly_plan_ahead' => [
             'name' => 'Plan Ahead',
-            'description' => 'Save three locations to Want to Go this week.',
+            'description' => 'Save three locations this week.',
             'period_type' => 'weekly',
             'group' => 'want_to_go',
             'metric' => 'want_to_go',
             'target' => 3,
-            'xp' => 90,
+            'xp' => 100,
+        ],
+        'weekly_supporter' => [
+            'name' => 'Local Supporter',
+            'description' => 'Follow three businesses this week.',
+            'period_type' => 'weekly',
+            'group' => 'follow',
+            'metric' => 'follows',
+            'target' => 3,
+            'xp' => 80,
         ],
         'weekly_explorer' => [
             'name' => 'Explorer',
@@ -284,6 +302,9 @@ function craftcrawl_quest_metric_progress($conn, $user_id, $metric, $start_at, $
         $stmt->bind_param("iss", $user_id, $start_at, $end_at);
     } elseif ($metric === 'reviews') {
         $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM reviews WHERE user_id=? AND createdAt >= ? AND createdAt < ?");
+        $stmt->bind_param("iss", $user_id, $start_at, $end_at);
+    } elseif ($metric === 'follows') {
+        $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM liked_businesses WHERE user_id=? AND createdAt >= ? AND createdAt < ?");
         $stmt->bind_param("iss", $user_id, $start_at, $end_at);
     } elseif ($metric === 'want_to_go') {
         $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM want_to_go_locations WHERE user_id=? AND createdAt >= ? AND createdAt < ?");

@@ -393,7 +393,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="checkbox" name="show_feed_activity" value="1" <?php echo $show_feed_activity ? 'checked' : ''; ?>>
                     <span>
                         <strong>Show My Activity in Friends Feed</strong>
-                        <small>Allow friends to see your check-ins, level-ups, badge earnings, Want-to-Go saves, and event RSVPs.</small>
+                        <small>Allow friends to see your check-ins, level-ups, badge earnings, saved locations, follows, and event RSVPs.</small>
                     </span>
                 </label>
                 <fieldset class="settings-radio-group">
@@ -431,8 +431,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label class="settings-toggle">
                     <input type="checkbox" name="show_want_to_go" value="1" <?php echo $show_want_to_go ? 'checked' : ''; ?>>
                     <span>
-                        <strong>Share Want-to-Go Activity with Friends</strong>
-                        <small>Allow friends to see businesses you've saved to your Want-to-Go list.</small>
+                        <strong>Share Saved Locations with Friends</strong>
+                        <small>Allow friends to see locations you've saved.</small>
                     </span>
                 </label>
                 <label class="settings-toggle">

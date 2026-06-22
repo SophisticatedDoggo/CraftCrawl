@@ -68,15 +68,17 @@ try {
     $stmt->execute();
 
     if ($stmt->affected_rows > 0) {
+        $badge_names = craftcrawl_award_eligible_badges($conn, $user_id);
         $quest_rewards = craftcrawl_award_eligible_quest_rewards($conn, $user_id);
-        if (!empty($quest_rewards)) {
+        $xp_items = craftcrawl_quest_xp_items($quest_rewards);
+        if (!empty($badge_names) || !empty($xp_items)) {
             $xp_reward_popup = craftcrawl_xp_reward_payload(
                 $conn,
                 $user_id,
                 $progress_before,
-                [],
-                'Quest Complete',
-                craftcrawl_quest_xp_items($quest_rewards)
+                $badge_names,
+                !empty($xp_items) ? 'Quest Complete' : null,
+                $xp_items
             );
         }
     }
