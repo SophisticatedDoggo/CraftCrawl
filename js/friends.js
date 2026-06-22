@@ -3019,22 +3019,23 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     function updateFeedCardCommentCount(itemKey, delta) {
-        const feedCard = feed?.querySelector(`[data-feed-item-key="${CSS.escape(itemKey)}"]`);
-        if (!feedCard) return;
+        const feedCards = document.querySelectorAll(`[data-feed-item-key="${CSS.escape(itemKey)}"]`);
 
-        const countSpan = feedCard.querySelector('.feed-comment-count');
-        if (countSpan) {
-            const current = Number(countSpan.textContent || 0);
-            countSpan.textContent = String(current + delta);
-        } else {
-            const link = feedCard.querySelector('.feed-comments-link');
-            if (link) {
-                const span = document.createElement('span');
-                span.className = 'feed-comment-count';
-                span.textContent = String(delta);
-                link.querySelector('.feed-comments-icon')?.after(span);
+        feedCards.forEach((feedCard) => {
+            const countSpan = feedCard.querySelector('.feed-comment-count');
+            if (countSpan) {
+                const current = Number(countSpan.textContent || 0);
+                countSpan.textContent = String(current + delta);
+            } else {
+                const link = feedCard.querySelector('.feed-comments-link');
+                if (link) {
+                    const span = document.createElement('span');
+                    span.className = 'feed-comment-count';
+                    span.textContent = String(delta);
+                    link.querySelector('.feed-comments-icon')?.after(span);
+                }
             }
-        }
+        });
     }
 
     function clearUnreadBadge(itemKey) {

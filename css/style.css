@@ -7932,6 +7932,7 @@ body.feed-comments-sheet-open {
 .event-feed-entry {
     border-bottom: 1px solid var(--color-border);
     padding: 16px 0;
+    background: var(--color-primary);
     cursor: pointer;
     transform-origin: center top;
     transition: transform 240ms cubic-bezier(.2, .82, .2, 1), background-color 180ms ease, opacity 180ms ease, box-shadow 180ms ease;
@@ -7940,7 +7941,7 @@ body.feed-comments-sheet-open {
 .event-feed-entry.is-opening-event {
     position: relative;
     z-index: 3;
-    background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+    background: var(--color-primary);
 }
 
 .event-feed-entry:has(a:hover, button:hover, input:hover, textarea:hover, select:hover) {
@@ -7972,11 +7973,7 @@ body.feed-comments-sheet-open {
     content: "";
     flex: 1 1 auto;
     height: 1px;
-    background: linear-gradient(90deg, var(--color-primary), color-mix(in srgb, var(--color-border) 50%, transparent));
-}
-
-.event-feed-day-header::after {
-    background: linear-gradient(90deg, color-mix(in srgb, var(--color-border) 50%, transparent), var(--color-primary));
+    background: #fff;
 }
 
 .event-feed-day-header span {
@@ -8001,6 +7998,7 @@ body.feed-comments-sheet-open {
     font-size: 15px;
     font-weight: 800;
     letter-spacing: 0.02em;
+    transform: translateY(var(--event-feed-day-push, 0px));
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -8012,11 +8010,7 @@ body.feed-comments-sheet-open {
     content: "";
     flex: 1 1 auto;
     height: 1px;
-    background: linear-gradient(90deg, var(--color-primary), color-mix(in srgb, var(--color-border) 50%, transparent));
-}
-
-.event-feed-floating-day-header::after {
-    background: linear-gradient(90deg, color-mix(in srgb, var(--color-border) 50%, transparent), var(--color-primary));
+    background: #fff;
 }
 
 .event-feed-floating-day-header span {
@@ -8082,6 +8076,16 @@ body.feed-comments-sheet-open {
 
 .event-feed-details {
     align-self: center;
+}
+
+.event-feed-action-row {
+    grid-column: 1 / -1;
+    width: 100%;
+}
+
+.event-feed-want-reaction .event-want-button {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 .event-feed-actions {

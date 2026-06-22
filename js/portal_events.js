@@ -56,13 +56,13 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
             const dayLabel = formatEventDayHeader(eventDate);
             const endTime = event.endTime ? ` - ${formatEventTime(event.endTime)}` : '';
             const eventUrl = `../event_details.php?id=${encodeURIComponent(event.id)}&date=${encodeURIComponent(event.date)}`;
-            const commentsUrl = `feed_post.php?item=${encodeURIComponent(event.itemKey || `event:${event.id}:${event.date}`)}`;
+            const itemKey = event.itemKey || `event:${event.id}:${event.date}`;
             const eventName = escapeHtml(event.name);
             const businessName = escapeHtml(event.businessName);
             const city = escapeHtml(event.city);
             const state = escapeHtml(event.state);
             const commentCount = Number(event.commentCount || 0);
-            const commentLabel = commentCount > 0 ? `${commentCount} ${commentCount === 1 ? 'Comment' : 'Comments'}` : 'Comments';
+            const wantToGoCount = Number(event.wantToGoCount || 0);
             const description = event.description ? escapeHtml(event.description) : '';
             const coverPhoto = event.coverPhotoUrl
                 ? `<img class="event-feed-cover" src="${event.coverPhotoUrl}" alt="">`
@@ -74,29 +74,37 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
 
             return `
                 ${dayHeader}
-                <div class="event-feed-entry" data-event-feed-item data-event-id="${event.id}" data-occurrence-date="${escapeHtml(event.date)}" data-event-detail-url="${eventUrl}" role="link" tabindex="0">
+                <div class="event-feed-entry" data-event-feed-item data-feed-item-key="${escapeHtml(itemKey)}" data-event-id="${event.id}" data-occurrence-date="${escapeHtml(event.date)}" data-event-detail-url="${eventUrl}" role="link" tabindex="0">
                     ${coverPhoto}
                     <article class="event-feed-item ${event.coverPhotoUrl ? 'event-feed-item-with-cover' : ''}">
                         <div class="event-feed-details">
-                            <h3>${eventName}</h3>
-                            <p>${formatEventTime(event.startTime)}${endTime} &middot; ${businessName}</p>
+                            <h3><a class="feed-event-link" href="${eventUrl}" data-event-detail-link>${eventName}</a></h3>
+                            <p>${formatEventTime(event.startTime)}${endTime} &middot; <a class="feed-business-link" href="../business_details.php?id=${event.businessId}">${businessName}</a></p>
                             <p>${formatBusinessType(event.businessType)} &middot; ${city}, ${state}</p>
                             ${description ? `<p>${description}</p>` : ''}
                         </div>
-                        <div class="event-feed-actions">
-                            <a href="${eventUrl}" data-event-detail-link>View event</a>
-                            <a href="../business_details.php?id=${event.businessId}">View business</a>
-                            <a class="event-comments-link" href="${commentsUrl}">${commentLabel}</a>
-                            <button
-                                type="button"
-                                class="event-want-button ${event.isWantToGo ? 'is-active' : ''}"
-                                data-event-want
-                                data-event-id="${event.id}"
-                                data-occurrence-date="${escapeHtml(event.date)}"
-                                data-is-saved="${event.isWantToGo ? '1' : '0'}"
-                            >
-                                <span class="pin-icon" aria-hidden="true"></span> Want to Go ${Number(event.wantToGoCount || 0)}
-                            </button>
+                        <div class="feed-action-row event-feed-action-row">
+                            <div class="feed-primary-actions">
+                                <button type="button" class="feed-comments-link" data-comments-sheet-trigger data-item-key="${escapeHtml(itemKey)}" aria-label="Show comments">
+                                    <span class="feed-comments-icon" aria-hidden="true"></span>
+                                    ${commentCount > 0 ? `<span class="feed-comment-count">${commentCount}</span>` : ''}
+                                </button>
+                            </div>
+                            <div class="feed-reactions event-feed-want-reaction">
+                                <button
+                                    type="button"
+                                    class="event-want-button ${event.isWantToGo ? 'is-active' : ''}"
+                                    data-event-want
+                                    data-event-id="${event.id}"
+                                    data-occurrence-date="${escapeHtml(event.date)}"
+                                    data-is-saved="${event.isWantToGo ? '1' : '0'}"
+                                    aria-label="Want to Go"
+                                    aria-pressed="${event.isWantToGo ? 'true' : 'false'}"
+                                >
+                                    <span class="feed-reaction-icon feed-reaction-icon-pin" aria-hidden="true"></span>
+                                    <span class="feed-reaction-count"${wantToGoCount > 0 ? '' : ' hidden'}>${wantToGoCount > 0 ? wantToGoCount : ''}</span>
+                                </button>
+                            </div>
                         </div>
                     </article>
                 </div>
@@ -129,7 +137,17 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
 
                         button.dataset.isSaved = data.is_saved ? '1' : '0';
                         button.classList.toggle('is-active', Boolean(data.is_saved));
-                        button.innerHTML = `<span class="pin-icon" aria-hidden="true"></span> Want to Go ${Number(data.count || 0)}`;
+                        button.setAttribute('aria-pressed', data.is_saved ? 'true' : 'false');
+                        const count = Number(data.count || 0);
+                        const countElement = button.querySelector('.feed-reaction-count');
+                        if (countElement) {
+                            countElement.textContent = count > 0 ? String(count) : '';
+                            countElement.hidden = count < 1;
+                        }
+                        if (data.is_saved) {
+                            button.classList.add('is-reacting');
+                            window.setTimeout(() => button.classList.remove('is-reacting'), 280);
+                        }
                         if (data.xp_reward && window.craftcrawlShowXpReward) {
                             window.craftcrawlShowXpReward(data.xp_reward);
                         }
@@ -200,25 +218,34 @@ window.CraftCrawlInitPortalEvents = function (root = document) {
 
         if (!headers.length || !isMobile || !isEventsTabActive()) {
             eventStickyDayHeader.classList.remove('is-visible');
+            eventStickyDayHeader.style.setProperty('--event-feed-day-push', '0px');
             return;
         }
 
-        const headerBottom = eventStickyDayHeader.getBoundingClientRect().bottom;
-        const threshold = Math.max(74, headerBottom);
+        const floatingHeaderRect = eventStickyDayHeader.getBoundingClientRect();
+        const floatingHeaderHeight = floatingHeaderRect.height;
         const feedRect = feedContainer.getBoundingClientRect();
-        const shouldShow = feedRect.top <= threshold && feedRect.bottom > threshold;
+        const headerRects = headers.map((header) => header.getBoundingClientRect());
+        const shouldShow = headerRects[0].top <= 0 && feedRect.bottom > 0;
         eventStickyDayHeader.classList.toggle('is-visible', shouldShow);
 
         if (!shouldShow) {
+            eventStickyDayHeader.style.setProperty('--event-feed-day-push', '0px');
             return;
         }
 
-        let activeHeader = headers[0];
-        headers.forEach((header) => {
-            if (header.getBoundingClientRect().top <= threshold) {
-                activeHeader = header;
+        let activeHeaderIndex = 0;
+        headerRects.forEach((headerRect, index) => {
+            if (headerRect.top <= 0) {
+                activeHeaderIndex = index;
             }
         });
+        const activeHeader = headers[activeHeaderIndex];
+        const nextHeaderRect = headerRects[activeHeaderIndex + 1];
+        const pushDistance = nextHeaderRect
+            ? Math.max(-floatingHeaderHeight, Math.min(0, nextHeaderRect.top - floatingHeaderHeight))
+            : 0;
+        eventStickyDayHeader.style.setProperty('--event-feed-day-push', `${pushDistance}px`);
 
         const nextDate = activeHeader.dataset.dateKey || '';
         if (!nextDate || nextDate === activeStickyDate) {
