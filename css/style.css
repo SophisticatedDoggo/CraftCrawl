@@ -12367,8 +12367,24 @@ a.event-calendar-event:focus .event-calendar-event-name {
     }
 
     .mobile-actions-panel a,
-    .mobile-actions-panel button {
+    .mobile-actions-panel button,
+    .mobile-actions-panel a:hover,
+    .mobile-actions-panel a:focus,
+    .mobile-actions-panel button:hover,
+    .mobile-actions-panel button:focus {
+        border: 1px solid var(--color-primary);
         border-radius: 999px;
+        color: var(--color-primary);
+        background:
+            radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.055) 34%, transparent 66%),
+            linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.045) 46%, rgba(255, 255, 255, 0.015)),
+            color-mix(in srgb, var(--color-surface) 18%, transparent);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.26),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.055),
+            0 5px 14px color-mix(in srgb, var(--color-text) 10%, transparent);
+        backdrop-filter: blur(18px) saturate(1.35);
+        -webkit-backdrop-filter: blur(18px) saturate(1.35);
     }
 
     .settings-page,
