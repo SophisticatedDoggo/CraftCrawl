@@ -4347,6 +4347,10 @@ body.map-expanded-open {
     margin-left: 4px;
 }
 
+.friends-subtab-badge[hidden] {
+    display: none;
+}
+
 .friends-summary-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5904,13 +5908,20 @@ a.feed-detail-link:not(.mapboxgl-ctrl-logo) {
 
 .leaderboard-mode-tabs {
     display: flex;
-    flex-wrap: wrap;
     gap: 8px;
     margin-bottom: 14px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.leaderboard-mode-tabs::-webkit-scrollbar {
+    display: none;
 }
 
 .leaderboard-mode-tabs a,
 .leaderboard-mode-tabs button {
+    flex: 0 0 auto;
     min-height: 34px;
     padding: 7px 10px;
     border: 1px solid var(--color-border);
@@ -5920,6 +5931,7 @@ a.feed-detail-link:not(.mapboxgl-ctrl-logo) {
     font: inherit;
     font-size: 13px;
     font-weight: 800;
+    white-space: nowrap;
     text-decoration: none;
     cursor: pointer;
 }
@@ -11289,7 +11301,8 @@ a.event-calendar-event:focus .event-calendar-event-name {
         justify-content: flex-start;
     }
 
-    .user-subpage-header-actions {
+    .user-subpage-header-actions,
+    .friends-header-actions {
         display: none !important;
     }
 
