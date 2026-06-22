@@ -3309,9 +3309,9 @@ a.text-link:focus {
     opacity: 0.8;
 }
 
-.chain-btn-primary,
-.chain-btn-primary:hover,
-.chain-btn-primary:focus {
+.chain-actions > .chain-btn-primary,
+.chain-actions > .chain-btn-primary:hover,
+.chain-actions > .chain-btn-primary:focus {
     background: var(--color-primary);
     color: var(--color-on-primary, #fff);
     border: none;
@@ -3320,9 +3320,12 @@ a.text-link:focus {
     box-shadow: none;
 }
 
-.chain-btn-secondary,
-.chain-btn-secondary:hover,
-.chain-btn-secondary:focus {
+.chain-actions > .chain-btn-secondary,
+.chain-actions > .chain-btn-secondary:hover,
+.chain-actions > .chain-btn-secondary:focus,
+.chain-invite-modal-body .chain-btn-secondary,
+.chain-invite-modal-body .chain-btn-secondary:hover,
+.chain-invite-modal-body .chain-btn-secondary:focus {
     background: color-mix(in srgb, var(--color-border) 40%, var(--color-surface));
     color: var(--color-text);
     border: none;
@@ -3350,10 +3353,15 @@ a.text-link:focus {
     color: var(--color-on-primary, #fff);
 }
 
-.chain-btn-danger {
+.chain-actions > .chain-btn-danger,
+.chain-actions > .chain-btn-danger:hover,
+.chain-actions > .chain-btn-danger:focus {
     background: transparent;
     color: var(--color-muted);
     border: 1px solid var(--color-border);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
 }
 
 .chain-discover-actions {
