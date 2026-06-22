@@ -597,6 +597,25 @@
         }
     });
 
+    window.addEventListener('craftcrawl:notification-counts-changed', function (e) {
+        var counts = e.detail;
+        if (!counts || window._chainInvitesSuppressed) return;
+        var panel = document.querySelector('[data-quest-chains-panel]');
+        var chainsBtn = panel && panel.querySelector('[data-quest-subtab="chains"]');
+        if (!chainsBtn) return;
+        var existing = chainsBtn.querySelector('.quest-subtab-badge');
+        if (counts.pendingChainInvites > 0) {
+            if (!existing) {
+                existing = document.createElement('span');
+                existing.className = 'quest-subtab-badge';
+                chainsBtn.appendChild(existing);
+            }
+            existing.textContent = counts.pendingChainInvites > 9 ? '9+' : String(counts.pendingChainInvites);
+        } else if (existing) {
+            existing.remove();
+        }
+    });
+
     function autoSelectChainsTab() {
         var params = new URLSearchParams(window.location.search);
         if (params.get('tab') !== 'chains') return;
