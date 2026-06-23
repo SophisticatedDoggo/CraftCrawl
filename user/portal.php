@@ -147,6 +147,7 @@ $craftcrawl_portal_shell = true;
     window.CRAFTCRAWL_SHOW_SOCIAL_CLUB_DISCLAIMER = <?php echo $show_social_club_disclaimer ? 'true' : 'false'; ?>;
 </script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="../js/business_subtabs.js?v=<?php echo filemtime(__DIR__ . '/../js/business_subtabs.js'); ?>"></script>
 <script src="../js/location.js?v=<?php echo filemtime(__DIR__ . '/../js/location.js'); ?>"></script>
 <script src="../js/map.js?v=<?php echo filemtime(__DIR__ . '/../js/map.js'); ?>"></script>
 <script src="../js/directions_links.js?v=<?php echo filemtime(__DIR__ . '/../js/directions_links.js'); ?>"></script>

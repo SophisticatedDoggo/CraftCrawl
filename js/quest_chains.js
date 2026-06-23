@@ -31,6 +31,8 @@
             p.hidden = p.dataset.questSubtabPanel !== target;
         });
 
+        window.CraftCrawlUpdateSubtabThumb?.(panel.querySelector('.quest-subtab-nav'), true);
+
         if (target === 'chains' && !chainsLoading) {
             markChainInvitesSeen();
             loadChainsTab(panel);
@@ -659,4 +661,10 @@
         d.textContent = str;
         return d.innerHTML;
     }
+
+    requestAnimationFrame(function () {
+        document.querySelectorAll('.quest-subtab-nav').forEach(function (nav) {
+            window.CraftCrawlUpdateSubtabThumb?.(nav, false);
+        });
+    });
 })();

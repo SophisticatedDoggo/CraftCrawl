@@ -32,6 +32,7 @@ $craftcrawl_portal_shell = true;
     window.CRAFTCRAWL_CSRF_TOKEN = "<?php echo escape_output(craftcrawl_csrf_token()); ?>";
 </script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="../js/business_subtabs.js?v=<?php echo filemtime(__DIR__ . '/../js/business_subtabs.js'); ?>"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.21.0/mapbox-gl.js"></script>
 <script src="../js/location.js?v=<?php echo filemtime(__DIR__ . '/../js/location.js'); ?>"></script>
 <script src="../js/map.js?v=<?php echo filemtime(__DIR__ . '/../js/map.js'); ?>"></script>
