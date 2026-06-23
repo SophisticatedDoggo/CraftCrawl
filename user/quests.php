@@ -63,6 +63,7 @@ $craftcrawl_portal_shell = true;
     window.CRAFTCRAWL_XP_REWARD_POPUP = <?php echo json_encode($xp_reward_popup, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
 </script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="../js/business_subtabs.js?v=<?php echo filemtime(__DIR__ . '/../js/business_subtabs.js'); ?>"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.21.0/mapbox-gl.js"></script>
 <script src="../js/location.js?v=<?php echo filemtime(__DIR__ . '/../js/location.js'); ?>"></script>
 <script src="../js/map.js?v=<?php echo filemtime(__DIR__ . '/../js/map.js'); ?>"></script>

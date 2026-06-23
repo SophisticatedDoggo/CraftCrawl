@@ -1,3 +1,10 @@
+var craftcrawlSubtabNavSelector = [
+    '.business-subtab-nav',
+    '.profile-subtab-nav',
+    '.quest-subtab-nav',
+    '.friends-subtab-nav'
+].join(', ');
+
 function craftcrawlUpdateSubtabThumb(nav, animate) {
     if (!nav) return;
     var active = nav.querySelector('.is-active');
@@ -22,6 +29,30 @@ function craftcrawlUpdateSubtabThumb(nav, animate) {
 }
 
 window.CraftCrawlUpdateSubtabThumb = craftcrawlUpdateSubtabThumb;
+
+function craftcrawlFindSubtabNavs(root) {
+    root = root || document;
+    var navs = [];
+
+    if (root.matches && root.matches(craftcrawlSubtabNavSelector)) {
+        navs.push(root);
+    }
+    if (root.querySelectorAll) {
+        root.querySelectorAll(craftcrawlSubtabNavSelector).forEach(function (nav) {
+            navs.push(nav);
+        });
+    }
+
+    return navs;
+}
+
+window.CraftCrawlInitSubtabThumbs = function (root) {
+    requestAnimationFrame(function () {
+        craftcrawlFindSubtabNavs(root).forEach(function (nav) {
+            craftcrawlUpdateSubtabThumb(nav, false);
+        });
+    });
+};
 
 window.CraftCrawlInitBusinessSubtabs = function (root = document) {
     var page = root.querySelector('.business-details-page') || root.querySelector('.business-portal');
@@ -74,16 +105,26 @@ window.CraftCrawlInitBusinessSubtabs = function (root = document) {
         });
     });
 
-    var resizeTimer;
-    window.addEventListener('resize', function () {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(function () {
-            navs.forEach(function (nav) {
-                nav.classList.remove('is-subtab-thumb-ready');
-                craftcrawlUpdateSubtabThumb(nav, false);
-            });
-        }, 150);
-    });
 };
 
 CraftCrawlInitBusinessSubtabs();
+CraftCrawlInitSubtabThumbs();
+
+var craftcrawlSubtabResizeTimer;
+window.addEventListener('resize', function () {
+    clearTimeout(craftcrawlSubtabResizeTimer);
+    craftcrawlSubtabResizeTimer = setTimeout(function () {
+        craftcrawlFindSubtabNavs(document).forEach(function (nav) {
+            nav.classList.remove('is-subtab-thumb-ready');
+            craftcrawlUpdateSubtabThumb(nav, false);
+        });
+    }, 150);
+});
+
+window.addEventListener('craftcrawl:user-tab-changed', function () {
+    CraftCrawlInitSubtabThumbs();
+});
+
+document.addEventListener('craftcrawl:user-shell-navigated', function (event) {
+    CraftCrawlInitSubtabThumbs(event.target);
+});

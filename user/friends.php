@@ -298,6 +298,7 @@ $suggested_friends_count = $suggested_friends->num_rows;
     </main>
     </div>
     <?php include __DIR__ . '/app_nav.php'; ?>
+    <script src="../js/business_subtabs.js?v=<?php echo filemtime(__DIR__ . '/../js/business_subtabs.js'); ?>"></script>
     <script src="../js/level_celebration.js?v=<?php echo filemtime(__DIR__ . '/../js/level_celebration.js'); ?>"></script>
     <script src="../js/post_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/post_menu.js'); ?>"></script>
     <script src="../js/report_modal.js?v=<?php echo filemtime(__DIR__ . '/../js/report_modal.js'); ?>"></script>
