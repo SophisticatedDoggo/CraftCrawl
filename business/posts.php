@@ -1,6 +1,7 @@
 <?php
 require '../login_check.php';
 require_once '../lib/business_context.php';
+require_once '../lib/business_helpers.php';
 include '../db.php';
 
 $selected_location = craftcrawl_require_selected_business_location($conn);
@@ -8,14 +9,6 @@ $selected_location = craftcrawl_require_selected_business_location($conn);
 $business_id = !empty($selected_location['legacy_business_id']) ? (int) $selected_location['legacy_business_id'] : null;
 $location_id = (int) $_SESSION['business_location_id'];
 $message = $_GET['message'] ?? null;
-
-function escape_output($value) {
-    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
-}
-
-function clean_text($value) {
-    return trim(strip_tags($value ?? ''));
-}
 
 require_once '../config.php';
 require_once '../lib/business_post_render.php';
@@ -354,31 +347,13 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '<span class="fee
 <body>
     <div data-area-page-content>
     <main class="business-portal">
-        <header class="business-portal-header">
-            <div>
-                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
-                <div>
-                    <h1>Posts</h1>
-                    <p><?php echo escape_output($business['bName']); ?></p>
-                </div>
-            </div>
-            <div class="business-header-actions mobile-actions-menu business-actions-menu" data-mobile-actions-menu>
-                <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-                <div class="mobile-actions-panel" data-mobile-actions-panel>
-                    <a href="locations.php">Locations</a>
-                    <a href="analytics.php">Stats</a>
-                    <a href="settings.php">Settings</a>
-                    <form action="../logout.php" method="POST">
-                        <?php echo craftcrawl_csrf_input(); ?>
-                        <button type="submit">Logout</button>
-                    </form>
-                </div>
-            </div>
-        </header>
+        <?php
+        $craftcrawl_business_page = 'posts';
+        $craftcrawl_business_page_title = 'Posts';
+        $craftcrawl_business_name = $business['bName'];
+        $craftcrawl_business_approved = false;
+        include __DIR__ . '/portal_header.php';
+        ?>
 
         <?php if ($message === 'post_saved') : ?>
             <p class="form-message form-message-success">Post published.</p>
@@ -408,16 +383,33 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '<span class="fee
             <p class="form-message form-message-error">Reply could not be posted.</p>
         <?php endif; ?>
 
+        <?php
+            $total_posts = count($all_posts_raw);
+            $total_reactions = 0;
+            foreach ($all_posts_raw as $p) { $total_reactions += (int) $p['reaction_count']; }
+        ?>
+        <div class="friends-summary-grid" style="margin-bottom: 18px;">
+            <article>
+                <strong><?php echo $total_posts; ?></strong>
+                <span>Total Posts</span>
+            </article>
+            <article>
+                <strong><?php echo $total_reactions; ?></strong>
+                <span>Reactions</span>
+            </article>
+        </div>
+
+        <nav class="business-subtab-nav" role="tablist" data-business-subtab-nav>
+            <button type="button" class="business-subtab is-active" role="tab" data-business-subtab="feed" aria-selected="true">All Posts</button>
+            <button type="button" class="business-subtab" role="tab" data-business-subtab="new-post" aria-selected="false">New Post</button>
+            <button type="button" class="business-subtab" role="tab" data-business-subtab="new-poll" aria-selected="false">New Poll</button>
+        </nav>
+
+        <div data-business-subtab-panel="new-post" hidden>
         <section class="business-reviews-panel">
             <header>
                 <h2>New Post</h2>
             </header>
-
-            <div class="portal-post-create-tabs">
-                <button type="button" class="is-active" data-post-create-tab="post">Text Post</button>
-                <button type="button" data-post-create-tab="poll">Poll</button>
-            </div>
-
             <form method="POST" action="" data-post-create-form="post">
                 <?php echo craftcrawl_csrf_input(); ?>
                 <input type="hidden" name="form_action" value="create_post">
@@ -427,8 +419,15 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '<span class="fee
                 <textarea id="post_body" name="body" rows="3" maxlength="2000" placeholder="More details..."></textarea>
                 <button type="submit">Post</button>
             </form>
+        </section>
+        </div>
 
-            <form method="POST" action="" data-post-create-form="poll" hidden>
+        <div data-business-subtab-panel="new-poll" hidden>
+        <section class="business-reviews-panel">
+            <header>
+                <h2>New Poll</h2>
+            </header>
+            <form method="POST" action="">
                 <?php echo craftcrawl_csrf_input(); ?>
                 <input type="hidden" name="form_action" value="create_poll">
                 <label for="poll_title">Question</label>
@@ -454,7 +453,9 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '<span class="fee
                 <button type="submit">Create Poll</button>
             </form>
         </section>
+        </div>
 
+        <div data-business-subtab-panel="feed">
         <section class="business-reviews-panel">
             <header>
                 <h2>All Posts</h2>
@@ -683,10 +684,10 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '<span class="fee
                 </article>
             <?php endforeach; ?>
         </section>
+        </div>
     </main>
 
     <?php include __DIR__ . '/mobile_nav.php'; ?>
-    <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
     <script>
         // Post type tab toggle
         document.querySelectorAll('[data-post-create-tab]').forEach(function (tab) {
@@ -785,12 +786,9 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '<span class="fee
             });
         });
     </script>
-    <script src="../js/business_events.js?v=<?php echo filemtime(__DIR__ . '/../js/business_events.js'); ?>"></script>
-    <script src="../js/business_analytics.js?v=<?php echo filemtime(__DIR__ . '/../js/business_analytics.js'); ?>"></script>
-    <script src="../js/business_review_responses.js?v=<?php echo filemtime(__DIR__ . '/../js/business_review_responses.js'); ?>"></script>
-    <script src="../js/business_hours_editor.js?v=<?php echo filemtime(__DIR__ . '/../js/business_hours_editor.js'); ?>"></script>
-    <script src="../js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/../js/business_posts.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','locations.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'locations.php':'locations', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
-    <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
+    <?php
+    $craftcrawl_business_page = 'posts';
+    include __DIR__ . '/business_scripts.php';
+    ?>
 </body>
 </html>

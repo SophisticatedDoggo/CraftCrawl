@@ -1,6 +1,7 @@
 <?php
 require '../login_check.php';
 require_once '../lib/business_context.php';
+require_once '../lib/business_helpers.php';
 include '../db.php';
 require_once '../lib/business_event_comments.php';
 require_once '../lib/feed_items.php';
@@ -13,10 +14,6 @@ $business_account_id = (int) $_SESSION['business_account_id'];
 $location_id = (int) $_SESSION['business_location_id'];
 $item_key = trim($_GET['item'] ?? $_POST['item_key'] ?? '');
 $message = $_GET['message'] ?? null;
-
-function escape_output($value) {
-    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
-}
 
 function clean_comment_body($value) {
     return trim(strip_tags($value ?? ''));
@@ -154,31 +151,13 @@ if ($feed_item) {
 <body>
     <div data-area-page-content>
     <main class="business-portal">
-        <header class="business-portal-header">
-            <div>
-                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
-                <div>
-                    <h1>Event Comments</h1>
-                    <p><?php echo escape_output($selected_location['name'] ?? 'Business'); ?></p>
-                </div>
-            </div>
-            <div class="business-header-actions mobile-actions-menu business-actions-menu" data-mobile-actions-menu>
-                <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-                <div class="mobile-actions-panel" data-mobile-actions-panel>
-                    <a href="events.php">Events</a>
-                    <a href="business_portal.php">Portal</a>
-                    <a href="settings.php">Settings</a>
-                    <form action="../logout.php" method="POST">
-                        <?php echo craftcrawl_csrf_input(); ?>
-                        <button type="submit">Logout</button>
-                    </form>
-                </div>
-            </div>
-        </header>
+        <?php
+        $craftcrawl_business_page = 'events';
+        $craftcrawl_business_page_title = 'Event Comments';
+        $craftcrawl_business_name = $selected_location['name'] ?? 'Business';
+        $craftcrawl_business_approved = false;
+        include __DIR__ . '/portal_header.php';
+        ?>
 
         <?php if (!$feed_item) : ?>
             <section class="event-calendar-panel">
@@ -293,9 +272,9 @@ if ($feed_item) {
     </main>
     </div>
     <?php include __DIR__ . '/mobile_nav.php'; ?>
-    <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
-    <script src="../js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/../js/business_posts.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','locations.php','posts.php','analytics.php','events.php','event_edit.php','event_comments.php','business_edit.php','settings.php'], active: { 'business_portal.php':'portal', 'locations.php':'locations', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'event_comments.php':'events', 'business_edit.php':'edit' } };</script>
-    <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
+    <?php
+    $craftcrawl_business_page = 'events';
+    include __DIR__ . '/business_scripts.php';
+    ?>
 </body>
 </html>
