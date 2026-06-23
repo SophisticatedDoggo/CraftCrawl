@@ -42,6 +42,8 @@ function craftcrawl_render_business_post(array $post): string {
         $html .= '<p class="business-post-body">' . nl2br(htmlspecialchars($body, ENT_QUOTES, 'UTF-8')) . '</p>';
     }
 
+    $item_key = htmlspecialchars($post['item_key'] ?? ('business_post:' . $post_id), ENT_QUOTES, 'UTF-8');
+
     if ($post_type === 'poll') {
         $options = $post['options'] ?? [];
         $user_voted = isset($post['user_voted_option_id']) ? (int) $post['user_voted_option_id'] : null;
@@ -61,19 +63,16 @@ function craftcrawl_render_business_post(array $post): string {
         if ($user_voted !== null) {
             $html .= craftcrawl_render_poll_results($options, $user_voted, $total_votes);
         } else {
-            // Not voted yet — show option buttons (disabled if expired so they can't vote)
-            $html .= '<div class="business-poll-vote-options" data-poll-options data-post-id="' . $post_id . '">';
+            $html .= '<div class="business-poll-vote-options" data-feed-poll-section>';
             foreach ($options as $option) {
                 $opt_id = (int) $option['id'];
                 $opt_text = htmlspecialchars($option['option_text'] ?? '', ENT_QUOTES, 'UTF-8');
                 $disabled = $is_expired ? ' disabled' : '';
-                $html .= '<button type="button" class="business-poll-option-btn" data-vote-option data-option-id="' . $opt_id . '"' . $disabled . '>' . $opt_text . '</button>';
+                $html .= '<button type="button" class="business-poll-option-btn" data-feed-poll-vote data-item-key="' . $item_key . '" data-option-id="' . $opt_id . '"' . $disabled . '>' . $opt_text . '</button>';
             }
             $html .= '</div>';
         }
     }
-
-    $item_key = htmlspecialchars($post['item_key'] ?? ('business_post:' . $post_id), ENT_QUOTES, 'UTF-8');
     $comment_count = (int) ($post['comment_count'] ?? 0);
     $reactions = $post['reactions'] ?? [];
     $reaction_map = [];
