@@ -56,6 +56,17 @@ $total_followers_stmt->bind_param("i", $location_id);
 $total_followers_stmt->execute();
 $total_followers = (int) ($total_followers_stmt->get_result()->fetch_assoc()['total'] ?? 0);
 
+$event_checkins_stmt = $conn->prepare("
+    SELECT COUNT(DISTINCT CONCAT(e.id, ':', uv.user_id, ':', DATE(uv.checkedInAt))) AS total
+    FROM user_visits uv
+    INNER JOIN events e ON e.location_id = uv.location_id
+        AND DATE(uv.checkedInAt) = e.eventDate
+    WHERE uv.location_id=?
+");
+$event_checkins_stmt->bind_param("i", $location_id);
+$event_checkins_stmt->execute();
+$event_checkins_total = (int) ($event_checkins_stmt->get_result()->fetch_assoc()['total'] ?? 0);
+
 $total_saves_stmt = $conn->prepare("SELECT COUNT(*) AS total FROM want_to_go_locations WHERE location_id=?");
 $total_saves_stmt->bind_param("i", $location_id);
 $total_saves_stmt->execute();
@@ -111,8 +122,8 @@ $recent_checkins = $recent_stmt->get_result();
                 <span>Followers</span>
             </article>
             <article class="analytics-stat-card">
-                <div class="analytics-stat-value" data-stat-total-xp><?php echo escape_output(craftcrawl_format_metric_number($today_xp)); ?></div>
-                <span>XP Awarded</span>
+                <div class="analytics-stat-value"><?php echo escape_output(craftcrawl_format_metric_number($event_checkins_total)); ?></div>
+                <span>Event Check-ins</span>
             </article>
         </div>
 

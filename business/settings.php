@@ -47,6 +47,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'httponly' => false,
             'samesite' => 'Lax',
         ]);
+
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true, 'palette' => $new_display_palette, 'message' => 'Display theme updated.']);
+            exit();
+        }
+
         header('Location: settings.php?message=theme_saved');
         exit();
     }
@@ -195,6 +202,7 @@ $display_palette = in_array($business['display_palette'] ?? '', $allowed_display
                     <?php endforeach; ?>
                 </div>
             </form>
+            <p class="form-message" data-palette-status hidden></p>
             <p class="form-help">This setting is saved to your account.</p>
         </section>
 

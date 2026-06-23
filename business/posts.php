@@ -570,19 +570,15 @@ $reaction_labels = [
                         </div>
                     <?php endif; ?>
 
-                    <?php $has_reactions = array_filter($reaction_labels, fn($type) => !empty($post_reactions[$type]), ARRAY_FILTER_USE_KEY); ?>
-                    <?php if (!empty($has_reactions)) : ?>
-                        <div class="portal-post-reactions">
-                            <?php foreach ($reaction_labels as $type => $info) : ?>
-                                <?php if (!empty($post_reactions[$type])) : ?>
-                                    <span class="portal-reaction-badge" title="<?php echo escape_output($info['label']); ?>">
-                                        <?php echo $info['icon']; ?>
-                                        <strong><?php echo escape_output($post_reactions[$type]); ?></strong>
-                                    </span>
-                                <?php endif; ?>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
+                    <div class="portal-post-reactions">
+                        <?php foreach ($reaction_labels as $type => $info) : ?>
+                            <?php $count = (int) ($post_reactions[$type] ?? 0); ?>
+                            <span class="portal-reaction-badge<?php echo $count === 0 ? ' is-empty' : ''; ?>" title="<?php echo escape_output($info['label']); ?>">
+                                <?php echo $info['icon']; ?>
+                                <strong><?php echo escape_output($count); ?></strong>
+                            </span>
+                        <?php endforeach; ?>
+                    </div>
 
                     <?php if (!empty($top_comments)) : ?>
                         <div class="portal-post-comments">

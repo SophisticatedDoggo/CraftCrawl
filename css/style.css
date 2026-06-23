@@ -9097,6 +9097,8 @@ body.feed-comments-sheet-open {
     width: 100%;
     margin: 14px 0;
     padding: 4px;
+    position: relative;
+    overflow: hidden;
     border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
     border-radius: 999px;
     background:
@@ -9105,6 +9107,37 @@ body.feed-comments-sheet-open {
     box-shadow: var(--glass-shadow);
     backdrop-filter: blur(14px) saturate(1.2);
     -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    --subtab-thumb-left: 0px;
+    --subtab-thumb-top: 0px;
+    --subtab-thumb-width: 0px;
+    --subtab-thumb-height: 100%;
+    --subtab-thumb-opacity: 0;
+}
+
+.analytics-mode-tabs::before {
+    content: "";
+    position: absolute;
+    top: var(--subtab-thumb-top);
+    left: var(--subtab-thumb-left);
+    z-index: 0;
+    width: var(--subtab-thumb-width);
+    height: var(--subtab-thumb-height);
+    border-radius: 999px;
+    opacity: var(--subtab-thumb-opacity);
+    background:
+        var(--glass-button),
+        var(--color-primary);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 5px 14px color-mix(in srgb, var(--color-primary) 18%, transparent);
+    pointer-events: none;
+}
+
+.analytics-mode-tabs.is-subtab-thumb-ready::before {
+    transition:
+        left 240ms cubic-bezier(0.22, 1, 0.36, 1),
+        top 240ms cubic-bezier(0.22, 1, 0.36, 1),
+        width 240ms cubic-bezier(0.22, 1, 0.36, 1),
+        height 240ms cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 160ms ease;
 }
 
 .analytics-mode-tabs button {
@@ -9117,20 +9150,20 @@ body.feed-comments-sheet-open {
     box-shadow: none;
     font-weight: 800;
     font-size: 13px;
-    transition: color 0.15s ease, background 0.15s ease;
+    position: relative;
+    z-index: 1;
+    transition: color 0.15s ease;
 }
 
 .analytics-mode-tabs button:hover,
 .analytics-mode-tabs button:focus-visible {
     color: var(--color-primary);
-    background: color-mix(in srgb, var(--color-primary) 8%, transparent);
 }
 
 .analytics-mode-tabs button.is-active {
     color: var(--color-on-primary);
-    background: var(--color-primary);
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 32%, transparent);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 16%, transparent);
+    background: transparent;
+    box-shadow: none;
 }
 
 .analytics-line-chart {
@@ -16433,6 +16466,10 @@ body.has-modal-open {
 .portal-reaction-badge strong {
     color: var(--color-primary);
     font-weight: 800;
+}
+
+.portal-reaction-badge.is-empty {
+    opacity: 0.45;
 }
 
 .portal-post-compose {
