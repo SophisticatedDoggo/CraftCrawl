@@ -99,7 +99,7 @@ require_once 'lib/quests.php';
 require_once 'lib/location_hours.php';
 
 if (!$business_id) {
-    header('Location: ' . ($is_admin_preview ? 'admin/review_center.php' : 'user/portal.php'));
+    header('Location: ' . ($is_admin_preview ? 'admin/submissions.php' : 'user/portal.php'));
     exit();
 }
 
@@ -128,7 +128,7 @@ $business_result = $business_stmt->get_result();
 $business = $business_result->fetch_assoc();
 
 if (!$business) {
-    header('Location: ' . ($is_admin_preview ? 'admin/review_center.php' : 'user/portal.php'));
+    header('Location: ' . ($is_admin_preview ? 'admin/submissions.php' : 'user/portal.php'));
     exit();
 }
 
@@ -199,7 +199,7 @@ if ($user_id > 0 && $user_has_reviewed) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($user_id <= 0) {
-        header('Location: admin/review_center.php');
+        header('Location: admin/submissions.php');
         exit();
     }
 
@@ -589,10 +589,10 @@ function format_event_time_range($event) {
             <strong data-refresh-label>Pull to refresh</strong>
         </div>
         <div class="details-nav">
-            <a href="<?php echo $is_admin_preview ? 'admin/review_center.php' : 'user/portal.php'; ?>" data-back-link>Back</a>
+            <a href="<?php echo $is_admin_preview ? 'admin/submissions.php' : 'user/portal.php'; ?>" data-back-link>Back</a>
             <div class="business-header-actions">
                 <?php if ($is_admin_preview) : ?>
-                    <a href="admin/review_center.php">Approval Center</a>
+                    <a href="admin/submissions.php">Approval Center</a>
                 <?php else : ?>
                 <div class="mobile-actions-menu details-actions-menu" data-mobile-actions-menu>
                     <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
@@ -730,7 +730,7 @@ function format_event_time_range($event) {
         <div class="business-action-bar">
             <?php if ($is_admin_preview) : ?>
                 <a href="admin/location_hours.php?id=<?php echo escape_output($location_id); ?>">Edit Hours</a>
-                <a href="admin/review_center.php">Review Reports</a>
+                <a href="admin/reports.php">Review Reports</a>
                 <?php if (!empty($business['bWebsite'])) : ?>
                     <a href="<?php echo escape_output($business['bWebsite']); ?>" target="_blank" rel="noopener">Visit Website</a>
                 <?php endif; ?>

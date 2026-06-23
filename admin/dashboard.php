@@ -98,63 +98,33 @@ if (!empty($params)) {
 }
 $stmt->execute();
 $locations = $stmt->get_result();
+$admin_page_title = 'Admin Dashboard';
+$admin_page_subtitle = 'Monitor location health and route work to the right queue.';
+include __DIR__ . '/admin_header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CraftCrawl | Admin Dashboard</title>
-    <script src="../js/theme_init.js?v=<?php echo filemtime(__DIR__ . '/../js/theme_init.js'); ?>"></script>
-    <link rel="stylesheet" href="../css/style.css?v=<?php echo filemtime(__DIR__ . '/../css/style.css'); ?>">
-    <?php require_once dirname(__DIR__) . '/lib/google_analytics.php'; echo craftcrawl_google_analytics_tag(); ?>
-</head>
-<body>
-    <div data-area-page-content>
-    <main class="business-portal admin-page">
-        <header class="business-portal-header">
-            <div>
-                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
-                <div>
-                    <h1>Admin Dashboard</h1>
-                    <p>Monitor location health and route approval work to the approval center.</p>
-                </div>
-            </div>
-            <div class="business-header-actions mobile-actions-menu business-actions-menu" data-mobile-actions-menu>
-                <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open admin menu">
-                    <span></span><span></span><span></span>
-                </button>
-                <div class="mobile-actions-panel" data-mobile-actions-panel>
-                    <a href="dashboard.php">Dashboard</a>
-                    <a href="accounts.php">Accounts</a>
-                    <a href="review_center.php">Approval Center</a>
-                    <a href="import_locations.php">Import Locations</a>
-                    <a href="reviews.php">Reviews</a>
-                    <a href="content.php">Content</a>
-                    <form action="../logout.php" method="POST"><?php echo craftcrawl_csrf_input(); ?><button type="submit">Logout</button></form>
-                </div>
-            </div>
-        </header>
 
         <section class="admin-stat-grid">
-            <article><strong><?php echo craftcrawl_admin_escape($counts['pending_new_business']); ?></strong><span>New submissions</span></article>
-            <article><strong><?php echo craftcrawl_admin_escape($counts['pending_claims']); ?></strong><span>Claims to review</span></article>
-            <article><strong><?php echo craftcrawl_admin_escape($counts['pending_suggestions']); ?></strong><span>Suggestions</span></article>
-            <article><strong><?php echo craftcrawl_admin_escape($counts['pending_imports']); ?></strong><span>Imports</span></article>
-            <article><strong><?php echo craftcrawl_admin_escape($counts['users']); ?></strong><span>User accounts</span></article>
-            <article><strong><?php echo craftcrawl_admin_escape($counts['reviews']); ?></strong><span>Reviews</span></article>
-            <article><strong><?php echo craftcrawl_admin_escape($counts['pending_reports']); ?></strong><span>Reports</span></article>
+            <a href="submissions.php" class="admin-stat-link"><article><strong><?php echo craftcrawl_admin_escape($counts['pending_new_business']); ?></strong><span>New submissions</span></article></a>
+            <a href="submissions.php" class="admin-stat-link"><article><strong><?php echo craftcrawl_admin_escape($counts['pending_claims']); ?></strong><span>Claims to review</span></article></a>
+            <a href="submissions.php" class="admin-stat-link"><article><strong><?php echo craftcrawl_admin_escape($counts['pending_suggestions']); ?></strong><span>Suggestions</span></article></a>
+            <a href="import_review.php" class="admin-stat-link"><article><strong><?php echo craftcrawl_admin_escape($counts['pending_imports']); ?></strong><span>Imports</span></article></a>
+            <a href="accounts.php" class="admin-stat-link"><article><strong><?php echo craftcrawl_admin_escape($counts['users']); ?></strong><span>User accounts</span></article></a>
+            <a href="reviews.php" class="admin-stat-link"><article><strong><?php echo craftcrawl_admin_escape($counts['reviews']); ?></strong><span>Reviews</span></article></a>
+            <a href="reports.php" class="admin-stat-link"><article><strong><?php echo craftcrawl_admin_escape($counts['pending_reports']); ?></strong><span>Reports</span></article></a>
         </section>
 
         <section class="admin-panel">
             <div class="business-section-header">
-                <h2>Review Work</h2>
-                <div class="business-header-actions">
-                    <a href="review_center.php">Open Approval Center</a>
-                    <a href="import_locations.php">Import Locations</a>
-                </div>
+                <h2>Work Queues</h2>
             </div>
-            <p>Run Google Places batches, then review new submissions, claims, suggestions, imports, and check-in readiness work.</p>
+            <div class="admin-work-queue-links">
+                <a href="submissions.php">Submissions <span><?php echo craftcrawl_admin_escape($counts['pending_new_business'] + $counts['pending_claims'] + $counts['pending_suggestions']); ?> pending</span></a>
+                <a href="import_review.php">Import Review <span><?php echo craftcrawl_admin_escape($counts['pending_imports']); ?> pending</span></a>
+                <a href="import_locations.php">Import Locations <span>Run Google Places batches</span></a>
+                <a href="reports.php">Location Reports <span><?php echo craftcrawl_admin_escape($counts['pending_reports']); ?> pending</span></a>
+                <a href="readiness.php">Check-in Readiness <span>Locations needing verified hours</span></a>
+                <a href="recovery.php">Recovery <span>Disabled and hidden locations</span></a>
+            </div>
         </section>
 
         <section class="admin-panel">
@@ -191,8 +161,9 @@ $locations = $stmt->get_result();
                         </label>
                     </div>
                     <div class="admin-location-search-actions">
+                        <a href="location_detail.php?id=<?php echo (int) $location['id']; ?>">Details</a>
                         <?php if (empty($location['disabledAt']) && !in_array($location['visibility_status'], ['public_unclaimed','public_claimed'], true)) : ?>
-                            <a class="admin-location-review-link" href="review_center.php">Review</a>
+                            <a class="admin-location-review-link" href="submissions.php">Review</a>
                         <?php endif; ?>
                         <form id="location_action_<?php echo craftcrawl_admin_escape($location['id']); ?>" class="admin-location-action-form" method="POST">
                             <?php echo craftcrawl_csrf_input(); ?>
@@ -212,12 +183,4 @@ $locations = $stmt->get_result();
                 </article>
             <?php endwhile; ?>
         </section>
-    </main>
-    </div>
-    <?php include __DIR__ . '/mobile_nav.php'; ?>
-    <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
-    <script src="../js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/../js/depth_animations.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'admin', home: 'dashboard.php', routes: ['dashboard.php','accounts.php','reviews.php','content.php','account_details.php','review_center.php','location_hours.php','import_locations.php'], active: { 'dashboard.php':'dashboard', 'accounts.php':'accounts', 'account_details.php':'accounts', 'reviews.php':'reviews', 'content.php':'content', 'review_center.php':'dashboard', 'location_hours.php':'dashboard', 'import_locations.php':'dashboard' } };</script>
-    <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
-</body>
-</html>
+<?php include __DIR__ . '/admin_footer.php'; ?>
