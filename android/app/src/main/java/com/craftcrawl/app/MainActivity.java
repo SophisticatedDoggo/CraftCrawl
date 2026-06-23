@@ -9,5 +9,6 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(CraftCrawlAppIconPlugin.class);
         registerPlugin(CraftCrawlGoogleAuthPlugin.class);
         super.onCreate(savedInstanceState);
+        bridge.getWebView().setWebChromeClient(new CraftCrawlWebChromeClient(bridge));
     }
 }
