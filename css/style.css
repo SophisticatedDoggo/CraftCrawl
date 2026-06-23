@@ -7989,6 +7989,78 @@ body.feed-comments-sheet-open {
     padding-left: 12px;
 }
 
+.admin-page .business-actions-menu {
+    position: relative;
+}
+
+.admin-page .business-actions-menu .mobile-actions-toggle {
+    display: flex;
+    width: 42px;
+    height: 42px;
+    min-height: 42px;
+    padding: 0;
+    gap: 5px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.admin-page .business-actions-menu .mobile-actions-toggle > span:not(.notification-badge) {
+    display: block;
+    width: 21px;
+    height: 2.5px;
+    border-radius: 999px;
+    background: currentColor;
+}
+
+.admin-page .business-actions-menu .mobile-actions-panel {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 1210;
+    display: none;
+    min-width: 220px;
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-md);
+}
+
+.admin-page .business-actions-menu.is-open .mobile-actions-panel {
+    display: grid;
+    gap: 4px;
+}
+
+.admin-page .business-actions-menu .mobile-actions-panel a,
+.admin-page .business-actions-menu .mobile-actions-panel form,
+.admin-page .business-actions-menu .mobile-actions-panel button {
+    width: 100%;
+}
+
+.admin-page .business-actions-menu .mobile-actions-panel a,
+.admin-page .business-actions-menu .mobile-actions-panel button {
+    display: block;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 0.88rem;
+    text-decoration: none;
+    color: var(--color-text);
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    min-height: 0;
+    white-space: nowrap;
+}
+
+.admin-page .business-actions-menu .mobile-actions-panel a:hover,
+.admin-page .business-actions-menu .mobile-actions-panel button:hover {
+    background: var(--glass-surface);
+}
+
 .event-feed-entry {
     border-bottom: 1px solid var(--color-border);
     padding: 16px 0;
@@ -12072,11 +12144,10 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
 
 .admin-stat-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
 }
 
-.admin-stat-grid article,
 .admin-panel {
     border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
     border-radius: var(--radius-md);
@@ -12091,33 +12162,35 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
 .admin-stat-grid article {
     display: grid;
     gap: 4px;
-    padding: 18px;
+    padding: 16px;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
 }
 
 .admin-stat-grid strong {
-    font-size: 2rem;
+    font-size: 1.8rem;
     line-height: 1;
 }
 
 .admin-stat-grid span {
     color: var(--color-muted);
+    font-size: 0.85rem;
 }
 
 .admin-stat-link {
     text-decoration: none;
     color: inherit;
-    display: contents;
 }
 
 .admin-stat-link article {
     cursor: pointer;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition: border-color 0.15s;
 }
 
 .admin-stat-link:hover article,
 .admin-stat-link:focus article {
     border-color: var(--color-accent);
-    box-shadow: 0 0 0 1px var(--color-accent);
 }
 
 .admin-work-queue-links {
