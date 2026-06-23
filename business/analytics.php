@@ -183,7 +183,7 @@ $recent_checkins = $recent_stmt->get_result();
                 </div>
             </article>
 
-            <section class="analytics-panel">
+            <section class="analytics-panel" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--color-border);">
                 <div class="business-section-header">
                     <h2>Recent Check-ins</h2>
                 </div>
