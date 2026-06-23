@@ -1231,10 +1231,12 @@ window.CraftCrawlInitFriends = function (scope = document) {
         const date = formatDate(item.created_at);
         const actions = renderFeedActions(item);
         const actorName = item.is_self ? 'You' : item.friend_name;
+        const postMenu = renderPostMenuTrigger(item);
 
         if (item.type === 'level_up') {
             return `
                 <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
+                    ${postMenu}
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
@@ -1249,6 +1251,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         if (item.type === 'badge_earned') {
             return `
                 <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
+                    ${postMenu}
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
@@ -1263,6 +1266,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         if (item.type === 'quest_complete') {
             return `
                 <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
+                    ${postMenu}
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
@@ -1278,6 +1282,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             const periodLabel = item.period_type === 'weekly' ? 'weekly' : 'daily';
             return `
                 <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
+                    ${postMenu}
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
@@ -1297,6 +1302,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             }).join('');
             return `
                 <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
+                    ${postMenu}
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
@@ -1312,6 +1318,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         if (item.type === 'event_want') {
             return `
                 <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
+                    ${postMenu}
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
@@ -1326,6 +1333,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         if (item.type === 'follow') {
             return `
                 <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
+                    ${postMenu}
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
@@ -1340,6 +1348,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         if (item.type === 'location_want') {
             return `
                 <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
+                    ${postMenu}
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
@@ -1354,6 +1363,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         if (item.type === 'user_post') {
             return `
                 <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
+                    ${postMenu}
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
@@ -1382,6 +1392,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
             return `
                 <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
+                    ${postMenu}
                     <div class="friends-feed-icon">${isPoll ? '📊' : '📢'}</div>
                     <div class="feed-item-content">
                         <p class="feed-item-meta">
@@ -1406,6 +1417,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
             const checkinActions = renderCheckinActions(item);
             return `
                 <article class="${feedItemClasses(item, 'feed-checkin-item')}" ${feedItemAttrs(item)}>
+                    ${postMenu}
                     ${renderAvatar(item.actor, item.friend_name)}
                     <div class="feed-item-content">
                         ${renderFeedMeta(actorName, date)}
@@ -1423,6 +1435,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
         return `
             <article class="${feedItemClasses(item)}" ${feedItemAttrs(item)}>
+                ${postMenu}
                 ${renderAvatar(item.actor, item.friend_name)}
                 <div class="feed-item-content">
                     ${renderFeedMeta(actorName, date)}
@@ -2266,7 +2279,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
         return `
             <div class="feed-action-row feed-action-row-flat">
                 <div class="feed-primary-actions">
-                    ${renderPostMenuTrigger(item)}
                     ${renderCommentsLink(item)}
                 </div>
                 <div class="feed-reactions">
@@ -2312,7 +2324,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
         return `
             <div class="feed-action-row">
                 <div class="feed-primary-actions">
-                    ${renderPostMenuTrigger(item)}
                     ${renderCommentsLink(item)}
                 </div>
                 <div class="feed-reactions">
