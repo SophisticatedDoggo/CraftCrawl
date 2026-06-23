@@ -160,6 +160,8 @@ require_once 'config.php';
         </button>
     </nav>
 
+    <script src="js/post_menu.js?v=<?php echo filemtime(__DIR__ . '/js/post_menu.js'); ?>"></script>
+    <script src="js/report_modal.js?v=<?php echo filemtime(__DIR__ . '/js/report_modal.js'); ?>"></script>
     <script src="js/friends.js?v=<?php echo filemtime(__DIR__ . '/js/friends.js'); ?>"></script>
     <script src="js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/js/business_posts.js'); ?>"></script>
     <script src="js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/js/mobile_actions_menu.js'); ?>"></script>

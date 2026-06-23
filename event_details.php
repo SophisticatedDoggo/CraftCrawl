@@ -137,6 +137,16 @@ if (isset($_SESSION['user_id'])) {
             <?php else : ?>
                 <a class="feed-thread-back-link" href="user/events.php" data-back-link>&lt;</a>
             <?php endif; ?>
+            <?php if (!$is_business_owner && isset($_SESSION['user_id'])) : ?>
+                <div class="post-menu" data-post-menu data-content-type="event" data-content-id="<?php echo escape_output($event_id); ?>" data-content-label="<?php echo escape_output($event['eName']); ?>">
+                    <button type="button" class="post-menu-trigger" aria-expanded="false" aria-label="More options">
+                        <span class="post-menu-trigger-icon" aria-hidden="true"></span>
+                    </button>
+                    <div class="post-menu-dropdown">
+                        <button type="button" class="post-menu-dropdown-item" data-post-menu-action="report">Report this event</button>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
 
         <article class="event-detail-card">
@@ -203,6 +213,8 @@ if (isset($_SESSION['user_id'])) {
             </div>
         </article>
     </main>
+    <script src="js/post_menu.js?v=<?php echo filemtime(__DIR__ . '/js/post_menu.js'); ?>"></script>
+    <script src="js/report_modal.js?v=<?php echo filemtime(__DIR__ . '/js/report_modal.js'); ?>"></script>
     <script src="js/portal_events.js?v=<?php echo filemtime(__DIR__ . '/js/portal_events.js'); ?>"></script>
     <script src="js/level_celebration.js?v=<?php echo filemtime(__DIR__ . '/js/level_celebration.js'); ?>"></script>
     <script src="js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/js/depth_animations.js'); ?>"></script>

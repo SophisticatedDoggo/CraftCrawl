@@ -2266,6 +2266,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         return `
             <div class="feed-action-row feed-action-row-flat">
                 <div class="feed-primary-actions">
+                    ${renderPostMenuTrigger(item)}
                     ${renderCommentsLink(item)}
                 </div>
                 <div class="feed-reactions">
@@ -2280,6 +2281,15 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 </div>
             </div>
         `;
+    }
+
+    function renderPostMenuTrigger(item) {
+        if (item.is_self || !window.CraftCrawlPostMenu) return '';
+        return window.CraftCrawlPostMenu.renderTrigger({
+            itemKey: item.item_key,
+            itemType: item.type,
+            isSelf: false
+        });
     }
 
     function renderFeedActions(item) {
@@ -2302,6 +2312,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         return `
             <div class="feed-action-row">
                 <div class="feed-primary-actions">
+                    ${renderPostMenuTrigger(item)}
                     ${renderCommentsLink(item)}
                 </div>
                 <div class="feed-reactions">

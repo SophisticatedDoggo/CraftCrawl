@@ -257,6 +257,8 @@ $badge_count = (int) ($badge_count_stmt->get_result()->fetch_assoc()['total'] ??
     </div>
     <?php include __DIR__ . '/app_nav.php'; ?>
     <script src="../js/level_celebration.js?v=<?php echo filemtime(__DIR__ . '/../js/level_celebration.js'); ?>"></script>
+    <script src="../js/post_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/post_menu.js'); ?>"></script>
+    <script src="../js/report_modal.js?v=<?php echo filemtime(__DIR__ . '/../js/report_modal.js'); ?>"></script>
     <script src="../js/friends.js?v=<?php echo filemtime(__DIR__ . '/../js/friends.js'); ?>"></script>
     <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
     <script src="../js/palette_switcher.js?v=<?php echo filemtime(__DIR__ . '/../js/palette_switcher.js'); ?>"></script>

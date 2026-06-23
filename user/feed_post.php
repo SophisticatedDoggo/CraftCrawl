@@ -291,6 +291,22 @@ function render_feed_thread_reactions($conn, $user_id, $item) {
     return $html;
 }
 
+function render_post_menu_trigger($item) {
+    if (!empty($item['is_self'])) return '';
+    $content_type = ($item['type'] ?? '') === 'business_post' ? 'business_post' : 'feed_post';
+    $content_id = escape_output($item['item_key'] ?? '');
+    return '
+        <div class="post-menu" data-post-menu data-content-type="' . $content_type . '" data-content-id="' . $content_id . '" data-content-label="">
+            <button type="button" class="post-menu-trigger" aria-expanded="false" aria-label="More options">
+                <span class="post-menu-trigger-icon" aria-hidden="true"></span>
+            </button>
+            <div class="post-menu-dropdown">
+                <button type="button" class="post-menu-dropdown-item" data-post-menu-action="report">Report</button>
+            </div>
+        </div>
+    ';
+}
+
 function render_feed_thread_post($item, $actions_html = '') {
     $date = format_feed_date($item['created_at'] ?? '');
     $actor_name = !empty($item['is_self']) ? 'You' : ($item['friend_name'] ?? 'A friend');
@@ -305,10 +321,12 @@ function render_feed_thread_post($item, $actions_html = '') {
         ], 'medium', 'feed-avatar')
         : '';
     $avatar = feed_thread_profile_avatar_link((int) ($item['actor']['id'] ?? 0), $avatar, $actor_name);
+    $post_menu = render_post_menu_trigger($item);
 
     if (($item['type'] ?? '') === 'level_up') {
         return '
             <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
+                ' . $post_menu . '
                 ' . $avatar . '
                 <div>
                     <strong>' . escape_output($actor_name) . ' reached Level ' . escape_output($item['level']) . '</strong>
@@ -322,6 +340,7 @@ function render_feed_thread_post($item, $actions_html = '') {
     if (($item['type'] ?? '') === 'badge_earned') {
         return '
             <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
+                ' . $post_menu . '
                 ' . $avatar . '
                 <div>
                     <strong>Earned the badge ' . escape_output($item['badge_name']) . '</strong>
@@ -335,6 +354,7 @@ function render_feed_thread_post($item, $actions_html = '') {
     if (($item['type'] ?? '') === 'event_want') {
         return '
             <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
+                ' . $post_menu . '
                 ' . $avatar . '
                 <div>
                     <strong>' . escape_output($want_phrase) . ' to go to <a class="feed-event-link" href="../event_details.php?id=' . escape_output($item['event_id']) . '&date=' . escape_output($item['event_date'] ?? '') . '">' . escape_output($item['event_name']) . '</a></strong>
@@ -348,6 +368,7 @@ function render_feed_thread_post($item, $actions_html = '') {
     if (($item['type'] ?? '') === 'event') {
         return '
             <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
+                ' . $post_menu . '
                 <div class="friends-feed-icon">📅</div>
                 <div>
                     <strong><a class="feed-event-link" href="../event_details.php?id=' . escape_output($item['event_id']) . '&date=' . escape_output($item['event_date'] ?? '') . '">' . escape_output($item['event_name']) . '</a></strong>
@@ -362,6 +383,7 @@ function render_feed_thread_post($item, $actions_html = '') {
     if (($item['type'] ?? '') === 'location_want') {
         return '
             <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
+                ' . $post_menu . '
                 ' . $avatar . '
                 <div>
                     <strong>' . escape_output($want_phrase) . ' to visit <a class="feed-business-link" href="../business_details.php?id=' . escape_output($item['business_id']) . '">' . escape_output($item['business_name']) . '</a></strong>
@@ -376,6 +398,7 @@ function render_feed_thread_post($item, $actions_html = '') {
         $is_poll = ($item['post_type'] ?? '') === 'poll';
         return '
             <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
+                ' . $post_menu . '
                 <div class="friends-feed-icon">' . ($is_poll ? '📊' : '📢') . '</div>
                 <div>
                     <strong><a class="feed-business-link" href="../business_details.php?id=' . escape_output($item['business_id']) . '">' . escape_output($item['business_name']) . '</a></strong>
@@ -390,6 +413,7 @@ function render_feed_thread_post($item, $actions_html = '') {
     if (($item['type'] ?? '') === 'user_post') {
         return '
             <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
+                ' . $post_menu . '
                 ' . $avatar . '
                 <div>
                     <strong>' . escape_output($actor_name) . '</strong>
@@ -404,6 +428,7 @@ function render_feed_thread_post($item, $actions_html = '') {
     if (($item['type'] ?? '') === 'quest_complete') {
         return '
             <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
+                ' . $post_menu . '
                 ' . $avatar . '
                 <div>
                     <strong>' . escape_output($actor_name) . ' completed ' . escape_output($item['quest_name']) . '</strong>
@@ -418,6 +443,7 @@ function render_feed_thread_post($item, $actions_html = '') {
         $period_label = ($item['period_type'] ?? '') === 'weekly' ? 'weekly' : 'daily';
         return '
             <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
+                ' . $post_menu . '
                 ' . $avatar . '
                 <div>
                     <strong>' . escape_output($actor_name) . ' completed all ' . escape_output($period_label) . ' quests</strong>
@@ -441,6 +467,7 @@ function render_feed_thread_post($item, $actions_html = '') {
         $reward_html = feed_thread_accomplishments($item);
         return '
             <article class="friends-feed-item feed-thread-post feed-checkin-post" ' . feed_thread_attrs($item) . '>
+                ' . $post_menu . '
                 ' . $avatar . '
                 <div>
                     <strong>' . escape_output($actor_name) . ' checked in at <a class="feed-business-link" href="../business_details.php?id=' . escape_output($item['business_id']) . '">' . escape_output($item['business_name']) . '</a>' . $visit_label . '</strong>
@@ -456,6 +483,7 @@ function render_feed_thread_post($item, $actions_html = '') {
 
     return '
         <article class="friends-feed-item feed-thread-post" ' . feed_thread_attrs($item) . '>
+            ' . $post_menu . '
             ' . $avatar . '
             <div>
                 <strong>' . escape_output($actor_name) . ' visited <a class="feed-business-link" href="../business_details.php?id=' . escape_output($item['business_id']) . '">' . escape_output($item['business_name']) . '</a> for the first time</strong>
@@ -740,6 +768,8 @@ if ($feed_item) {
     </main>
     </div>
     <?php include __DIR__ . '/app_nav.php'; ?>
+    <script src="../js/post_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/post_menu.js'); ?>"></script>
+    <script src="../js/report_modal.js?v=<?php echo filemtime(__DIR__ . '/../js/report_modal.js'); ?>"></script>
     <script src="../js/friends.js?v=<?php echo filemtime(__DIR__ . '/../js/friends.js'); ?>"></script>
     <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
     <script src="../js/palette_switcher.js?v=<?php echo filemtime(__DIR__ . '/../js/palette_switcher.js'); ?>"></script>

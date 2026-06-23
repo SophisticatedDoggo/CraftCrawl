@@ -53,6 +53,7 @@ $counts = [
     'users' => (int) $conn->query("SELECT COUNT(*) FROM users")->fetch_row()[0],
     'reviews' => (int) $conn->query("SELECT COUNT(*) FROM reviews")->fetch_row()[0],
     'pending_reports' => (int) $conn->query("SELECT COUNT(*) FROM location_reports WHERE status='pending'")->fetch_row()[0],
+    'pending_content_reports' => (int) $conn->query("SELECT COUNT(*) FROM content_reports WHERE status='pending'")->fetch_row()[0],
 ];
 
 $location_sql = "
@@ -111,7 +112,8 @@ include __DIR__ . '/admin_header.php';
             <a href="import_review.php" class="admin-stat-link"><article><strong><?php echo craftcrawl_admin_escape($counts['pending_imports']); ?></strong><span>Imports</span></article></a>
             <a href="accounts.php" class="admin-stat-link"><article><strong><?php echo craftcrawl_admin_escape($counts['users']); ?></strong><span>User accounts</span></article></a>
             <a href="reviews.php" class="admin-stat-link"><article><strong><?php echo craftcrawl_admin_escape($counts['reviews']); ?></strong><span>Reviews</span></article></a>
-            <a href="reports.php" class="admin-stat-link"><article><strong><?php echo craftcrawl_admin_escape($counts['pending_reports']); ?></strong><span>Reports</span></article></a>
+            <a href="reports.php" class="admin-stat-link"><article><strong><?php echo craftcrawl_admin_escape($counts['pending_reports']); ?></strong><span>Location Reports</span></article></a>
+            <a href="content_reports.php" class="admin-stat-link"><article><strong><?php echo craftcrawl_admin_escape($counts['pending_content_reports']); ?></strong><span>Content Reports</span></article></a>
         </section>
 
         <section class="admin-panel">
@@ -123,6 +125,7 @@ include __DIR__ . '/admin_header.php';
                 <a href="import_review.php">Import Review <span><?php echo craftcrawl_admin_escape($counts['pending_imports']); ?> pending</span></a>
                 <a href="import_locations.php">Import Locations <span>Run Google Places batches</span></a>
                 <a href="reports.php">Location Reports <span><?php echo craftcrawl_admin_escape($counts['pending_reports']); ?> pending</span></a>
+                <a href="content_reports.php">Content Reports <span><?php echo craftcrawl_admin_escape($counts['pending_content_reports']); ?> pending</span></a>
                 <a href="readiness.php">Check-in Readiness <span>Locations needing verified hours</span></a>
                 <a href="recovery.php">Recovery <span>Disabled and hidden locations</span></a>
             </div>
