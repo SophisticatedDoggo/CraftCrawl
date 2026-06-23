@@ -744,8 +744,8 @@ function format_event_time_range($event) {
                 <input type="hidden" name="location_id" value="<?php echo escape_output($location_id); ?>">
                 <input type="hidden" name="latitude" value="">
                 <input type="hidden" name="longitude" value="">
-                <input type="file" name="checkin_photo" accept="image/jpeg,image/png,image/webp"
-                       capture data-checkin-photo-input class="visually-hidden">
+                <input type="file" name="checkin_photo" accept="image/*"
+                       capture="environment" data-checkin-photo-input class="visually-hidden">
                 <?php if ($checkin_on_cooldown) : ?>
                 <button type="submit" disabled class="checkin-cooldown-btn" data-checkin-cooldown-btn
                         <?php if ($checkin_session_closes_at) : ?>data-cooldown-until="<?php echo escape_output($checkin_session_closes_at); ?>"<?php endif; ?>>
