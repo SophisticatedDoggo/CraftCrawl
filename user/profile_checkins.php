@@ -40,11 +40,12 @@ $sql = "
     SELECT uv.id AS visit_id, uv.visit_type, uv.xp_awarded, uv.caption, uv.checkedInAt,
         uv.user_id,
         l.id AS business_id, l.name AS bName, l.location_type AS bType, l.city, l.state,
+        (l.visibility_status IN ('public_unclaimed', 'public_claimed')) AS location_is_listed,
         vp.object_key AS visit_photo_object_key
     FROM user_visits uv
     INNER JOIN locations l ON l.id = uv.location_id
     LEFT JOIN photos vp ON vp.id = uv.photo_id AND vp.deletedAt IS NULL AND vp.status = 'approved'
-    WHERE uv.user_id=? AND l.visibility_status IN ('public_unclaimed', 'public_claimed') AND l.disabledAt IS NULL
+    WHERE uv.user_id=? AND l.visibility_status IN ('public_unclaimed', 'public_claimed', 'hidden') AND l.disabledAt IS NULL
     $before_clause
     ORDER BY uv.checkedInAt DESC, uv.id DESC
     LIMIT $fetch_limit
@@ -126,6 +127,7 @@ foreach ($rows as $row) {
         'is_self' => $is_own_profile,
         'allow_interactions' => (bool) $profile_user['allow_post_interactions'],
         'business_id' => (int) $row['business_id'],
+        'location_is_listed' => (bool) $row['location_is_listed'],
         'business_name' => $row['bName'],
         'business_type' => $row['bType'],
         'city' => $row['city'],

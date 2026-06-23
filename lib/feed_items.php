@@ -208,6 +208,7 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
         $stmt = $conn->prepare("
             SELECT uv.id, uv.user_id, uv.visit_type, uv.caption, uv.checkedInAt,
                 l.id AS business_id, l.name AS bName, l.city, l.state,
+                (l.visibility_status IN ('public_unclaimed', 'public_claimed') AND l.disabledAt IS NULL) AS location_is_listed,
                 u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, u.allow_post_interactions,
                 p.object_key AS profile_photo_object_key,
                 vp.object_key AS visit_photo_object_key
@@ -242,6 +243,7 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
             'is_self' => $actor_id === (int) $viewer_id,
             'allow_interactions' => (bool) $visit['allow_post_interactions'],
             'business_id' => $location_id,
+            'location_is_listed' => (bool) $visit['location_is_listed'],
             'business_name' => $visit['bName'],
             'city' => $visit['city'],
             'state' => $visit['state'],
@@ -285,6 +287,7 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
         $visit_id = (int) $matches[1];
         $stmt = $conn->prepare("
             SELECT uv.id, uv.user_id, uv.checkedInAt, l.id AS business_id, l.name AS bName, l.city, l.state,
+                (l.visibility_status IN ('public_unclaimed', 'public_claimed') AND l.disabledAt IS NULL) AS location_is_listed,
                 u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
             FROM user_visits uv
             INNER JOIN locations l ON l.id = uv.location_id
@@ -309,6 +312,7 @@ function craftcrawl_feed_item_by_key($conn, $viewer_id, $item_key) {
             'actor' => craftcrawl_feed_actor_payload($visit),
             'is_self' => (int) $visit['user_id'] === (int) $viewer_id,
             'business_id' => (int) $visit['business_id'],
+            'location_is_listed' => (bool) $visit['location_is_listed'],
             'business_name' => $visit['bName'],
             'city' => $visit['city'],
             'state' => $visit['state']

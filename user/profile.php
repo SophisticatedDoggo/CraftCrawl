@@ -328,11 +328,12 @@ if (!$profile) {
 
     $past_checkins_stmt = $conn->prepare("
         SELECT uv.id AS visit_id, uv.visit_type, uv.xp_awarded, uv.caption, uv.checkedInAt, l.id AS business_id, l.name AS bName, l.location_type AS bType, l.city, l.state,
+            (l.visibility_status IN ('public_unclaimed', 'public_claimed')) AS location_is_listed,
             vp.object_key AS visit_photo_object_key
         FROM user_visits uv
         INNER JOIN locations l ON l.id = uv.location_id
         LEFT JOIN photos vp ON vp.id = uv.photo_id AND vp.deletedAt IS NULL AND vp.status = 'approved'
-        WHERE uv.user_id=? AND l.visibility_status IN ('public_unclaimed', 'public_claimed') AND l.disabledAt IS NULL
+        WHERE uv.user_id=? AND l.visibility_status IN ('public_unclaimed', 'public_claimed', 'hidden') AND l.disabledAt IS NULL
         ORDER BY uv.checkedInAt DESC, uv.id DESC
         LIMIT 21
     ");

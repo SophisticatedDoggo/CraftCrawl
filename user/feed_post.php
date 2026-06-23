@@ -91,6 +91,15 @@ function feed_thread_profile_avatar_link($profile_user_id, $avatar_html, $profil
     return '<a class="user-avatar-link feed-avatar-link" href="profile.php?id=' . escape_output($profile_user_id) . '" aria-label="' . escape_output($label) . '">' . $avatar_html . '</a>';
 }
 
+function feed_thread_business_link($item) {
+    $business_name = escape_output($item['business_name'] ?? '');
+    if (array_key_exists('location_is_listed', $item) && empty($item['location_is_listed'])) {
+        return '<span>' . $business_name . '</span>';
+    }
+
+    return '<a class="feed-business-link" href="../business_details.php?id=' . escape_output($item['business_id'] ?? '') . '">' . $business_name . '</a>';
+}
+
 function feed_thread_reference_attrs($title, $meta = '', $body = '') {
     return ' data-reference-title="' . escape_output($title) . '" data-reference-meta="' . escape_output($meta) . '" data-reference-body="' . escape_output($body) . '"';
 }
@@ -470,7 +479,7 @@ function render_feed_thread_post($item, $actions_html = '') {
                 ' . $post_menu . '
                 ' . $avatar . '
                 <div>
-                    <strong>' . escape_output($actor_name) . ' checked in at <a class="feed-business-link" href="../business_details.php?id=' . escape_output($item['business_id']) . '">' . escape_output($item['business_name']) . '</a>' . $visit_label . '</strong>
+                    <strong>' . escape_output($actor_name) . ' checked in at ' . feed_thread_business_link($item) . $visit_label . '</strong>
                     <p>' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
                     ' . $photo_html . '
                     ' . $caption_html . '
@@ -486,7 +495,7 @@ function render_feed_thread_post($item, $actions_html = '') {
             ' . $post_menu . '
             ' . $avatar . '
             <div>
-                <strong>' . escape_output($actor_name) . ' visited <a class="feed-business-link" href="../business_details.php?id=' . escape_output($item['business_id']) . '">' . escape_output($item['business_name']) . '</a> for the first time</strong>
+                <strong>' . escape_output($actor_name) . ' visited ' . feed_thread_business_link($item) . ' for the first time</strong>
                 <p>' . escape_output($item['city']) . ', ' . escape_output($item['state']) . ($date ? ' · ' . escape_output($date) : '') . '</p>
                 ' . $actions_html . '
             </div>
