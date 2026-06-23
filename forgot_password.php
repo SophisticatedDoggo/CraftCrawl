@@ -30,6 +30,7 @@ $login_path = $account_type === 'business' ? 'business_login.php' : 'user_login.
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CraftCrawl | Forgot Password</title>
     <script src="js/theme_init.js?v=<?php echo filemtime(__DIR__ . '/js/theme_init.js'); ?>"></script>
+    <script src="js/age_gate.js?v=<?php echo filemtime(__DIR__ . '/js/age_gate.js'); ?>"></script>
     <link rel="stylesheet" href="css/style.css?v=<?php echo filemtime(__DIR__ . '/css/style.css'); ?>">
     <?php require_once __DIR__ . '/lib/google_analytics.php'; echo craftcrawl_google_analytics_tag(); ?>
 </head>

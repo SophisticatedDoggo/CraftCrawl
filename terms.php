@@ -21,7 +21,7 @@ $contact_email = craftcrawl_env('CRAFTCRAWL_SUPPORT_EMAIL', 'support@craftcrawl.
                 <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('images/'); ?>" alt="CraftCrawl logo">
                 <div>
                     <h1>Terms of Service</h1>
-                    <p>Last updated May 12, 2026</p>
+                    <p>Last updated June 23, 2026</p>
                 </div>
             </div>
             <a href="index.php" data-back-link>Back</a>
@@ -34,11 +34,17 @@ $contact_email = craftcrawl_env('CRAFTCRAWL_SUPPORT_EMAIL', 'support@craftcrawl.
             <h2>Accounts</h2>
             <p>You are responsible for keeping your login information secure and for the activity that happens through your account. You must provide accurate account information and may not impersonate another person or business.</p>
 
+            <h2>Age Requirements</h2>
+            <p>You must be 21 years of age or older to use CraftCrawl. By creating an account, you confirm that you meet this age requirement. CraftCrawl is focused on craft beverage locations and is not intended for users under the legal drinking age.</p>
+
             <h2>Check-ins, XP, Badges, and Reviews</h2>
             <p>CraftCrawl may award XP, badges, levels, or other progress indicators for eligible activity. We may adjust, deny, or remove XP, badges, reviews, check-ins, or other activity if we believe the activity is inaccurate, abusive, fraudulent, automated, or otherwise inconsistent with the intended use of the service.</p>
 
             <h2>User Content</h2>
             <p>You are responsible for reviews, photos, comments, replies, reactions, recommendations, and other content you submit. Do not submit unlawful, misleading, abusive, harassing, hateful, spammy, or infringing content. You grant CraftCrawl permission to host, display, process, and use your submitted content to operate and improve the service.</p>
+
+            <h2>Content Reporting and Moderation</h2>
+            <p>If you believe content on CraftCrawl violates these terms or our acceptable use policy, you can report it using the in-app reporting tools. CraftCrawl reviews reports and may remove content or take action on accounts at our discretion. Submitting false or abusive reports may itself result in account action.</p>
 
             <h2>Business Content</h2>
             <p>Business users are responsible for keeping business information, hours, addresses, event details, and media accurate. CraftCrawl may review, edit, hide, or remove business content that appears inaccurate, harmful, or inappropriate.</p>
@@ -49,11 +55,17 @@ $contact_email = craftcrawl_env('CRAFTCRAWL_SUPPORT_EMAIL', 'support@craftcrawl.
             <h2>Acceptable Use</h2>
             <p>You may not attempt to break, scrape, overload, reverse engineer, bypass security, abuse notifications, harvest data, spam users, manipulate reviews, or farm XP through fake or automated activity.</p>
 
+            <h2>Account Termination and Deletion</h2>
+            <p>You may delete your account at any time from your account settings. Deleting your account removes your login access, profile identity, and personal content as described in our Privacy Policy. CraftCrawl may also disable or terminate accounts that violate these terms, engage in abusive behavior, or are used fraudulently.</p>
+
             <h2>Availability</h2>
             <p>CraftCrawl may change, pause, or discontinue features at any time. We aim to keep the service available, but we do not guarantee uninterrupted access.</p>
 
             <h2>Disclaimers</h2>
             <p>CraftCrawl is provided as-is. Information about businesses, events, hours, locations, and availability may be incomplete or outdated. Always confirm important details directly with the business.</p>
+
+            <h2>Changes to Terms</h2>
+            <p>CraftCrawl may update these terms from time to time. When we make changes, we will update the date at the top of this page. Continued use of CraftCrawl after changes are posted constitutes acceptance of the updated terms.</p>
 
             <h2>Contact</h2>
             <p>Questions about these terms can be sent to <a class="text-link" href="mailto:<?php echo escape_output($contact_email); ?>"><?php echo escape_output($contact_email); ?></a>.</p>

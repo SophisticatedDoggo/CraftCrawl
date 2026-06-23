@@ -247,6 +247,8 @@ $display_palette = in_array($business['display_palette'] ?? '', $allowed_display
                 <button type="submit" class="danger-button">Delete Account Permanently</button>
             </form>
         </section>
+
+        <?php $legal_base = '../'; include dirname(__DIR__) . '/legal_nav.php'; ?>
     </main>
     </div>
     <?php include __DIR__ . '/mobile_nav.php'; ?>
