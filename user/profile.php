@@ -558,6 +558,16 @@ if (!$profile) {
                         </form>
                     </details>
                 <?php endif; ?>
+                <?php if (!$is_own_profile) : ?>
+                    <div class="post-menu" data-post-menu data-content-type="user" data-content-id="<?php echo escape_output($profile_id); ?>" data-content-label="<?php echo escape_output(trim($profile['fName'] . ' ' . $profile['lName'])); ?>" style="position:absolute;top:8px;right:8px;">
+                        <button type="button" class="post-menu-trigger" aria-expanded="false" aria-label="More options">
+                            <span class="post-menu-trigger-icon" aria-hidden="true"></span>
+                        </button>
+                        <div class="post-menu-dropdown">
+                            <button type="button" class="post-menu-dropdown-item" data-post-menu-action="report">Report this user</button>
+                        </div>
+                    </div>
+                <?php endif; ?>
                 <div class="profile-identity profile-identity-view">
                     <?php echo craftcrawl_render_user_avatar($visible_profile, 'large', 'profile-page-avatar'); ?>
                     <div>
@@ -1018,6 +1028,8 @@ if (!$profile) {
     </div>
     <?php include __DIR__ . '/app_nav.php'; ?>
     <script src="../js/level_celebration.js?v=<?php echo filemtime(__DIR__ . '/../js/level_celebration.js'); ?>"></script>
+    <script src="../js/post_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/post_menu.js'); ?>"></script>
+    <script src="../js/report_modal.js?v=<?php echo filemtime(__DIR__ . '/../js/report_modal.js'); ?>"></script>
     <script src="../js/friends.js?v=<?php echo filemtime(__DIR__ . '/../js/friends.js'); ?>"></script>
     <script src="../js/profile_photo_crop.js?v=<?php echo filemtime(__DIR__ . '/../js/profile_photo_crop.js'); ?>"></script>
     <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>

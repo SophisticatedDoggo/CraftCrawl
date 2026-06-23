@@ -45,6 +45,7 @@ if (!isset($admin_page_extra_scripts)) {
                     <a href="recovery.php">Recovery</a>
                     <strong class="mobile-actions-section-label">Reports</strong>
                     <a href="reports.php">Location Reports</a>
+                    <a href="content_reports.php">Content Reports</a>
                     <strong class="mobile-actions-section-label">Moderation</strong>
                     <a href="reviews.php">Reviews</a>
                     <a href="content.php">Content</a>
