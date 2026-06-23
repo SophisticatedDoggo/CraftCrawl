@@ -150,9 +150,7 @@ $recent_checkins = $recent_stmt->get_result();
                 </div>
                 <div class="analytics-chart-period" aria-label="Change analytics period">
                     <button type="button" data-analytics-previous aria-label="Previous period">&#8249;</button>
-                    <p><span data-analytics-period-label>This month</span> &middot; <strong data-analytics-total-label>Loading</strong>
-                        <span class="analytics-trend-badge" data-analytics-trend hidden></span>
-                    </p>
+                    <p><span data-analytics-period-label>This month</span> &middot; <strong data-analytics-total-label>Loading</strong></p>
                     <button type="button" data-analytics-next aria-label="Next period" disabled>&#8250;</button>
                 </div>
                 <div class="analytics-line-chart" data-analytics-chart style="position: relative;">
