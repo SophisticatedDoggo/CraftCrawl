@@ -66,7 +66,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
         business_post: ['heart', 'cheers', 'nice_find', 'yuck', 'want_to_go'],
         chain_complete: ['heart', 'cheers', 'nice_find', 'yuck', 'trophy']
     };
-    const isUserPath = /\/user\/?$|\/user\//.test(window.location.pathname);
     let focusParams = new URLSearchParams(window.location.search);
     let requestedFocusRequestId = focusParams.get('focus_request');
     let requestedFocusFriendId = focusParams.get('focus_friend');
@@ -231,6 +230,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     function userEndpoint(file) {
+        const isUserPath = /\/user\/?$|\/user\//.test(window.location.pathname);
         return isUserPath ? file : `user/${file}`;
     }
 

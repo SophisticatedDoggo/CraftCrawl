@@ -3,7 +3,8 @@ window.CraftCrawlInitProfileGrid = function (scope) {
 
     scope = scope || document;
     var profilePage = scope.querySelector('.profile-page');
-    if (!profilePage) return;
+    if (!profilePage || profilePage.dataset.profileGridReady === 'true') return;
+    profilePage.dataset.profileGridReady = 'true';
 
     var grid = profilePage.querySelector('[data-profile-photo-grid]');
     var feedView = profilePage.querySelector('[data-profile-feed-view]');
@@ -240,6 +241,22 @@ window.CraftCrawlInitProfileGrid = function (scope) {
             '<div class="feed-checkin-below">' + actionsHtml + captionHtml + '</div>' +
         '</article>';
     }
+
+    feedItems.addEventListener('click', function (event) {
+        var trigger = event.target.closest('[data-comments-sheet-trigger]');
+        if (!trigger || !feedItems.contains(trigger)) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        var itemKey = trigger.dataset.itemKey || '';
+        if (!itemKey) return;
+
+        if (typeof window.CraftCrawlOpenCommentsSheet !== 'function') {
+            window.CraftCrawlInitFriends?.(document);
+        }
+        window.CraftCrawlOpenCommentsSheet?.(itemKey);
+    });
 
     function showFeedView(targetVisitId) {
         gridScrollPosition = window.scrollY;
