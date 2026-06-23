@@ -127,7 +127,16 @@ $recent_checkins = $recent_stmt->get_result();
             </article>
         </div>
 
-        <div class="analytics-dashboard" data-analytics-widget data-analytics-endpoint="analytics_data.php" data-analytics-mode="month">
+        <div data-analytics-widget data-analytics-endpoint="analytics_data.php" data-analytics-mode="month">
+
+        <article class="analytics-panel analytics-heatmap-panel">
+            <h3>This Week's Activity</h3>
+            <div class="analytics-heatmap" data-analytics-heatmap>
+                <p class="analytics-empty">Loading.</p>
+            </div>
+        </article>
+
+        <div class="analytics-dashboard">
             <article class="analytics-panel analytics-interactive-panel analytics-chart-panel">
                 <div class="business-section-header analytics-widget-header">
                     <h2>Check-ins Over Time</h2>
@@ -159,14 +168,9 @@ $recent_checkins = $recent_stmt->get_result();
                         <p class="analytics-empty">Loading.</p>
                     </div>
                 </article>
-
-                <article class="analytics-panel analytics-heatmap-panel">
-                    <h3>Activity Pattern</h3>
-                    <div class="analytics-heatmap" data-analytics-heatmap>
-                        <p class="analytics-empty">Loading.</p>
-                    </div>
-                </article>
             </div>
+        </div>
+
         </div>
 
         <div class="analytics-metric-grid analytics-range-metrics" data-analytics-summary-cards aria-label="Selected range summary">

@@ -8845,23 +8845,26 @@ body.feed-comments-sheet-open {
 
 .analytics-metric-grid {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
     margin-bottom: 20px;
 }
 
 .analytics-card {
     min-width: 0;
-    padding: 16px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-surface);
+    padding: 10px 14px;
+}
+
+.analytics-card span {
+    font-size: 12px;
+}
+
+.analytics-card strong {
+    font-size: 1.2rem;
 }
 
 .analytics-card p {
-    margin: 8px 0 0;
-    color: var(--color-muted);
-    font-size: 14px;
+    display: none;
 }
 
 .analytics-layout {
@@ -8922,6 +8925,10 @@ body.feed-comments-sheet-open {
     margin: 0 0 12px;
     font-size: 0.95rem;
     font-weight: 800;
+}
+
+.analytics-heatmap-panel {
+    margin-bottom: 20px;
 }
 
 .analytics-donut {
@@ -9332,7 +9339,7 @@ body.feed-comments-sheet-open {
 }
 
 .analytics-range-metrics {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     margin: 18px 0 0;
 }
 

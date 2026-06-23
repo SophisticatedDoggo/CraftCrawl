@@ -290,8 +290,6 @@ if ($mode !== 'lifetime') {
     $prev_total = (int) $prev_total_stmt->get_result()->fetch_assoc()['cnt'];
     if ($prev_total > 0 && $total > 0) {
         $change_pct = round((($total - $prev_total) / $prev_total) * 100, 1);
-    } elseif ($prev_total === 0 && $total > 0) {
-        $change_pct = 100.0;
     }
 }
 
