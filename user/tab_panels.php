@@ -157,10 +157,6 @@ if (!function_exists('craftcrawl_render_portal_quest_card')) {
                 <span aria-hidden="true"></span>
                 <strong data-refresh-label>Pull to refresh</strong>
             </div>
-            <div class="friends-feed-header">
-                <h3>Friends Feed</h3>
-                <p data-friends-count></p>
-            </div>
             <div class="friends-feed" data-friends-feed>
                 <div data-feed-sentinel hidden></div>
             </div>
