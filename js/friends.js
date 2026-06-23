@@ -235,7 +235,113 @@ window.CraftCrawlInitFriends = function (scope = document) {
         return isUserPath ? file : `user/${file}`;
     }
 
+    function installCommentsSheetHandler() {
+        window.CraftCrawlOpenCommentsSheet = openCommentsSheet;
+        window.CraftCrawlSetSheetReply = setSheetReply;
+
+        if (document.documentElement.dataset.commentsSheetClickReady === 'true') {
+            return;
+        }
+
+        document.documentElement.dataset.commentsSheetClickReady = 'true';
+        document.addEventListener('click', (event) => {
+            const trigger = event.target.closest('[data-comments-sheet-trigger]');
+            if (trigger) {
+                event.preventDefault();
+                event.stopPropagation();
+                const itemKey = trigger.dataset.itemKey;
+                if (itemKey) window.CraftCrawlOpenCommentsSheet?.(itemKey);
+                return;
+            }
+
+            const replyBtn = event.target.closest('[data-sheet-reply]');
+            if (replyBtn) {
+                const parentId = replyBtn.dataset.parentCommentId || '';
+                const label = replyBtn.dataset.replyLabel || '';
+                if (parentId) window.CraftCrawlSetSheetReply?.(parentId, label);
+                return;
+            }
+
+            const repliesToggle = event.target.closest('[data-sheet-replies-toggle]');
+            if (repliesToggle) {
+                const panelId = repliesToggle.getAttribute('aria-controls') || '';
+                const replyPanel = panelId ? document.getElementById(panelId) : null;
+                if (replyPanel) {
+                    const isExpanded = repliesToggle.getAttribute('aria-expanded') === 'true';
+                    repliesToggle.setAttribute('aria-expanded', String(!isExpanded));
+                    replyPanel.hidden = isExpanded;
+                    const label = repliesToggle.querySelector('span');
+                    const replyCount = Number(repliesToggle.dataset.replyCount || replyPanel.children.length || 0);
+                    if (label) {
+                        label.textContent = isExpanded
+                            ? `View ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`
+                            : 'Hide replies';
+                    }
+                }
+                return;
+            }
+        });
+    }
+
+    function installPollVoteHandler() {
+        if (document.documentElement.dataset.pollVoteReady === 'true') {
+            return;
+        }
+
+        document.documentElement.dataset.pollVoteReady = 'true';
+        document.addEventListener('click', (event) => {
+            const voteBtn = event.target.closest('[data-feed-poll-vote]');
+            if (!voteBtn || voteBtn.disabled) {
+                return;
+            }
+
+            const pollSection = voteBtn.closest('[data-feed-poll-section]');
+            if (!pollSection) {
+                return;
+            }
+
+            pollSection.querySelectorAll('[data-feed-poll-vote]').forEach(function (btn) {
+                btn.disabled = true;
+            });
+
+            const tokenSource = voteBtn.closest('[data-csrf-token]');
+            const requestCsrfToken = tokenSource?.dataset.csrfToken || csrfToken;
+
+            const formData = new FormData();
+            formData.append('csrf_token', requestCsrfToken);
+            formData.append('post_id', voteBtn.dataset.itemKey.split(':')[1]);
+            formData.append('option_id', voteBtn.dataset.optionId);
+
+            fetch(userEndpoint('business_poll_vote.php'), {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (!data.ok) {
+                        pollSection.querySelectorAll('[data-feed-poll-vote]').forEach(function (btn) {
+                            btn.disabled = false;
+                        });
+                        return;
+                    }
+                    pollSection.innerHTML = renderFeedPollResults(
+                        data.options,
+                        data.user_voted_option_id,
+                        data.total_votes
+                    );
+                })
+                .catch(function () {
+                    pollSection.querySelectorAll('[data-feed-poll-vote]').forEach(function (btn) {
+                        btn.disabled = false;
+                    });
+                });
+        });
+    }
+
     installFeedReactionHandler();
+    installCommentsSheetHandler();
+    installPollVoteHandler();
 
     if (!panel && !managerPage && !profileFriendButtons.length && !suggestedFriendButtons.length) {
         return;
@@ -1833,50 +1939,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
                 }
                 return;
             }
-
-            const voteBtn = event.target.closest('[data-feed-poll-vote]');
-            if (!voteBtn || voteBtn.disabled) {
-                return;
-            }
-
-            const pollSection = voteBtn.closest('[data-feed-poll-section]');
-            if (!pollSection) {
-                return;
-            }
-
-            pollSection.querySelectorAll('[data-feed-poll-vote]').forEach(function (btn) {
-                btn.disabled = true;
-            });
-
-            const formData = new FormData();
-            formData.append('csrf_token', csrfToken);
-            formData.append('post_id', voteBtn.dataset.itemKey.split(':')[1]);
-            formData.append('option_id', voteBtn.dataset.optionId);
-
-            fetch(userEndpoint('business_poll_vote.php'), {
-                method: 'POST',
-                body: formData,
-                credentials: 'same-origin'
-            })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    if (!data.ok) {
-                        pollSection.querySelectorAll('[data-feed-poll-vote]').forEach(function (btn) {
-                            btn.disabled = false;
-                        });
-                        return;
-                    }
-                    pollSection.innerHTML = renderFeedPollResults(
-                        data.options,
-                        data.user_voted_option_id,
-                        data.total_votes
-                    );
-                })
-                .catch(function () {
-                    pollSection.querySelectorAll('[data-feed-poll-vote]').forEach(function (btn) {
-                        btn.disabled = false;
-                    });
-                });
         });
     }
 
@@ -3083,47 +3145,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
             });
     }
 
-    if (document.documentElement.dataset.commentsSheetClickReady !== 'true') {
-        document.documentElement.dataset.commentsSheetClickReady = 'true';
-        document.addEventListener('click', (event) => {
-            const trigger = event.target.closest('[data-comments-sheet-trigger]');
-            if (trigger) {
-                event.preventDefault();
-                event.stopPropagation();
-                const itemKey = trigger.dataset.itemKey;
-                if (itemKey) window.CraftCrawlOpenCommentsSheet?.(itemKey);
-                return;
-            }
-
-            const replyBtn = event.target.closest('[data-sheet-reply]');
-            if (replyBtn) {
-                const parentId = replyBtn.dataset.parentCommentId || '';
-                const label = replyBtn.dataset.replyLabel || '';
-                if (parentId) window.CraftCrawlSetSheetReply?.(parentId, label);
-                return;
-            }
-
-            const repliesToggle = event.target.closest('[data-sheet-replies-toggle]');
-            if (repliesToggle) {
-                const panelId = repliesToggle.getAttribute('aria-controls') || '';
-                const replyPanel = panelId ? document.getElementById(panelId) : null;
-                if (replyPanel) {
-                    const isExpanded = repliesToggle.getAttribute('aria-expanded') === 'true';
-                    repliesToggle.setAttribute('aria-expanded', String(!isExpanded));
-                    replyPanel.hidden = isExpanded;
-                    const label = repliesToggle.querySelector('span');
-                    const replyCount = Number(repliesToggle.dataset.replyCount || replyPanel.children.length || 0);
-                    if (label) {
-                        label.textContent = isExpanded
-                            ? `View ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`
-                            : 'Hide replies';
-                    }
-                }
-                return;
-            }
-        });
-    }
-
     function isFeedTabActive() {
         return Boolean(panel && !panel.closest('[data-user-tab-panel]')?.hidden);
     }
@@ -3141,8 +3162,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     window.CraftCrawlRefreshFriendsFeed = refreshVisibleFeed;
-    window.CraftCrawlOpenCommentsSheet = openCommentsSheet;
-    window.CraftCrawlSetSheetReply = setSheetReply;
 
     window.addEventListener('craftcrawl:event-want-updated', () => {
         loadFeed();
