@@ -32,6 +32,9 @@ $support_email = craftcrawl_env('CRAFTCRAWL_SUPPORT_EMAIL', 'support@craftcrawl.
             <p>For support, account help, business profile questions, content concerns, or privacy requests, email us at:</p>
             <p><a class="text-link legal-contact-link" href="mailto:<?php echo escape_output($support_email); ?>"><?php echo escape_output($support_email); ?></a></p>
 
+            <h2>Data and Privacy Requests</h2>
+            <p>You can request access to your personal data, correction of inaccurate information, account deletion, or data export by emailing us at the address above. You can also delete your account directly from your account settings. We respond to data requests within 30 days.</p>
+
             <h2>Helpful Details</h2>
             <p>When contacting support, include the email address on your account, the business or event involved, screenshots if helpful, and a short description of what happened.</p>
 

@@ -512,6 +512,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="submit" class="danger-button" <?php echo $password_auth_enabled ? '' : 'disabled'; ?>>Delete Account Permanently</button>
             </form>
         </section>
+
+        <?php $legal_base = '../'; include dirname(__DIR__) . '/legal_nav.php'; ?>
     </main>
     </div>
     <?php include __DIR__ . '/app_nav.php'; ?>
