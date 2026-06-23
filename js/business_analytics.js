@@ -149,17 +149,21 @@ window.CraftCrawlInitBusinessAnalytics = function (root = document) {
         tip.textContent = `${label}: ${formatNumber(count)} check-in${count === 1 ? '' : 's'}`;
         tip.hidden = false;
 
-        // Convert SVG coordinates to container-relative coordinates
         const svgRect = svgEl.getBoundingClientRect();
         const containerRect = container.getBoundingClientRect();
         const viewBox = svgEl.viewBox.baseVal;
         const scaleX = svgRect.width / viewBox.width;
         const scaleY = svgRect.height / viewBox.height;
-        const px = (anchorX * scaleX) + svgRect.left - containerRect.left;
+        let px = (anchorX * scaleX) + svgRect.left - containerRect.left;
         const py = (anchorY * scaleY) + svgRect.top - containerRect.top;
 
+        const tipWidth = tip.offsetWidth;
+        const minLeft = tipWidth / 2 + 4;
+        const maxLeft = containerRect.width - tipWidth / 2 - 4;
+        px = Math.max(minLeft, Math.min(maxLeft, px));
+
         tip.style.left = `${px}px`;
-        tip.style.top = `${py - 12}px`;
+        tip.style.top = `${py - 14}px`;
     }
 
     function renderChart(points) {
@@ -425,11 +429,28 @@ window.CraftCrawlInitBusinessAnalytics = function (root = document) {
                 var opacity = val / max;
                 var hourStr = hr === 0 ? '12am' : (hr < 12 ? hr + 'am' : (hr === 12 ? '12pm' : (hr - 12) + 'pm'));
                 var title = dayNames[d] + ' ' + hourStr + ': ' + formatNumber(val) + ' check-in' + (val === 1 ? '' : 's');
-                html += '<div class="heatmap-cell" style="opacity: ' + Math.max(0.08, opacity).toFixed(2) + '" title="' + escapeHtml(title) + '"></div>';
+                html += '<div class="heatmap-cell" style="opacity: ' + Math.max(0.08, opacity).toFixed(2) + '" data-heatmap-label="' + escapeHtml(title) + '"></div>';
             }
         }
         html += '</div>';
+        html += '<div class="heatmap-tooltip" data-heatmap-tooltip hidden></div>';
         heatmap.innerHTML = html;
+
+        heatmap.addEventListener('click', function (e) {
+            var cell = e.target.closest('.heatmap-cell');
+            var tip = heatmap.querySelector('[data-heatmap-tooltip]');
+            if (!cell || !tip) { if (tip) tip.hidden = true; return; }
+            tip.textContent = cell.dataset.heatmapLabel;
+            tip.hidden = false;
+            var cellRect = cell.getBoundingClientRect();
+            var mapRect = heatmap.getBoundingClientRect();
+            var left = cellRect.left - mapRect.left + cellRect.width / 2;
+            var top = cellRect.top - mapRect.top - 8;
+            var tipWidth = tip.offsetWidth;
+            left = Math.max(tipWidth / 2 + 4, Math.min(mapRect.width - tipWidth / 2 - 4, left));
+            tip.style.left = left + 'px';
+            tip.style.top = top + 'px';
+        });
     }
 
     function updateModeButtons() {

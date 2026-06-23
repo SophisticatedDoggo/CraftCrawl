@@ -401,7 +401,6 @@ $event_comment_summary = craftcrawl_business_event_unread_comment_summary($conn,
                             <?php if ($photo['photo_type'] === 'cover') : ?>
                                 <span class="business-photo-badge">Cover Photo</span>
                             <?php endif; ?>
-                            <span class="business-photo-drag-handle" data-photo-drag-handle aria-label="Drag to reorder">&#x2807;</span>
                             <div class="business-photo-overlay">
                                 <?php if ($photo['photo_type'] !== 'cover') : ?>
                                     <form method="POST" action="">

@@ -5,6 +5,9 @@ require_once dirname(__DIR__) . '/lib/business_helpers.php';
 $craftcrawl_business_page = $craftcrawl_business_page ?? 'portal';
 $craftcrawl_business_page_title = $craftcrawl_business_page_title ?? 'Portal';
 $craftcrawl_business_name = $craftcrawl_business_name ?? '';
+if (!isset($craftcrawl_business_approved) && isset($selected_location)) {
+    $craftcrawl_business_approved = ($selected_location['visibility_status'] ?? '') === 'public_claimed';
+}
 $craftcrawl_business_approved = $craftcrawl_business_approved ?? false;
 ?>
 <header class="business-portal-header">
