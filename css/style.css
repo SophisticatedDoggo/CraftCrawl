@@ -9370,7 +9370,7 @@ body.feed-comments-sheet-open {
 
 .analytics-range-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin: 18px 0 0;
+    margin: 0;
 }
 
 .analytics-trend {
@@ -13309,7 +13309,7 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     }
 
     .analytics-metric-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .analytics-checkin-card {
