@@ -1,6 +1,6 @@
 window.CraftCrawlInitAdminReviewCenter = function (root = document) {
-    const reviewRoot = root.querySelector?.('[data-admin-review-center]')
-        || (root.matches?.('[data-admin-review-center]') ? root : null);
+    const reviewRoot = root.querySelector?.('[data-admin-review-page]')
+        || (root.matches?.('[data-admin-review-page]') ? root : null);
     if (!reviewRoot) return;
 
     const batchActionValues = new Set([

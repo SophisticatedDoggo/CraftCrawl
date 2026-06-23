@@ -12044,20 +12044,20 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     gap: 24px;
 }
 
-[data-admin-review-center].business-portal {
+[data-admin-review-page].business-portal {
     width: min(100%, 1400px);
     max-width: none;
     margin: 0 auto;
     padding: 24px 28px 80px;
 }
 
-[data-admin-review-center] .business-portal-header,
-[data-admin-review-center] .admin-panel {
+[data-admin-review-page] .business-portal-header,
+[data-admin-review-page] .admin-panel {
     width: 100%;
     min-width: 0;
 }
 
-[data-admin-review-center] .admin-panel {
+[data-admin-review-page] .admin-panel {
     padding: 0;
     border: 0;
     border-radius: 0;
@@ -12097,6 +12097,52 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
 }
 
 .admin-stat-grid span {
+    color: var(--color-muted);
+}
+
+.admin-stat-link {
+    text-decoration: none;
+    color: inherit;
+    display: contents;
+}
+
+.admin-stat-link article {
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.admin-stat-link:hover article,
+.admin-stat-link:focus article {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.admin-work-queue-links {
+    display: grid;
+    gap: 8px;
+}
+
+.admin-work-queue-links a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--color-heading);
+    font-weight: 600;
+    transition: border-color 0.15s;
+}
+
+.admin-work-queue-links a:hover {
+    border-color: var(--color-accent);
+}
+
+.admin-work-queue-links a span {
+    font-weight: 400;
+    font-size: 0.85rem;
     color: var(--color-muted);
 }
 
@@ -12196,11 +12242,11 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     margin: 8px 0;
 }
 
-[data-admin-review-center] .admin-review-list-panel {
+[data-admin-review-page] .admin-review-list-panel {
     overflow: visible;
 }
 
-[data-admin-review-center] .admin-batch-toolbar {
+[data-admin-review-page] .admin-batch-toolbar {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -12210,8 +12256,8 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     margin-bottom: 2px;
 }
 
-[data-admin-review-center] .admin-batch-select-all,
-[data-admin-review-center] .admin-batch-row-select {
+[data-admin-review-page] .admin-batch-select-all,
+[data-admin-review-page] .admin-batch-row-select {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -12219,34 +12265,34 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     color: var(--color-text);
 }
 
-[data-admin-review-center] .admin-batch-actions {
+[data-admin-review-page] .admin-batch-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     margin-left: auto;
 }
 
-[data-admin-review-center] .admin-import-table-section .admin-batch-toolbar {
+[data-admin-review-page] .admin-import-table-section .admin-batch-toolbar {
     width: max-content;
     margin: 14px 0 12px;
     border-top: 1px solid var(--color-border);
 }
 
-[data-admin-review-center] .admin-import-table-section .admin-batch-actions {
+[data-admin-review-page] .admin-import-table-section .admin-batch-actions {
     margin-left: 0;
 }
 
-[data-admin-review-center] .admin-batch-actions button {
+[data-admin-review-page] .admin-batch-actions button {
     padding: 8px 12px;
     min-height: 36px;
 }
 
-[data-admin-review-center] .admin-batch-actions button:disabled {
+[data-admin-review-page] .admin-batch-actions button:disabled {
     opacity: 0.45;
     cursor: not-allowed;
 }
 
-[data-admin-review-center] .admin-import-pagination {
+[data-admin-review-page] .admin-import-pagination {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -12254,7 +12300,7 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     font-weight: 800;
 }
 
-[data-admin-review-center] .admin-import-pagination a {
+[data-admin-review-page] .admin-import-pagination a {
     display: inline-flex;
     min-height: 34px;
     align-items: center;
@@ -12264,7 +12310,7 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     box-shadow: var(--shadow-sm);
 }
 
-[data-admin-review-center] .admin-import-table-wrap {
+[data-admin-review-page] .admin-import-table-wrap {
     width: 100%;
     max-width: 100%;
     max-height: min(720px, 72vh);
@@ -12276,7 +12322,7 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     -webkit-overflow-scrolling: touch;
 }
 
-[data-admin-review-center] .admin-import-review-table {
+[data-admin-review-page] .admin-import-review-table {
     width: 4442px;
     min-width: 4442px;
     border-collapse: collapse;
@@ -12285,8 +12331,8 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     border: 0;
 }
 
-[data-admin-review-center] .admin-import-review-table th,
-[data-admin-review-center] .admin-import-review-table td {
+[data-admin-review-page] .admin-import-review-table th,
+[data-admin-review-page] .admin-import-review-table td {
     width: 160px;
     max-width: 160px;
     padding: 8px 9px;
@@ -12299,7 +12345,7 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     overflow-wrap: anywhere;
 }
 
-[data-admin-review-center] .admin-import-review-table thead th {
+[data-admin-review-page] .admin-import-review-table thead th {
     position: sticky;
     top: 0;
     z-index: 2;
@@ -12309,7 +12355,7 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     white-space: nowrap;
 }
 
-[data-admin-review-center] .admin-sort-header {
+[data-admin-review-page] .admin-sort-header {
     display: inline-flex;
     width: 100%;
     min-height: 0;
@@ -12328,100 +12374,100 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     cursor: pointer;
 }
 
-[data-admin-review-center] .admin-sort-header:hover,
-[data-admin-review-center] .admin-sort-header:focus {
+[data-admin-review-page] .admin-sort-header:hover,
+[data-admin-review-page] .admin-sort-header:focus {
     color: var(--color-primary);
     background: transparent;
     box-shadow: none;
 }
 
-[data-admin-review-center] .admin-sort-indicator {
+[data-admin-review-page] .admin-sort-indicator {
     color: var(--color-muted);
     font-size: 0.66rem;
     font-weight: 700;
     text-transform: uppercase;
 }
 
-[data-admin-review-center] .admin-import-review-table tbody tr:nth-child(even) {
+[data-admin-review-page] .admin-import-review-table tbody tr:nth-child(even) {
     background: rgba(15, 23, 42, 0.045);
 }
 
-[data-admin-review-center] .admin-import-review-table th:first-child,
-[data-admin-review-center] .admin-import-review-table td:first-child {
+[data-admin-review-page] .admin-import-review-table th:first-child,
+[data-admin-review-page] .admin-import-review-table td:first-child {
     width: 42px;
     max-width: 42px;
     text-align: center;
 }
 
-[data-admin-review-center] .admin-import-review-table th:nth-child(2),
-[data-admin-review-center] .admin-import-review-table td:nth-child(2) {
+[data-admin-review-page] .admin-import-review-table th:nth-child(2),
+[data-admin-review-page] .admin-import-review-table td:nth-child(2) {
     width: 210px;
     max-width: 210px;
     color: var(--color-heading);
     font-weight: 800;
 }
 
-[data-admin-review-center] .admin-import-review-table th:nth-child(6),
-[data-admin-review-center] .admin-import-review-table td:nth-child(6),
-[data-admin-review-center] .admin-import-review-table th:nth-child(7),
-[data-admin-review-center] .admin-import-review-table td:nth-child(7),
-[data-admin-review-center] .admin-import-review-table th:nth-child(15),
-[data-admin-review-center] .admin-import-review-table td:nth-child(15),
-[data-admin-review-center] .admin-import-review-table th:nth-child(16),
-[data-admin-review-center] .admin-import-review-table td:nth-child(16),
-[data-admin-review-center] .admin-import-review-table th:nth-child(17),
-[data-admin-review-center] .admin-import-review-table td:nth-child(17) {
+[data-admin-review-page] .admin-import-review-table th:nth-child(6),
+[data-admin-review-page] .admin-import-review-table td:nth-child(6),
+[data-admin-review-page] .admin-import-review-table th:nth-child(7),
+[data-admin-review-page] .admin-import-review-table td:nth-child(7),
+[data-admin-review-page] .admin-import-review-table th:nth-child(15),
+[data-admin-review-page] .admin-import-review-table td:nth-child(15),
+[data-admin-review-page] .admin-import-review-table th:nth-child(16),
+[data-admin-review-page] .admin-import-review-table td:nth-child(16),
+[data-admin-review-page] .admin-import-review-table th:nth-child(17),
+[data-admin-review-page] .admin-import-review-table td:nth-child(17) {
     width: 230px;
     max-width: 230px;
 }
 
-[data-admin-review-center] .admin-import-review-table th:nth-child(18),
-[data-admin-review-center] .admin-import-review-table td:nth-child(18),
-[data-admin-review-center] .admin-import-review-table th:nth-child(19),
-[data-admin-review-center] .admin-import-review-table td:nth-child(19),
-[data-admin-review-center] .admin-import-review-table th:nth-child(20),
-[data-admin-review-center] .admin-import-review-table td:nth-child(20),
-[data-admin-review-center] .admin-import-review-table th:nth-child(21),
-[data-admin-review-center] .admin-import-review-table td:nth-child(21) {
+[data-admin-review-page] .admin-import-review-table th:nth-child(18),
+[data-admin-review-page] .admin-import-review-table td:nth-child(18),
+[data-admin-review-page] .admin-import-review-table th:nth-child(19),
+[data-admin-review-page] .admin-import-review-table td:nth-child(19),
+[data-admin-review-page] .admin-import-review-table th:nth-child(20),
+[data-admin-review-page] .admin-import-review-table td:nth-child(20),
+[data-admin-review-page] .admin-import-review-table th:nth-child(21),
+[data-admin-review-page] .admin-import-review-table td:nth-child(21) {
     width: 180px;
     max-width: 180px;
 }
 
-[data-admin-review-center] .admin-import-review-table th:nth-child(22),
-[data-admin-review-center] .admin-import-review-table td:nth-child(22) {
+[data-admin-review-page] .admin-import-review-table th:nth-child(22),
+[data-admin-review-page] .admin-import-review-table td:nth-child(22) {
     width: 720px;
     max-width: 720px;
 }
 
-[data-admin-review-center] .admin-import-review-table td {
+[data-admin-review-page] .admin-import-review-table td {
     max-height: 72px;
 }
 
-[data-admin-review-center] .admin-import-review-table td > .admin-duplicate-summary {
+[data-admin-review-page] .admin-import-review-table td > .admin-duplicate-summary {
     max-height: 72px;
     overflow: auto;
 }
 
-[data-admin-review-center] .admin-import-table-form {
+[data-admin-review-page] .admin-import-table-form {
     display: none;
 }
 
-[data-admin-review-center] .admin-import-review-table td select,
-[data-admin-review-center] .admin-import-review-table td input:not([type="hidden"]):not([type="checkbox"]),
-[data-admin-review-center] .admin-import-review-table td textarea {
+[data-admin-review-page] .admin-import-review-table td select,
+[data-admin-review-page] .admin-import-review-table td input:not([type="hidden"]):not([type="checkbox"]),
+[data-admin-review-page] .admin-import-review-table td textarea {
     width: 100%;
     min-width: 0;
 }
 
-[data-admin-review-center] .admin-import-review-table td textarea {
+[data-admin-review-page] .admin-import-review-table td textarea {
     height: 42px;
     min-height: 42px;
     resize: none;
     transition: width 0.16s ease, height 0.16s ease, box-shadow 0.16s ease;
 }
 
-[data-admin-review-center] [data-admin-review-row].is-editing-notes textarea[name="admin_notes"],
-[data-admin-review-center] .admin-import-review-table textarea[name="admin_notes"]:focus {
+[data-admin-review-page] [data-admin-review-row].is-editing-notes textarea[name="admin_notes"],
+[data-admin-review-page] .admin-import-review-table textarea[name="admin_notes"]:focus {
     position: relative;
     z-index: 5;
     width: 420px;
@@ -12431,26 +12477,26 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     box-shadow: var(--shadow-lg);
 }
 
-[data-admin-review-center] .admin-import-review-table .admin-import-review-actions {
+[data-admin-review-page] .admin-import-review-table .admin-import-review-actions {
     display: flex;
     flex-wrap: nowrap;
     gap: 6px;
 }
 
-[data-admin-review-center] .admin-import-review-table .admin-import-review-actions button {
+[data-admin-review-page] .admin-import-review-table .admin-import-review-actions button {
     min-height: 32px;
     padding: 6px 10px;
     white-space: nowrap;
 }
 
-[data-admin-review-center] .admin-import-confirm-duplicate {
+[data-admin-review-page] .admin-import-confirm-duplicate {
     display: inline-flex;
     align-items: center;
     gap: 5px;
     white-space: nowrap;
 }
 
-[data-admin-review-center] .admin-review-list-row {
+[data-admin-review-page] .admin-review-list-row {
     grid-template-columns: 26px 2440px 1140px;
     align-items: center;
     gap: 12px;
@@ -12464,17 +12510,17 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     contain-intrinsic-size: auto 76px;
 }
 
-[data-admin-review-center] .admin-review-list-row.is-editing-notes {
+[data-admin-review-page] .admin-review-list-row.is-editing-notes {
     min-height: 184px;
     overflow: visible;
     content-visibility: visible;
 }
 
-[data-admin-review-center] .admin-review-list-row:nth-of-type(even) {
+[data-admin-review-page] .admin-review-list-row:nth-of-type(even) {
     background: rgba(15, 23, 42, 0.045);
 }
 
-[data-admin-review-center] .admin-review-list-row > div {
+[data-admin-review-page] .admin-review-list-row > div {
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: 170px;
@@ -12485,7 +12531,7 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     overflow: hidden;
 }
 
-[data-admin-review-center] .admin-review-list-row h3 {
+[data-admin-review-page] .admin-review-list-row h3 {
     margin-bottom: 0;
     width: 190px;
     max-height: 58px;
@@ -12495,7 +12541,7 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     overflow-wrap: anywhere;
 }
 
-[data-admin-review-center] .admin-review-list-row p {
+[data-admin-review-page] .admin-review-list-row p {
     min-width: 0;
     max-height: 58px;
     font-size: 0.92rem;
@@ -12504,31 +12550,31 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     overflow-wrap: anywhere;
 }
 
-[data-admin-review-center] .admin-review-list-row p strong {
+[data-admin-review-page] .admin-review-list-row p strong {
     display: block;
     color: var(--color-muted);
     font-size: 0.8rem;
     line-height: 1.2;
 }
 
-[data-admin-review-center] .admin-review-list-row p {
+[data-admin-review-page] .admin-review-list-row p {
     padding-left: 8px;
     border-left: 1px solid var(--color-border);
 }
 
-[data-admin-review-center] .admin-review-list-row .admin-duplicate-summary {
+[data-admin-review-page] .admin-review-list-row .admin-duplicate-summary {
     width: 220px;
     max-height: 58px;
     overflow: auto;
 }
 
-[data-admin-review-center] .admin-review-list-row .admin-duplicate-summary p {
+[data-admin-review-page] .admin-review-list-row .admin-duplicate-summary p {
     max-height: none;
     padding: 6px 8px;
     border-left: 0;
 }
 
-[data-admin-review-center] .admin-review-list-row p a:not(.mapboxgl-ctrl-logo) {
+[data-admin-review-page] .admin-review-list-row p a:not(.mapboxgl-ctrl-logo) {
     display: inline;
     min-height: 0;
     padding: 0;
@@ -12545,13 +12591,13 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     text-underline-offset: 2px;
 }
 
-[data-admin-review-center] .admin-review-list-row p a:not(.mapboxgl-ctrl-logo):hover,
-[data-admin-review-center] .admin-review-list-row p a:not(.mapboxgl-ctrl-logo):focus {
+[data-admin-review-page] .admin-review-list-row p a:not(.mapboxgl-ctrl-logo):hover,
+[data-admin-review-page] .admin-review-list-row p a:not(.mapboxgl-ctrl-logo):focus {
     background: transparent;
     box-shadow: none;
 }
 
-[data-admin-review-center] .admin-review-list-row form {
+[data-admin-review-page] .admin-review-list-row form {
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: max-content;
@@ -12562,14 +12608,14 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     overflow: visible;
 }
 
-[data-admin-review-center] .admin-review-list-row form textarea,
-[data-admin-review-center] .admin-review-list-row form select,
-[data-admin-review-center] .admin-review-list-row form input:not([type="checkbox"]):not([type="hidden"]) {
+[data-admin-review-page] .admin-review-list-row form textarea,
+[data-admin-review-page] .admin-review-list-row form select,
+[data-admin-review-page] .admin-review-list-row form input:not([type="checkbox"]):not([type="hidden"]) {
     width: 170px;
     min-width: 0;
 }
 
-[data-admin-review-center] .admin-review-list-row form textarea {
+[data-admin-review-page] .admin-review-list-row form textarea {
     width: 190px;
     min-height: 42px;
     max-height: 42px;
@@ -12578,8 +12624,8 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     transition: width 0.16s ease, min-height 0.16s ease, max-height 0.16s ease, box-shadow 0.16s ease;
 }
 
-[data-admin-review-center] .admin-review-list-row.is-editing-notes form textarea[name="admin_notes"],
-[data-admin-review-center] .admin-review-list-row form textarea[name="admin_notes"]:focus {
+[data-admin-review-page] .admin-review-list-row.is-editing-notes form textarea[name="admin_notes"],
+[data-admin-review-page] .admin-review-list-row form textarea[name="admin_notes"]:focus {
     position: relative;
     z-index: 5;
     width: 420px;
@@ -12590,28 +12636,28 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
     box-shadow: var(--shadow-lg);
 }
 
-[data-admin-review-center] .admin-review-list-row form label,
-[data-admin-review-center] .admin-review-list-row form .form-help,
-[data-admin-review-center] .admin-review-list-row .admin-suggestion-review-actions,
-[data-admin-review-center] .admin-review-list-row .admin-import-review-actions,
-[data-admin-review-center] .admin-review-list-row .admin-readiness-actions,
-[data-admin-review-center] .admin-review-list-row .admin-recovery-review-actions {
+[data-admin-review-page] .admin-review-list-row form label,
+[data-admin-review-page] .admin-review-list-row form .form-help,
+[data-admin-review-page] .admin-review-list-row .admin-suggestion-review-actions,
+[data-admin-review-page] .admin-review-list-row .admin-import-review-actions,
+[data-admin-review-page] .admin-review-list-row .admin-readiness-actions,
+[data-admin-review-page] .admin-review-list-row .admin-recovery-review-actions {
     grid-column: auto;
 }
 
-[data-admin-review-center] .admin-review-list-row .admin-suggestion-review-actions,
-[data-admin-review-center] .admin-review-list-row .admin-import-review-actions,
-[data-admin-review-center] .admin-review-list-row .admin-readiness-actions,
-[data-admin-review-center] .admin-review-list-row .admin-recovery-review-actions {
+[data-admin-review-page] .admin-review-list-row .admin-suggestion-review-actions,
+[data-admin-review-page] .admin-review-list-row .admin-import-review-actions,
+[data-admin-review-page] .admin-review-list-row .admin-readiness-actions,
+[data-admin-review-page] .admin-review-list-row .admin-recovery-review-actions {
     display: flex;
     flex-wrap: nowrap;
     gap: 6px;
 }
 
-[data-admin-review-center] .admin-review-list-row .admin-suggestion-review-actions button,
-[data-admin-review-center] .admin-review-list-row .admin-import-review-actions button,
-[data-admin-review-center] .admin-review-list-row .admin-readiness-actions button,
-[data-admin-review-center] .admin-review-list-row .admin-recovery-review-actions button {
+[data-admin-review-page] .admin-review-list-row .admin-suggestion-review-actions button,
+[data-admin-review-page] .admin-review-list-row .admin-import-review-actions button,
+[data-admin-review-page] .admin-review-list-row .admin-readiness-actions button,
+[data-admin-review-page] .admin-review-list-row .admin-recovery-review-actions button {
     min-height: 34px;
     padding: 7px 11px;
     font-size: 0.88rem;
@@ -14043,6 +14089,21 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
         mask-image: url("../images/SVG/trophy.svg");
     }
 
+    .mobile-app-tab-icon-locations {
+        -webkit-mask-image: url("../images/SVG/pin.svg");
+        mask-image: url("../images/SVG/pin.svg");
+    }
+
+    .mobile-app-tab-icon-reports {
+        -webkit-mask-image: url("../images/SVG/fire.svg");
+        mask-image: url("../images/SVG/fire.svg");
+    }
+
+    .mobile-app-tab-icon-moderation {
+        -webkit-mask-image: url("../images/SVG/trophy.svg");
+        mask-image: url("../images/SVG/trophy.svg");
+    }
+
     .mobile-app-tab-icon-settings {
         display: inline-flex;
         align-items: center;
@@ -14578,7 +14639,7 @@ a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
         overflow-x: hidden;
     }
 
-    [data-admin-review-center].admin-page {
+    [data-admin-review-page].admin-page {
         width: 100%;
         max-width: 100%;
     }
@@ -17747,8 +17808,146 @@ a.text-link:focus,
     white-space: nowrap;
 }
 
+.admin-report-card {
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    margin-bottom: 12px;
+}
+
+.admin-report-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.admin-report-card-body {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: start;
+}
+
+@media (max-width: 600px) {
+    .admin-report-card-body {
+        grid-template-columns: 1fr;
+    }
+}
+
+.admin-report-card-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-report-card-links a {
+    font-size: 0.82rem;
+}
+
+.admin-report-card form textarea {
+    width: 100%;
+    min-height: 48px;
+    font-size: 0.82rem;
+    resize: vertical;
+}
+
+.admin-report-type-badge {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--glass-surface);
+    color: var(--color-muted);
+    white-space: nowrap;
+}
+
+.admin-report-filter-bar {
+    margin-bottom: 12px;
+}
+
+.admin-report-counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.mobile-actions-section-label {
+    display: block;
+    padding: 8px 16px 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-muted);
+    pointer-events: none;
+}
+
+.admin-location-detail {
+    display: grid;
+    gap: 16px;
+}
+
+.admin-location-detail-form {
+    display: grid;
+    gap: 12px;
+}
+
+.admin-location-detail-form .admin-field {
+    display: grid;
+    gap: 4px;
+}
+
+.admin-location-detail-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.admin-location-metadata {
+    display: grid;
+    gap: 4px;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+.admin-location-metadata dt {
+    font-weight: 700;
+    color: var(--color-heading);
+}
+
+.admin-location-metadata dd {
+    margin: 0 0 8px;
+}
+
+.admin-location-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-location-history {
+    display: grid;
+    gap: 4px;
+    font-size: 0.85rem;
+}
+
+.admin-location-history-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
 @media (max-width: 760px) {
-    [data-admin-review-center].business-portal {
+    [data-admin-review-page].business-portal {
         width: 100%;
         padding: 18px 16px 96px;
     }

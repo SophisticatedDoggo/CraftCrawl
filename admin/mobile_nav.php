@@ -2,26 +2,26 @@
 $craftcrawl_admin_nav_page = basename($_SERVER['SCRIPT_NAME'] ?? '');
 
 $craftcrawl_admin_nav_is_dashboard = $craftcrawl_admin_nav_page === 'dashboard.php';
-$craftcrawl_admin_nav_is_accounts = in_array($craftcrawl_admin_nav_page, ['accounts.php', 'account_details.php'], true);
-$craftcrawl_admin_nav_is_reviews = $craftcrawl_admin_nav_page === 'reviews.php';
-$craftcrawl_admin_nav_is_content = $craftcrawl_admin_nav_page === 'content.php';
+$craftcrawl_admin_nav_is_locations = in_array($craftcrawl_admin_nav_page, ['submissions.php', 'import_review.php', 'readiness.php', 'recovery.php', 'location_detail.php', 'location_hours.php', 'import_locations.php'], true);
+$craftcrawl_admin_nav_is_reports = $craftcrawl_admin_nav_page === 'reports.php';
+$craftcrawl_admin_nav_is_moderation = in_array($craftcrawl_admin_nav_page, ['reviews.php', 'content.php'], true);
 ?>
 <nav data-area-persistent-ui class="mobile-app-tabbar admin-mobile-tabbar" aria-label="Admin navigation">
     <a class="mobile-app-tab<?php echo $craftcrawl_admin_nav_is_dashboard ? ' is-active' : ''; ?>" href="dashboard.php">
         <span class="mobile-app-tab-icon mobile-app-tab-icon-dashboard" aria-hidden="true"></span>
-        <span>Home</span>
+        <span>Dashboard</span>
     </a>
-    <a class="mobile-app-tab<?php echo $craftcrawl_admin_nav_is_accounts ? ' is-active' : ''; ?>" href="accounts.php">
-        <span class="mobile-app-tab-icon mobile-app-tab-icon-accounts" aria-hidden="true"></span>
-        <span>Accounts</span>
+    <a class="mobile-app-tab<?php echo $craftcrawl_admin_nav_is_locations ? ' is-active' : ''; ?>" href="submissions.php">
+        <span class="mobile-app-tab-icon mobile-app-tab-icon-locations" aria-hidden="true"></span>
+        <span>Locations</span>
     </a>
-    <a class="mobile-app-tab<?php echo $craftcrawl_admin_nav_is_reviews ? ' is-active' : ''; ?>" href="reviews.php">
-        <span class="mobile-app-tab-icon mobile-app-tab-icon-reviews" aria-hidden="true"></span>
-        <span>Reviews</span>
+    <a class="mobile-app-tab<?php echo $craftcrawl_admin_nav_is_reports ? ' is-active' : ''; ?>" href="reports.php">
+        <span class="mobile-app-tab-icon mobile-app-tab-icon-reports" aria-hidden="true"></span>
+        <span>Reports</span>
     </a>
-    <a class="mobile-app-tab<?php echo $craftcrawl_admin_nav_is_content ? ' is-active' : ''; ?>" href="content.php">
-        <span class="mobile-app-tab-icon mobile-app-tab-icon-friends" aria-hidden="true"></span>
-        <span>Content</span>
+    <a class="mobile-app-tab<?php echo $craftcrawl_admin_nav_is_moderation ? ' is-active' : ''; ?>" href="reviews.php">
+        <span class="mobile-app-tab-icon mobile-app-tab-icon-moderation" aria-hidden="true"></span>
+        <span>Moderation</span>
     </a>
     <button type="button" class="mobile-app-tab mobile-app-menu-tab" data-mobile-actions-toggle aria-expanded="false" aria-label="Open admin menu">
         <span class="mobile-app-tab-icon mobile-app-tab-icon-menu" aria-hidden="true">

@@ -121,45 +121,11 @@ if (!empty($account['disabledAt'])) {
 } elseif ($account_type !== 'admin' && empty($account['emailVerifiedAt'])) {
     $status_label = 'Unverified';
 }
+$admin_page_title = 'Account Details';
+$admin_page_subtitle = $account['account_name'];
+$admin_page_extra_scripts = ['../js/admin_review_edit_toggle.js'];
+include __DIR__ . '/admin_header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CraftCrawl | Account Details</title>
-    <script src="../js/theme_init.js?v=<?php echo filemtime(__DIR__ . '/../js/theme_init.js'); ?>"></script>
-    <link rel="stylesheet" href="../css/style.css?v=<?php echo filemtime(__DIR__ . '/../css/style.css'); ?>">
-    <?php require_once dirname(__DIR__) . '/lib/google_analytics.php'; echo craftcrawl_google_analytics_tag(); ?>
-</head>
-<body>
-    <div data-area-page-content>
-    <main class="business-portal admin-page">
-        <header class="business-portal-header">
-            <div>
-                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
-                <div>
-                    <h1>Account Details</h1>
-                    <p><?php echo craftcrawl_admin_escape($account['account_name']); ?></p>
-                </div>
-            </div>
-            <div class="business-header-actions mobile-actions-menu business-actions-menu" data-mobile-actions-menu>
-                <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open admin menu">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-                <div class="mobile-actions-panel" data-mobile-actions-panel>
-                    <a href="dashboard.php">Dashboard</a>
-                    <a href="accounts.php">Accounts</a>
-                    <a href="reviews.php">Reviews</a>
-                    <form action="../logout.php" method="POST">
-                        <?php echo craftcrawl_csrf_input(); ?>
-                        <button type="submit">Logout</button>
-                    </form>
-                </div>
-            </div>
-        </header>
 
         <?php if ($message === 'password_saved') : ?>
             <p class="form-message form-message-success">Password saved.</p>
@@ -247,13 +213,4 @@ if (!empty($account['disabledAt'])) {
                 </form>
             </details>
         </section>
-    </main>
-    </div>
-    <?php include __DIR__ . '/mobile_nav.php'; ?>
-    <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
-    <script src="../js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/../js/depth_animations.js'); ?>"></script>
-    <script src="../js/admin_review_edit_toggle.js?v=<?php echo filemtime(__DIR__ . '/../js/admin_review_edit_toggle.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'admin', home: 'dashboard.php', routes: ['dashboard.php','accounts.php','reviews.php','content.php','account_details.php','review_center.php','location_hours.php','import_locations.php'], active: { 'dashboard.php':'dashboard', 'accounts.php':'accounts', 'account_details.php':'accounts', 'reviews.php':'reviews', 'content.php':'content', 'review_center.php':'dashboard', 'location_hours.php':'dashboard', 'import_locations.php':'dashboard' } };</script>
-    <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
-</body>
-</html>
+<?php include __DIR__ . '/admin_footer.php'; ?>

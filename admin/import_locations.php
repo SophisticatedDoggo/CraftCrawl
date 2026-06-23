@@ -200,26 +200,11 @@ $recent_google_operations = $conn->query("
     ORDER BY last_batch_id DESC
     LIMIT 10
 ");
+$admin_page_title = 'Import Locations';
+$admin_page_subtitle = 'Run Google Places batches and import individual locations.';
+$admin_page_extra_scripts = ['../js/admin_google_import_tiles.js'];
+include __DIR__ . '/admin_header.php';
 ?>
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CraftCrawl | Import Locations</title>
-    <link rel="stylesheet" href="../css/style.css?v=<?php echo filemtime(__DIR__ . '/../css/style.css'); ?>">
-    <?php require_once dirname(__DIR__) . '/lib/google_analytics.php'; echo craftcrawl_google_analytics_tag(); ?>
-</head>
-<body>
-    <div data-area-page-content>
-    <main class="business-portal admin-page">
-        <header class="business-portal-header">
-            <h1>Import Locations</h1>
-            <div>
-                <a href="review_center.php">Approval Center</a>
-                <a href="dashboard.php">Dashboard</a>
-            </div>
-        </header>
 
         <section class="admin-panel" data-google-import-tiles data-tile-catalog="<?php echo import_escape(json_encode($google_tile_catalog)); ?>">
             <h2>Run Google Places Batch</h2>
@@ -265,7 +250,7 @@ $recent_google_operations = $conn->query("
                 </div>
                 <label><input type="checkbox" name="google_dry_run" value="1" <?php echo $google_dry_run ? 'checked' : ''; ?>> Dry run only</label>
                 <button type="submit">Run Google Import</button>
-                <a href="review_center.php?import_provider=google">Review Google imports</a>
+                <a href="import_review.php?import_provider=google">Review Google imports</a>
             </form>
             <p id="google_tile_count_info"><?php echo import_escape($google_state); ?> has <?php echo import_escape(count($google_tiles)); ?> import tile<?php echo count($google_tiles) === 1 ? '' : 's'; ?>, starting with priority city/metro seeds followed by a shape-filtered coarse grid. Tile limit runs from the first tile through that number.</p>
             <p class="form-help">Imports run as a server background worker when PHP exec() is available. If background launch is unavailable, this page falls back to small browser work requests and can resume queued or running operations when you return.</p>
@@ -388,7 +373,7 @@ $recent_google_operations = $conn->query("
                             <?php import_render_duplicate_summary($duplicates); ?>
                         </div>
                         <?php if (empty($duplicates['hard_block'])) : ?>
-                            <form method="POST" action="review_center.php">
+                            <form method="POST" action="import_review.php">
                                 <?php echo craftcrawl_csrf_input(); ?>
                                 <input type="hidden" name="form_action" value="import_location">
                                 <input type="hidden" name="source_provider" value="google">
@@ -470,7 +455,7 @@ $recent_google_operations = $conn->query("
                             <?php import_render_duplicate_summary($duplicates); ?>
                         </div>
                         <?php if (empty($duplicates['hard_block'])) : ?>
-                            <form method="POST" action="review_center.php">
+                            <form method="POST" action="import_review.php">
                                 <?php echo craftcrawl_csrf_input(); ?>
                                 <input type="hidden" name="form_action" value="import_location">
                                 <input type="hidden" name="source_provider" value="mapbox">
@@ -493,13 +478,5 @@ $recent_google_operations = $conn->query("
                 <?php endforeach; ?>
             </section>
         <?php endif; ?>
-    </main>
-    </div>
-    <?php include __DIR__ . '/mobile_nav.php'; ?>
-    <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
-    <script src="../js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/../js/depth_animations.js'); ?>"></script>
-    <script src="../js/admin_google_import_tiles.js?v=<?php echo filemtime(__DIR__ . '/../js/admin_google_import_tiles.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'admin', home: 'dashboard.php', routes: ['dashboard.php','accounts.php','reviews.php','content.php','account_details.php','review_center.php','location_hours.php','import_locations.php'], active: { 'dashboard.php':'dashboard', 'accounts.php':'accounts', 'account_details.php':'accounts', 'reviews.php':'reviews', 'content.php':'content', 'review_center.php':'dashboard', 'location_hours.php':'dashboard', 'import_locations.php':'dashboard' } };</script>
-    <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
-</body>
-</html>
+
+<?php include __DIR__ . '/admin_footer.php'; ?>
