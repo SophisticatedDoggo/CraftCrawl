@@ -2,20 +2,32 @@ var craftcrawlSubtabNavSelector = [
     '.business-subtab-nav',
     '.profile-subtab-nav',
     '.quest-subtab-nav',
-    '.friends-subtab-nav'
+    '.friends-subtab-nav',
+    '.analytics-mode-tabs'
 ].join(', ');
 
+var craftcrawlObservedSubtabNavs = new WeakSet();
+var craftcrawlSubtabResizeObserver = typeof ResizeObserver === 'function'
+    ? new ResizeObserver(function (entries) {
+        entries.forEach(function (entry) {
+            if (!entry.contentRect.width || !entry.contentRect.height) return;
+            entry.target.classList.remove('is-subtab-thumb-ready');
+            craftcrawlUpdateSubtabThumb(entry.target, false);
+        });
+    })
+    : null;
+
 function craftcrawlUpdateSubtabThumb(nav, animate) {
-    if (!nav) return;
+    if (!nav) return false;
     var active = nav.querySelector('.is-active');
     if (!active) {
         nav.style.setProperty('--subtab-thumb-opacity', '0');
-        return;
+        return false;
     }
 
     var navRect = nav.getBoundingClientRect();
     var btnRect = active.getBoundingClientRect();
-    if (!navRect.width || !btnRect.width) return;
+    if (!navRect.width || !btnRect.width) return false;
 
     if (animate && !nav.classList.contains('is-subtab-thumb-ready')) {
         nav.classList.add('is-subtab-thumb-ready');
@@ -26,6 +38,7 @@ function craftcrawlUpdateSubtabThumb(nav, animate) {
     nav.style.setProperty('--subtab-thumb-width', btnRect.width + 'px');
     nav.style.setProperty('--subtab-thumb-height', btnRect.height + 'px');
     nav.style.setProperty('--subtab-thumb-opacity', '1');
+    return true;
 }
 
 window.CraftCrawlUpdateSubtabThumb = craftcrawlUpdateSubtabThumb;
@@ -46,9 +59,18 @@ function craftcrawlFindSubtabNavs(root) {
     return navs;
 }
 
+function craftcrawlWatchSubtabNav(nav) {
+    if (!craftcrawlSubtabResizeObserver || craftcrawlObservedSubtabNavs.has(nav)) return;
+    craftcrawlObservedSubtabNavs.add(nav);
+    craftcrawlSubtabResizeObserver.observe(nav);
+}
+
 window.CraftCrawlInitSubtabThumbs = function (root) {
+    var navs = craftcrawlFindSubtabNavs(root);
+    navs.forEach(craftcrawlWatchSubtabNav);
+
     requestAnimationFrame(function () {
-        craftcrawlFindSubtabNavs(root).forEach(function (nav) {
+        navs.forEach(function (nav) {
             craftcrawlUpdateSubtabThumb(nav, false);
         });
     });
@@ -128,3 +150,46 @@ window.addEventListener('craftcrawl:user-tab-changed', function () {
 document.addEventListener('craftcrawl:user-shell-navigated', function (event) {
     CraftCrawlInitSubtabThumbs(event.target);
 });
+
+window.addEventListener('pageshow', function () {
+    CraftCrawlInitSubtabThumbs();
+});
+
+window.addEventListener('load', function () {
+    CraftCrawlInitSubtabThumbs();
+});
+
+if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () {
+        CraftCrawlInitSubtabThumbs();
+    });
+}
+
+if (typeof MutationObserver === 'function') {
+    var craftcrawlSubtabMutationObserver = new MutationObserver(function (records) {
+        records.forEach(function (record) {
+            if (record.type === 'attributes') {
+                var revealedRoot = record.target;
+                if (!revealedRoot.hidden
+                    && (revealedRoot.matches(craftcrawlSubtabNavSelector)
+                        || revealedRoot.querySelector(craftcrawlSubtabNavSelector))) {
+                    CraftCrawlInitSubtabThumbs(revealedRoot);
+                }
+                return;
+            }
+
+            record.addedNodes.forEach(function (node) {
+                if (!(node instanceof Element)) return;
+                if (node.matches(craftcrawlSubtabNavSelector) || node.querySelector(craftcrawlSubtabNavSelector)) {
+                    CraftCrawlInitSubtabThumbs(node);
+                }
+            });
+        });
+    });
+    craftcrawlSubtabMutationObserver.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['hidden']
+    });
+}
