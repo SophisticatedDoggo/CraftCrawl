@@ -18471,15 +18471,15 @@ a.text-link:focus,
     position: relative;
 }
 
-.friends-feed-item:has(> .post-menu) {
-    padding-right: 36px;
-}
-
 .friends-feed-item > .post-menu {
     position: absolute;
     top: 6px;
     right: 6px;
     z-index: 2;
+}
+
+.friends-feed-item:has(> .post-menu) > .feed-item-content {
+    padding-right: 30px;
 }
 
 .feed-thread-post .post-menu {
