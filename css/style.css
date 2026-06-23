@@ -1947,15 +1947,18 @@ a.text-link:focus {
     max-width: none;
     position: relative;
     display: grid;
-    gap: 8px;
+    gap: 9px;
     min-width: 220px;
-    padding: 14px 18px 13px 24px;
-    border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
-    border-radius: var(--radius-md);
+    padding: 17px 20px 16px 26px;
+    border: 1px solid color-mix(in srgb, var(--color-primary) 34%, var(--color-border));
+    border-radius: var(--radius-lg);
     background:
-        var(--glass-surface),
-        var(--color-surface);
-    box-shadow: var(--glass-shadow);
+        radial-gradient(circle at 9% 48%, color-mix(in srgb, var(--color-primary) 20%, transparent) 0, transparent 32%),
+        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--color-accent-light) 15%, transparent) 0, transparent 42%),
+        linear-gradient(135deg, color-mix(in srgb, var(--color-surface) 92%, var(--color-primary)) 0%, var(--color-surface) 68%);
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb, #fff 52%, transparent),
+        0 15px 34px color-mix(in srgb, var(--color-primary) 15%, transparent);
     overflow: hidden;
 }
 
@@ -1966,6 +1969,7 @@ a.text-link:focus {
     z-index: 1;
     align-self: center;
     margin: 7px 10px 7px 12px;
+    filter: drop-shadow(0 6px 9px color-mix(in srgb, var(--color-primary) 28%, transparent));
 }
 
 @media (max-width: 760px) {
@@ -1973,7 +1977,7 @@ a.text-link:focus {
         grid-template-columns: max-content minmax(0, 1fr);
         align-items: center;
         column-gap: 14px;
-        padding: 13px 14px 12px 20px;
+        padding: 16px 15px 14px 21px;
     }
 
     .portal-level-avatar {
@@ -2019,8 +2023,9 @@ a.text-link:focus {
     top: 0;
     bottom: 0;
     left: 0;
-    width: 4px;
-    background: var(--color-primary);
+    width: 5px;
+    background: linear-gradient(180deg, var(--color-accent-light), var(--color-primary) 44%, var(--color-primary-dark));
+    box-shadow: 2px 0 12px color-mix(in srgb, var(--color-primary) 28%, transparent);
 }
 
 .portal-level-summary > div:first-of-type strong,
@@ -2032,7 +2037,9 @@ a.text-link:focus {
 
 .portal-level-summary > div:first-of-type strong {
     color: var(--color-primary);
-    font-size: 1.35rem;
+    font-size: 1.42rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
     line-height: 1;
 }
 
@@ -2043,7 +2050,58 @@ a.text-link:focus {
 }
 
 .portal-level-summary > div:first-of-type span {
+    margin-top: 3px;
     font-weight: 650;
+    letter-spacing: 0.01em;
+}
+
+.portal-level-summary > p:not(.next-reward-preview) {
+    font-variant-numeric: tabular-nums;
+    font-weight: 650;
+}
+
+.portal-level-summary .level-progress-bar {
+    height: 11px;
+    border-color: color-mix(in srgb, var(--color-primary) 22%, var(--color-border));
+    background: color-mix(in srgb, var(--color-surface-muted) 82%, var(--color-surface));
+    box-shadow: inset 0 1px 3px color-mix(in srgb, var(--color-text) 12%, transparent);
+}
+
+.portal-level-summary .level-progress-bar span {
+    position: relative;
+    background: linear-gradient(90deg, var(--color-primary-dark), var(--color-primary) 58%, var(--color-accent-light));
+    box-shadow: 0 0 12px color-mix(in srgb, var(--color-primary) 38%, transparent);
+}
+
+.portal-level-summary .level-progress-bar span::after {
+    content: "";
+    position: absolute;
+    inset: 1px 3px auto;
+    height: 3px;
+    border-radius: 999px;
+    background: color-mix(in srgb, #fff 42%, transparent);
+}
+
+.portal-level-summary .next-reward-preview {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 11px;
+    border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
+    border-left-width: 3px;
+    color: var(--color-text);
+    background: color-mix(in srgb, var(--color-primary) 13%, var(--color-surface));
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 34%, transparent);
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.portal-level-summary .next-reward-preview::before {
+    content: "\2726";
+    flex: 0 0 auto;
+    color: var(--color-primary);
+    font-size: 1rem;
+    line-height: 1;
 }
 
 .level-summary-card {
