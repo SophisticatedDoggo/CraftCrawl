@@ -392,7 +392,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label class="settings-toggle">
                     <input type="checkbox" name="show_feed_activity" value="1" <?php echo $show_feed_activity ? 'checked' : ''; ?>>
                     <span>
-                        <strong>Show My Activity in Friends Feed</strong>
+                        <strong>Show My Activity in the Feed</strong>
                         <small>Allow friends to see your check-ins, level-ups, badge earnings, saved locations, follows, and event RSVPs.</small>
                     </span>
                 </label>

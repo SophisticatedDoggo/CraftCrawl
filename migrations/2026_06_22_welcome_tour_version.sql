@@ -1,0 +1,2 @@
+ALTER TABLE users
+    ADD COLUMN welcomeTourVersion SMALLINT UNSIGNED NOT NULL DEFAULT 0 AFTER welcomeSeenAt;

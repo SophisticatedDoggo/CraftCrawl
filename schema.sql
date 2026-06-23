@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS users (
     feedSeenAt DATETIME,
     socialNotificationsSeenAt DATETIME,
     welcomeSeenAt DATETIME,
+    welcomeTourVersion SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     createdAt DATETIME NOT NULL,
     emailVerifiedAt DATETIME,
     disabledAt DATETIME,

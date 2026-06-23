@@ -16,7 +16,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
     const feed = panel?.querySelector('[data-friends-feed]');
     let feedSentinel = feed?.querySelector('[data-feed-sentinel]') || null;
     const status = root.querySelector('[data-friends-status]');
-    const count = panel?.querySelector('[data-friends-count]');
     const csrfToken = panel?.dataset.csrfToken || managerPage?.dataset.csrfToken || profilePage?.dataset.csrfToken || '';
     let currentStatus = window.CraftCrawlNotificationService
         ? window.CraftCrawlNotificationService.getStatus()
@@ -1440,10 +1439,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
         const items = data.feed || [];
         currentFriendsCache = friends;
 
-        if (count) {
-            count.textContent = friends.length === 1 ? '1 friend' : `${friends.length} friends`;
-        }
-
         renderCurrentFriends(friends);
 
         if (!feed) {
@@ -1451,9 +1446,7 @@ window.CraftCrawlInitFriends = function (scope = document) {
         }
 
         if (!items.length) {
-            feed.innerHTML = friends.length
-                ? '<p>No friend activity yet.</p>'
-                : '<p>Add friends to see level-ups and first-time visits here.</p>';
+            feed.innerHTML = '<p>No feed activity yet. Follow businesses or add friends to start seeing updates here.</p>';
             hasMore = false;
             nextFeedCursor = { before: null, key: null };
             feedPaginationFailed = false;
