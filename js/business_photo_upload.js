@@ -170,7 +170,7 @@ window.CraftCrawlInitPhotoReorder = function (root = document) {
     // Desktop drag and drop
     grid.addEventListener('dragstart', function (e) {
         var card = e.target.closest('.business-photo-card[data-photo-id]');
-        if (!card || !e.target.closest('[data-photo-drag-handle]')) { e.preventDefault(); return; }
+        if (!card) { e.preventDefault(); return; }
         dragCard = card;
         card.classList.add('is-dragging');
         e.dataTransfer.effectAllowed = 'move';
@@ -203,17 +203,29 @@ window.CraftCrawlInitPhotoReorder = function (root = document) {
         card.setAttribute('draggable', 'true');
     });
 
-    // Mobile touch reorder
+    // Mobile touch reorder (long press)
+    var longPressTimer = null;
     grid.addEventListener('touchstart', function (e) {
-        var handle = e.target.closest('[data-photo-drag-handle]');
-        if (!handle) return;
-        var card = handle.closest('.business-photo-card[data-photo-id]');
-        if (!card) return;
+        var card = e.target.closest('.business-photo-card[data-photo-id]');
+        if (!card || e.target.closest('.photo-overlay-btn')) return;
 
-        e.preventDefault();
+        longPressTimer = setTimeout(function () {
+            longPressTimer = null;
+            startTouchDrag(card, e.touches[0]);
+        }, 400);
+    }, { passive: true });
+
+    grid.addEventListener('touchend', function () {
+        if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    });
+
+    grid.addEventListener('touchmove', function () {
+        if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    }, { passive: true });
+
+    function startTouchDrag(card, touch) {
         dragCard = card;
         var rect = card.getBoundingClientRect();
-        var touch = e.touches[0];
         touchOffsetX = touch.clientX - rect.left;
         touchOffsetY = touch.clientY - rect.top;
 
@@ -222,7 +234,7 @@ window.CraftCrawlInitPhotoReorder = function (root = document) {
         touchClone.style.cssText = 'position:fixed;z-index:9999;width:' + rect.width + 'px;height:' + rect.height + 'px;left:' + (touch.clientX - touchOffsetX) + 'px;top:' + (touch.clientY - touchOffsetY) + 'px;opacity:0.85;pointer-events:none;';
         document.body.appendChild(touchClone);
         card.classList.add('is-dragging');
-    }, { passive: false });
+    }
 
     document.addEventListener('touchmove', function (e) {
         if (!dragCard || !touchClone) return;

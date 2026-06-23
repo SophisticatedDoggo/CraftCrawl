@@ -226,6 +226,16 @@ window.CraftCrawlInitBusinessCalendar = function (root = document) {
     }
     requestAnimationFrame(function () {
         window.CraftCrawlUpdateSubtabThumb?.(tabs, false);
+        if (saved === 'agenda') {
+            var todayStr = new Date().toISOString().slice(0, 10);
+            var todayHeader = root.querySelector('[data-agenda-date="' + todayStr + '"]');
+            if (todayHeader) {
+                todayHeader.scrollIntoView({ block: 'start' });
+            } else {
+                var firstFuture = root.querySelector('.calendar-agenda-group-header:not(:first-child)');
+                if (firstFuture) firstFuture.scrollIntoView({ block: 'start' });
+            }
+        }
     });
 };
 

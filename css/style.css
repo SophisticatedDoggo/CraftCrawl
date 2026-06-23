@@ -6424,6 +6424,7 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
     display: flex;
     gap: 4px;
     padding: 4px;
+    margin-bottom: 20px;
     overflow: hidden;
     position: relative;
     border: 1px solid rgba(255, 255, 255, 0.16);
@@ -9001,6 +9002,29 @@ body.feed-comments-sheet-open {
     background: var(--color-surface-muted);
 }
 
+.analytics-heatmap {
+    position: relative;
+}
+
+.heatmap-tooltip {
+    position: absolute;
+    z-index: 5;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--color-text);
+    color: var(--color-bg);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.16);
+    transform: translateX(-50%) translateY(-100%);
+}
+
+.heatmap-tooltip[hidden] {
+    display: none;
+}
+
 .analytics-trend-badge {
     display: inline-block;
     padding: 2px 8px;
@@ -9069,8 +9093,8 @@ body.feed-comments-sheet-open {
 }
 
 .analytics-mode-tabs {
-    flex-wrap: wrap;
-    width: fit-content;
+    flex-wrap: nowrap;
+    width: 100%;
     margin: 14px 0;
     padding: 4px;
     border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
@@ -9084,7 +9108,8 @@ body.feed-comments-sheet-open {
 }
 
 .analytics-mode-tabs button {
-    min-width: 64px;
+    flex: 1;
+    min-width: 0;
     border: 0;
     border-radius: 999px;
     color: var(--color-muted);
@@ -9173,7 +9198,8 @@ body.feed-comments-sheet-open {
 .analytics-line-chart svg {
     display: block;
     width: 100%;
-    min-height: 260px;
+    min-height: 280px;
+    aspect-ratio: 2 / 1;
 }
 
 .analytics-line-axis {
@@ -11635,6 +11661,10 @@ a.calendar-today-btn:hover:not(.mapboxgl-ctrl-logo) {
     display: flex;
     align-items: flex-end;
     justify-content: center;
+}
+
+.event-detail-modal-overlay[hidden] {
+    display: none;
 }
 
 .event-detail-modal-scrim {

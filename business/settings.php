@@ -154,14 +154,17 @@ $display_palette = in_array($business['display_palette'] ?? '', $allowed_display
 </head>
 <body>
     <div data-area-page-content>
-    <main class="business-portal settings-page">
-        <?php
-        $craftcrawl_business_page = 'settings';
-        $craftcrawl_business_page_title = 'Settings';
-        $craftcrawl_business_name = $business['bName'] ?? 'Business';
-        $craftcrawl_business_approved = false;
-        include __DIR__ . '/portal_header.php';
-        ?>
+    <main class="settings-page">
+        <header class="settings-header">
+            <div>
+                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
+                <div>
+                    <h1>Settings</h1>
+                    <p><?php echo escape_output($business['bName'] ?? 'Business'); ?></p>
+                </div>
+            </div>
+            <a href="business_portal.php">Back</a>
+        </header>
 
         <?php if ($message === 'password_saved') : ?>
             <p class="form-message form-message-success">Password updated.</p>
