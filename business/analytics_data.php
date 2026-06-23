@@ -288,7 +288,11 @@ if ($mode !== 'lifetime') {
     $prev_total_stmt->bind_param('iss', $location_id, $prev_start->format('Y-m-d H:i:s'), $prev_end->format('Y-m-d H:i:s'));
     $prev_total_stmt->execute();
     $prev_total = (int) $prev_total_stmt->get_result()->fetch_assoc()['cnt'];
-    $change_pct = $prev_total > 0 ? round((($total - $prev_total) / $prev_total) * 100, 1) : null;
+    if ($prev_total > 0 && $total > 0) {
+        $change_pct = round((($total - $prev_total) / $prev_total) * 100, 1);
+    } elseif ($prev_total === 0 && $total > 0) {
+        $change_pct = 100.0;
+    }
 }
 
 $summary_cards = [
