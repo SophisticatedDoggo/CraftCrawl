@@ -8092,7 +8092,7 @@ body.feed-comments-sheet-open {
     gap: 12px;
     padding: 18px 0 8px;
     margin: 0;
-    color: var(--color-heading);
+    color: #fff;
     background: var(--color-primary);
     font-size: 15px;
     font-weight: 800;
@@ -8124,7 +8124,7 @@ body.feed-comments-sheet-open {
     min-height: 0;
     padding: calc(18px + env(safe-area-inset-top, 0px)) 14px 8px;
     border-bottom: 1px solid color-mix(in srgb, var(--color-border) 82%, var(--color-primary));
-    color: var(--color-heading);
+    color: #fff;
     background: var(--color-primary);
     box-shadow: 0 12px 20px color-mix(in srgb, var(--color-text) 12%, transparent);
     font-size: 15px;
