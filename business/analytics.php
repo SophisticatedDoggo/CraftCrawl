@@ -3,27 +3,12 @@ require '../login_check.php';
 require_once '../lib/business_context.php';
 include '../db.php';
 require_once '../lib/user_avatar.php';
+require_once '../lib/business_helpers.php';
 
 $selected_location = craftcrawl_require_selected_business_location($conn);
 
 $business_id = !empty($selected_location['legacy_business_id']) ? (int) $selected_location['legacy_business_id'] : null;
 $location_id = (int) $_SESSION['business_location_id'];
-
-function escape_output($value) {
-    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
-}
-
-function format_metric_number($value) {
-    return number_format((int) $value);
-}
-
-function format_checkin_time($value) {
-    if (empty($value)) {
-        return '';
-    }
-
-    return date('M j, g:i A', strtotime($value));
-}
 
 $business_stmt = $conn->prepare("SELECT name AS bName FROM locations WHERE id=?");
 $business_stmt->bind_param("i", $location_id);
@@ -113,37 +98,19 @@ $recent_checkins = $recent_stmt->get_result();
 <body>
     <div data-area-page-content>
     <main class="business-portal">
-        <header class="business-portal-header">
-            <div>
-                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
-                <div>
-                    <h1>Stats</h1>
-                    <p><?php echo escape_output($business['bName']); ?></p>
-                </div>
-            </div>
-            <div class="business-header-actions mobile-actions-menu business-actions-menu" data-mobile-actions-menu>
-                <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-                <div class="mobile-actions-panel" data-mobile-actions-panel>
-                    <a href="locations.php">Locations</a>
-                    <a href="events.php">Events</a>
-                    <a href="settings.php">Settings</a>
-                    <form action="../logout.php" method="POST">
-                        <?php echo craftcrawl_csrf_input(); ?>
-                        <button type="submit">Logout</button>
-                    </form>
-                </div>
-            </div>
-        </header>
+        <?php
+        $craftcrawl_business_page = 'analytics';
+        $craftcrawl_business_page_title = 'Stats';
+        $craftcrawl_business_name = $business['bName'];
+        $craftcrawl_business_approved = false;
+        include __DIR__ . '/portal_header.php';
+        ?>
 
         <section class="analytics-hero">
             <div>
                 <p class="analytics-eyebrow">Today</p>
-                <h2><?php echo escape_output(format_metric_number($today_checkins)); ?> check-ins</h2>
-                <p><?php echo escape_output(format_metric_number($today_first_time)); ?> first-time and <?php echo escape_output(format_metric_number($today_repeat)); ?> repeat visits today.</p>
+                <h2><?php echo escape_output(craftcrawl_format_metric_number($today_checkins)); ?> check-ins</h2>
+                <p><?php echo escape_output(craftcrawl_format_metric_number($today_first_time)); ?> first-time and <?php echo escape_output(craftcrawl_format_metric_number($today_repeat)); ?> repeat visits today.</p>
             </div>
             <div class="analytics-hero-stats" aria-label="Today quick stats">
                 <div class="analytics-hero-stat">
@@ -151,19 +118,19 @@ $recent_checkins = $recent_stmt->get_result();
                     <span>first-time rate</span>
                 </div>
                 <div class="analytics-hero-stat">
-                    <strong><?php echo escape_output(format_metric_number($today_unique_visitors)); ?></strong>
+                    <strong><?php echo escape_output(craftcrawl_format_metric_number($today_unique_visitors)); ?></strong>
                     <span>unique visitors</span>
                 </div>
                 <div class="analytics-hero-stat">
-                    <strong><?php echo escape_output(format_metric_number($today_xp)); ?></strong>
+                    <strong><?php echo escape_output(craftcrawl_format_metric_number($today_xp)); ?></strong>
                     <span>XP awarded</span>
                 </div>
                 <div class="analytics-hero-stat">
-                    <strong><?php echo escape_output(format_metric_number($total_followers)); ?></strong>
+                    <strong><?php echo escape_output(craftcrawl_format_metric_number($total_followers)); ?></strong>
                     <span>followers</span>
                 </div>
                 <div class="analytics-hero-stat">
-                    <strong><?php echo escape_output(format_metric_number($total_saves)); ?></strong>
+                    <strong><?php echo escape_output(craftcrawl_format_metric_number($total_saves)); ?></strong>
                     <span>saves</span>
                 </div>
             </div>
@@ -203,8 +170,9 @@ $recent_checkins = $recent_stmt->get_result();
                     <p><span data-analytics-period-label>This month</span> &middot; <strong data-analytics-total-label>Loading</strong></p>
                     <button type="button" data-analytics-next aria-label="Next period" disabled>›</button>
                 </div>
-                <div class="analytics-line-chart" data-analytics-chart>
+                <div class="analytics-line-chart" data-analytics-chart style="position: relative;">
                     <p class="analytics-empty">Loading analytics.</p>
+                    <div class="analytics-tooltip" data-analytics-tooltip hidden></div>
                 </div>
                 <div class="analytics-metric-grid analytics-range-metrics" data-analytics-summary-cards aria-label="Selected range summary">
                     <p class="analytics-empty">Loading summary.</p>
@@ -235,12 +203,12 @@ $recent_checkins = $recent_stmt->get_result();
                                 <?php echo craftcrawl_render_user_avatar($checkin, 'small'); ?>
                                 <div>
                                     <strong><?php echo escape_output(trim($checkin['fName'] . ' ' . $checkin['lName'])); ?></strong>
-                                    <span><?php echo escape_output(format_checkin_time($checkin['checkedInAt'])); ?></span>
+                                    <span><?php echo escape_output(craftcrawl_format_checkin_time($checkin['checkedInAt'])); ?></span>
                                 </div>
                             </div>
                             <p>
                                 <?php echo $checkin['visit_type'] === 'first_time' ? 'First-time check-in' : 'Repeat check-in'; ?>
-                                &middot; <?php echo escape_output(format_metric_number($checkin['xp_awarded'])); ?> XP
+                                &middot; <?php echo escape_output(craftcrawl_format_metric_number($checkin['xp_awarded'])); ?> XP
                             </p>
                         </article>
                     <?php endwhile; ?>
@@ -250,14 +218,9 @@ $recent_checkins = $recent_stmt->get_result();
     </main>
     </div>
     <?php include __DIR__ . '/mobile_nav.php'; ?>
-    <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
-    <script src="../js/business_analytics.js?v=<?php echo filemtime(__DIR__ . '/../js/business_analytics.js'); ?>"></script>
-    <script src="../js/business_events.js?v=<?php echo filemtime(__DIR__ . '/../js/business_events.js'); ?>"></script>
-    <script src="../js/business_analytics.js?v=<?php echo filemtime(__DIR__ . '/../js/business_analytics.js'); ?>"></script>
-    <script src="../js/business_review_responses.js?v=<?php echo filemtime(__DIR__ . '/../js/business_review_responses.js'); ?>"></script>
-    <script src="../js/business_hours_editor.js?v=<?php echo filemtime(__DIR__ . '/../js/business_hours_editor.js'); ?>"></script>
-    <script src="../js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/../js/business_posts.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','locations.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'locations.php':'locations', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
-    <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
+    <?php
+    $craftcrawl_business_page = 'analytics';
+    include __DIR__ . '/business_scripts.php';
+    ?>
 </body>
 </html>

@@ -5,6 +5,7 @@ require_once '../lib/admin_auth.php';
 require_once '../lib/remember_auth.php';
 require_once '../lib/password_reset.php';
 require_once '../lib/business_account_deletion.php';
+require_once '../lib/business_helpers.php';
 include '../db.php';
 
 $selected_location = craftcrawl_require_selected_business_location($conn);
@@ -24,10 +25,6 @@ $display_palette_options = [
     'barnwood-dark' => 'Barnwood Dark',
 ];
 $allowed_display_palettes = array_keys($display_palette_options);
-
-function escape_output($value) {
-    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
-}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
@@ -158,30 +155,13 @@ $display_palette = in_array($business['display_palette'] ?? '', $allowed_display
 <body>
     <div data-area-page-content>
     <main class="business-portal settings-page">
-        <header class="business-portal-header">
-            <div>
-                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
-                <div>
-                    <h1>Settings</h1>
-                    <p><?php echo escape_output($business['bName'] ?? 'Business'); ?></p>
-                </div>
-            </div>
-            <div class="business-header-actions mobile-actions-menu business-actions-menu" data-mobile-actions-menu>
-                <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-                <div class="mobile-actions-panel" data-mobile-actions-panel>
-                    <a href="locations.php">Locations</a>
-                    <a href="analytics.php">Stats</a>
-                    <form action="../logout.php" method="POST">
-                        <?php echo craftcrawl_csrf_input(); ?>
-                        <button type="submit">Logout</button>
-                    </form>
-                </div>
-            </div>
-        </header>
+        <?php
+        $craftcrawl_business_page = 'settings';
+        $craftcrawl_business_page_title = 'Settings';
+        $craftcrawl_business_name = $business['bName'] ?? 'Business';
+        $craftcrawl_business_approved = false;
+        include __DIR__ . '/portal_header.php';
+        ?>
 
         <?php if ($message === 'password_saved') : ?>
             <p class="form-message form-message-success">Password updated.</p>
@@ -259,14 +239,9 @@ $display_palette = in_array($business['display_palette'] ?? '', $allowed_display
     </main>
     </div>
     <?php include __DIR__ . '/mobile_nav.php'; ?>
-    <script src="../js/palette_switcher.js?v=<?php echo filemtime(__DIR__ . '/../js/palette_switcher.js'); ?>"></script>
-    <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
-    <script src="../js/business_events.js?v=<?php echo filemtime(__DIR__ . '/../js/business_events.js'); ?>"></script>
-    <script src="../js/business_analytics.js?v=<?php echo filemtime(__DIR__ . '/../js/business_analytics.js'); ?>"></script>
-    <script src="../js/business_review_responses.js?v=<?php echo filemtime(__DIR__ . '/../js/business_review_responses.js'); ?>"></script>
-    <script src="../js/business_hours_editor.js?v=<?php echo filemtime(__DIR__ . '/../js/business_hours_editor.js'); ?>"></script>
-    <script src="../js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/../js/business_posts.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','locations.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'locations.php':'locations', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
-    <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
+    <?php
+    $craftcrawl_business_page = 'settings';
+    include __DIR__ . '/business_scripts.php';
+    ?>
 </body>
 </html>

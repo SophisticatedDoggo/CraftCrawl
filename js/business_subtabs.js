@@ -1,5 +1,5 @@
 window.CraftCrawlInitBusinessSubtabs = function (root = document) {
-    var page = root.querySelector('.business-details-page');
+    var page = root.querySelector('.business-details-page') || root.querySelector('.business-portal');
     if (!page || page.dataset.businessSubtabsReady === 'true') return;
     page.dataset.businessSubtabsReady = 'true';
 
@@ -19,7 +19,7 @@ window.CraftCrawlInitBusinessSubtabs = function (root = document) {
         });
 
         var url = new URL(window.location.href);
-        if (target === 'info') {
+        if (target === 'info' || target === 'overview') {
             url.searchParams.delete('tab');
         } else {
             url.searchParams.set('tab', target);

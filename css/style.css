@@ -8146,6 +8146,11 @@ body.feed-comments-sheet-open {
     justify-content: space-between;
     gap: 20px;
     align-items: flex-start;
+    margin-bottom: 0;
+}
+
+.business-portal > .portal-tabs {
+    width: 100%;
     margin-bottom: 24px;
 }
 
@@ -8835,21 +8840,25 @@ body.feed-comments-sheet-open {
     margin: 14px 0;
     padding: 4px;
     border: 1px solid color-mix(in srgb, var(--color-border) 72%, var(--glass-border));
-    border-radius: var(--radius-md);
+    border-radius: 999px;
     background:
         var(--glass-surface),
         color-mix(in srgb, var(--color-surface) 92%, transparent);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
 }
 
 .analytics-mode-tabs button {
-    min-width: 72px;
+    min-width: 64px;
     border: 0;
-    border-radius: var(--radius-sm);
+    border-radius: 999px;
     color: var(--color-muted);
     background: transparent;
     box-shadow: none;
     font-weight: 800;
+    font-size: 13px;
+    transition: color 0.15s ease, background 0.15s ease;
 }
 
 .analytics-mode-tabs button:hover,
@@ -8859,8 +8868,9 @@ body.feed-comments-sheet-open {
 }
 
 .analytics-mode-tabs button.is-active {
-    color: var(--color-primary);
-    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 32%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 16%, transparent);
 }
 
@@ -8938,26 +8948,77 @@ body.feed-comments-sheet-open {
 }
 
 .analytics-line-area {
-    fill: color-mix(in srgb, var(--color-primary) 14%, transparent);
+    fill: url(#analytics-area-gradient);
 }
 
 .analytics-line-path {
     fill: none;
     stroke: var(--color-primary);
-    stroke-width: 4;
+    stroke-width: 3;
     stroke-linecap: round;
     stroke-linejoin: round;
+}
+
+.analytics-line-path-animate {
+    transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.analytics-grid-line {
+    stroke: var(--color-border);
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
+    opacity: 0.5;
+}
+
+.analytics-grid-label {
+    fill: var(--color-muted);
+    font-size: 11px;
+    font-weight: 600;
 }
 
 .analytics-line-point {
     fill: var(--color-surface);
     stroke: var(--color-primary);
     stroke-width: 3;
+    transition: r 0.15s ease;
+}
+
+.analytics-line-point-hit,
+.analytics-line-hit {
+    fill: transparent;
+    stroke: none;
+    cursor: pointer;
+}
+
+.analytics-tooltip {
+    position: absolute;
+    z-index: 5;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--color-text);
+    color: var(--color-bg);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    transform: translateX(-50%);
+}
+
+.analytics-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    margin-left: -5px;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid var(--color-text);
 }
 
 .analytics-line-label {
     fill: var(--color-muted);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
 }
 
@@ -9608,28 +9669,139 @@ body.feed-comments-sheet-open {
 
 .business-photo-upload-form {
     display: grid;
-    gap: 10px;
-    max-width: 520px;
+    gap: 12px;
     margin: 14px 0 18px;
 }
 
-.business-photo-upload-form input {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 8px;
+.photo-drop-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 160px;
+    padding: 28px 20px;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--color-surface-muted) 50%, transparent);
+    color: var(--color-muted);
+    font-size: 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
 }
 
-.business-photo-upload-form button {
-    justify-self: start;
-    width: auto;
-    max-width: 100%;
-    padding: 10px 14px;
+.photo-drop-zone:hover,
+.photo-drop-zone:focus-within {
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface));
+}
+
+.photo-drop-zone.is-drag-over {
+    border-color: var(--color-primary);
+    border-style: solid;
+    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+}
+
+.photo-drop-zone-icon::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 4px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+}
+
+.photo-drop-zone strong {
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.photo-drop-zone.has-photos {
+    min-height: auto;
+    padding: 14px;
+}
+
+.photo-drop-zone.has-photos strong,
+.photo-drop-zone.has-photos span:not(.photo-drop-zone-limit) {
+    display: none;
+}
+
+.photo-drop-zone.has-photos .photo-drop-zone-limit {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.photo-drop-zone.has-photos .photo-drop-zone-limit::before {
+    content: '+ Add more — ';
+}
+
+.photo-drop-zone-limit {
+    font-size: 12px;
+}
+
+.photo-upload-previews {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.photo-preview-item {
+    position: relative;
+    aspect-ratio: 3 / 2;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--color-surface-muted);
+}
+
+.photo-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-preview-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    min-height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(17, 24, 39, 0.72);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.photo-upload-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.photo-upload-actions span {
+    color: var(--color-muted);
+    font-size: 13px;
+    font-weight: 700;
 }
 
 .business-photo-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
 }
 
 .business-photo-grid img {
@@ -9642,18 +9814,79 @@ body.feed-comments-sheet-open {
 
 .business-photo-card {
     position: relative;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
 }
 
 .business-photo-badge {
     position: absolute;
     top: 8px;
     left: 8px;
-    padding: 4px 8px;
+    padding: 5px 10px;
     border-radius: 999px;
-    color: var(--color-surface);
-    background: rgba(17, 24, 39, 0.78);
+    color: #fff;
+    background: var(--color-primary);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.business-photo-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.business-photo-card:hover .business-photo-overlay,
+.business-photo-card:focus-within .business-photo-overlay {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .business-photo-overlay {
+        opacity: 1;
+    }
+}
+
+.photo-overlay-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 34px;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--color-text);
     font-size: 12px;
     font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.photo-overlay-btn:hover {
+    background: #fff;
+}
+
+.photo-overlay-btn-danger {
+    margin-left: auto;
+    background: rgba(220, 38, 38, 0.88);
+    color: #fff;
+}
+
+.photo-overlay-btn-danger:hover {
+    background: rgba(220, 38, 38, 1);
 }
 
 .business-photo-actions {
@@ -10859,6 +11092,247 @@ a.event-calendar-event:focus .event-calendar-event-name {
     justify-self: start;
     width: auto;
     max-width: 100%;
+}
+
+.calendar-nav-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.calendar-nav-btn,
+a.calendar-nav-btn:not(.mapboxgl-ctrl-logo) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 4px;
+    border-radius: 50%;
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+    font-size: 1.4rem;
+    font-weight: 900;
+    line-height: 1;
+    text-decoration: none;
+}
+
+.calendar-nav-btn:hover,
+a.calendar-nav-btn:hover:not(.mapboxgl-ctrl-logo) {
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+}
+
+.calendar-nav-label {
+    flex: 1;
+    text-align: center;
+}
+
+.calendar-nav-label strong {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--color-text);
+}
+
+.calendar-today-btn,
+a.calendar-today-btn:not(.mapboxgl-ctrl-logo) {
+    min-height: 34px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.calendar-today-btn:hover,
+a.calendar-today-btn:hover:not(.mapboxgl-ctrl-logo) {
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+}
+
+.event-calendar-date.is-today {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+}
+
+.event-calendar-dots {
+    display: flex;
+    gap: 3px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+.event-calendar-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-primary);
+}
+
+.event-calendar-dot-more {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--color-primary);
+    line-height: 8px;
+}
+
+.calendar-agenda-view {
+    display: grid;
+    gap: 0;
+}
+
+.calendar-agenda-date-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 12px 0 8px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg);
+    font-size: 14px;
+}
+
+.calendar-agenda-date-header strong {
+    color: var(--color-text);
+    font-weight: 800;
+}
+
+.calendar-agenda-date-header span {
+    color: var(--color-muted);
+    font-weight: 600;
+}
+
+.calendar-agenda-today-badge {
+    padding: 2px 8px;
+    border-radius: 999px;
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.calendar-agenda-event {
+    display: grid;
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+}
+
+.calendar-agenda-event-time {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: var(--color-muted);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.calendar-agenda-event-body strong {
+    display: block;
+    color: var(--color-text);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.calendar-agenda-event-body p {
+    margin: 4px 0 0;
+    color: var(--color-muted);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.calendar-agenda-event-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.calendar-agenda-comment-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    color: var(--color-muted);
+    background: var(--color-surface-muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.calendar-agenda-comment-badge.has-unread {
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+}
+
+.calendar-agenda-comment-badge span {
+    color: var(--color-primary);
+    font-weight: 800;
+}
+
+.calendar-agenda-edit-link,
+a.calendar-agenda-edit-link:not(.mapboxgl-ctrl-logo) {
+    color: var(--color-primary);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.calendar-agenda-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--color-muted);
+}
+
+.calendar-agenda-empty a {
+    display: inline-block;
+    margin-top: 10px;
+}
+
+.calendar-fab {
+    position: fixed;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
+    right: 20px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    min-height: 56px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    font-size: 28px;
+    font-weight: 300;
+    line-height: 1;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22), 0 1px 3px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.calendar-fab:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+    color: var(--color-on-primary);
+    background: var(--color-primary-dark);
 }
 
 .event-form-panel input,

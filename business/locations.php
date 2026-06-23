@@ -2,6 +2,7 @@
 require '../login_check.php';
 include '../db.php';
 require_once '../lib/business_context.php';
+require_once '../lib/business_helpers.php';
 
 if (!isset($_SESSION['business_account_id'])) {
     craftcrawl_redirect('business_login.php');
@@ -11,24 +12,6 @@ $business_account_id = (int) $_SESSION['business_account_id'];
 $locations = craftcrawl_business_account_locations($conn, $business_account_id);
 $pending_submissions = craftcrawl_business_account_pending_submissions($conn, $business_account_id);
 $claims = craftcrawl_business_account_claims($conn, $business_account_id);
-
-function escape_output($value) {
-    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
-}
-
-function format_location_type($type) {
-    $labels = [
-        'brewery' => 'Brewery',
-        'winery' => 'Winery',
-        'cidery' => 'Cidery',
-        'distillery' => 'Distillery',
-        'distilery' => 'Distillery',
-        'meadery' => 'Meadery',
-        'bar' => 'Bar',
-        'social_club' => 'Social Club'
-    ];
-    return $labels[$type] ?? 'Location';
-}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     craftcrawl_verify_csrf();
@@ -72,21 +55,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div data-area-page-content>
     <main class="business-portal">
-        <header class="business-portal-header">
-            <div>
-                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
-                <div>
-                    <h1>Your Locations</h1>
-                    <p>Choose the location you want to manage.</p>
-                </div>
-            </div>
-            <form action="../logout.php" method="POST">
-                <?php echo craftcrawl_csrf_input(); ?>
-                <button type="submit">Logout</button>
-            </form>
-        </header>
+        <?php
+        $craftcrawl_business_page = 'locations';
+        $craftcrawl_business_page_title = 'Your Locations';
+        $craftcrawl_business_name = 'Choose the location you want to manage.';
+        $craftcrawl_business_approved = false;
+        include __DIR__ . '/portal_header.php';
+        ?>
 
-        <section class="admin-panel business-locations-panel business-locations-claim-panel">
+        <section class="business-reviews-panel business-locations-panel business-locations-claim-panel">
             <div>
                 <h2>Add or claim another location</h2>
                 <p>Claim an existing CraftCrawl listing, or submit a new location if it is not listed yet.</p>
@@ -97,16 +74,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </section>
 
-        <section class="admin-panel business-locations-panel">
+        <section class="business-reviews-panel business-locations-panel">
             <?php if (empty($locations)) : ?>
                 <p>You do not have any approved locations to manage yet.</p>
             <?php endif; ?>
 
             <?php foreach ($locations as $location) : ?>
-                <article class="admin-list-item">
+                <article class="business-review-card">
                     <div>
                         <h2><?php echo escape_output($location['name']); ?></h2>
-                        <p><?php echo escape_output(format_location_type($location['location_type'])); ?> · <?php echo escape_output($location['city']); ?>, <?php echo escape_output($location['state']); ?></p>
+                        <p><?php echo escape_output(craftcrawl_format_business_type($location['location_type'])); ?> · <?php echo escape_output($location['city']); ?>, <?php echo escape_output($location['state']); ?></p>
                     </div>
                     <form method="POST" action="">
                         <?php echo craftcrawl_csrf_input(); ?>
@@ -118,13 +95,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </section>
 
         <?php if (!empty($claims)) : ?>
-            <section class="admin-panel business-locations-panel business-locations-status-panel">
+            <section class="business-reviews-panel business-locations-panel business-locations-status-panel">
                 <h2>Claims</h2>
                 <?php foreach ($claims as $claim) : ?>
-                    <article class="admin-list-item">
+                    <article class="business-review-card">
                         <div>
                             <h2><?php echo escape_output($claim['name']); ?></h2>
-                            <p><?php echo escape_output(format_location_type($claim['location_type'])); ?> · <?php echo escape_output($claim['city']); ?>, <?php echo escape_output($claim['state']); ?></p>
+                            <p><?php echo escape_output(craftcrawl_format_business_type($claim['location_type'])); ?> · <?php echo escape_output($claim['city']); ?>, <?php echo escape_output($claim['state']); ?></p>
                             <p>Status: <?php echo escape_output(ucwords(str_replace('_', ' ', $claim['status']))); ?></p>
                             <?php if (!empty($claim['adminNotes'])) : ?>
                                 <p><?php echo nl2br(escape_output($claim['adminNotes'])); ?></p>
@@ -139,13 +116,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <?php if (!empty($pending_submissions)) : ?>
-            <section class="admin-panel business-locations-panel business-locations-status-panel">
+            <section class="business-reviews-panel business-locations-panel business-locations-status-panel">
                 <h2>Pending Submissions</h2>
                 <?php foreach ($pending_submissions as $submission) : ?>
-                    <article class="admin-list-item">
+                    <article class="business-review-card">
                         <div>
                             <h2><?php echo escape_output($submission['name']); ?></h2>
-                            <p><?php echo escape_output(format_location_type($submission['location_type'])); ?> · <?php echo escape_output($submission['city']); ?>, <?php echo escape_output($submission['state']); ?></p>
+                            <p><?php echo escape_output(craftcrawl_format_business_type($submission['location_type'])); ?> · <?php echo escape_output($submission['city']); ?>, <?php echo escape_output($submission['state']); ?></p>
                             <p>Status: <?php echo escape_output(ucwords(str_replace('_', ' ', $submission['submission_review_status']))); ?></p>
                             <?php if ($submission['submission_review_status'] === 'needs_more_info' && !empty($submission['adminNotes'])) : ?>
                                 <p><?php echo nl2br(escape_output($submission['adminNotes'])); ?></p>
@@ -168,8 +145,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </main>
     </div>
     <?php include __DIR__ . '/mobile_nav.php'; ?>
-    <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','locations.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'locations.php':'locations', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
-    <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
+    <?php
+    $craftcrawl_business_page = 'locations';
+    include __DIR__ . '/business_scripts.php';
+    ?>
 </body>
 </html>

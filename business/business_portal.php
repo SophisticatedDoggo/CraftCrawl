@@ -1,6 +1,7 @@
 <?php
 require '../login_check.php';
 require_once '../lib/business_context.php';
+require_once '../lib/business_helpers.php';
 include '../db.php';
 require_once '../lib/user_avatar.php';
 require_once '../lib/business_event_comments.php';
@@ -8,42 +9,6 @@ require_once '../lib/business_event_comments.php';
 $selected_location = craftcrawl_require_selected_business_location($conn);
 
 $message = $_GET['message'] ?? null;
-
-function escape_output($value) {
-    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
-}
-
-function clean_text($value) {
-    return trim(strip_tags($value ?? ''));
-}
-
-function format_business_type($type) {
-    $labels = [
-        'brewery' => 'Brewery',
-        'winery' => 'Winery',
-        'cidery' => 'Cidery',
-        'distillery' => 'Distillery',
-        'distilery' => 'Distillery',
-        'meadery' => 'Meadery',
-        'bar' => 'Bar',
-        'social_club' => 'Social Club'
-    ];
-
-    return $labels[$type] ?? 'Business';
-}
-
-function render_star_rating($rating, $label = '') {
-    $rating_value = max(0, min(5, (float) $rating));
-    $rounded_rating = (int) round($rating_value);
-    $label_text = $label !== '' ? $label : number_format($rating_value, 1) . ' out of 5';
-    $html = '<span class="star-rating" aria-label="' . escape_output($label_text) . '">';
-
-    for ($star = 1; $star <= 5; $star++) {
-        $html .= '<span class="' . ($star <= $rounded_rating ? 'star-filled' : 'star-empty') . '">&#9733;</span>';
-    }
-
-    return $html . '</span>';
-}
 
 require_once '../config.php';
 require_once '../lib/cloudinary_upload.php';
@@ -238,6 +203,17 @@ $photo_stmt = $conn->prepare("
 $photo_stmt->bind_param("i", $location_id);
 $photo_stmt->execute();
 $business_photos = $photo_stmt->get_result();
+
+$today_checkins_stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM user_visits WHERE location_id=? AND DATE(checkedInAt)=CURDATE()");
+$today_checkins_stmt->bind_param("i", $location_id);
+$today_checkins_stmt->execute();
+$today_checkins = (int) $today_checkins_stmt->get_result()->fetch_assoc()['cnt'];
+
+$follower_count_stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM liked_businesses WHERE location_id=?");
+$follower_count_stmt->bind_param("i", $location_id);
+$follower_count_stmt->execute();
+$portal_follower_count = (int) $follower_count_stmt->get_result()->fetch_assoc()['cnt'];
+
 $event_comment_summary = craftcrawl_business_event_unread_comment_summary($conn, (int) $_SESSION['business_account_id'], $location_id, 5);
 
 ?>
@@ -254,35 +230,13 @@ $event_comment_summary = craftcrawl_business_event_unread_comment_summary($conn,
 <body>
     <div data-area-page-content>
     <main class="business-portal">
-        <header class="business-portal-header">
-            <div>
-                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
-                <div>
-                    <h1><?php echo escape_output($business['bName']); ?></h1>
-                    <p><?php echo escape_output(format_business_type($business['bType'])); ?> account dashboard</p>
-                </div>
-            </div>
-            <div class="business-header-actions mobile-actions-menu business-actions-menu" data-mobile-actions-menu>
-                <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-                <div class="mobile-actions-panel" data-mobile-actions-panel>
-                <span class="approval-status <?php echo $business['approved'] ? 'approval-status-approved' : 'approval-status-pending'; ?>">
-                    <?php echo $business['approved'] ? 'Approved' : 'Pending approval'; ?>
-                </span>
-                <a href="analytics.php">Stats</a>
-                <a href="events.php">Events</a>
-                <a href="locations.php">Locations</a>
-                <a href="settings.php">Settings</a>
-                <form action="../logout.php" method="POST">
-                    <?php echo craftcrawl_csrf_input(); ?>
-                    <button type="submit">Logout</button>
-                </form>
-                </div>
-            </div>
-        </header>
+        <?php
+        $craftcrawl_business_page = 'portal';
+        $craftcrawl_business_page_title = $business['bName'];
+        $craftcrawl_business_name = craftcrawl_format_business_type($business['bType']) . ' account dashboard';
+        $craftcrawl_business_approved = !empty($business['approved']);
+        include __DIR__ . '/portal_header.php';
+        ?>
 
         <?php if ($message === 'response_saved') : ?>
             <p class="form-message form-message-success">Your response has been saved.</p>
@@ -308,6 +262,24 @@ $event_comment_summary = craftcrawl_business_event_unread_comment_summary($conn,
             <p class="form-message form-message-success">Check-in message updated.</p>
         <?php endif; ?>
 
+        <div class="friends-summary-grid" style="margin-bottom: 18px;">
+            <article>
+                <strong><?php echo escape_output($today_checkins); ?></strong>
+                <span>Today's Check-ins</span>
+            </article>
+            <article>
+                <strong><?php echo escape_output($portal_follower_count); ?></strong>
+                <span>Followers</span>
+            </article>
+        </div>
+
+        <nav class="business-subtab-nav" role="tablist" data-business-subtab-nav>
+            <button type="button" class="business-subtab is-active" role="tab" data-business-subtab="overview" aria-selected="true">Overview</button>
+            <button type="button" class="business-subtab" role="tab" data-business-subtab="photos" aria-selected="false">Photos</button>
+            <button type="button" class="business-subtab" role="tab" data-business-subtab="reviews" aria-selected="false">Reviews</button>
+        </nav>
+
+        <div data-business-subtab-panel="overview">
         <section class="business-portal-grid business-portal-grid-single">
             <article class="business-preview">
                 <div class="business-section-header">
@@ -317,7 +289,7 @@ $event_comment_summary = craftcrawl_business_event_unread_comment_summary($conn,
                     </div>
                 </div>
                 <div class="business-preview-card">
-                    <p class="business-preview-type"><?php echo escape_output(format_business_type($business['bType'])); ?></p>
+                    <p class="business-preview-type"><?php echo escape_output(craftcrawl_format_business_type($business['bType'])); ?></p>
                     <h3><?php echo escape_output($business['bName']); ?></h3>
                     <?php if (!empty($business['bAbout'])) : ?>
                         <p><?php echo nl2br(escape_output($business['bAbout'])); ?></p>
@@ -329,7 +301,7 @@ $event_comment_summary = craftcrawl_business_event_unread_comment_summary($conn,
                     <p>
                         <?php if ((int) $rating_summary['review_count'] > 0) : ?>
                             <span class="rating-summary">
-                                <?php echo render_star_rating($rating_summary['average_rating']); ?>
+                                <?php echo craftcrawl_render_star_rating($rating_summary['average_rating']); ?>
                                 <span><?php echo escape_output(number_format((float) $rating_summary['average_rating'], 1)); ?> / 5 from <?php echo escape_output($rating_summary['review_count']); ?> reviews</span>
                             </span>
                         <?php else : ?>
@@ -356,19 +328,30 @@ $event_comment_summary = craftcrawl_business_event_unread_comment_summary($conn,
                 </div>
             </article>
         </section>
+        </div>
 
+        <div data-business-subtab-panel="photos" hidden>
         <section class="business-photo-manager">
             <div class="business-section-header">
                 <h2>Business Photos</h2>
             </div>
 
-            <form method="POST" action="" enctype="multipart/form-data" class="business-photo-upload-form">
+            <form method="POST" action="" enctype="multipart/form-data" class="business-photo-upload-form" data-photo-upload-form>
                 <?php echo craftcrawl_csrf_input(); ?>
                 <input type="hidden" name="form_action" value="upload_gallery_photos">
-                <label for="business_photos">Upload gallery photos</label>
-                <input type="file" id="business_photos" name="business_photos[]" accept="image/jpeg,image/png,image/webp" multiple>
-                <p class="form-help">Upload up to 6 JPEG, PNG, or WebP photos under 12 MB each.</p>
-                <button type="submit">Upload Photos</button>
+                <div class="photo-drop-zone" data-photo-drop-zone>
+                    <span class="photo-drop-zone-icon" aria-hidden="true"></span>
+                    <strong>Tap to choose photos</strong>
+                    <span>or drag and drop</span>
+                    <span class="photo-drop-zone-limit">Up to 6 JPEG, PNG, or WebP photos under 12 MB each</span>
+                </div>
+                <input type="file" id="business_photos" name="business_photos[]" accept="image/jpeg,image/png,image/webp" multiple data-photo-file-input class="visually-hidden">
+                <div class="photo-upload-previews" data-photo-previews hidden></div>
+                <div class="photo-upload-actions" data-photo-upload-actions hidden>
+                    <span data-photo-count></span>
+                    <button type="submit">Upload Photos</button>
+                    <button type="button" data-photo-clear class="button-link-secondary">Clear</button>
+                </div>
             </form>
 
             <?php if ($business_photos->num_rows === 0) : ?>
@@ -376,26 +359,31 @@ $event_comment_summary = craftcrawl_business_event_unread_comment_summary($conn,
             <?php else : ?>
                 <div class="business-photo-grid">
                     <?php while ($photo = $business_photos->fetch_assoc()) : ?>
-                        <?php $photo_url = craftcrawl_cloudinary_delivery_url($photo['object_key'], 'f_auto,q_auto,c_fill,w_360,h_240'); ?>
+                        <?php $photo_url = craftcrawl_cloudinary_delivery_url($photo['object_key'], 'f_auto,q_auto,c_fill,w_480,h_320'); ?>
                         <article class="business-photo-card">
                             <img src="<?php echo escape_output($photo_url); ?>" alt="Business photo" loading="lazy">
                             <?php if ($photo['photo_type'] === 'cover') : ?>
-                                <span class="business-photo-badge">Cover</span>
+                                <span class="business-photo-badge">Cover Photo</span>
                             <?php endif; ?>
-                            <div class="business-photo-actions">
+                            <div class="business-photo-overlay">
                                 <?php if ($photo['photo_type'] !== 'cover') : ?>
                                     <form method="POST" action="">
                                         <?php echo craftcrawl_csrf_input(); ?>
                                         <input type="hidden" name="form_action" value="set_cover_photo">
                                         <input type="hidden" name="photo_id" value="<?php echo escape_output($photo['id']); ?>">
-                                        <button type="submit">Set Cover</button>
+                                        <button type="submit" class="photo-overlay-btn" aria-label="Set as cover photo">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                            Set Cover
+                                        </button>
                                     </form>
                                 <?php endif; ?>
-                                <form method="POST" action="">
+                                <form method="POST" action="" onsubmit="return confirm('Delete this photo?');">
                                     <?php echo craftcrawl_csrf_input(); ?>
                                     <input type="hidden" name="form_action" value="delete_business_photo">
                                     <input type="hidden" name="photo_id" value="<?php echo escape_output($photo['id']); ?>">
-                                    <button type="submit">Delete</button>
+                                    <button type="submit" class="photo-overlay-btn photo-overlay-btn-danger" aria-label="Delete photo">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                    </button>
                                 </form>
                             </div>
                         </article>
@@ -403,7 +391,9 @@ $event_comment_summary = craftcrawl_business_event_unread_comment_summary($conn,
                 </div>
             <?php endif; ?>
         </section>
+        </div>
 
+        <div data-business-subtab-panel="overview">
         <section class="business-reviews-panel">
             <div class="business-section-header">
                 <h2>Business Posts</h2>
@@ -447,7 +437,9 @@ $event_comment_summary = craftcrawl_business_event_unread_comment_summary($conn,
                 <button type="submit">Save Message</button>
             </form>
         </section>
+        </div>
 
+        <div data-business-subtab-panel="reviews" hidden>
         <section class="business-reviews-panel">
             <header>
                 <h2>User Reviews</h2>
@@ -455,7 +447,7 @@ $event_comment_summary = craftcrawl_business_event_unread_comment_summary($conn,
                     <?php if ((int) $rating_summary['review_count'] > 0) : ?>
                         Average rating:
                         <span class="rating-summary">
-                            <?php echo render_star_rating($rating_summary['average_rating']); ?>
+                            <?php echo craftcrawl_render_star_rating($rating_summary['average_rating']); ?>
                             <span><?php echo escape_output(number_format((float) $rating_summary['average_rating'], 1)); ?> / 5</span>
                         </span>
                     <?php else : ?>
@@ -476,7 +468,7 @@ $event_comment_summary = craftcrawl_business_event_unread_comment_summary($conn,
                             <strong><?php echo escape_output($review['fName'] . ' ' . $review['lName']); ?></strong>
                         </div>
                         <span class="rating-summary">
-                            <?php echo render_star_rating($review['rating'], $review['rating'] . ' out of 5'); ?>
+                            <?php echo craftcrawl_render_star_rating($review['rating'], $review['rating'] . ' out of 5'); ?>
                             <span><?php echo escape_output(number_format((float) $review['rating'], 1)); ?></span>
                         </span>
                     </div>
@@ -521,18 +513,13 @@ $event_comment_summary = craftcrawl_business_event_unread_comment_summary($conn,
                 </article>
             <?php endwhile; ?>
         </section>
+        </div>
     </main>
     </div>
     <?php include __DIR__ . '/mobile_nav.php'; ?>
-    <script src="../js/business_review_responses.js?v=<?php echo filemtime(__DIR__ . '/../js/business_review_responses.js'); ?>"></script>
-    <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
-    <script src="../js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/../js/depth_animations.js'); ?>"></script>
-    <script src="../js/business_events.js?v=<?php echo filemtime(__DIR__ . '/../js/business_events.js'); ?>"></script>
-    <script src="../js/business_analytics.js?v=<?php echo filemtime(__DIR__ . '/../js/business_analytics.js'); ?>"></script>
-    <script src="../js/business_review_responses.js?v=<?php echo filemtime(__DIR__ . '/../js/business_review_responses.js'); ?>"></script>
-    <script src="../js/business_hours_editor.js?v=<?php echo filemtime(__DIR__ . '/../js/business_hours_editor.js'); ?>"></script>
-    <script src="../js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/../js/business_posts.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','locations.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'locations.php':'locations', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
-    <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
+    <?php
+    $craftcrawl_business_page = 'portal';
+    include __DIR__ . '/business_scripts.php';
+    ?>
 </body>
 </html>

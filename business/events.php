@@ -3,6 +3,7 @@ require '../login_check.php';
 require_once '../lib/business_context.php';
 include '../db.php';
 require_once '../lib/business_event_comments.php';
+require_once '../lib/business_helpers.php';
 
 $selected_location = craftcrawl_require_selected_business_location($conn);
 
@@ -28,23 +29,9 @@ if ($edit_event_id) {
     exit();
 }
 
-function escape_output($value) {
-    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
-}
-
 function add_event_occurrence(&$events_by_date, $event, $date) {
     $event['occurrenceDate'] = $date;
     $events_by_date[$date][] = $event;
-}
-
-function format_event_time_range($event) {
-    $time = date('g:i A', strtotime($event['startTime']));
-
-    if (!empty($event['endTime'])) {
-        $time .= ' - ' . date('g:i A', strtotime($event['endTime']));
-    }
-
-    return $time;
 }
 
 function add_recurring_event_occurrences(&$events_by_date, $event, $month_start, $month_end) {
@@ -108,32 +95,13 @@ $event_comment_counts = craftcrawl_business_event_comment_counts_for_items($conn
 <body>
     <div data-area-page-content>
     <main class="business-portal">
-        <header class="business-portal-header">
-            <div>
-                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
-                <div>
-                    <h1>Events</h1>
-                    <p><?php echo escape_output($business['bName'] ?? 'Business'); ?></p>
-                </div>
-            </div>
-            <div class="business-header-actions mobile-actions-menu business-actions-menu" data-mobile-actions-menu>
-                <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-                <div class="mobile-actions-panel" data-mobile-actions-panel>
-                    <a href="locations.php">Locations</a>
-                    <a href="analytics.php">Stats</a>
-                    <a href="event_edit.php?month=<?php echo escape_output($calendar_month); ?>">Add Event</a>
-                    <a href="settings.php">Settings</a>
-                    <form action="../logout.php" method="POST">
-                        <?php echo craftcrawl_csrf_input(); ?>
-                        <button type="submit">Logout</button>
-                    </form>
-                </div>
-            </div>
-        </header>
+        <?php
+$craftcrawl_business_page = 'events';
+$craftcrawl_business_page_title = 'Events';
+$craftcrawl_business_name = $business['bName'] ?? 'Business';
+$craftcrawl_business_approved = false;
+include __DIR__ . '/portal_header.php';
+?>
 
         <?php if ($message === 'event_saved') : ?>
             <p class="form-message form-message-success">Event saved.</p>
@@ -143,74 +111,142 @@ $event_comment_counts = craftcrawl_business_event_comment_counts_for_items($conn
             <p class="form-message form-message-error">That event could not be found.</p>
         <?php endif; ?>
 
-        <section class="event-calendar-panel">
-            <div class="business-section-header">
-                <h2>Calendar</h2>
-                <a class="event-calendar-add-link" href="event_edit.php?month=<?php echo escape_output($calendar_month); ?>" aria-label="Add Event" title="Add Event">
-                    <span aria-hidden="true">+</span>
-                </a>
+        <?php
+            $today = date('Y-m-d');
+            $total_events_this_month = 0;
+            $total_unread_comments = 0;
+            foreach ($events_by_date as $date => $day_events) {
+                $total_events_this_month += count($day_events);
+                foreach ($day_events as $ev) {
+                    $ik = craftcrawl_business_event_item_key($ev['id'], $date);
+                    $total_unread_comments += (int) ($event_comment_counts[$ik]['unread'] ?? 0);
+                }
+            }
+        ?>
+        <div class="friends-summary-grid" style="margin-bottom: 18px;">
+            <article>
+                <strong><?php echo $total_events_this_month; ?></strong>
+                <span>Events This Month</span>
+            </article>
+            <article>
+                <strong><?php echo $total_unread_comments; ?></strong>
+                <span>Unread Comments</span>
+            </article>
+        </div>
+
+        <nav class="business-subtab-nav calendar-view-tabs" role="tablist" data-calendar-view-tabs>
+            <button type="button" class="business-subtab is-active" role="tab" data-calendar-view="month">Month</button>
+            <button type="button" class="business-subtab" role="tab" data-calendar-view="agenda">Agenda</button>
+        </nav>
+
+        <section class="event-calendar-panel" data-calendar-view-panel="month">
+            <div class="calendar-nav-bar">
+                <a href="events.php?month=<?php echo escape_output($previous_month); ?>" class="calendar-nav-btn" aria-label="Previous month">‹</a>
+                <div class="calendar-nav-label">
+                    <strong><?php echo escape_output(date('F Y', $month_timestamp)); ?></strong>
+                </div>
+                <a href="events.php?month=<?php echo escape_output($next_month); ?>" class="calendar-nav-btn" aria-label="Next month">›</a>
+                <?php if ($calendar_month !== date('Y-m')) : ?>
+                    <a href="events.php" class="calendar-today-btn" data-calendar-today>Today</a>
+                <?php endif; ?>
             </div>
 
-                <div class="calendar-header calendar-header-compact">
-                    <div class="calendar-period-control" aria-label="Change calendar month">
-                        <a href="events.php?month=<?php echo escape_output($previous_month); ?>" aria-label="Previous month">‹</a>
-                        <span><?php echo escape_output(date('F Y', $month_timestamp)); ?></span>
-                        <a href="events.php?month=<?php echo escape_output($next_month); ?>" aria-label="Next month">›</a>
-                    </div>
+            <div class="event-calendar-scroll">
+                <div class="event-calendar">
+                    <?php foreach (['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $day_name) : ?>
+                        <div class="event-calendar-day-name"><?php echo escape_output($day_name); ?></div>
+                    <?php endforeach; ?>
+
+                    <?php for ($i = 0; $i < (int) date('w', $month_timestamp); $i++) : ?>
+                        <div class="event-calendar-empty"></div>
+                    <?php endfor; ?>
+
+                    <?php for ($day = 1; $day <= (int) date('t', $month_timestamp); $day++) : ?>
+                        <?php $date = date('Y-m-d', strtotime($calendar_month . '-' . str_pad((string) $day, 2, '0', STR_PAD_LEFT))); ?>
+                        <?php $is_today = $date === $today; ?>
+                        <?php $day_event_count = count($events_by_date[$date] ?? []); ?>
+                        <div class="event-calendar-day<?php echo $is_today ? ' is-today' : ''; ?>" data-calendar-day-date="<?php echo escape_output($date); ?>">
+                            <span class="event-calendar-date<?php echo $is_today ? ' is-today' : ''; ?>">
+                                <?php echo escape_output($day); ?>
+                            </span>
+                            <?php if ($day_event_count > 0) : ?>
+                                <div class="event-calendar-dots">
+                                    <?php for ($dot = 0; $dot < min($day_event_count, 3); $dot++) : ?>
+                                        <span class="event-calendar-dot"></span>
+                                    <?php endfor; ?>
+                                    <?php if ($day_event_count > 3) : ?>
+                                        <span class="event-calendar-dot-more">+<?php echo $day_event_count - 3; ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endfor; ?>
                 </div>
+            </div>
+        </section>
 
-                <div class="event-calendar-scroll">
-                    <div class="event-calendar">
-                        <?php foreach (['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $day_name) : ?>
-                            <div class="event-calendar-day-name"><?php echo escape_output($day_name); ?></div>
-                        <?php endforeach; ?>
-
-                        <?php for ($i = 0; $i < (int) date('w', $month_timestamp); $i++) : ?>
-                            <div class="event-calendar-empty"></div>
-                        <?php endfor; ?>
-
-                        <?php for ($day = 1; $day <= (int) date('t', $month_timestamp); $day++) : ?>
-                            <?php $date = date('Y-m-d', strtotime($calendar_month . '-' . str_pad((string) $day, 2, '0', STR_PAD_LEFT))); ?>
-                            <div class="event-calendar-day">
-                                <a class="event-calendar-date" href="event_edit.php?month=<?php echo escape_output($calendar_month); ?>&date=<?php echo escape_output($date); ?>">
-                                    <?php echo escape_output($day); ?>
-                                </a>
-                                <span class="event-calendar-mobile-date"><?php echo escape_output(date('D, M j', strtotime($date))); ?></span>
-
-                                <?php foreach ($events_by_date[$date] ?? [] as $event) : ?>
-                                    <?php
-                                        $item_key = craftcrawl_business_event_item_key($event['id'], $date);
-                                        $comment_count = (int) ($event_comment_counts[$item_key]['total'] ?? 0);
-                                        $unread_count = (int) ($event_comment_counts[$item_key]['unread'] ?? 0);
-                                    ?>
-                                    <a class="event-calendar-event" href="../event_details.php?id=<?php echo escape_output($event['id']); ?>&date=<?php echo escape_output($date); ?>">
-                                        <span class="event-calendar-event-time"><?php echo escape_output(format_event_time_range($event)); ?></span>
-                                        <span class="event-calendar-event-name"><?php echo escape_output($event['eName']); ?></span>
-                                    </a>
-                                    <a class="event-calendar-comments-link<?php echo $unread_count > 0 ? ' has-unread' : ''; ?>" href="event_comments.php?item=<?php echo rawurlencode($item_key); ?>">
-                                        <?php echo $comment_count > 0 ? escape_output($comment_count . ' ' . ($comment_count === 1 ? 'comment' : 'comments')) : 'Comments'; ?>
+        <section class="calendar-agenda-view" data-calendar-view-panel="agenda" hidden>
+            <?php
+                ksort($events_by_date);
+                $has_agenda_events = false;
+            ?>
+            <?php foreach ($events_by_date as $date => $day_events) : ?>
+                <?php $has_agenda_events = true; ?>
+                <div class="calendar-agenda-date-header" data-agenda-date="<?php echo escape_output($date); ?>">
+                    <strong><?php echo escape_output(date('l', strtotime($date))); ?></strong>
+                    <span><?php echo escape_output(date('M j, Y', strtotime($date))); ?></span>
+                    <?php if ($date === $today) : ?>
+                        <span class="calendar-agenda-today-badge">Today</span>
+                    <?php endif; ?>
+                </div>
+                <?php foreach ($day_events as $event) : ?>
+                    <?php
+                        $item_key = craftcrawl_business_event_item_key($event['id'], $date);
+                        $comment_count = (int) ($event_comment_counts[$item_key]['total'] ?? 0);
+                        $unread_count = (int) ($event_comment_counts[$item_key]['unread'] ?? 0);
+                    ?>
+                    <article class="calendar-agenda-event">
+                        <div class="calendar-agenda-event-time">
+                            <span><?php echo escape_output(date('g:i A', strtotime($event['startTime']))); ?></span>
+                            <?php if (!empty($event['endTime'])) : ?>
+                                <span><?php echo escape_output(date('g:i A', strtotime($event['endTime']))); ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="calendar-agenda-event-body">
+                            <strong><?php echo escape_output($event['eName']); ?></strong>
+                            <?php if (!empty($event['eDescription'])) : ?>
+                                <p><?php echo escape_output(mb_strimwidth($event['eDescription'], 0, 100, '...')); ?></p>
+                            <?php endif; ?>
+                            <div class="calendar-agenda-event-meta">
+                                <?php if ($comment_count > 0) : ?>
+                                    <a href="event_comments.php?item=<?php echo rawurlencode($item_key); ?>" class="calendar-agenda-comment-badge<?php echo $unread_count > 0 ? ' has-unread' : ''; ?>">
+                                        <?php echo escape_output($comment_count); ?> comment<?php echo $comment_count !== 1 ? 's' : ''; ?>
                                         <?php if ($unread_count > 0) : ?>
                                             <span><?php echo escape_output($unread_count); ?> new</span>
                                         <?php endif; ?>
                                     </a>
-                                <?php endforeach; ?>
+                                <?php endif; ?>
+                                <a href="event_edit.php?month=<?php echo escape_output($calendar_month); ?>&edit=<?php echo escape_output($event['id']); ?>&date=<?php echo escape_output($date); ?>" class="calendar-agenda-edit-link">Edit</a>
                             </div>
-                        <?php endfor; ?>
-                    </div>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            <?php endforeach; ?>
+            <?php if (!$has_agenda_events) : ?>
+                <div class="calendar-agenda-empty">
+                    <p>No events this month.</p>
+                    <a href="event_edit.php?month=<?php echo escape_output($calendar_month); ?>">Create your first event</a>
                 </div>
+            <?php endif; ?>
         </section>
+
+        <a class="calendar-fab" href="event_edit.php?month=<?php echo escape_output($calendar_month); ?>" data-calendar-fab aria-label="Add Event">+</a>
     </main>
     </div>
     <?php include __DIR__ . '/mobile_nav.php'; ?>
-    <script src="../js/business_events.js?v=<?php echo filemtime(__DIR__ . '/../js/business_events.js'); ?>"></script>
-    <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
-    <script src="../js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/../js/depth_animations.js'); ?>"></script>
-    <script src="../js/business_events.js?v=<?php echo filemtime(__DIR__ . '/../js/business_events.js'); ?>"></script>
-    <script src="../js/business_analytics.js?v=<?php echo filemtime(__DIR__ . '/../js/business_analytics.js'); ?>"></script>
-    <script src="../js/business_review_responses.js?v=<?php echo filemtime(__DIR__ . '/../js/business_review_responses.js'); ?>"></script>
-    <script src="../js/business_hours_editor.js?v=<?php echo filemtime(__DIR__ . '/../js/business_hours_editor.js'); ?>"></script>
-    <script src="../js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/../js/business_posts.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','locations.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'locations.php':'locations', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
-    <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
+    <?php
+$craftcrawl_business_page = 'events';
+include __DIR__ . '/business_scripts.php';
+?>
 </body>
 </html>

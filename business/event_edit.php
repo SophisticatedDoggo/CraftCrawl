@@ -1,6 +1,7 @@
 <?php
 require '../login_check.php';
 require_once '../lib/business_context.php';
+require_once '../lib/business_helpers.php';
 include '../db.php';
 
 $selected_location = craftcrawl_require_selected_business_location($conn);
@@ -18,14 +19,6 @@ if (!$month_timestamp) {
 }
 
 $calendar_month = date('Y-m', $month_timestamp);
-
-function escape_output($value) {
-    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
-}
-
-function clean_text($value) {
-    return trim(strip_tags($value ?? ''));
-}
 
 function is_valid_event_date($date) {
     $timestamp = strtotime($date);
@@ -171,32 +164,13 @@ $form_date = $editing_event['eventDate'] ?? $selected_date;
 <body>
     <div data-area-page-content>
     <main class="business-portal event-edit-page">
-        <header class="business-portal-header">
-            <div>
-                <img class="site-logo" src="<?php echo craftcrawl_theme_logo_src('../images/'); ?>" alt="CraftCrawl logo">
-                <div>
-                    <h1><?php echo $editing_event ? 'Edit Event' : 'Add Event'; ?></h1>
-                    <p><?php echo escape_output($business['bName'] ?? 'Business'); ?></p>
-                </div>
-            </div>
-            <div class="business-header-actions mobile-actions-menu business-actions-menu" data-mobile-actions-menu>
-                <button type="button" class="mobile-actions-toggle" data-mobile-actions-toggle aria-expanded="false" aria-label="Open account menu">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-                <div class="mobile-actions-panel" data-mobile-actions-panel>
-                    <a href="locations.php">Locations</a>
-                    <a href="events.php?month=<?php echo escape_output($calendar_month); ?>" data-back-link>&lt;</a>
-                    <a href="analytics.php">Stats</a>
-                    <a href="settings.php">Settings</a>
-                    <form action="../logout.php" method="POST">
-                        <?php echo craftcrawl_csrf_input(); ?>
-                        <button type="submit">Logout</button>
-                    </form>
-                </div>
-            </div>
-        </header>
+        <?php
+        $craftcrawl_business_page = 'events';
+        $craftcrawl_business_page_title = $editing_event ? 'Edit Event' : 'Add Event';
+        $craftcrawl_business_name = $business['bName'] ?? 'Business';
+        $craftcrawl_business_approved = false;
+        include __DIR__ . '/portal_header.php';
+        ?>
 
         <?php if ($message === 'event_error') : ?>
             <p class="form-message form-message-error">Please enter an event name, start time, and a date between today and one year from today.</p>
@@ -274,15 +248,9 @@ $form_date = $editing_event['eventDate'] ?? $selected_date;
     </main>
     </div>
     <?php include __DIR__ . '/mobile_nav.php'; ?>
-    <script src="../js/business_events.js?v=<?php echo filemtime(__DIR__ . '/../js/business_events.js'); ?>"></script>
-    <script src="../js/mobile_actions_menu.js?v=<?php echo filemtime(__DIR__ . '/../js/mobile_actions_menu.js'); ?>"></script>
-    <script src="../js/depth_animations.js?v=<?php echo filemtime(__DIR__ . '/../js/depth_animations.js'); ?>"></script>
-    <script src="../js/business_events.js?v=<?php echo filemtime(__DIR__ . '/../js/business_events.js'); ?>"></script>
-    <script src="../js/business_analytics.js?v=<?php echo filemtime(__DIR__ . '/../js/business_analytics.js'); ?>"></script>
-    <script src="../js/business_review_responses.js?v=<?php echo filemtime(__DIR__ . '/../js/business_review_responses.js'); ?>"></script>
-    <script src="../js/business_hours_editor.js?v=<?php echo filemtime(__DIR__ . '/../js/business_hours_editor.js'); ?>"></script>
-    <script src="../js/business_posts.js?v=<?php echo filemtime(__DIR__ . '/../js/business_posts.js'); ?>"></script>
-    <script>window.CraftCrawlAreaShellConfig = { area: 'business', home: 'business_portal.php', routes: ['business_portal.php','locations.php','posts.php','analytics.php','events.php','business_edit.php','settings.php','event_edit.php'], active: { 'business_portal.php':'portal', 'locations.php':'locations', 'posts.php':'posts', 'analytics.php':'analytics', 'events.php':'events', 'event_edit.php':'events', 'business_edit.php':'edit' } };</script>
-    <script src="../js/area_shell_navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/area_shell_navigation.js'); ?>"></script>
+    <?php
+    $craftcrawl_business_page = 'events';
+    include __DIR__ . '/business_scripts.php';
+    ?>
 </body>
 </html>
