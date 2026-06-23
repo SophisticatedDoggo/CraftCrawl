@@ -606,6 +606,10 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     function renderBusinessLink(item) {
+        if (item.location_is_listed === false) {
+            return `<span>${escapeHtml(item.business_name)}</span>`;
+        }
+
         return `<a class="feed-business-link" href="../business_details.php?id=${encodeURIComponent(item.business_id)}">${escapeHtml(item.business_name)}</a>`;
     }
 

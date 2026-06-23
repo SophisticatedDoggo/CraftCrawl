@@ -156,6 +156,7 @@ function craftcrawl_feed_person_payload($person) {
 $before_clause_checkin = $before_dt ? ' AND uv.checkedInAt <= ?' : '';
 $visit_sql = "
     SELECT uv.id, uv.user_id, uv.visit_type, uv.caption, uv.checkedInAt, l.id AS business_id, l.name AS bName, l.city, l.state,
+        (l.visibility_status IN ('public_unclaimed', 'public_claimed') AND l.disabledAt IS NULL) AS location_is_listed,
         u.allow_post_interactions,
         vp.object_key AS visit_photo_object_key
     FROM user_visits uv
@@ -189,6 +190,7 @@ while ($visit = $visit_result->fetch_assoc()) {
         'is_self' => $actor_id === $user_id,
         'allow_interactions' => (bool) $visit['allow_post_interactions'],
         'business_id' => (int) $visit['business_id'],
+        'location_is_listed' => (bool) $visit['location_is_listed'],
         'business_name' => $visit['bName'],
         'city' => $visit['city'],
         'state' => $visit['state']
@@ -593,6 +595,7 @@ if ($before_dt) {
     $public_checkin_sql = "
         SELECT uv.id, uv.user_id, uv.visit_type, uv.caption, uv.checkedInAt,
             l.id AS business_id, l.name AS bName, l.city, l.state,
+            (l.visibility_status IN ('public_unclaimed', 'public_claimed') AND l.disabledAt IS NULL) AS location_is_listed,
             u.fName, u.lName, u.allow_post_interactions,
             u.selected_profile_frame, u.selected_profile_frame_style,
             u.profile_photo_url,
@@ -622,6 +625,7 @@ if ($before_dt) {
     $public_checkin_sql = "
         SELECT uv.id, uv.user_id, uv.visit_type, uv.caption, uv.checkedInAt,
             l.id AS business_id, l.name AS bName, l.city, l.state,
+            (l.visibility_status IN ('public_unclaimed', 'public_claimed') AND l.disabledAt IS NULL) AS location_is_listed,
             u.fName, u.lName, u.allow_post_interactions,
             u.selected_profile_frame, u.selected_profile_frame_style,
             u.profile_photo_url,
@@ -669,6 +673,7 @@ while ($pv = $public_checkin_result->fetch_assoc()) {
         'is_self' => false,
         'allow_interactions' => (bool) $pv['allow_post_interactions'],
         'business_id' => (int) $pv['business_id'],
+        'location_is_listed' => (bool) $pv['location_is_listed'],
         'business_name' => $pv['bName'],
         'city' => $pv['city'],
         'state' => $pv['state'],

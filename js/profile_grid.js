@@ -193,7 +193,9 @@ window.CraftCrawlInitProfileGrid = function (scope) {
         }
 
         var visitLabel = item.visit_type === 'first_time' ? ' for the first time' : '';
-        var businessLink = '<a class="feed-business-link" href="../business_details.php?id=' + encodeURIComponent(item.business_id) + '">' + escapeHtml(item.business_name) + '</a>';
+        var businessLink = item.location_is_listed === false
+            ? '<span>' + escapeHtml(item.business_name) + '</span>'
+            : '<a class="feed-business-link" href="../business_details.php?id=' + encodeURIComponent(item.business_id) + '">' + escapeHtml(item.business_name) + '</a>';
 
         var captionHtml = '';
         if (item.caption) {
