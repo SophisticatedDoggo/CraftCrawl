@@ -453,10 +453,13 @@ window.CraftCrawlInitBusinessAnalytics = function (root = document) {
         });
     }
 
+    const modeTabs = widget.querySelector('.analytics-mode-tabs');
+
     function updateModeButtons() {
         modeButtons.forEach((button) => {
             button.classList.toggle('is-active', button.dataset.analyticsMode === mode);
         });
+        window.CraftCrawlUpdateSubtabThumb?.(modeTabs, true);
     }
 
     function loadAnalytics() {
@@ -533,5 +536,8 @@ window.CraftCrawlInitBusinessAnalytics = function (root = document) {
     });
 
     loadAnalytics();
+    requestAnimationFrame(function () {
+        window.CraftCrawlUpdateSubtabThumb?.(modeTabs, false);
+    });
 };
 window.CraftCrawlInitBusinessAnalytics();

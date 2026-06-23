@@ -8,9 +8,7 @@ function craftcrawl_business_script_tag($name) {
 }
 ?>
 <?php craftcrawl_business_script_tag('mobile_actions_menu.js'); ?>
-<?php if (in_array($craftcrawl_business_page, ['portal', 'posts'], true)) : ?>
-    <?php craftcrawl_business_script_tag('business_subtabs.js'); ?>
-<?php endif; ?>
+<?php craftcrawl_business_script_tag('business_subtabs.js'); ?>
 <?php if ($craftcrawl_business_page === 'portal') : ?>
     <?php craftcrawl_business_script_tag('business_review_responses.js'); ?>
     <?php craftcrawl_business_script_tag('business_photo_upload.js'); ?>

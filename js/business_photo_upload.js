@@ -170,7 +170,7 @@ window.CraftCrawlInitPhotoReorder = function (root = document) {
     // Desktop drag and drop
     grid.addEventListener('dragstart', function (e) {
         var card = e.target.closest('.business-photo-card[data-photo-id]');
-        if (!card) { e.preventDefault(); return; }
+        if (!card || e.target.closest('.photo-overlay-btn') || e.target.closest('form')) { e.preventDefault(); return; }
         dragCard = card;
         card.classList.add('is-dragging');
         e.dataTransfer.effectAllowed = 'move';
@@ -198,9 +198,11 @@ window.CraftCrawlInitPhotoReorder = function (root = document) {
         }
     });
 
-    // Set draggable on all cards
+    // Set draggable on all cards, prevent native image drag
     cards().forEach(function (card) {
         card.setAttribute('draggable', 'true');
+        var img = card.querySelector('img');
+        if (img) img.setAttribute('draggable', 'false');
     });
 
     // Mobile touch reorder (long press)
