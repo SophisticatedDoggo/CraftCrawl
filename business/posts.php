@@ -332,7 +332,14 @@ if (!empty($item_keys)) {
     }
 }
 
-$reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '<span class="feed-reaction-icon feed-reaction-icon-pin" aria-hidden="true"></span> Want to Go'];
+$reaction_labels = [
+    'heart' => ['icon' => '<span class="feed-reaction-icon feed-reaction-icon-heart" aria-hidden="true"></span>', 'label' => 'Like'],
+    'cheers' => ['icon' => '🍻', 'label' => 'Cheers'],
+    'nice_find' => ['icon' => '🔥', 'label' => 'Fire'],
+    'want_to_go' => ['icon' => '<span class="feed-reaction-icon feed-reaction-icon-pin" aria-hidden="true"></span>', 'label' => 'Want to Go'],
+    'trophy' => ['icon' => '🏆', 'label' => 'Congrats'],
+    'yuck' => ['icon' => '<span class="feed-reaction-icon feed-reaction-icon-yuck" aria-hidden="true"></span>', 'label' => 'Yuck'],
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -566,9 +573,12 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '<span class="fee
                     <?php $has_reactions = array_filter($reaction_labels, fn($type) => !empty($post_reactions[$type]), ARRAY_FILTER_USE_KEY); ?>
                     <?php if (!empty($has_reactions)) : ?>
                         <div class="portal-post-reactions">
-                            <?php foreach ($reaction_labels as $type => $label) : ?>
+                            <?php foreach ($reaction_labels as $type => $info) : ?>
                                 <?php if (!empty($post_reactions[$type])) : ?>
-                                    <span><?php echo $label; ?> <strong><?php echo escape_output($post_reactions[$type]); ?></strong></span>
+                                    <span class="portal-reaction-badge" title="<?php echo escape_output($info['label']); ?>">
+                                        <?php echo $info['icon']; ?>
+                                        <strong><?php echo escape_output($post_reactions[$type]); ?></strong>
+                                    </span>
                                 <?php endif; ?>
                             <?php endforeach; ?>
                         </div>
@@ -656,29 +666,13 @@ $reaction_labels = ['cheers' => '🍻 Cheers', 'want_to_go' => '<span class="fee
                         <p class="portal-no-comments">No comments yet.</p>
                     <?php endif; ?>
 
-                    <div class="portal-post-comment-section">
-                        <button
-                            type="button"
-                            class="portal-reply-toggle"
-                            data-comment-toggle
-                            aria-expanded="false"
-                            aria-controls="comment-form-<?php echo escape_output($post_id); ?>"
-                        >Add a Comment</button>
-                        <form
-                            method="POST"
-                            action=""
-                            class="portal-reply-form"
-                            id="comment-form-<?php echo escape_output($post_id); ?>"
-                            hidden
-                        >
+                    <div class="portal-post-compose">
+                        <form method="POST" action="" class="portal-compose-form">
                             <?php echo craftcrawl_csrf_input(); ?>
                             <input type="hidden" name="form_action" value="comment_post">
                             <input type="hidden" name="post_id" value="<?php echo escape_output($post_id); ?>">
-                            <textarea name="body" maxlength="500" rows="2" required placeholder="Add a comment as the business owner..."></textarea>
-                            <div class="portal-reply-actions">
-                                <button type="submit">Post Comment</button>
-                                <button type="button" class="button-link-secondary" data-comment-cancel>Cancel</button>
-                            </div>
+                            <textarea name="body" maxlength="500" rows="1" required placeholder="Add a comment as the business owner..." class="portal-compose-input"></textarea>
+                            <button type="submit" class="portal-compose-submit">Post</button>
                         </form>
                     </div>
                 </article>

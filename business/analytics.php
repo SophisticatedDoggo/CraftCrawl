@@ -61,15 +61,6 @@ $total_saves_stmt->bind_param("i", $location_id);
 $total_saves_stmt->execute();
 $total_saves = (int) ($total_saves_stmt->get_result()->fetch_assoc()['total'] ?? 0);
 
-$milestone_thresholds = [10, 25, 50, 100, 250, 500, 1000];
-$next_follower_milestone = null;
-foreach ($milestone_thresholds as $threshold) {
-    if ($total_followers < $threshold) {
-        $next_follower_milestone = $threshold;
-        break;
-    }
-}
-
 $recent_stmt = $conn->prepare("
     SELECT uv.visit_type, uv.xp_awarded, uv.distance_meters, uv.checkedInAt,
         u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url, p.object_key AS profile_photo_object_key
@@ -106,93 +97,83 @@ $recent_checkins = $recent_stmt->get_result();
         include __DIR__ . '/portal_header.php';
         ?>
 
-        <section class="analytics-hero">
-            <div>
-                <p class="analytics-eyebrow">Today</p>
-                <h2><?php echo escape_output(craftcrawl_format_metric_number($today_checkins)); ?> check-ins</h2>
-                <p><?php echo escape_output(craftcrawl_format_metric_number($today_first_time)); ?> first-time and <?php echo escape_output(craftcrawl_format_metric_number($today_repeat)); ?> repeat visits today.</p>
-            </div>
-            <div class="analytics-hero-stats" aria-label="Today quick stats">
-                <div class="analytics-hero-stat">
-                    <strong><?php echo escape_output($today_first_time_rate); ?>%</strong>
-                    <span>first-time rate</span>
-                </div>
-                <div class="analytics-hero-stat">
-                    <strong><?php echo escape_output(craftcrawl_format_metric_number($today_unique_visitors)); ?></strong>
-                    <span>unique visitors</span>
-                </div>
-                <div class="analytics-hero-stat">
-                    <strong><?php echo escape_output(craftcrawl_format_metric_number($today_xp)); ?></strong>
-                    <span>XP awarded</span>
-                </div>
-                <div class="analytics-hero-stat">
-                    <strong><?php echo escape_output(craftcrawl_format_metric_number($total_followers)); ?></strong>
-                    <span>followers</span>
-                </div>
-                <div class="analytics-hero-stat">
-                    <strong><?php echo escape_output(craftcrawl_format_metric_number($total_saves)); ?></strong>
-                    <span>saves</span>
-                </div>
-            </div>
-        </section>
+        <div class="analytics-stat-cards">
+            <article class="analytics-stat-card">
+                <div class="analytics-stat-value" data-stat-today-checkins><?php echo escape_output(craftcrawl_format_metric_number($today_checkins)); ?></div>
+                <span>Today's Check-ins</span>
+            </article>
+            <article class="analytics-stat-card">
+                <div class="analytics-stat-value" data-stat-unique-visitors><?php echo escape_output(craftcrawl_format_metric_number($today_unique_visitors)); ?></div>
+                <span>Unique Visitors</span>
+            </article>
+            <article class="analytics-stat-card">
+                <div class="analytics-stat-value" data-stat-followers><?php echo escape_output(craftcrawl_format_metric_number($total_followers)); ?></div>
+                <span>Followers</span>
+            </article>
+            <article class="analytics-stat-card">
+                <div class="analytics-stat-value" data-stat-total-xp><?php echo escape_output(craftcrawl_format_metric_number($today_xp)); ?></div>
+                <span>XP Awarded</span>
+            </article>
+        </div>
 
-        <?php if ($next_follower_milestone !== null) :
-            $milestone_progress = $total_followers / $next_follower_milestone * 100;
-            $remaining = $next_follower_milestone - $total_followers;
-        ?>
-        <section class="analytics-milestone-banner">
-            <div class="analytics-milestone-text">
-                <strong><?php echo number_format($total_followers); ?> / <?php echo number_format($next_follower_milestone); ?> followers</strong>
-                <span><?php echo number_format($remaining); ?> more to your next milestone!</span>
-            </div>
-            <div class="analytics-milestone-bar">
-                <div class="analytics-milestone-fill" style="width: <?php echo min(100, $milestone_progress); ?>%"></div>
-            </div>
-        </section>
-        <?php endif; ?>
-
-        <section class="analytics-layout">
-            <article class="analytics-panel analytics-interactive-panel" data-analytics-widget data-analytics-endpoint="analytics_data.php" data-analytics-mode="month">
+        <div class="analytics-dashboard" data-analytics-widget data-analytics-endpoint="analytics_data.php" data-analytics-mode="month">
+            <article class="analytics-panel analytics-interactive-panel analytics-chart-panel">
                 <div class="business-section-header analytics-widget-header">
-                    <div>
-                        <h2>Check-ins Over Time</h2>
-                    </div>
+                    <h2>Check-ins Over Time</h2>
                 </div>
                 <div class="analytics-mode-tabs" aria-label="Stats range">
                     <button type="button" data-analytics-mode="day">Day</button>
                     <button type="button" data-analytics-mode="week">Week</button>
                     <button type="button" data-analytics-mode="month" class="is-active">Month</button>
                     <button type="button" data-analytics-mode="year">Year</button>
-                    <button type="button" data-analytics-mode="lifetime">Lifetime</button>
+                    <button type="button" data-analytics-mode="lifetime">All</button>
                 </div>
                 <div class="analytics-chart-period" aria-label="Change analytics period">
-                    <button type="button" data-analytics-previous aria-label="Previous period">‹</button>
-                    <p><span data-analytics-period-label>This month</span> &middot; <strong data-analytics-total-label>Loading</strong></p>
-                    <button type="button" data-analytics-next aria-label="Next period" disabled>›</button>
+                    <button type="button" data-analytics-previous aria-label="Previous period">&#8249;</button>
+                    <p><span data-analytics-period-label>This month</span> &middot; <strong data-analytics-total-label>Loading</strong>
+                        <span class="analytics-trend-badge" data-analytics-trend hidden></span>
+                    </p>
+                    <button type="button" data-analytics-next aria-label="Next period" disabled>&#8250;</button>
                 </div>
                 <div class="analytics-line-chart" data-analytics-chart style="position: relative;">
                     <p class="analytics-empty">Loading analytics.</p>
                     <div class="analytics-tooltip" data-analytics-tooltip hidden></div>
                 </div>
-                <div class="analytics-metric-grid analytics-range-metrics" data-analytics-summary-cards aria-label="Selected range summary">
-                    <p class="analytics-empty">Loading summary.</p>
-                </div>
             </article>
 
+            <div class="analytics-side-panel">
+                <article class="analytics-panel analytics-donut-panel">
+                    <h3>Visitor Mix</h3>
+                    <div class="analytics-donut" data-analytics-donut>
+                        <p class="analytics-empty">Loading.</p>
+                    </div>
+                </article>
+
+                <article class="analytics-panel analytics-heatmap-panel">
+                    <h3>Activity Pattern</h3>
+                    <div class="analytics-heatmap" data-analytics-heatmap>
+                        <p class="analytics-empty">Loading.</p>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <div class="analytics-metric-grid analytics-range-metrics" data-analytics-summary-cards aria-label="Selected range summary">
+            <p class="analytics-empty">Loading summary.</p>
+        </div>
+
+        <div class="analytics-bottom-grid">
             <article class="analytics-panel">
-                <div class="business-section-header">
-                    <h2>Top Visitors</h2>
-                </div>
+                <div class="business-section-header"><h2>Top Visitors</h2></div>
                 <div class="analytics-list" data-analytics-top-visitors>
                     <p class="analytics-empty">Loading top visitors.</p>
                 </div>
             </article>
-        </section>
 
-        <section class="analytics-panel">
-            <div class="business-section-header">
-                <h2>Recent Check-ins</h2>
-            </div>
+            <section class="analytics-panel">
+                <div class="business-section-header">
+                    <h2>Recent Check-ins</h2>
+                </div>
             <?php if ($recent_checkins->num_rows === 0) : ?>
                 <p class="analytics-empty">Recent check-ins will show here once users visit your business.</p>
             <?php else : ?>
@@ -214,7 +195,8 @@ $recent_checkins = $recent_stmt->get_result();
                     <?php endwhile; ?>
                 </div>
             <?php endif; ?>
-        </section>
+            </section>
+        </div>
     </main>
     </div>
     <?php include __DIR__ . '/mobile_nav.php'; ?>

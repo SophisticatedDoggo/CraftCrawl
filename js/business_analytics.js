@@ -11,7 +11,7 @@ window.CraftCrawlInitBusinessAnalytics = function (root = document) {
     const periodLabel = widget.querySelector('[data-analytics-period-label]');
     const totalLabel = widget.querySelector('[data-analytics-total-label]');
     const chart = widget.querySelector('[data-analytics-chart]');
-    const summaryCards = widget.querySelector('[data-analytics-summary-cards]');
+    const summaryCards = root.querySelector('[data-analytics-summary-cards]');
     const visitors = root.querySelector('[data-analytics-top-visitors]');
     let mode = widget.dataset.analyticsMode || 'month';
     let offset = 0;
@@ -317,6 +317,121 @@ window.CraftCrawlInitBusinessAnalytics = function (root = document) {
         `).join('');
     }
 
+    function renderDonutChart(breakdown) {
+        var donut = root.querySelector('[data-analytics-donut]');
+        if (!donut) return;
+        var firstTime = breakdown.first_time || 0;
+        var repeat = breakdown.repeat || 0;
+        var total = firstTime + repeat;
+        if (total === 0) {
+            donut.innerHTML = '<p class="analytics-empty">No visitor data for this period.</p>';
+            return;
+        }
+        var firstPct = firstTime / total;
+        var repeatPct = repeat / total;
+        var circumference = 2 * Math.PI * 70;
+        var firstLen = circumference * firstPct;
+        var repeatLen = circumference * repeatPct;
+        var gap = total > 0 && firstTime > 0 && repeat > 0 ? 4 : 0;
+
+        // SVG arcs: first segment starts at top (rotated -90deg), second offset after first
+        var firstDash = Math.max(0, firstLen - gap) + ' ' + (circumference - Math.max(0, firstLen - gap));
+        var repeatDash = Math.max(0, repeatLen - gap) + ' ' + (circumference - Math.max(0, repeatLen - gap));
+        var repeatOffset = -(firstLen + gap);
+
+        donut.innerHTML =
+            '<svg viewBox="0 0 200 200" class="analytics-donut-svg" aria-label="Visitor breakdown">' +
+                '<circle cx="100" cy="100" r="70" fill="none" stroke="var(--color-primary)" stroke-width="28" ' +
+                    'stroke-dasharray="' + firstDash + '" ' +
+                    'transform="rotate(-90 100 100)" ' +
+                    'class="analytics-donut-segment" style="stroke-dashoffset: ' + circumference + '"></circle>' +
+                (repeat > 0 ?
+                '<circle cx="100" cy="100" r="70" fill="none" stroke="var(--color-accent)" stroke-width="28" ' +
+                    'stroke-dasharray="' + repeatDash + '" ' +
+                    'stroke-dashoffset="' + repeatOffset + '" ' +
+                    'transform="rotate(-90 100 100)" ' +
+                    'class="analytics-donut-segment" style="stroke-dashoffset: ' + circumference + '"></circle>'
+                : '') +
+                '<text x="100" y="95" text-anchor="middle" class="analytics-donut-total">' + formatNumber(total) + '</text>' +
+                '<text x="100" y="115" text-anchor="middle" class="analytics-donut-label">visitors</text>' +
+            '</svg>' +
+            '<div class="analytics-donut-legend">' +
+                '<div class="analytics-donut-legend-row">' +
+                    '<span class="analytics-legend-dot" style="background: var(--color-primary)"></span>' +
+                    '<span>First-time</span><strong>' + formatNumber(firstTime) + '</strong>' +
+                '</div>' +
+                '<div class="analytics-donut-legend-row">' +
+                    '<span class="analytics-legend-dot" style="background: var(--color-accent)"></span>' +
+                    '<span>Repeat</span><strong>' + formatNumber(repeat) + '</strong>' +
+                '</div>' +
+            '</div>';
+
+        // Animate segments on load
+        requestAnimationFrame(function () {
+            var segments = donut.querySelectorAll('.analytics-donut-segment');
+            segments.forEach(function (seg, i) {
+                if (i === 0) {
+                    seg.style.strokeDashoffset = '0';
+                } else {
+                    seg.style.strokeDashoffset = String(repeatOffset);
+                }
+            });
+        });
+    }
+
+    function renderHeatmap(matrix) {
+        var heatmap = root.querySelector('[data-analytics-heatmap]');
+        if (!heatmap) return;
+
+        // matrix is 7 rows (Sun-Sat) x 24 cols (hours)
+        if (!matrix || !matrix.length) {
+            heatmap.innerHTML = '<p class="analytics-empty">No activity data yet.</p>';
+            return;
+        }
+
+        var max = 0;
+        matrix.forEach(function (row) {
+            row.forEach(function (v) { if (v > max) max = v; });
+        });
+        if (max === 0) {
+            heatmap.innerHTML = '<p class="analytics-empty">No activity data yet.</p>';
+            return;
+        }
+
+        var dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+        var dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        var hourLabels = [];
+        for (var h = 0; h < 24; h++) {
+            if (h % 4 === 0) {
+                var suffix = h < 12 ? 'a' : 'p';
+                var display = h === 0 ? '12a' : (h <= 12 ? h + suffix : (h - 12) + suffix);
+                hourLabels.push(display);
+            } else {
+                hourLabels.push('');
+            }
+        }
+
+        var html = '<div class="analytics-heatmap-grid">';
+        // Hour header row
+        html += '<div class="heatmap-corner"></div>';
+        for (var hi = 0; hi < 24; hi++) {
+            html += '<div class="heatmap-hour-label">' + (hourLabels[hi] || '') + '</div>';
+        }
+        // Data rows
+        for (var d = 0; d < 7; d++) {
+            html += '<div class="heatmap-day-label">' + dayLabels[d] + '</div>';
+            for (var hr = 0; hr < 24; hr++) {
+                var val = matrix[d] ? (matrix[d][hr] || 0) : 0;
+                var opacity = val / max;
+                var hourStr = hr === 0 ? '12am' : (hr < 12 ? hr + 'am' : (hr === 12 ? '12pm' : (hr - 12) + 'pm'));
+                var title = dayNames[d] + ' ' + hourStr + ': ' + formatNumber(val) + ' check-in' + (val === 1 ? '' : 's');
+                html += '<div class="heatmap-cell" style="opacity: ' + Math.max(0.08, opacity).toFixed(2) + '" title="' + escapeHtml(title) + '"></div>';
+            }
+        }
+        html += '</div>';
+        heatmap.innerHTML = html;
+    }
+
     function updateModeButtons() {
         modeButtons.forEach((button) => {
             button.classList.toggle('is-active', button.dataset.analyticsMode === mode);
@@ -340,9 +455,33 @@ window.CraftCrawlInitBusinessAnalytics = function (root = document) {
                 totalLabel.textContent = data.total_label;
                 nextButton.disabled = !data.can_go_next;
                 previousButton.disabled = !data.can_go_previous;
+
+                // Trend indicator
+                var trendBadge = widget.querySelector('[data-analytics-trend]');
+                if (trendBadge && data.trend && data.trend.change_pct !== null) {
+                    var pct = data.trend.change_pct;
+                    var arrow = pct >= 0 ? '↑' : '↓';
+                    trendBadge.textContent = arrow + ' ' + Math.abs(pct) + '%';
+                    trendBadge.className = 'analytics-trend-badge ' + (pct >= 0 ? 'is-trend-up' : 'is-trend-down');
+                    trendBadge.hidden = false;
+                } else if (trendBadge) {
+                    trendBadge.hidden = true;
+                }
+
                 renderChart(data.points || []);
                 renderSummaryCards(data.summary_cards || []);
                 renderVisitors(data.top_visitors || []);
+                renderDonutChart(data.visitor_breakdown || { first_time: 0, repeat: 0 });
+                renderHeatmap(data.activity_heatmap || []);
+
+                // Update stat cards with summary data
+                var cards = data.summary_cards || [];
+                cards.forEach(function (card) {
+                    if (card.label === 'Unique Visitors') {
+                        var el = root.querySelector('[data-stat-unique-visitors]');
+                        if (el) el.textContent = card.value;
+                    }
+                });
             })
             .catch(() => {
                 chart.innerHTML = '<p class="analytics-empty">Analytics could not be loaded.</p>';

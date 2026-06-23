@@ -140,6 +140,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
+    if ($form_action === 'reorder_photos') {
+        $photo_ids = $_POST['photo_ids'] ?? [];
+        if (!is_array($photo_ids) || empty($photo_ids)) {
+            echo json_encode(['ok' => false, 'message' => 'No photos provided.']);
+            exit();
+        }
+
+        $conn->begin_transaction();
+        try {
+            $verify_stmt = $conn->prepare("SELECT photo_id FROM business_photos WHERE location_id=? AND photo_id=?");
+            $update_stmt = $conn->prepare("UPDATE business_photos SET sort_order=? WHERE location_id=? AND photo_id=?");
+
+            foreach ($photo_ids as $order => $photo_id) {
+                $photo_id = (int) $photo_id;
+                $verify_stmt->bind_param("ii", $location_id, $photo_id);
+                $verify_stmt->execute();
+                if (!$verify_stmt->get_result()->fetch_assoc()) {
+                    throw new Exception('Invalid photo');
+                }
+                $sort_order = (int) $order;
+                $update_stmt->bind_param("iii", $sort_order, $location_id, $photo_id);
+                $update_stmt->execute();
+            }
+
+            $conn->commit();
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true]);
+            exit();
+        } catch (Throwable $e) {
+            $conn->rollback();
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'message' => 'Could not save order.']);
+            exit();
+        }
+    }
+
     $review_id = (int) ($_POST['review_id'] ?? 0);
     $business_response = clean_text($_POST['business_response'] ?? '');
 
@@ -360,11 +396,12 @@ $event_comment_summary = craftcrawl_business_event_unread_comment_summary($conn,
                 <div class="business-photo-grid">
                     <?php while ($photo = $business_photos->fetch_assoc()) : ?>
                         <?php $photo_url = craftcrawl_cloudinary_delivery_url($photo['object_key'], 'f_auto,q_auto,c_fill,w_480,h_320'); ?>
-                        <article class="business-photo-card">
+                        <article class="business-photo-card" data-photo-id="<?php echo escape_output($photo['id']); ?>">
                             <img src="<?php echo escape_output($photo_url); ?>" alt="Business photo" loading="lazy">
                             <?php if ($photo['photo_type'] === 'cover') : ?>
                                 <span class="business-photo-badge">Cover Photo</span>
                             <?php endif; ?>
+                            <span class="business-photo-drag-handle" data-photo-drag-handle aria-label="Drag to reorder">&#x2807;</span>
                             <div class="business-photo-overlay">
                                 <?php if ($photo['photo_type'] !== 'cover') : ?>
                                     <form method="POST" action="">
