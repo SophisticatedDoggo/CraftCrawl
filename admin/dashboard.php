@@ -65,10 +65,13 @@ $params = [];
 $types = '';
 
 if ($search !== '') {
-    $like = '%' . $search . '%';
-    $location_sql .= " AND (l.name LIKE ? OR l.city LIKE ? OR l.state LIKE ? OR l.street_address LIKE ? OR l.location_type LIKE ?)";
-    $params = [$like, $like, $like, $like, $like];
-    $types .= 'sssss';
+    $words = preg_split('/\s+/', trim($search));
+    foreach ($words as $word) {
+        $like = '%' . $word . '%';
+        $location_sql .= " AND (l.name LIKE ? OR l.city LIKE ? OR l.state LIKE ? OR l.street_address LIKE ? OR l.location_type LIKE ? OR l.adminNotes LIKE ?)";
+        $params = array_merge($params, [$like, $like, $like, $like, $like, $like]);
+        $types .= 'ssssss';
+    }
 }
 
 if (preg_match('/^[A-Z]{2}$/', $state)) {
@@ -87,8 +90,6 @@ if ($status === 'disabled') {
     $location_sql .= " AND l.visibility_status=?";
     $params[] = $status;
     $types .= 's';
-} else {
-    $location_sql .= " AND l.disabledAt IS NULL";
 }
 
 $location_sql .= " GROUP BY l.id ORDER BY FIELD(l.visibility_status,'pending_new_business','pending_import_review','public_unclaimed','public_claimed','rejected','hidden'), l.name LIMIT 60";
