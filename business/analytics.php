@@ -86,6 +86,20 @@ $recent_stmt->bind_param("i", $location_id);
 $recent_stmt->execute();
 $recent_checkins = $recent_stmt->get_result();
 
+$followers_stmt = $conn->prepare("
+    SELECT u.fName, u.lName, u.selected_profile_frame, u.selected_profile_frame_style, u.profile_photo_url,
+        p.object_key AS profile_photo_object_key, lb.createdAt
+    FROM liked_businesses lb
+    INNER JOIN users u ON u.id = lb.user_id AND u.disabledAt IS NULL
+    LEFT JOIN photos p ON p.id = u.profile_photo_id AND p.deletedAt IS NULL AND p.status = 'approved'
+    WHERE lb.location_id=?
+    ORDER BY lb.createdAt DESC
+    LIMIT 12
+");
+$followers_stmt->bind_param("i", $location_id);
+$followers_stmt->execute();
+$recent_followers = $followers_stmt->get_result();
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -204,6 +218,29 @@ $recent_checkins = $recent_stmt->get_result();
                                 <?php echo $checkin['visit_type'] === 'first_time' ? 'First-time check-in' : 'Repeat check-in'; ?>
                                 &middot; <?php echo escape_output(craftcrawl_format_metric_number($checkin['xp_awarded'])); ?> XP
                             </p>
+                        </article>
+                    <?php endwhile; ?>
+                </div>
+            <?php endif; ?>
+            </section>
+
+            <section class="analytics-panel" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--color-border);">
+                <div class="business-section-header">
+                    <h2>Followers</h2>
+                </div>
+            <?php if ($recent_followers->num_rows === 0) : ?>
+                <p class="analytics-empty">Followers will show here once users follow your business.</p>
+            <?php else : ?>
+                <div class="analytics-recent-grid">
+                    <?php while ($follower = $recent_followers->fetch_assoc()) : ?>
+                        <article class="analytics-checkin-card">
+                            <div class="user-identity-row">
+                                <?php echo craftcrawl_render_user_avatar($follower, 'small'); ?>
+                                <div>
+                                    <strong><?php echo escape_output(trim($follower['fName'] . ' ' . $follower['lName'])); ?></strong>
+                                    <span><?php echo escape_output(craftcrawl_format_checkin_time($follower['createdAt'])); ?></span>
+                                </div>
+                            </div>
                         </article>
                     <?php endwhile; ?>
                 </div>
