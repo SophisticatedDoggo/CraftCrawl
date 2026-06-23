@@ -35,7 +35,9 @@ $apk_updated = $apk_available ? date('F j, Y g:i A T', filemtime($apk_path)) : n
             <article class="settings-panel legal-panel download-option-card">
                 <div>
                     <h2>iOS TestFlight</h2>
-                    <p>Join the CraftCrawl TestFlight beta from your iPhone or iPad.</p>
+                    <p>Join the CraftCrawl TestFlight beta from your iPhone or iPad. This link will take you to download the TestFlight app. 
+                        Once you've downloaded the testflight app, click this link again to download CraftCrawl.
+                    </p>
                 </div>
                 <a class="button-link" href="<?php echo escape_output($testflight_url); ?>" target="_blank" rel="noopener">Open TestFlight</a>
             </article>
