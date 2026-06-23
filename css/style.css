@@ -18375,10 +18375,14 @@ a.text-link:focus,
     place-items: center;
     width: 28px;
     height: 28px;
+    min-height: 0;
     padding: 0;
     border: none;
     border-radius: 6px;
     background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     transition: background 120ms;
@@ -18387,6 +18391,8 @@ a.text-link:focus,
 .post-menu-trigger:hover,
 .post-menu-trigger:focus-visible {
     background: var(--color-surface-raised);
+    border: none;
+    box-shadow: none;
 }
 
 .post-menu-trigger-icon {
@@ -18434,10 +18440,14 @@ a.text-link:focus,
     align-items: center;
     gap: 8px;
     width: 100%;
+    min-height: 0;
     padding: 10px 14px;
     border: none;
     border-radius: 0;
     background: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     color: var(--color-text);
     font-size: 0.88rem;
     font-weight: 500;
@@ -18449,6 +18459,8 @@ a.text-link:focus,
 .post-menu-dropdown-item:hover,
 .post-menu-dropdown-item:focus-visible {
     background: var(--color-surface-raised);
+    border: none;
+    box-shadow: none;
 }
 
 .post-menu-dropdown-item.is-danger {
@@ -18457,6 +18469,10 @@ a.text-link:focus,
 
 .friends-feed-item {
     position: relative;
+}
+
+.friends-feed-item:has(> .post-menu) {
+    padding-right: 36px;
 }
 
 .friends-feed-item > .post-menu {
