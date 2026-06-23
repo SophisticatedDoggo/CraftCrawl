@@ -18554,30 +18554,37 @@ a.text-link:focus,
     padding: 12px 18px;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s;
 }
 
-.age-gate-btn-yes {
+.age-gate-btn.age-gate-btn-yes,
+.age-gate-btn.age-gate-btn-yes:hover,
+.age-gate-btn.age-gate-btn-yes:focus {
     color: #fff;
     background: var(--color-primary);
     border-color: var(--color-primary);
 }
 
-.age-gate-btn-yes:hover,
-.age-gate-btn-yes:focus-visible {
+.age-gate-btn.age-gate-btn-yes:hover,
+.age-gate-btn.age-gate-btn-yes:focus-visible {
     background: var(--color-primary-dark);
     border-color: var(--color-primary-dark);
 }
 
-.age-gate-btn-no {
+.age-gate-btn.age-gate-btn-no,
+.age-gate-btn.age-gate-btn-no:hover,
+.age-gate-btn.age-gate-btn-no:focus {
     color: var(--color-text);
     background: var(--color-surface);
 }
 
-.age-gate-btn-no:hover,
-.age-gate-btn-no:focus-visible {
+.age-gate-btn.age-gate-btn-no:hover,
+.age-gate-btn.age-gate-btn-no:focus-visible {
     background: var(--color-surface-muted);
 }
