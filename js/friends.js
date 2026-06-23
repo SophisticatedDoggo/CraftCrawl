@@ -3439,6 +3439,8 @@ window.CraftCrawlInitFriends = function (scope = document) {
             p.hidden = p.dataset.friendsSubtabPanel !== target;
         });
 
+        window.CraftCrawlUpdateSubtabThumb?.(managerPage.querySelector('.friends-subtab-nav'), true);
+
         if (target === 'friends' && !friendsSubtabLoaded.friends) {
             friendsSubtabLoaded.friends = true;
             loadCurrentFriendsTab();
@@ -3603,6 +3605,9 @@ window.CraftCrawlInitFriends = function (scope = document) {
 
     if (managerPage) {
         handleInitialSubtab();
+        requestAnimationFrame(function () {
+            window.CraftCrawlUpdateSubtabThumb?.(managerPage.querySelector('.friends-subtab-nav'), false);
+        });
         friendsSubtabLoaded.friends = true;
         friendsSubtabLoaded.find = true;
         loadRequests();

@@ -81,6 +81,34 @@ foreach ($events_by_date as $date => $events) {
 }
 
 $event_comment_counts = craftcrawl_business_event_comment_counts_for_items($conn, (int) $_SESSION['business_account_id'], $event_item_keys);
+
+$events_json = [];
+foreach ($events_by_date as $date => $day_events) {
+    foreach ($day_events as $ev) {
+        $item_key = craftcrawl_business_event_item_key($ev['id'], $date);
+        $events_json[] = [
+            'id' => (int) $ev['id'],
+            'name' => $ev['eName'],
+            'description' => $ev['eDescription'] ?? '',
+            'date' => $date,
+            'startTime' => $ev['startTime'],
+            'endTime' => $ev['endTime'] ?? null,
+            'isRecurring' => !empty($ev['isRecurring']),
+            'comments' => (int) ($event_comment_counts[$item_key]['total'] ?? 0),
+            'unread' => (int) ($event_comment_counts[$item_key]['unread'] ?? 0),
+        ];
+    }
+}
+
+function craftcrawl_relative_date_group($date, $today) {
+    $diff = (int) ((strtotime($date) - strtotime($today)) / 86400);
+    if ($diff < 0) return 'Past';
+    if ($diff === 0) return 'Today';
+    if ($diff === 1) return 'Tomorrow';
+    if ($diff <= 6) return 'This Week';
+    if ($diff <= 13) return 'Next Week';
+    return 'Later';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -136,6 +164,7 @@ include __DIR__ . '/portal_header.php';
 
         <nav class="business-subtab-nav calendar-view-tabs" role="tablist" data-calendar-view-tabs>
             <button type="button" class="business-subtab is-active" role="tab" data-calendar-view="month">Month</button>
+            <button type="button" class="business-subtab" role="tab" data-calendar-view="day">Day</button>
             <button type="button" class="business-subtab" role="tab" data-calendar-view="agenda">Agenda</button>
         </nav>
 
@@ -164,20 +193,23 @@ include __DIR__ . '/portal_header.php';
                     <?php for ($day = 1; $day <= (int) date('t', $month_timestamp); $day++) : ?>
                         <?php $date = date('Y-m-d', strtotime($calendar_month . '-' . str_pad((string) $day, 2, '0', STR_PAD_LEFT))); ?>
                         <?php $is_today = $date === $today; ?>
-                        <?php $day_event_count = count($events_by_date[$date] ?? []); ?>
+                        <?php $day_events_list = $events_by_date[$date] ?? []; ?>
                         <div class="event-calendar-day<?php echo $is_today ? ' is-today' : ''; ?>" data-calendar-day-date="<?php echo escape_output($date); ?>">
                             <span class="event-calendar-date<?php echo $is_today ? ' is-today' : ''; ?>">
                                 <?php echo escape_output($day); ?>
                             </span>
-                            <?php if ($day_event_count > 0) : ?>
-                                <div class="event-calendar-dots">
-                                    <?php for ($dot = 0; $dot < min($day_event_count, 3); $dot++) : ?>
-                                        <span class="event-calendar-dot"></span>
-                                    <?php endfor; ?>
-                                    <?php if ($day_event_count > 3) : ?>
-                                        <span class="event-calendar-dot-more">+<?php echo $day_event_count - 3; ?></span>
-                                    <?php endif; ?>
-                                </div>
+                            <?php foreach (array_slice($day_events_list, 0, 2) as $preview_event) : ?>
+                                <button type="button" class="event-calendar-event-preview"
+                                        data-event-id="<?php echo escape_output($preview_event['id']); ?>"
+                                        data-event-date="<?php echo escape_output($date); ?>">
+                                    <span class="event-preview-time"><?php echo escape_output(date('g:i', strtotime($preview_event['startTime']))); ?></span>
+                                    <span class="event-preview-name"><?php echo escape_output(mb_strimwidth($preview_event['eName'], 0, 18, '…')); ?></span>
+                                </button>
+                            <?php endforeach; ?>
+                            <?php if (count($day_events_list) > 2) : ?>
+                                <button type="button" class="event-calendar-more-btn" data-calendar-day-date="<?php echo escape_output($date); ?>">
+                                    +<?php echo count($day_events_list) - 2; ?> more
+                                </button>
                             <?php endif; ?>
                         </div>
                     <?php endfor; ?>
@@ -185,13 +217,27 @@ include __DIR__ . '/portal_header.php';
             </div>
         </section>
 
+        <section class="calendar-day-view" data-calendar-view-panel="day" hidden>
+            <div class="calendar-day-nav">
+                <button type="button" data-day-prev class="calendar-nav-btn">&#8249;</button>
+                <strong data-day-label></strong>
+                <button type="button" data-day-next class="calendar-nav-btn">&#8250;</button>
+            </div>
+            <div class="calendar-day-timeline" data-day-timeline></div>
+        </section>
+
         <section class="calendar-agenda-view" data-calendar-view-panel="agenda" hidden>
             <?php
                 ksort($events_by_date);
                 $has_agenda_events = false;
+                $current_group = '';
             ?>
             <?php foreach ($events_by_date as $date => $day_events) : ?>
                 <?php $has_agenda_events = true; ?>
+                <?php $group = craftcrawl_relative_date_group($date, $today); ?>
+                <?php if ($group !== $current_group) : $current_group = $group; ?>
+                    <div class="calendar-agenda-group-header"><?php echo escape_output($group); ?></div>
+                <?php endif; ?>
                 <div class="calendar-agenda-date-header" data-agenda-date="<?php echo escape_output($date); ?>">
                     <strong><?php echo escape_output(date('l', strtotime($date))); ?></strong>
                     <span><?php echo escape_output(date('M j, Y', strtotime($date))); ?></span>
@@ -241,6 +287,21 @@ include __DIR__ . '/portal_header.php';
         </section>
 
         <a class="calendar-fab" href="event_edit.php?month=<?php echo escape_output($calendar_month); ?>" data-calendar-fab aria-label="Add Event">+</a>
+
+        <div class="event-detail-modal-overlay" data-event-modal hidden>
+            <div class="event-detail-modal-scrim" data-event-modal-close></div>
+            <div class="event-detail-modal" role="dialog" aria-modal="true">
+                <div class="event-detail-modal-header">
+                    <h2 data-event-modal-title></h2>
+                    <button type="button" data-event-modal-close aria-label="Close">&times;</button>
+                </div>
+                <div class="event-detail-modal-body" data-event-modal-body></div>
+                <div class="event-detail-modal-actions" data-event-modal-actions></div>
+            </div>
+        </div>
+
+        <script>window.CraftCrawlCalendarEvents = <?php echo json_encode($events_json, JSON_HEX_TAG | JSON_HEX_AMP); ?>;</script>
+        <script>window.CraftCrawlCalendarMonth = <?php echo json_encode($calendar_month); ?>;</script>
     </main>
     </div>
     <?php include __DIR__ . '/mobile_nav.php'; ?>

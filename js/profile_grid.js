@@ -78,6 +78,8 @@ window.CraftCrawlInitProfileGrid = function (scope) {
             panel.hidden = panel.dataset.profileSubtabPanel !== target;
         });
 
+        window.CraftCrawlUpdateSubtabThumb?.(profilePage.querySelector('.profile-subtab-nav'), true);
+
         var url = new URL(window.location.href);
         if (target === 'posts') {
             url.searchParams.delete('tab');
@@ -99,6 +101,10 @@ window.CraftCrawlInitProfileGrid = function (scope) {
     if (initialTab && profilePage.querySelector('[data-profile-subtab="' + initialTab + '"]')) {
         switchProfileSubtab(initialTab);
     }
+
+    requestAnimationFrame(function () {
+        window.CraftCrawlUpdateSubtabThumb?.(profilePage.querySelector('.profile-subtab-nav'), false);
+    });
 
     // --- Grid "Load More" ---
 

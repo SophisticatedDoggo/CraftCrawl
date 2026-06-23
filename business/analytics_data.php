@@ -250,6 +250,47 @@ while ($visitor = $visitor_result->fetch_assoc()) {
 
 $point_values = array_values($points);
 $total = array_sum(array_column($point_values, 'total'));
+$visitor_breakdown = [
+    'first_time' => (int) ($summary['first_time_checkins'] ?? 0),
+    'repeat' => (int) ($summary['repeat_checkins'] ?? 0),
+];
+
+// Activity heatmap: 7 days x 24 hours matrix
+$heatmap_stmt = $conn->prepare("
+    SELECT DAYOFWEEK(checkedInAt) AS dow, HOUR(checkedInAt) AS hr, COUNT(*) AS total
+    FROM user_visits
+    WHERE location_id=?
+    " . ($mode === 'lifetime' ? '' : 'AND checkedInAt >= ? AND checkedInAt < ?') . "
+    GROUP BY dow, hr
+");
+if ($mode === 'lifetime') {
+    $heatmap_stmt->bind_param('i', $location_id);
+} else {
+    $heatmap_stmt->bind_param('iss', $location_id, $start_sql, $end_sql);
+}
+$heatmap_stmt->execute();
+$heatmap_result = $heatmap_stmt->get_result();
+
+// Initialize 7x24 matrix (0=Sun .. 6=Sat, 0-23 hours)
+$heatmap_data = array_fill(0, 7, array_fill(0, 24, 0));
+while ($hrow = $heatmap_result->fetch_assoc()) {
+    $dow = ((int) $hrow['dow']) - 1; // DAYOFWEEK returns 1=Sun, convert to 0-indexed
+    $hr = (int) $hrow['hr'];
+    $heatmap_data[$dow][$hr] = (int) $hrow['total'];
+}
+
+// Trend: compare current period to previous period
+$prev_total = null;
+$change_pct = null;
+if ($mode !== 'lifetime') {
+    [$prev_start, $prev_end, ] = analytics_period_range($mode, $offset - 1, $first_checkin_at);
+    $prev_total_stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM user_visits WHERE location_id=? AND checkedInAt >= ? AND checkedInAt < ?");
+    $prev_total_stmt->bind_param('iss', $location_id, $prev_start->format('Y-m-d H:i:s'), $prev_end->format('Y-m-d H:i:s'));
+    $prev_total_stmt->execute();
+    $prev_total = (int) $prev_total_stmt->get_result()->fetch_assoc()['cnt'];
+    $change_pct = $prev_total > 0 ? round((($total - $prev_total) / $prev_total) * 100, 1) : null;
+}
+
 $summary_cards = [
     [
         'label' => 'Total Check-ins',
@@ -309,7 +350,10 @@ echo json_encode([
     'can_go_previous' => $mode !== 'lifetime',
     'points' => $point_values,
     'summary_cards' => $summary_cards,
-    'top_visitors' => $visitors
+    'top_visitors' => $visitors,
+    'visitor_breakdown' => $visitor_breakdown,
+    'activity_heatmap' => $heatmap_data,
+    'trend' => ['previous_total' => $prev_total, 'change_pct' => $change_pct],
 ]);
 
 ?>

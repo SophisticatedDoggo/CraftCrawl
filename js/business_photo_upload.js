@@ -138,3 +138,121 @@ window.CraftCrawlInitBusinessPhotoUpload = function (root = document) {
 };
 
 window.CraftCrawlInitBusinessPhotoUpload();
+
+window.CraftCrawlInitPhotoReorder = function (root = document) {
+    var grid = root.querySelector('.business-photo-grid');
+    if (!grid || grid.dataset.reorderReady === 'true') return;
+    grid.dataset.reorderReady = 'true';
+
+    var cards = function () { return Array.from(grid.querySelectorAll('.business-photo-card[data-photo-id]')); };
+    var dragCard = null;
+    var touchClone = null;
+    var touchOffsetX = 0;
+    var touchOffsetY = 0;
+    var csrfInput = root.querySelector('input[name="csrf_token"]');
+    var csrfToken = csrfInput ? csrfInput.value : '';
+
+    function saveOrder() {
+        var ids = cards().map(function (c) { return c.dataset.photoId; });
+        var form = new FormData();
+        form.append('form_action', 'reorder_photos');
+        if (csrfToken) form.append('csrf_token', csrfToken);
+        ids.forEach(function (id) { form.append('photo_ids[]', id); });
+
+        fetch('', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: form,
+            credentials: 'same-origin'
+        });
+    }
+
+    // Desktop drag and drop
+    grid.addEventListener('dragstart', function (e) {
+        var card = e.target.closest('.business-photo-card[data-photo-id]');
+        if (!card || !e.target.closest('[data-photo-drag-handle]')) { e.preventDefault(); return; }
+        dragCard = card;
+        card.classList.add('is-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    });
+
+    grid.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        if (!dragCard) return;
+        var target = e.target.closest('.business-photo-card[data-photo-id]');
+        if (!target || target === dragCard) return;
+        var rect = target.getBoundingClientRect();
+        var mid = rect.left + rect.width / 2;
+        if (e.clientX < mid) {
+            grid.insertBefore(dragCard, target);
+        } else {
+            grid.insertBefore(dragCard, target.nextSibling);
+        }
+    });
+
+    grid.addEventListener('dragend', function () {
+        if (dragCard) {
+            dragCard.classList.remove('is-dragging');
+            dragCard = null;
+            saveOrder();
+        }
+    });
+
+    // Set draggable on all cards
+    cards().forEach(function (card) {
+        card.setAttribute('draggable', 'true');
+    });
+
+    // Mobile touch reorder
+    grid.addEventListener('touchstart', function (e) {
+        var handle = e.target.closest('[data-photo-drag-handle]');
+        if (!handle) return;
+        var card = handle.closest('.business-photo-card[data-photo-id]');
+        if (!card) return;
+
+        e.preventDefault();
+        dragCard = card;
+        var rect = card.getBoundingClientRect();
+        var touch = e.touches[0];
+        touchOffsetX = touch.clientX - rect.left;
+        touchOffsetY = touch.clientY - rect.top;
+
+        touchClone = card.cloneNode(true);
+        touchClone.classList.add('is-touch-ghost');
+        touchClone.style.cssText = 'position:fixed;z-index:9999;width:' + rect.width + 'px;height:' + rect.height + 'px;left:' + (touch.clientX - touchOffsetX) + 'px;top:' + (touch.clientY - touchOffsetY) + 'px;opacity:0.85;pointer-events:none;';
+        document.body.appendChild(touchClone);
+        card.classList.add('is-dragging');
+    }, { passive: false });
+
+    document.addEventListener('touchmove', function (e) {
+        if (!dragCard || !touchClone) return;
+        e.preventDefault();
+        var touch = e.touches[0];
+        touchClone.style.left = (touch.clientX - touchOffsetX) + 'px';
+        touchClone.style.top = (touch.clientY - touchOffsetY) + 'px';
+
+        var elem = document.elementFromPoint(touch.clientX, touch.clientY);
+        var target = elem ? elem.closest('.business-photo-card[data-photo-id]') : null;
+        if (target && target !== dragCard) {
+            var rect = target.getBoundingClientRect();
+            var mid = rect.left + rect.width / 2;
+            if (touch.clientX < mid) {
+                grid.insertBefore(dragCard, target);
+            } else {
+                grid.insertBefore(dragCard, target.nextSibling);
+            }
+        }
+    }, { passive: false });
+
+    document.addEventListener('touchend', function () {
+        if (!dragCard) return;
+        dragCard.classList.remove('is-dragging');
+        if (touchClone) {
+            touchClone.remove();
+            touchClone = null;
+        }
+        saveOrder();
+        dragCard = null;
+    });
+};
+window.CraftCrawlInitPhotoReorder();
