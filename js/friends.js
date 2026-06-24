@@ -91,6 +91,19 @@ window.CraftCrawlInitFriends = function (scope = document) {
         closeTimer: 0
     };
     window.CraftCrawlFeedThreadOverlayState = feedThreadOverlayState;
+    const commentsSheetState = {
+        overlay: null,
+        panel: null,
+        body: null,
+        form: null,
+        replyContext: null,
+        itemKey: '',
+        closeTimer: 0,
+        pageScrollX: 0,
+        pageScrollY: 0,
+        previousBodyTop: '',
+        pageScrollLocked: false
+    };
     let feedThreadPendingReturnItemKey = '';
     let feedThreadPendingReturnUntil = 0;
 
@@ -2567,20 +2580,6 @@ window.CraftCrawlInitFriends = function (scope = document) {
     }
 
     // --- Comments Bottom Sheet ---
-
-    const commentsSheetState = {
-        overlay: null,
-        panel: null,
-        body: null,
-        form: null,
-        replyContext: null,
-        itemKey: '',
-        closeTimer: 0,
-        pageScrollX: 0,
-        pageScrollY: 0,
-        previousBodyTop: '',
-        pageScrollLocked: false
-    };
 
     function lockCommentsSheetPageScroll() {
         if (commentsSheetState.pageScrollLocked) return;

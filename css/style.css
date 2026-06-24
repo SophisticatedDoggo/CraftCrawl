@@ -6703,6 +6703,27 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
     font-size: 13px;
 }
 
+.profile-social-links {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding-top: 4px;
+}
+
+.profile-social-links a {
+    display: inline-flex;
+    transition: opacity 0.15s;
+}
+
+.profile-social-links a:hover,
+.profile-social-links a:focus {
+    opacity: 0.7;
+}
+
+.profile-social-links img {
+    border-radius: 4px;
+}
+
 @media (max-width: 500px) {
     .profile-photo-grid {
         gap: 1px;
@@ -9538,9 +9559,21 @@ body.feed-comments-sheet-open {
     border-radius: var(--radius-sm);
 }
 
-.business-hours-editor legend {
+.business-hours-editor legend,
+.business-socials-editor legend {
     padding: 0 6px;
     font-weight: 700;
+}
+
+.business-socials-editor {
+    display: grid;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    min-inline-size: 0;
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
 }
 
 .business-hours-bulk {

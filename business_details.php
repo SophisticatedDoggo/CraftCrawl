@@ -892,6 +892,25 @@ function format_event_time_range($event) {
                         <?php endif; ?>
                     </div>
                     <?php endif; ?>
+                    <?php
+                    $social_links = [];
+                    if (!empty($business['social_facebook'])) $social_links[] = ['url' => $business['social_facebook'], 'icon' => 'facebook.png', 'label' => 'Facebook'];
+                    if (!empty($business['social_instagram'])) $social_links[] = ['url' => $business['social_instagram'], 'icon' => 'instagram.png', 'label' => 'Instagram'];
+                    if (!empty($business['social_tiktok'])) $social_links[] = ['url' => $business['social_tiktok'], 'icon' => 'tiktok.png', 'label' => 'TikTok'];
+                    if (!empty($business['social_x'])) $social_links[] = ['url' => $business['social_x'], 'icon' => 'x.png', 'label' => 'X'];
+                    ?>
+                    <?php if (!empty($social_links)) : ?>
+                    <div class="profile-about-detail">
+                        <h3>Socials</h3>
+                        <div class="profile-social-links">
+                            <?php foreach ($social_links as $link) : ?>
+                                <a href="<?php echo escape_output($link['url']); ?>" target="_blank" rel="noopener" title="<?php echo escape_output($link['label']); ?>">
+                                    <img src="images/socials/<?php echo escape_output($link['icon']); ?>" alt="<?php echo escape_output($link['label']); ?>" width="28" height="28">
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </section>
 
