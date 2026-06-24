@@ -33,6 +33,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $business_hours = craftcrawl_business_hours_from_post($_POST);
     $phone = clean_text($_POST['phone'] ?? '');
     $website = filter_var(trim($_POST['website'] ?? ''), FILTER_SANITIZE_URL);
+    $social_facebook = filter_var(trim($_POST['social_facebook'] ?? ''), FILTER_SANITIZE_URL);
+    $social_instagram = filter_var(trim($_POST['social_instagram'] ?? ''), FILTER_SANITIZE_URL);
+    $social_tiktok = filter_var(trim($_POST['social_tiktok'] ?? ''), FILTER_SANITIZE_URL);
+    $social_x = filter_var(trim($_POST['social_x'] ?? ''), FILTER_SANITIZE_URL);
     $street_address = clean_text($_POST['address_address-search'] ?? $_POST['address'] ?? '');
     $apt_suite = clean_text($_POST['apt_suite'] ?? '');
     $city = clean_text($_POST['city'] ?? '');
@@ -51,8 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conn->begin_transaction();
 
         try {
-            $stmt = $conn->prepare("UPDATE locations SET name=?, location_type=?, about=?, hours_note=?, phone=?, website=?, street_address=?, apt_suite=?, city=?, state=?, zip=?, latitude=?, longitude=? WHERE id=?");
-            $stmt->bind_param("sssssssssssddi", $business_name, $business_type, $about, $hours, $phone, $website, $street_address, $apt_suite, $city, $state, $zip, $latitude, $longitude, $location_id);
+            $stmt = $conn->prepare("UPDATE locations SET name=?, location_type=?, about=?, hours_note=?, phone=?, website=?, social_facebook=?, social_instagram=?, social_tiktok=?, social_x=?, street_address=?, apt_suite=?, city=?, state=?, zip=?, latitude=?, longitude=? WHERE id=?");
+            $stmt->bind_param("sssssssssssssssddi", $business_name, $business_type, $about, $hours, $phone, $website, $social_facebook, $social_instagram, $social_tiktok, $social_x, $street_address, $apt_suite, $city, $state, $zip, $latitude, $longitude, $location_id);
             $stmt->execute();
             craftcrawl_save_location_hours($conn, $location_id, $business_hours);
             $conn->commit();
@@ -191,6 +195,19 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
                 <label for="website">Website</label>
                 <input type="url" id="website" name="website" value="<?php echo escape_output($business['bWebsite']); ?>">
+
+                <fieldset class="business-socials-editor">
+                    <legend>Social Media</legend>
+                    <p class="form-help">Optional. Paste the full URL to your profile on each platform.</p>
+                    <label for="social_facebook">Facebook</label>
+                    <input type="url" id="social_facebook" name="social_facebook" placeholder="https://facebook.com/yourbusiness" value="<?php echo escape_output($business['social_facebook'] ?? ''); ?>">
+                    <label for="social_instagram">Instagram</label>
+                    <input type="url" id="social_instagram" name="social_instagram" placeholder="https://instagram.com/yourbusiness" value="<?php echo escape_output($business['social_instagram'] ?? ''); ?>">
+                    <label for="social_tiktok">TikTok</label>
+                    <input type="url" id="social_tiktok" name="social_tiktok" placeholder="https://tiktok.com/@yourbusiness" value="<?php echo escape_output($business['social_tiktok'] ?? ''); ?>">
+                    <label for="social_x">X</label>
+                    <input type="url" id="social_x" name="social_x" placeholder="https://x.com/yourbusiness" value="<?php echo escape_output($business['social_x'] ?? ''); ?>">
+                </fieldset>
 
                 <label for="street_address">Street Address</label>
                 <input type="text" id="street_address" name="address" autocomplete="address-line1" required value="<?php echo escape_output($business['street_address']); ?>">

@@ -32,6 +32,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $zip = craftcrawl_admin_clean_text($_POST['zip'] ?? '');
         $phone = craftcrawl_admin_clean_text($_POST['phone'] ?? '');
         $website = filter_var(trim($_POST['website'] ?? ''), FILTER_SANITIZE_URL);
+        $social_facebook = filter_var(trim($_POST['social_facebook'] ?? ''), FILTER_SANITIZE_URL);
+        $social_instagram = filter_var(trim($_POST['social_instagram'] ?? ''), FILTER_SANITIZE_URL);
+        $social_tiktok = filter_var(trim($_POST['social_tiktok'] ?? ''), FILTER_SANITIZE_URL);
+        $social_x = filter_var(trim($_POST['social_x'] ?? ''), FILTER_SANITIZE_URL);
         $admin_notes = craftcrawl_admin_clean_text($_POST['admin_notes'] ?? '');
 
         $allowed_types = ['brewery', 'winery', 'cidery', 'distillery', 'meadery', 'bar', 'social_club', 'other'];
@@ -48,8 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $na = craftcrawl_normalize_location_text($street_address);
         $wd = craftcrawl_location_website_domain($website);
 
-        $u = $conn->prepare("UPDATE locations SET name=?, location_type=?, street_address=?, apt_suite=?, city=?, state=?, zip=?, phone=?, website=?, normalized_name=?, normalized_address=?, website_domain=?, adminNotes=? WHERE id=?");
-        $u->bind_param('sssssssssssssi', $name, $location_type, $street_address, $apt_suite, $city, $state, $zip, $phone, $website, $nn, $na, $wd, $admin_notes, $id);
+        $u = $conn->prepare("UPDATE locations SET name=?, location_type=?, street_address=?, apt_suite=?, city=?, state=?, zip=?, phone=?, website=?, social_facebook=?, social_instagram=?, social_tiktok=?, social_x=?, normalized_name=?, normalized_address=?, website_domain=?, adminNotes=? WHERE id=?");
+        $u->bind_param('sssssssssssssssssi', $name, $location_type, $street_address, $apt_suite, $city, $state, $zip, $phone, $website, $social_facebook, $social_instagram, $social_tiktok, $social_x, $nn, $na, $wd, $admin_notes, $id);
         $u->execute();
         craftcrawl_log_admin_review_action($conn, $admin_id, 'location', $id, 'details_updated', $admin_notes);
         header('Location: location_detail.php?id=' . $id . '&message=details_saved');
@@ -225,6 +229,22 @@ include __DIR__ . '/admin_header.php';
                 <div class="admin-field">
                     <label for="website">Website</label>
                     <input id="website" name="website" value="<?php echo craftcrawl_admin_escape($location['website']); ?>">
+                </div>
+                <div class="admin-field">
+                    <label for="social_facebook">Facebook</label>
+                    <input id="social_facebook" name="social_facebook" value="<?php echo craftcrawl_admin_escape($location['social_facebook'] ?? ''); ?>">
+                </div>
+                <div class="admin-field">
+                    <label for="social_instagram">Instagram</label>
+                    <input id="social_instagram" name="social_instagram" value="<?php echo craftcrawl_admin_escape($location['social_instagram'] ?? ''); ?>">
+                </div>
+                <div class="admin-field">
+                    <label for="social_tiktok">TikTok</label>
+                    <input id="social_tiktok" name="social_tiktok" value="<?php echo craftcrawl_admin_escape($location['social_tiktok'] ?? ''); ?>">
+                </div>
+                <div class="admin-field">
+                    <label for="social_x">X</label>
+                    <input id="social_x" name="social_x" value="<?php echo craftcrawl_admin_escape($location['social_x'] ?? ''); ?>">
                 </div>
                 <div class="admin-field">
                     <label for="admin_notes">Admin Notes</label>

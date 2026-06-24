@@ -242,22 +242,6 @@ window.CraftCrawlInitProfileGrid = function (scope) {
         '</article>';
     }
 
-    feedItems.addEventListener('click', function (event) {
-        var trigger = event.target.closest('[data-comments-sheet-trigger]');
-        if (!trigger || !feedItems.contains(trigger)) return;
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        var itemKey = trigger.dataset.itemKey || '';
-        if (!itemKey) return;
-
-        if (typeof window.CraftCrawlOpenCommentsSheet !== 'function') {
-            window.CraftCrawlInitFriends?.(document);
-        }
-        window.CraftCrawlOpenCommentsSheet?.(itemKey);
-    });
-
     function showFeedView(targetVisitId) {
         gridScrollPosition = window.scrollY;
 
