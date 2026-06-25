@@ -52,7 +52,7 @@ function admin_details_account_fetch($conn, $account_type, $account_id) {
             GROUP BY ba.id
         ");
     } elseif ($account_type === 'admin') {
-        $stmt = $conn->prepare("SELECT id, CONCAT(fName, ' ', lName) AS account_name, email, createdAt, NULL AS emailVerifiedAt, CASE WHEN active=FALSE THEN COALESCE(disabledAt, createdAt) ELSE disabledAt END AS disabledAt FROM admins WHERE id=?");
+        $stmt = $conn->prepare("SELECT id, CONCAT(fName, ' ', lName) AS account_name, fName, lName, email, createdAt, NULL AS emailVerifiedAt, CASE WHEN active=FALSE THEN COALESCE(disabledAt, createdAt) ELSE disabledAt END AS disabledAt FROM admins WHERE id=?");
     } else {
         return null;
     }
@@ -83,6 +83,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $sent = craftcrawl_issue_password_reset($conn, $account_type, $account['email']);
             $message = $sent ? 'password_reset_sent' : 'email_send_error';
         }
+    }
+
+    if ($form_action === 'update_account_details') {
+        $redirect = 'account_details.php?account_type=' . urlencode($account_type) . '&account_id=' . urlencode((string) $account_id);
+        $new_email = trim($_POST['account_email'] ?? '');
+
+        if ($account_type === 'user') {
+            $fname = craftcrawl_admin_clean_text($_POST['fName'] ?? '');
+            $lname = craftcrawl_admin_clean_text($_POST['lName'] ?? '');
+            if ($fname === '' || $lname === '' || $new_email === '') {
+                header('Location: ' . $redirect . '&message=details_validation_error');
+                exit();
+            }
+            $dup = $conn->prepare("SELECT id FROM users WHERE email=? AND id!=?");
+            $dup->bind_param('si', $new_email, $account_id);
+            $dup->execute();
+            if ($dup->get_result()->num_rows > 0) {
+                header('Location: ' . $redirect . '&message=email_taken');
+                exit();
+            }
+            $u = $conn->prepare("UPDATE users SET fName=?, lName=?, email=? WHERE id=?");
+            $u->bind_param('sssi', $fname, $lname, $new_email, $account_id);
+            $u->execute();
+        } elseif ($account_type === 'business') {
+            $contact_name = craftcrawl_admin_clean_text($_POST['contact_name'] ?? '');
+            if ($contact_name === '' || $new_email === '') {
+                header('Location: ' . $redirect . '&message=details_validation_error');
+                exit();
+            }
+            $dup = $conn->prepare("SELECT id FROM business_accounts WHERE account_email=? AND id!=?");
+            $dup->bind_param('si', $new_email, $account_id);
+            $dup->execute();
+            if ($dup->get_result()->num_rows > 0) {
+                header('Location: ' . $redirect . '&message=email_taken');
+                exit();
+            }
+            $u = $conn->prepare("UPDATE business_accounts SET contact_name=?, account_email=? WHERE id=?");
+            $u->bind_param('ssi', $contact_name, $new_email, $account_id);
+            $u->execute();
+        } elseif ($account_type === 'admin') {
+            $fname = craftcrawl_admin_clean_text($_POST['fName'] ?? '');
+            $lname = craftcrawl_admin_clean_text($_POST['lName'] ?? '');
+            if ($fname === '' || $lname === '' || $new_email === '') {
+                header('Location: ' . $redirect . '&message=details_validation_error');
+                exit();
+            }
+            $dup = $conn->prepare("SELECT id FROM admins WHERE email=? AND id!=?");
+            $dup->bind_param('si', $new_email, $account_id);
+            $dup->execute();
+            if ($dup->get_result()->num_rows > 0) {
+                header('Location: ' . $redirect . '&message=email_taken');
+                exit();
+            }
+            $u = $conn->prepare("UPDATE admins SET fName=?, lName=?, email=? WHERE id=?");
+            $u->bind_param('sssi', $fname, $lname, $new_email, $account_id);
+            $u->execute();
+        }
+        header('Location: ' . $redirect . '&message=details_saved');
+        exit();
     }
 
     if ($form_action === 'change_password') {
@@ -127,7 +186,13 @@ $admin_page_extra_scripts = ['../js/admin_review_edit_toggle.js'];
 include __DIR__ . '/admin_header.php';
 ?>
 
-        <?php if ($message === 'password_saved') : ?>
+        <?php if ($message === 'details_saved') : ?>
+            <p class="form-message form-message-success">Account details saved.</p>
+        <?php elseif ($message === 'details_validation_error') : ?>
+            <p class="form-message form-message-error">All required fields must be filled in.</p>
+        <?php elseif ($message === 'email_taken') : ?>
+            <p class="form-message form-message-error">That email address is already in use by another account.</p>
+        <?php elseif ($message === 'password_saved') : ?>
             <p class="form-message form-message-success">Password saved.</p>
         <?php elseif ($message === 'password_reset_sent') : ?>
             <p class="form-message form-message-success">Password reset email sent.</p>
@@ -141,7 +206,7 @@ include __DIR__ . '/admin_header.php';
             <p class="form-message form-message-error">Email could not be sent.</p>
         <?php endif; ?>
 
-        <section class="admin-panel">
+        <section class="admin-panel" data-admin-review-card>
             <div class="business-section-header">
                 <div class="user-identity-row admin-account-identity">
                     <?php if ($account_type === 'user') : ?>
@@ -149,13 +214,32 @@ include __DIR__ . '/admin_header.php';
                     <?php endif; ?>
                     <h2><?php echo craftcrawl_admin_escape($account['account_name']); ?></h2>
                 </div>
-                <a href="accounts.php" data-back-link>Back</a>
+                <div class="admin-location-actions">
+                    <button type="button" data-admin-review-edit-toggle>Edit</button>
+                    <a href="accounts.php" data-back-link>Back</a>
+                </div>
             </div>
-            <dl class="admin-detail-list">
+
+            <dl class="admin-detail-list" data-admin-review-preview>
                 <div>
                     <dt>Account Type</dt>
                     <dd><?php echo craftcrawl_admin_escape(ucfirst($account_type)); ?></dd>
                 </div>
+                <?php if ($account_type === 'user' || $account_type === 'admin') : ?>
+                    <div>
+                        <dt>First Name</dt>
+                        <dd><?php echo craftcrawl_admin_escape($account['fName']); ?></dd>
+                    </div>
+                    <div>
+                        <dt>Last Name</dt>
+                        <dd><?php echo craftcrawl_admin_escape($account['lName']); ?></dd>
+                    </div>
+                <?php elseif ($account_type === 'business') : ?>
+                    <div>
+                        <dt>Contact Name</dt>
+                        <dd><?php echo craftcrawl_admin_escape($account['account_name']); ?></dd>
+                    </div>
+                <?php endif; ?>
                 <div>
                     <dt>Email</dt>
                     <dd><?php echo craftcrawl_admin_escape($account['email']); ?></dd>
@@ -179,6 +263,36 @@ include __DIR__ . '/admin_header.php';
                     </div>
                 <?php endif; ?>
             </dl>
+
+            <form method="POST" action="account_details.php" data-admin-review-edit-form hidden>
+                <?php echo craftcrawl_csrf_input(); ?>
+                <input type="hidden" name="form_action" value="update_account_details">
+                <input type="hidden" name="account_type" value="<?php echo craftcrawl_admin_escape($account_type); ?>">
+                <input type="hidden" name="account_id" value="<?php echo craftcrawl_admin_escape($account_id); ?>">
+                <?php if ($account_type === 'user' || $account_type === 'admin') : ?>
+                    <div class="admin-field">
+                        <label for="fName">First Name</label>
+                        <input id="fName" name="fName" value="<?php echo craftcrawl_admin_escape($account['fName']); ?>" required>
+                    </div>
+                    <div class="admin-field">
+                        <label for="lName">Last Name</label>
+                        <input id="lName" name="lName" value="<?php echo craftcrawl_admin_escape($account['lName']); ?>" required>
+                    </div>
+                <?php elseif ($account_type === 'business') : ?>
+                    <div class="admin-field">
+                        <label for="contact_name">Contact Name</label>
+                        <input id="contact_name" name="contact_name" value="<?php echo craftcrawl_admin_escape($account['account_name']); ?>" required>
+                    </div>
+                <?php endif; ?>
+                <div class="admin-field">
+                    <label for="account_email">Email</label>
+                    <input id="account_email" name="account_email" type="email" value="<?php echo craftcrawl_admin_escape($account['email']); ?>" required>
+                </div>
+                <div class="admin-location-actions">
+                    <button type="submit">Save Details</button>
+                    <button type="button" data-admin-review-edit-cancel>Cancel</button>
+                </div>
+            </form>
         </section>
 
         <section class="admin-panel">
