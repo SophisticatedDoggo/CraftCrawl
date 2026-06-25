@@ -52,11 +52,31 @@ require_once '../config.php';
 require_once '../lib/cloudinary_upload.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $is_ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+        && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
     if (craftcrawl_request_exceeds_post_max_size()) {
+        if ($is_ajax) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'message' => 'event_photo_server_limit_error']);
+            exit();
+        }
         redirect_to_event_form($edit_event_id ?: 0, $selected_date, $calendar_month, 'event_photo_server_limit_error');
     }
 
-    craftcrawl_verify_csrf();
+    if ($is_ajax) {
+        craftcrawl_secure_session_start();
+        $session_token = $_SESSION['csrf_token'] ?? '';
+        $posted_token = $_POST['csrf_token'] ?? '';
+        if (!is_string($posted_token) || !hash_equals($session_token, $posted_token)) {
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'message' => 'csrf_error']);
+            exit();
+        }
+    } else {
+        craftcrawl_verify_csrf();
+    }
 
     $form_action = $_POST['form_action'] ?? 'save_event';
     $event_id = (int) ($_POST['event_id'] ?? 0);
@@ -82,10 +102,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $recurrence_rule = $recurrence_rule === '' ? null : $recurrence_rule;
 
     if ($event_name === '' || $event_date === '' || $start_time === '' || !is_valid_event_date($event_date)) {
+        if ($is_ajax) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'message' => 'event_error']);
+            exit();
+        }
         redirect_to_event_form($event_id, $event_date, $calendar_month, 'event_error');
     }
 
     if ($is_recurring && !in_array($recurrence_rule, ['weekly', 'monthly'], true)) {
+        if ($is_ajax) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'message' => 'recurrence_error']);
+            exit();
+        }
         redirect_to_event_form($event_id, $event_date, $calendar_month, 'recurrence_error');
     }
 
@@ -117,10 +147,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $conn->commit();
+        if ($is_ajax) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true]);
+            exit();
+        }
         redirect_to_calendar(date('Y-m', strtotime($event_date)), 'event_saved');
     } catch (Throwable $error) {
         $conn->rollback();
         $upload_message = str_contains($error->getMessage(), 'server upload limit') ? 'event_photo_server_limit_error' : 'event_photo_error';
+        if ($is_ajax) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'message' => $upload_message]);
+            exit();
+        }
         redirect_to_event_form($event_id, $event_date, $calendar_month, $upload_message);
     }
 }

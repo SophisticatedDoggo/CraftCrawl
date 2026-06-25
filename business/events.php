@@ -286,8 +286,6 @@ include __DIR__ . '/portal_header.php';
             <?php endif; ?>
         </section>
 
-        <a class="calendar-fab" href="event_edit.php?month=<?php echo escape_output($calendar_month); ?>" data-calendar-fab aria-label="Add Event">+</a>
-
         <div class="event-detail-modal-overlay" data-event-modal hidden>
             <div class="event-detail-modal-scrim" data-event-modal-close></div>
             <div class="event-detail-modal" role="dialog" aria-modal="true">
@@ -297,6 +295,69 @@ include __DIR__ . '/portal_header.php';
                 </div>
                 <div class="event-detail-modal-body" data-event-modal-body></div>
                 <div class="event-detail-modal-actions" data-event-modal-actions></div>
+            </div>
+        </div>
+
+        <div class="day-events-modal-overlay" data-day-events-modal hidden>
+            <div class="day-events-modal-scrim" data-day-events-modal-close></div>
+            <div class="day-events-modal" role="dialog" aria-modal="true">
+                <div class="day-events-modal-header">
+                    <h2 data-day-events-modal-title></h2>
+                    <button type="button" data-day-events-modal-close aria-label="Close">&times;</button>
+                </div>
+                <div class="day-events-modal-body">
+                    <div class="day-events-modal-list-panel" data-day-events-list></div>
+                    <div class="day-events-modal-form-panel" data-day-events-form hidden>
+                        <div class="day-events-form-header">
+                            <button type="button" data-day-events-form-back aria-label="Back to events list">&larr; Back</button>
+                            <h3>Add Event</h3>
+                        </div>
+                        <form method="POST" action="event_edit.php?month=<?php echo escape_output($calendar_month); ?>" enctype="multipart/form-data" data-day-events-create-form>
+                            <?php echo craftcrawl_csrf_input(); ?>
+                            <input type="hidden" name="event_id" value="0">
+                            <input type="hidden" name="event_date" data-day-events-form-date value="">
+
+                            <label for="modal_event_name">Event Name</label>
+                            <input type="text" id="modal_event_name" name="event_name" required>
+
+                            <label for="modal_description">Description</label>
+                            <textarea id="modal_description" name="description" rows="3"></textarea>
+
+                            <label for="modal_event_cover_photo">Cover Photo</label>
+                            <input type="file" id="modal_event_cover_photo" name="event_cover_photo" accept="image/jpeg,image/png,image/webp">
+                            <p class="form-help">JPEG, PNG, or WebP under 12 MB.</p>
+
+                            <div class="event-time-row">
+                                <div>
+                                    <label for="modal_start_time">Start Time</label>
+                                    <input type="time" id="modal_start_time" name="start_time" required>
+                                </div>
+                                <div>
+                                    <label for="modal_end_time">End Time</label>
+                                    <input type="time" id="modal_end_time" name="end_time">
+                                </div>
+                            </div>
+
+                            <label class="event-recurring-toggle">
+                                <input type="checkbox" id="modal_is_recurring" name="is_recurring" value="1">
+                                Recurring Event
+                            </label>
+
+                            <div id="modal_recurrence_fields" class="recurrence-fields recurrence-fields-hidden">
+                                <label for="modal_recurrence_rule">Repeats</label>
+                                <select id="modal_recurrence_rule" name="recurrence_rule">
+                                    <option value="">Does not repeat</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                                <label for="modal_recurrence_end">Repeat Until</label>
+                                <input type="date" id="modal_recurrence_end" name="recurrence_end" min="<?php echo escape_output(date('Y-m-d')); ?>" max="<?php echo escape_output(date('Y-m-d', strtotime('+1 year'))); ?>">
+                            </div>
+
+                            <button type="submit">Save Event</button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
 
