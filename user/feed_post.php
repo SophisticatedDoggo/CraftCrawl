@@ -206,6 +206,7 @@ function feed_thread_reaction_options($item) {
         'level_up' => ['heart', 'cheers', 'nice_find', 'yuck', 'trophy'],
         'event' => ['heart', 'cheers', 'nice_find', 'yuck', 'want_to_go'],
         'event_want' => ['heart', 'cheers', 'nice_find', 'yuck'],
+        'follow' => ['heart', 'cheers', 'nice_find'],
         'location_want' => ['heart', 'cheers', 'nice_find', 'yuck', 'want_to_go'],
         'badge_earned' => ['heart', 'cheers', 'nice_find', 'yuck', 'trophy'],
         'quest_complete' => ['heart', 'cheers', 'nice_find', 'yuck', 'trophy'],

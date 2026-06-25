@@ -97,6 +97,16 @@ function craftcrawl_feed_item_owner_id($conn, $item_key) {
         return 0;
     }
 
+    if (preg_match('/^follow:(\d+)$/', $item_key, $matches)) {
+        $follow_id = (int) $matches[1];
+        $stmt = $conn->prepare("SELECT user_id FROM liked_businesses WHERE id=? LIMIT 1");
+        $stmt->bind_param("i", $follow_id);
+        $stmt->execute();
+        $follow = $stmt->get_result()->fetch_assoc();
+
+        return $follow ? (int) $follow['user_id'] : 0;
+    }
+
     if (preg_match('/^location_want:(\d+)$/', $item_key, $matches)) {
         $want_id = (int) $matches[1];
         $stmt = $conn->prepare("SELECT user_id FROM want_to_go_locations WHERE id=? LIMIT 1");
