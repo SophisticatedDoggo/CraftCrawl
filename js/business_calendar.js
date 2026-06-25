@@ -105,7 +105,7 @@ window.CraftCrawlInitBusinessCalendar = function (root = document) {
         });
     }
 
-    // --- Event detail modal ---
+    // --- Event detail modal (used by day view and agenda view) ---
 
     function openEventModal(eventId, dateStr) {
         var ev = events.find(function (e) { return e.id === parseInt(eventId) && e.date === dateStr; });
@@ -139,6 +139,71 @@ window.CraftCrawlInitBusinessCalendar = function (root = document) {
         document.body.classList.remove('welcome-modal-open');
     }
 
+    // --- Day events modal (used by month view) ---
+
+    function openDayEventsModal(dateStr) {
+        var modal = root.querySelector('[data-day-events-modal]');
+        if (!modal) return;
+
+        modal.querySelector('[data-day-events-modal-title]').textContent = formatDate(dateStr);
+
+        var listPanel = modal.querySelector('[data-day-events-list]');
+        var formPanel = modal.querySelector('[data-day-events-form]');
+        formPanel.hidden = true;
+        modal.classList.remove('is-form-visible');
+
+        var dayEvents = events.filter(function (e) { return e.date === dateStr; });
+        var html = '';
+
+        if (dayEvents.length === 0) {
+            html += '<p class="day-events-empty">No events on this day.</p>';
+        } else {
+            dayEvents.forEach(function (ev) {
+                var timeStr = formatTime(ev.startTime);
+                if (ev.endTime) timeStr += ' – ' + formatTime(ev.endTime);
+                html += '<article class="day-events-item">';
+                html += '<div class="day-events-item-time">' + escapeHtml(timeStr) + '</div>';
+                html += '<div class="day-events-item-body">';
+                html += '<strong>' + escapeHtml(ev.name) + '</strong>';
+                if (ev.description) {
+                    html += '<p>' + escapeHtml(ev.description.length > 100 ? ev.description.slice(0, 100) + '...' : ev.description) + '</p>';
+                }
+                html += '<div class="day-events-item-meta">';
+                if (ev.comments > 0) {
+                    html += '<a class="calendar-agenda-comment-badge' + (ev.unread > 0 ? ' has-unread' : '') + '" href="event_comments.php?item=' + encodeURIComponent('event:' + ev.id + ':' + ev.date) + '">';
+                    html += ev.comments + ' comment' + (ev.comments !== 1 ? 's' : '');
+                    if (ev.unread > 0) html += ' <span>' + ev.unread + ' new</span>';
+                    html += '</a>';
+                }
+                html += '<a class="calendar-agenda-edit-link" href="event_edit.php?month=' + encodeURIComponent(window.CraftCrawlCalendarMonth || '') + '&edit=' + ev.id + '&date=' + encodeURIComponent(ev.date) + '">Edit</a>';
+                html += '</div></div></article>';
+            });
+        }
+
+        html += '<button type="button" class="day-events-add-btn" data-day-events-add>+ Add Event</button>';
+        listPanel.innerHTML = html;
+
+        var dateInput = modal.querySelector('[data-day-events-form-date]');
+        if (dateInput) dateInput.value = dateStr;
+
+        modal.hidden = false;
+        document.body.classList.add('welcome-modal-open');
+    }
+
+    function closeDayEventsModal() {
+        var modal = root.querySelector('[data-day-events-modal]');
+        if (!modal) return;
+        modal.hidden = true;
+        modal.classList.remove('is-form-visible');
+        document.body.classList.remove('welcome-modal-open');
+        var form = modal.querySelector('[data-day-events-create-form]');
+        if (form) form.reset();
+        var formPanel = modal.querySelector('[data-day-events-form]');
+        if (formPanel) formPanel.hidden = true;
+        var existingMsg = modal.querySelector('.form-message');
+        if (existingMsg) existingMsg.remove();
+    }
+
     // --- Event listeners ---
 
     // Tab clicks
@@ -147,27 +212,22 @@ window.CraftCrawlInitBusinessCalendar = function (root = document) {
         if (btn) switchView(btn.dataset.calendarView);
     });
 
-    // Month view: click a day cell to switch to day view
+    // Month view: click a day cell to open day events modal
     root.addEventListener('click', function (e) {
+        var monthPanel = root.querySelector('[data-calendar-view-panel="month"]');
+        if (!monthPanel || monthPanel.hidden) return;
+
         var cell = e.target.closest('[data-calendar-day-date]');
-        if (!cell || e.target.closest('[data-event-id]') || e.target.closest('.event-calendar-more-btn')) return;
-        var date = cell.dataset.calendarDayDate;
-        switchView('day');
-        renderDayView(date);
+        if (!cell) return;
+
+        openDayEventsModal(cell.dataset.calendarDayDate);
     });
 
-    // "+N more" button: switch to day view for that day
+    // Event preview/block click: open single-event modal (day view and agenda view only)
     root.addEventListener('click', function (e) {
-        var moreBtn = e.target.closest('.event-calendar-more-btn');
-        if (!moreBtn) return;
-        e.stopPropagation();
-        var date = moreBtn.dataset.calendarDayDate;
-        switchView('day');
-        renderDayView(date);
-    });
+        var monthPanel = root.querySelector('[data-calendar-view-panel="month"]');
+        if (monthPanel && !monthPanel.hidden) return;
 
-    // Event preview/block click: open modal
-    root.addEventListener('click', function (e) {
         var preview = e.target.closest('[data-event-id]');
         if (preview) {
             e.stopPropagation();
@@ -189,12 +249,95 @@ window.CraftCrawlInitBusinessCalendar = function (root = document) {
         }
     });
 
-    // Modal close handlers
+    // Single-event modal close
     root.addEventListener('click', function (e) {
         if (e.target.closest('[data-event-modal-close]')) closeEventModal();
     });
+
+    // Day events modal close
+    root.addEventListener('click', function (e) {
+        if (e.target.closest('[data-day-events-modal-close]')) closeDayEventsModal();
+    });
+
+    // Day events modal: "Add Event" button -> show form panel
+    root.addEventListener('click', function (e) {
+        if (!e.target.closest('[data-day-events-add]')) return;
+        var modal = root.querySelector('[data-day-events-modal]');
+        if (!modal) return;
+        var formPanel = modal.querySelector('[data-day-events-form]');
+        if (formPanel) formPanel.hidden = false;
+        modal.classList.add('is-form-visible');
+    });
+
+    // Day events modal: "Back" button -> hide form panel
+    root.addEventListener('click', function (e) {
+        if (!e.target.closest('[data-day-events-form-back]')) return;
+        var modal = root.querySelector('[data-day-events-modal]');
+        if (!modal) return;
+        var formPanel = modal.querySelector('[data-day-events-form]');
+        if (formPanel) formPanel.hidden = true;
+        modal.classList.remove('is-form-visible');
+    });
+
+    // Day events modal: form submission via fetch
+    root.addEventListener('submit', function (e) {
+        var form = e.target.closest('[data-day-events-create-form]');
+        if (!form) return;
+        e.preventDefault();
+
+        var submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
+        var existingMsg = form.querySelector('.form-message');
+        if (existingMsg) existingMsg.remove();
+
+        fetch(form.action, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: new FormData(form)
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            if (data.ok) {
+                window.location.reload();
+            } else {
+                if (submitBtn) submitBtn.disabled = false;
+                var p = document.createElement('p');
+                p.className = 'form-message form-message-error';
+                var messages = {
+                    event_error: 'Please enter an event name, start time, and a valid date.',
+                    recurrence_error: 'Please choose a valid recurrence option.',
+                    event_photo_server_limit_error: 'That photo is too large. Try a smaller image.',
+                    event_photo_error: 'Cover photo could not be uploaded. Try a JPEG, PNG, or WebP under 12 MB.',
+                    csrf_error: 'Your session has expired. Please reload the page and try again.'
+                };
+                p.textContent = messages[data.message] || 'Something went wrong. Please try again.';
+                form.insertBefore(p, form.firstChild);
+            }
+        })
+        .catch(function () {
+            if (submitBtn) submitBtn.disabled = false;
+            var p = document.createElement('p');
+            p.className = 'form-message form-message-error';
+            p.textContent = 'Something went wrong. Please try again.';
+            form.insertBefore(p, form.firstChild);
+        });
+    });
+
+    // Recurring checkbox toggle for the modal form
+    root.addEventListener('change', function (e) {
+        if (e.target.id !== 'modal_is_recurring') return;
+        var fields = root.querySelector('#modal_recurrence_fields');
+        if (fields) fields.classList.toggle('recurrence-fields-hidden', !e.target.checked);
+    });
+
+    // Escape key closes modals
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeEventModal();
+        if (e.key === 'Escape') {
+            closeEventModal();
+            closeDayEventsModal();
+        }
     });
 
     // Today button
