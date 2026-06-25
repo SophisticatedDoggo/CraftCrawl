@@ -37,12 +37,13 @@ $reaction_options_by_type = [
     'badge_earned'  => ['heart', 'cheers', 'nice_find', 'yuck', 'trophy'],
     'quest_complete' => ['heart', 'cheers', 'nice_find', 'yuck', 'trophy'],
     'quest_sweep' => ['heart', 'cheers', 'nice_find', 'yuck', 'trophy'],
+    'follow'        => ['heart', 'cheers', 'nice_find'],
     'business_post' => ['heart', 'cheers', 'nice_find', 'yuck', 'want_to_go'],
     'user_post' => ['heart', 'cheers', 'nice_find', 'yuck'],
 ];
 
 $item_type = null;
-if (preg_match('/^(checkin|first_visit|level_up|event_want|location_want|badge_earned|quest_complete|business_post|user_post):\d+$/', $item_key, $type_matches)
+if (preg_match('/^(checkin|first_visit|level_up|event_want|location_want|follow|badge_earned|quest_complete|business_post|user_post):\d+$/', $item_key, $type_matches)
     || preg_match('/^(quest_sweep):(daily|weekly):\d+:\d{8}$/', $item_key, $type_matches)) {
     $item_type = $type_matches[1];
 }
@@ -161,6 +162,30 @@ function craftcrawl_feed_item_is_visible($conn, $user_id, $item_key) {
             LIMIT 1
         ");
         $stmt->bind_param("iii", $want_id, $user_id, $user_id);
+        $stmt->execute();
+        return (bool) $stmt->get_result()->fetch_assoc();
+    }
+
+    if (preg_match('/^follow:(\d+)$/', $item_key, $matches)) {
+        $follow_id = (int) $matches[1];
+        $stmt = $conn->prepare("
+            SELECT lb.id
+            FROM liked_businesses lb
+            INNER JOIN users u ON u.id = lb.user_id
+            INNER JOIN locations l ON l.id = lb.location_id
+            WHERE lb.id=?
+                AND u.show_feed_activity=TRUE
+                AND l.visibility_status IN ('public_unclaimed','public_claimed')
+                AND (
+                    lb.user_id=?
+                    OR EXISTS (
+                        SELECT 1 FROM user_friends uf
+                        WHERE uf.user_id=? AND uf.friend_user_id=lb.user_id
+                    )
+                )
+            LIMIT 1
+        ");
+        $stmt->bind_param("iii", $follow_id, $user_id, $user_id);
         $stmt->execute();
         return (bool) $stmt->get_result()->fetch_assoc();
     }
@@ -324,6 +349,11 @@ function craftcrawl_feed_item_allows_interactions($conn, $item_key, $viewer_user
     } elseif (preg_match('/^location_want:(\d+)$/', $item_key, $m)) {
         $item_id = (int) $m[1];
         $s = $conn->prepare("SELECT user_id FROM want_to_go_locations WHERE id=? LIMIT 1");
+        $s->bind_param("i", $item_id); $s->execute();
+        $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
+    } elseif (preg_match('/^follow:(\d+)$/', $item_key, $m)) {
+        $item_id = (int) $m[1];
+        $s = $conn->prepare("SELECT user_id FROM liked_businesses WHERE id=? LIMIT 1");
         $s->bind_param("i", $item_id); $s->execute();
         $owner_user_id = (int) ($s->get_result()->fetch_assoc()['user_id'] ?? 0);
     } elseif (preg_match('/^badge_earned:(\d+)$/', $item_key, $m)) {
