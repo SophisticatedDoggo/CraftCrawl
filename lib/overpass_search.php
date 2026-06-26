@@ -1,9 +1,15 @@
 <?php
 
-function craftcrawl_overpass_api_urls() {
+function craftcrawl_overpass_api_urls($area_query = false) {
     $env_url = trim((string) (getenv('OVERPASS_API_URL') ?: ''));
     if ($env_url !== '') {
         return [$env_url];
+    }
+    if ($area_query) {
+        return [
+            'https://overpass-api.de/api/interpreter',
+            'https://overpass.kumi.systems/api/interpreter',
+        ];
     }
     return [
         'https://overpass.openstreetmap.fr/api/interpreter',
@@ -94,11 +100,11 @@ function craftcrawl_overpass_adaptive_delay_us($response_time_s, $http_status) {
     return 2000000;
 }
 
-function craftcrawl_overpass_request(array $bbox, $timeout = 30, $query = null) {
+function craftcrawl_overpass_request(array $bbox, $timeout = 30, $query = null, $area_query = false) {
     if ($query === null) {
         $query = craftcrawl_overpass_build_query($bbox, $timeout);
     }
-    $urls = craftcrawl_overpass_api_urls();
+    $urls = craftcrawl_overpass_api_urls($area_query);
     $max_attempts = 3;
     $last_response = null;
     $last_status = 0;
@@ -143,6 +149,10 @@ function craftcrawl_overpass_request(array $bbox, $timeout = 30, $query = null) 
             }
 
             if (in_array($status, [403, 406], true)) {
+                break;
+            }
+
+            if ($area_query && $status === 504) {
                 break;
             }
 

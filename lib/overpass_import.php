@@ -862,7 +862,7 @@ function craftcrawl_run_overpass_import($conn, $state, array $options = []) {
         }
 
         $bbox_unused = [0, 0, 0, 0];
-        $payload = craftcrawl_overpass_request($bbox_unused, $area_timeout, $area_query);
+        $payload = craftcrawl_overpass_request($bbox_unused, $area_timeout, $area_query, true);
 
         if (empty($payload['error'])) {
             $used_area_query = true;
