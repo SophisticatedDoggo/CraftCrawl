@@ -6,6 +6,7 @@ function craftcrawl_overpass_api_urls() {
         return [$env_url];
     }
     return [
+        'https://overpass.openstreetmap.fr/api/interpreter',
         'https://overpass.kumi.systems/api/interpreter',
         'https://overpass-api.de/api/interpreter',
     ];
