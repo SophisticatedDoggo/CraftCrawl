@@ -665,6 +665,8 @@ function craftcrawl_process_overpass_import_operation_step($conn, $operation_id,
         $elements = $payload['elements'] ?? [];
         $counts = ['raw' => count($elements), 'created' => 0, 'review' => 0, 'rejected' => 0, 'duplicate' => 0, 'skipped' => 0, 'error' => 0];
 
+        craftcrawl_overpass_ensure_db($conn);
+
         foreach ($elements as $element) {
             $candidate = craftcrawl_normalize_overpass_element($element);
             if (!$candidate || trim($candidate['name']) === '') {
@@ -788,6 +790,8 @@ function craftcrawl_run_overpass_import($conn, $state, array $options = []) {
 
         $elements = $payload['elements'] ?? [];
         $counts = ['raw' => count($elements), 'created' => 0, 'review' => 0, 'rejected' => 0, 'duplicate' => 0, 'skipped' => 0, 'error' => 0];
+
+        craftcrawl_overpass_ensure_db($conn);
 
         foreach ($elements as $element) {
             $candidate = craftcrawl_normalize_overpass_element($element);
