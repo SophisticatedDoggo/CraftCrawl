@@ -770,12 +770,18 @@ function craftcrawl_process_overpass_import_operation_step($conn, $operation_id,
     return $summary;
 }
 
-function craftcrawl_overpass_process_elements($conn, array $elements, $state, $batch_id, array $chain_patterns, array $tile, $dry_run, $include_results, &$seen_place_ids, &$stmt_cache) {
+function craftcrawl_overpass_process_elements($conn, array $elements, $state, $batch_id, array $chain_patterns, array $tile, $dry_run, $include_results, &$seen_place_ids, &$stmt_cache, $progress_callback = null) {
     $counts = ['raw' => count($elements), 'created' => 0, 'review' => 0, 'rejected' => 0, 'duplicate' => 0, 'skipped' => 0, 'error' => 0];
     $results = ['created' => [], 'review' => [], 'rejected' => [], 'duplicate' => [], 'skipped' => [], 'error' => []];
     $check_tile_bounds = !empty($tile['latitude']);
+    $total = count($elements);
+    $processed_count = 0;
 
     foreach ($elements as $element) {
+        $processed_count++;
+        if ($progress_callback && $total > 0 && ($processed_count % 50 === 0 || $processed_count === $total)) {
+            $progress_callback('elements', null, $processed_count, $total);
+        }
         $candidate = craftcrawl_normalize_overpass_element($element);
         if (!$candidate || trim($candidate['name']) === '') {
             $counts['skipped']++;
@@ -850,6 +856,7 @@ function craftcrawl_run_overpass_import($conn, $state, array $options = []) {
     $tile_term = ['term' => 'overpass'];
     $stmt_cache = craftcrawl_overpass_stmt_cache_create();
     $used_area_query = false;
+    $progress_callback = $options['progress_callback'] ?? null;
 
     if ($limit_tiles === 0) {
         $area_query = craftcrawl_overpass_build_state_query($state, 120);
@@ -861,6 +868,10 @@ function craftcrawl_run_overpass_import($conn, $state, array $options = []) {
             craftcrawl_update_google_import_operation_progress($conn, $operation_id, 0, $summary, $area_tile, $tile_term, 'running');
         }
 
+        if ($progress_callback) {
+            $progress_callback('phase', 'Querying Overpass API (area query for ' . $state . ')...');
+        }
+
         $bbox_unused = [0, 0, 0, 0];
         $payload = craftcrawl_overpass_request($bbox_unused, $area_timeout, $area_query, true);
 
@@ -869,9 +880,13 @@ function craftcrawl_run_overpass_import($conn, $state, array $options = []) {
             $elements = $payload['elements'] ?? [];
             $batch_id = $dry_run ? 0 : craftcrawl_insert_location_import_batch($conn, $operation_id, $scope, $state, $tile_term, $area_tile, 'overpass');
 
+            if ($progress_callback) {
+                $progress_callback('phase', 'Area query returned ' . count($elements) . ' elements. Processing...');
+            }
+
             craftcrawl_overpass_ensure_db($conn);
 
-            $processed = craftcrawl_overpass_process_elements($conn, $elements, $state, $batch_id, $chain_patterns, $area_tile, $dry_run, $include_results, $seen_place_ids, $stmt_cache);
+            $processed = craftcrawl_overpass_process_elements($conn, $elements, $state, $batch_id, $chain_patterns, $area_tile, $dry_run, $include_results, $seen_place_ids, $stmt_cache, $progress_callback);
 
             foreach ($processed['counts'] as $key => $value) {
                 $summary[$key] += $value;
@@ -890,6 +905,10 @@ function craftcrawl_run_overpass_import($conn, $state, array $options = []) {
                 $final_status = $summary['error'] > 0 ? 'failed' : 'completed';
                 craftcrawl_update_google_import_operation_progress($conn, $operation_id, 1, $summary, $area_tile, $tile_term, $final_status);
             }
+        } else {
+            if ($progress_callback) {
+                $progress_callback('phase', 'Area query failed (' . ($payload['error'] ?? 'unknown') . '). Falling back to tiles...');
+            }
         }
     }
 
@@ -903,6 +922,12 @@ function craftcrawl_run_overpass_import($conn, $state, array $options = []) {
             craftcrawl_mark_google_import_operation_running($conn, $operation_id, $state, $limit_tiles ?: count($tiles), $dry_run, count($tiles), 1, 'overpass');
         }
 
+        $total_tiles = count($tiles);
+
+        if ($progress_callback) {
+            $progress_callback('phase', 'Using tile-based import (' . $total_tiles . ' tiles)...');
+        }
+
         foreach ($tiles as $tile) {
             if ($track_operation) {
                 $latest_operation = craftcrawl_fetch_google_import_operation($conn, $operation_id);
@@ -911,6 +936,10 @@ function craftcrawl_run_overpass_import($conn, $state, array $options = []) {
                     break;
                 }
                 craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile, $tile_term);
+            }
+
+            if ($progress_callback) {
+                $progress_callback('tile', $tile['label'] ?? '', $completed_steps + 1, $total_tiles);
             }
 
             $bbox = craftcrawl_overpass_tile_bbox($tile);
@@ -936,7 +965,7 @@ function craftcrawl_run_overpass_import($conn, $state, array $options = []) {
 
             craftcrawl_overpass_ensure_db($conn);
 
-            $processed = craftcrawl_overpass_process_elements($conn, $elements, $state, $batch_id, $chain_patterns, $tile, $dry_run, $include_results, $seen_place_ids, $stmt_cache);
+            $processed = craftcrawl_overpass_process_elements($conn, $elements, $state, $batch_id, $chain_patterns, $tile, $dry_run, $include_results, $seen_place_ids, $stmt_cache, $progress_callback);
 
             foreach ($processed['counts'] as $key => $value) {
                 $summary[$key] += $value;

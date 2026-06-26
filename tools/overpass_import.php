@@ -70,7 +70,37 @@ if (!isset(craftcrawl_us_state_bounds()[$state])) {
     exit(1);
 }
 
+$start_time = microtime(true);
+$start_date = date('Y-m-d H:i:s');
+
 echo ($dry_run ? '[dry-run] ' : '') . "Importing {$state} via Overpass (OSM)\n";
+echo "Started: {$start_date}\n";
+echo str_repeat('-', 60) . "\n";
+
+$progress_callback = function ($type, $message = null, $current = 0, $total = 0) {
+    if ($type === 'phase') {
+        echo "  {$message}\n";
+    } elseif ($type === 'tile') {
+        $pct = $total > 0 ? (int) round(($current / $total) * 100) : 0;
+        $bar_width = 30;
+        $filled = (int) round($bar_width * $current / max(1, $total));
+        $bar = str_repeat('█', $filled) . str_repeat('░', $bar_width - $filled);
+        echo "\r  [{$bar}] {$pct}% ({$current}/{$total}) {$message}";
+        if ($current >= $total) {
+            echo "\n";
+        }
+    } elseif ($type === 'elements') {
+        $pct = $total > 0 ? (int) round(($current / $total) * 100) : 0;
+        $bar_width = 30;
+        $filled = (int) round($bar_width * $current / max(1, $total));
+        $bar = str_repeat('█', $filled) . str_repeat('░', $bar_width - $filled);
+        echo "\r  [{$bar}] {$pct}% ({$current}/{$total} elements)";
+        if ($current >= $total) {
+            echo "\n";
+        }
+    }
+};
+
 try {
     $payload = craftcrawl_run_overpass_import($conn, $state, [
         'limit_tiles' => $limit_tiles,
@@ -79,6 +109,7 @@ try {
         'include_results' => $write_results,
         'operation_id' => $operation_id !== '' ? $operation_id : null,
         'track_operation' => $track_operation,
+        'progress_callback' => $progress_callback,
     ]);
 } catch (Throwable $error) {
     if ($track_operation && $operation_id !== '') {
@@ -98,6 +129,14 @@ try {
     fwrite(STDERR, $error->getTraceAsString() . "\n");
     exit(1);
 }
+
+$end_time = microtime(true);
+$end_date = date('Y-m-d H:i:s');
+$elapsed = round($end_time - $start_time, 1);
+
+echo str_repeat('-', 60) . "\n";
+echo "Finished: {$end_date} ({$elapsed}s)\n\n";
+
 $summary = $write_results ? $payload['summary'] : $payload;
 echo json_encode(['state' => $state, 'summary' => $summary], JSON_PRETTY_PRINT) . "\n";
 if ($write_results) {
