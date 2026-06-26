@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $website = filter_var(trim($_POST['website'] ?? ''), FILTER_SANITIZE_URL);
         $lat = (float) ($_POST['latitude'] ?? 0);
         $lng = (float) ($_POST['longitude'] ?? 0);
-        if (!in_array($source_provider, ['google', 'mapbox'], true)) {
+        if (!in_array($source_provider, ['google', 'mapbox', 'overpass'], true)) {
             $source_provider = 'mapbox';
         }
         if (!$name || !$place || !$addr || !$city || !$state || !$type || $type === 'any' || !$lat || !$lng) {
@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $btypes = '';
         $bwhere = admin_build_import_filter_where(admin_import_filter_inputs_from_post(), $bparams, $btypes);
         if ($a === 'bulk_approve_import') {
-            $bupdate = "UPDATE locations l LEFT JOIN google_place_imports gpi ON gpi.location_id=l.id SET l.visibility_status='public_unclaimed',l.approvedAt=NOW(),l.approvedByAdminId=? WHERE " . implode(' AND ', $bwhere);
+            $bupdate = "UPDATE locations l LEFT JOIN google_place_imports gpi ON gpi.location_id=l.id LEFT JOIN overpass_place_imports opi ON opi.location_id=l.id SET l.visibility_status='public_unclaimed',l.approvedAt=NOW(),l.approvedByAdminId=? WHERE " . implode(' AND ', $bwhere);
             array_unshift($bparams, $admin_id);
             $btypes = 'i' . $btypes;
             $bu = $conn->prepare($bupdate);
@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conn->begin_transaction();
         $conn->query("CREATE TEMPORARY TABLE IF NOT EXISTS admin_import_delete_ids (location_id INT PRIMARY KEY) ENGINE=MEMORY");
         $conn->query("TRUNCATE TABLE admin_import_delete_ids");
-        $insert_sql = "INSERT IGNORE INTO admin_import_delete_ids (location_id) SELECT l.id FROM locations l LEFT JOIN google_place_imports gpi ON gpi.location_id=l.id WHERE " . implode(' AND ', $bwhere);
+        $insert_sql = "INSERT IGNORE INTO admin_import_delete_ids (location_id) SELECT l.id FROM locations l LEFT JOIN google_place_imports gpi ON gpi.location_id=l.id LEFT JOIN overpass_place_imports opi ON opi.location_id=l.id WHERE " . implode(' AND ', $bwhere);
         $ins = $conn->prepare($insert_sql);
         $insert_params = $bparams;
         admin_bind_dynamic_params($ins, $btypes, $insert_params);
@@ -106,6 +106,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $g = $conn->prepare("UPDATE google_place_imports gpi INNER JOIN admin_import_delete_ids d ON d.location_id=gpi.location_id SET gpi.location_id=NULL,gpi.decision=?,gpi.decision_reason=?");
         $g->bind_param('ss', $decision, $reason);
         $g->execute();
+        $o = $conn->prepare("UPDATE overpass_place_imports opi INNER JOIN admin_import_delete_ids d ON d.location_id=opi.location_id SET opi.location_id=NULL,opi.decision=?,opi.decision_reason=?");
+        $o->bind_param('ss', $decision, $reason);
+        $o->execute();
         $conn->query("DELETE lh FROM location_hours lh INNER JOIN admin_import_delete_ids d ON d.location_id=lh.location_id");
         $conn->query("DELETE l FROM locations l INNER JOIN admin_import_delete_ids d ON d.location_id=l.id WHERE l.visibility_status='pending_import_review'");
         $deleted = $conn->affected_rows;
@@ -154,19 +157,19 @@ $import_params = [];
 $import_types = '';
 if ($import_search !== '') {
     $like = '%' . $import_search . '%';
-    $import_where[] = "(l.name LIKE ? OR l.city LIKE ? OR l.state LIKE ? OR l.street_address LIKE ? OR l.source_place_id LIKE ? OR l.location_type LIKE ? OR gpi.suggested_category LIKE ? OR gpi.google_primary_type LIKE ? OR gpi.search_term LIKE ? OR gpi.decision_reason LIKE ? OR gpi.positive_signals LIKE ? OR gpi.negative_signals LIKE ?)";
+    $import_where[] = "(l.name LIKE ? OR l.city LIKE ? OR l.state LIKE ? OR l.street_address LIKE ? OR l.source_place_id LIKE ? OR l.location_type LIKE ? OR COALESCE(gpi.suggested_category, opi.suggested_category) LIKE ? OR COALESCE(gpi.google_primary_type, opi.osm_craft, opi.osm_amenity) LIKE ? OR COALESCE(gpi.search_term, '') LIKE ? OR COALESCE(gpi.decision_reason, opi.decision_reason) LIKE ? OR COALESCE(gpi.positive_signals, opi.positive_signals) LIKE ? OR COALESCE(gpi.negative_signals, opi.negative_signals) LIKE ?)";
     for ($i = 0; $i < 12; $i++) {
         $import_params[] = $like;
         $import_types .= 's';
     }
 }
-if (in_array($import_provider, ['google', 'mapbox', 'user_suggested', 'manual'], true)) {
+if (in_array($import_provider, ['google', 'mapbox', 'overpass', 'user_suggested', 'manual'], true)) {
     $import_where[] = 'l.source_provider=?';
     $import_params[] = $import_provider;
     $import_types .= 's';
 }
 if (in_array($import_decision, ['auto_add', 'needs_review', 'reject', 'duplicate', 'error'], true)) {
-    $import_where[] = 'gpi.decision=?';
+    $import_where[] = 'COALESCE(gpi.decision, opi.decision)=?';
     $import_params[] = $import_decision;
     $import_types .= 's';
 }
@@ -181,12 +184,12 @@ if ($import_type !== '') {
     $import_types .= 's';
 }
 if ($import_score_min !== '' && is_numeric($import_score_min)) {
-    $import_where[] = 'gpi.fit_score>=?';
+    $import_where[] = 'COALESCE(gpi.fit_score, opi.fit_score)>=?';
     $import_params[] = (int) $import_score_min;
     $import_types .= 'i';
 }
 if ($import_score_max !== '' && is_numeric($import_score_max)) {
-    $import_where[] = 'gpi.fit_score<=?';
+    $import_where[] = 'COALESCE(gpi.fit_score, opi.fit_score)<=?';
     $import_params[] = (int) $import_score_max;
     $import_types .= 'i';
 }
@@ -194,7 +197,7 @@ $import_per_page = 100;
 $import_page = max(1, (int) ($_GET['import_page'] ?? 1));
 $import_offset = ($import_page - 1) * $import_per_page;
 
-$import_count_sql = "SELECT COUNT(*) AS total FROM locations l LEFT JOIN google_place_imports gpi ON gpi.location_id=l.id WHERE " . implode(' AND ', $import_where);
+$import_count_sql = "SELECT COUNT(*) AS total FROM locations l LEFT JOIN google_place_imports gpi ON gpi.location_id=l.id LEFT JOIN overpass_place_imports opi ON opi.location_id=l.id WHERE " . implode(' AND ', $import_where);
 if ($import_params) {
     $import_count_stmt = $conn->prepare($import_count_sql);
     $import_count_params = $import_params;
@@ -210,7 +213,7 @@ if ($import_page > $import_total_pages) {
     $import_offset = ($import_page - 1) * $import_per_page;
 }
 
-$import_sql = "SELECT l.*, gpi.fit_score, gpi.suggested_category, gpi.google_primary_type, gpi.google_types, gpi.raw_place_json, gpi.positive_signals, gpi.negative_signals, gpi.decision_reason, gpi.search_term, gpi.decision, EXISTS(SELECT 1 FROM location_hours lh WHERE lh.location_id=l.id LIMIT 1) AS has_import_hours FROM locations l LEFT JOIN google_place_imports gpi ON gpi.location_id=l.id WHERE " . implode(' AND ', $import_where) . " ORDER BY l.createdAt LIMIT ? OFFSET ?";
+$import_sql = "SELECT l.*, COALESCE(gpi.fit_score, opi.fit_score) AS fit_score, COALESCE(gpi.suggested_category, opi.suggested_category) AS suggested_category, COALESCE(gpi.google_primary_type, opi.osm_craft, opi.osm_amenity) AS source_primary_type, gpi.google_types, gpi.raw_place_json, opi.osm_tags, opi.raw_element_json, COALESCE(gpi.positive_signals, opi.positive_signals) AS positive_signals, COALESCE(gpi.negative_signals, opi.negative_signals) AS negative_signals, COALESCE(gpi.decision_reason, opi.decision_reason) AS decision_reason, COALESCE(gpi.search_term, '') AS search_term, COALESCE(gpi.decision, opi.decision) AS decision, EXISTS(SELECT 1 FROM location_hours lh WHERE lh.location_id=l.id LIMIT 1) AS has_import_hours FROM locations l LEFT JOIN google_place_imports gpi ON gpi.location_id=l.id LEFT JOIN overpass_place_imports opi ON opi.location_id=l.id WHERE " . implode(' AND ', $import_where) . " ORDER BY l.createdAt LIMIT ? OFFSET ?";
 $import_query_params = $import_params;
 $import_query_params[] = $import_per_page;
 $import_query_params[] = $import_offset;
@@ -253,8 +256,8 @@ include __DIR__ . '/admin_header.php';
 
         <section class="admin-panel">
             <h2>Import Location</h2>
-            <p><a href="import_locations.php">Run Google Places imports</a></p>
-            <p class="form-help">Google Places is the primary import source. Mapbox search remains available there as a fallback.</p>
+            <p><a href="import_locations.php">Run Overpass/Google imports</a></p>
+            <p class="form-help">Overpass (OSM) is the primary import source. Google Places and Mapbox are also available.</p>
         </section>
 
         <section class="admin-panel admin-import-table-section" data-admin-import-table-section>
@@ -268,6 +271,7 @@ include __DIR__ . '/admin_header.php';
                     <label for="import_provider">Provider</label>
                     <select id="import_provider" name="import_provider">
                         <option value="">Any</option>
+                        <option value="overpass" <?php echo $import_provider === 'overpass' ? 'selected' : ''; ?>>Overpass (OSM)</option>
                         <option value="google" <?php echo $import_provider === 'google' ? 'selected' : ''; ?>>Google</option>
                         <option value="mapbox" <?php echo $import_provider === 'mapbox' ? 'selected' : ''; ?>>Mapbox</option>
                     </select>
@@ -367,7 +371,7 @@ include __DIR__ . '/admin_header.php';
                             <th scope="col">Place ID</th>
                             <th scope="col">Search</th>
                             <th scope="col">Primary type</th>
-                            <th scope="col">Google types</th>
+                            <th scope="col">Source types</th>
                             <th scope="col">Positive signals</th>
                             <th scope="col">Negative signals</th>
                             <th scope="col">Duplicates</th>
@@ -382,8 +386,10 @@ include __DIR__ . '/admin_header.php';
                         <?php while ($l = $imports->fetch_assoc()) :
                             $dupes = admin_duplicate_summary_for_candidate($conn, admin_location_candidate($l));
                             $full_address = trim(implode(', ', array_filter([$l['street_address'], $l['apt_suite'], $l['city'], $l['state'], $l['zip']])));
-                            $provider_label = $l['source_provider'] === 'google' ? 'Google Places' : 'Mapbox';
-                            $google_types = json_decode((string) ($l['google_types'] ?? ''), true);
+                            $provider_labels = ['google' => 'Google Places', 'overpass' => 'Overpass (OSM)', 'mapbox' => 'Mapbox', 'user_suggested' => 'User Suggested', 'manual' => 'Manual'];
+                            $provider_label = $provider_labels[$l['source_provider']] ?? $l['source_provider'];
+                            $source_types_json = $l['source_provider'] === 'overpass' ? ($l['osm_tags'] ?? '') : ($l['google_types'] ?? '');
+                            $source_types = json_decode((string) $source_types_json, true);
                             $website_url = admin_external_url($l['website'] ?? '');
                             $google_maps_url = admin_google_maps_url($l);
                             $positive_signals = json_decode((string) ($l['positive_signals'] ?? ''), true);
@@ -396,15 +402,15 @@ include __DIR__ . '/admin_header.php';
                                 <td><?php echo craftcrawl_admin_escape(craftcrawl_admin_business_type_label($l['location_type'])); ?> · <?php echo craftcrawl_admin_escape($provider_label); ?></td>
                                 <td><?php if ($website_url !== '') : ?><a href="<?php echo craftcrawl_admin_escape($website_url); ?>" target="_blank" rel="noopener">Open</a><?php endif; ?></td>
                                 <td><?php if ($google_maps_url !== '') : ?><a href="<?php echo craftcrawl_admin_escape($google_maps_url); ?>" target="_blank" rel="noopener">Open</a><?php endif; ?></td>
-                                <td><?php if ($l['source_provider'] === 'google') : ?><?php echo craftcrawl_admin_escape($l['fit_score']); ?><br><small><?php echo craftcrawl_admin_escape(craftcrawl_admin_business_type_label($l['suggested_category'])); ?> · <?php echo craftcrawl_admin_escape($l['decision']); ?></small><?php endif; ?></td>
+                                <td><?php if (in_array($l['source_provider'], ['google', 'overpass'], true)) : ?><?php echo craftcrawl_admin_escape($l['fit_score']); ?><br><small><?php echo craftcrawl_admin_escape(craftcrawl_admin_business_type_label($l['suggested_category'])); ?> · <?php echo craftcrawl_admin_escape($l['decision']); ?></small><?php endif; ?></td>
                                 <td><?php echo craftcrawl_admin_escape($l['decision_reason'] ?? ''); ?></td>
                                 <td><?php echo craftcrawl_admin_escape($full_address); ?></td>
                                 <td><?php echo craftcrawl_admin_escape($l['phone'] ?? ''); ?></td>
                                 <td><?php echo !empty($l['has_import_hours']) ? 'Yes' : 'No'; ?></td>
                                 <td><?php echo craftcrawl_admin_escape($l['source_place_id']); ?></td>
                                 <td><?php echo craftcrawl_admin_escape($l['search_term'] ?? ''); ?></td>
-                                <td><?php echo craftcrawl_admin_escape($l['google_primary_type'] ?? ''); ?></td>
-                                <td><?php echo is_array($google_types) ? craftcrawl_admin_escape(implode(', ', $google_types)) : ''; ?></td>
+                                <td><?php echo craftcrawl_admin_escape($l['source_primary_type'] ?? ''); ?></td>
+                                <td><?php echo is_array($source_types) ? craftcrawl_admin_escape(implode(', ', is_array(array_values($source_types)[0] ?? null) ? array_keys($source_types) : $source_types)) : ''; ?></td>
                                 <td><?php echo is_array($positive_signals) ? craftcrawl_admin_escape(implode('; ', $positive_signals)) : ''; ?></td>
                                 <td><?php echo is_array($negative_signals) ? craftcrawl_admin_escape(implode('; ', $negative_signals)) : ''; ?></td>
                                 <td><?php admin_render_duplicate_summary($dupes); ?></td>
