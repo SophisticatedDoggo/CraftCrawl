@@ -1,8 +1,14 @@
 <?php
 
-function craftcrawl_overpass_api_url() {
+function craftcrawl_overpass_api_urls() {
     $env_url = trim((string) (getenv('OVERPASS_API_URL') ?: ''));
-    return $env_url !== '' ? $env_url : 'https://overpass-api.de/api/interpreter';
+    if ($env_url !== '') {
+        return [$env_url];
+    }
+    return [
+        'https://overpass.kumi.systems/api/interpreter',
+        'https://overpass-api.de/api/interpreter',
+    ];
 }
 
 function craftcrawl_overpass_build_query(array $bbox, $timeout = 30) {
@@ -52,46 +58,60 @@ function craftcrawl_overpass_retry_delay_us($attempt) {
 
 function craftcrawl_overpass_request(array $bbox, $timeout = 30) {
     $query = craftcrawl_overpass_build_query($bbox, $timeout);
-    $url = craftcrawl_overpass_api_url();
-    $max_attempts = 4;
+    $urls = craftcrawl_overpass_api_urls();
+    $max_attempts = 3;
     $last_response = null;
     $last_status = 0;
     $last_error = '';
 
-    for ($attempt = 1; $attempt <= $max_attempts; $attempt++) {
-        $curl = curl_init($url);
-        curl_setopt_array($curl, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => $timeout + 10,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => 'data=' . urlencode($query),
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/x-www-form-urlencoded',
-            ],
-        ]);
-        $response = curl_exec($curl);
-        $status = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        $error = curl_error($curl);
-        curl_close($curl);
+    foreach ($urls as $url) {
+        for ($attempt = 1; $attempt <= $max_attempts; $attempt++) {
+            $curl = curl_init($url);
+            curl_setopt_array($curl, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => $timeout + 10,
+                CURLOPT_CONNECTTIMEOUT => 10,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => 'data=' . urlencode($query),
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/x-www-form-urlencoded',
+                    'User-Agent: CraftCrawl/1.0 (location importer)',
+                    'Accept: application/json',
+                ],
+            ]);
+            $response = curl_exec($curl);
+            $status = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $error = curl_error($curl);
+            curl_close($curl);
 
-        $last_response = $response;
-        $last_status = $status;
-        $last_error = $error;
+            $last_response = $response;
+            $last_status = $status;
+            $last_error = $error;
 
-        if ($response !== false && $status >= 200 && $status < 300) {
-            $payload = json_decode($response, true);
-            if (is_array($payload) && isset($payload['elements'])) {
-                return $payload;
+            if ($response !== false && $status >= 200 && $status < 300) {
+                $payload = json_decode($response, true);
+                if (is_array($payload) && isset($payload['elements'])) {
+                    return $payload;
+                }
+                return ['error' => 'Invalid Overpass JSON response from ' . $url, 'http_status' => $status];
             }
-            return ['error' => 'Invalid Overpass JSON response', 'http_status' => $status];
+
+            if (in_array($status, [403, 406], true)) {
+                break;
+            }
+
+            if ($attempt < $max_attempts && craftcrawl_overpass_should_retry($status, $error)) {
+                usleep(craftcrawl_overpass_retry_delay_us($attempt));
+                continue;
+            }
+
+            break;
         }
 
-        if ($attempt < $max_attempts && craftcrawl_overpass_should_retry($status, $error)) {
-            usleep(craftcrawl_overpass_retry_delay_us($attempt));
-            continue;
+        if ($last_status >= 200 && $last_status < 300) {
+            break;
         }
-
-        break;
     }
 
     $message = trim((string) $last_error) !== '' ? $last_error : 'Overpass HTTP ' . $last_status;
@@ -99,15 +119,17 @@ function craftcrawl_overpass_request(array $bbox, $timeout = 30) {
         $message = 'Overpass rate limited (429). Try again in a few minutes.';
     } elseif ($last_status === 504) {
         $message = 'Overpass query timed out (504). The tile may be too large.';
+    } elseif ($last_status === 406) {
+        $message = 'Overpass rejected request (406). All mirrors tried.';
     }
 
     if (craftcrawl_overpass_should_retry($last_status, $last_error)) {
-        $message .= ' after ' . $max_attempts . ' attempts';
+        $message .= ' after ' . $max_attempts . ' attempts per mirror';
     }
 
     return [
         'error' => $message,
         'http_status' => $last_status,
-        'fatal' => $last_status === 429,
+        'fatal' => in_array($last_status, [429, 403], true),
     ];
 }
