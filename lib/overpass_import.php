@@ -8,10 +8,25 @@ require_once __DIR__ . '/us_state_tiles.php';
 require_once __DIR__ . '/google_places_import.php';
 
 function craftcrawl_overpass_ensure_db(&$conn) {
-    if (!$conn->ping()) {
-        $conn->close();
-        include __DIR__ . '/../db.php';
+    try {
+        if ($conn->ping()) {
+            return;
+        }
+    } catch (Throwable $e) {
     }
+
+    try {
+        @$conn->close();
+    } catch (Throwable $e) {
+    }
+
+    require_once __DIR__ . '/env.php';
+    $db_host = craftcrawl_env('CRAFTCRAWL_DB_HOST', 'localhost');
+    $db_user = craftcrawl_env('CRAFTCRAWL_DB_USER');
+    $db_password = craftcrawl_env('CRAFTCRAWL_DB_PASSWORD');
+    $db_name = craftcrawl_env('CRAFTCRAWL_DB_NAME');
+    $conn = new mysqli($db_host, $db_user, $db_password, $db_name);
+    $conn->set_charset('utf8mb4');
 }
 
 function craftcrawl_overpass_tile_bbox(array $tile) {
