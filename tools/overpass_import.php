@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../lib/overpass_import.php';
 
 function usage() {
@@ -68,9 +69,6 @@ if (!isset(craftcrawl_us_state_bounds()[$state])) {
     fwrite(STDERR, "Unknown state: {$state}\n");
     exit(1);
 }
-
-include __DIR__ . '/../db.php';
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 echo ($dry_run ? '[dry-run] ' : '') . "Importing {$state} via Overpass (OSM)\n";
 try {
