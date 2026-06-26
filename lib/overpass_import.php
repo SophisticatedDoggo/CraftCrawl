@@ -451,6 +451,9 @@ function craftcrawl_fetch_overpass_location_by_place_id($conn, $source_place_id)
         return null;
     }
     $stmt = $conn->prepare("SELECT * FROM locations WHERE source_provider='overpass' AND source_place_id=? LIMIT 1");
+    if ($stmt === false) {
+        throw new RuntimeException('Prepare failed in fetch_overpass_location: ' . $conn->error . ' (errno: ' . $conn->errno . ')');
+    }
     $stmt->bind_param('s', $source_place_id);
     $stmt->execute();
     return $stmt->get_result()->fetch_assoc() ?: null;
