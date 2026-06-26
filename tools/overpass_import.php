@@ -94,6 +94,8 @@ try {
         );
     }
     fwrite(STDERR, "Import failed for {$state}: " . $error->getMessage() . "\n");
+    fwrite(STDERR, "At: " . $error->getFile() . ":" . $error->getLine() . "\n");
+    fwrite(STDERR, $error->getTraceAsString() . "\n");
     exit(1);
 }
 $summary = $write_results ? $payload['summary'] : $payload;
