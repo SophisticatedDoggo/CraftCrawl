@@ -72,6 +72,11 @@ if (!isset(craftcrawl_us_state_bounds()[$state])) {
     exit(1);
 }
 
+if (!$conn->ping()) {
+    $conn->close();
+    include __DIR__ . '/../db.php';
+}
+
 echo ($dry_run ? '[dry-run] ' : '') . "Importing {$state} via Overpass (OSM)\n";
 try {
     $payload = craftcrawl_run_overpass_import($conn, $state, [

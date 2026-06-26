@@ -7,6 +7,13 @@ require_once __DIR__ . '/location_hours.php';
 require_once __DIR__ . '/us_state_tiles.php';
 require_once __DIR__ . '/google_places_import.php';
 
+function craftcrawl_overpass_ensure_db(&$conn) {
+    if (!$conn->ping()) {
+        $conn->close();
+        include __DIR__ . '/../db.php';
+    }
+}
+
 function craftcrawl_overpass_tile_bbox(array $tile) {
     $lat = (float) ($tile['latitude'] ?? 0);
     $lng = (float) ($tile['longitude'] ?? 0);
@@ -731,6 +738,8 @@ function craftcrawl_run_overpass_import($conn, $state, array $options = []) {
     }
 
     foreach ($tiles as $tile) {
+        craftcrawl_overpass_ensure_db($conn);
+
         if ($track_operation) {
             $latest_operation = craftcrawl_fetch_google_import_operation($conn, $operation_id);
             if (!$latest_operation || !in_array($latest_operation['status'], ['queued', 'running'], true)) {
