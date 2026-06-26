@@ -7,6 +7,25 @@ require_once __DIR__ . '/location_hours.php';
 require_once __DIR__ . '/us_state_tiles.php';
 require_once __DIR__ . '/google_places_import.php';
 
+function craftcrawl_overpass_stmt_cache_create() {
+    return ['conn_id' => null, 'stmts' => []];
+}
+
+function craftcrawl_overpass_stmt_cache_get(&$cache, $conn, $key, $sql) {
+    $conn_id = spl_object_id($conn);
+    if ($cache['conn_id'] !== $conn_id) {
+        $cache = ['conn_id' => $conn_id, 'stmts' => []];
+    }
+    if (!isset($cache['stmts'][$key])) {
+        $stmt = $conn->prepare($sql);
+        if ($stmt === false) {
+            throw new RuntimeException('Prepare failed (' . $key . '): ' . $conn->error);
+        }
+        $cache['stmts'][$key] = $stmt;
+    }
+    return $cache['stmts'][$key];
+}
+
 function craftcrawl_overpass_ensure_db(&$conn) {
     try {
         if ($conn->ping()) {
@@ -349,7 +368,7 @@ function craftcrawl_overpass_candidate_matches_import_state(array $candidate, $s
     return $candidate_state === '' || $candidate_state === $import_state;
 }
 
-function craftcrawl_record_overpass_place_import($conn, $batch_id, array $candidate, array $classification, $decision, $location_id = null) {
+function craftcrawl_record_overpass_place_import($conn, $batch_id, array $candidate, array $classification, $decision, $location_id = null, &$stmt_cache = null) {
     $osm_tags = json_encode($candidate['raw_element']['tags'] ?? []);
     $raw = json_encode($candidate['raw_element'] ?? []);
     $positive = json_encode($classification['positive_signals'] ?? []);
@@ -357,7 +376,7 @@ function craftcrawl_record_overpass_place_import($conn, $batch_id, array $candid
     $osm_amenity = craftcrawl_overpass_osm_tag($candidate['raw_element'] ?? [], 'amenity');
     $osm_craft = craftcrawl_overpass_osm_tag($candidate['raw_element'] ?? [], 'craft');
 
-    $stmt = $conn->prepare("
+    $sql = "
         INSERT INTO overpass_place_imports
         (batch_id,location_id,osm_type,osm_id,source_place_id,state,osm_amenity,osm_craft,osm_tags,raw_element_json,fit_score,suggested_category,decision,positive_signals,negative_signals,decision_reason)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
@@ -370,7 +389,13 @@ function craftcrawl_record_overpass_place_import($conn, $batch_id, array $candid
             positive_signals=VALUES(positive_signals),
             negative_signals=VALUES(negative_signals),
             decision_reason=VALUES(decision_reason)
-    ");
+    ";
+
+    if ($stmt_cache !== null) {
+        $stmt = craftcrawl_overpass_stmt_cache_get($stmt_cache, $conn, 'record_import', $sql);
+    } else {
+        $stmt = $conn->prepare($sql);
+    }
 
     $osm_type = $candidate['osm_type'] ?? 'node';
     $osm_id = (int) ($candidate['osm_id'] ?? 0);
@@ -445,14 +470,19 @@ function craftcrawl_create_overpass_location($conn, array $candidate, array $cla
     return $location_id;
 }
 
-function craftcrawl_fetch_overpass_location_by_place_id($conn, $source_place_id) {
+function craftcrawl_fetch_overpass_location_by_place_id($conn, $source_place_id, &$stmt_cache = null) {
     $source_place_id = trim((string) $source_place_id);
     if ($source_place_id === '') {
         return null;
     }
-    $stmt = $conn->prepare("SELECT * FROM locations WHERE source_provider='overpass' AND source_place_id=? LIMIT 1");
-    if ($stmt === false) {
-        throw new RuntimeException('Prepare failed in fetch_overpass_location: ' . $conn->error . ' (errno: ' . $conn->errno . ')');
+    $sql = "SELECT * FROM locations WHERE source_provider='overpass' AND source_place_id=? LIMIT 1";
+    if ($stmt_cache !== null) {
+        $stmt = craftcrawl_overpass_stmt_cache_get($stmt_cache, $conn, 'fetch_by_place_id', $sql);
+    } else {
+        $stmt = $conn->prepare($sql);
+        if ($stmt === false) {
+            throw new RuntimeException('Prepare failed in fetch_overpass_location: ' . $conn->error . ' (errno: ' . $conn->errno . ')');
+        }
     }
     $stmt->bind_param('s', $source_place_id);
     $stmt->execute();
@@ -496,10 +526,17 @@ function craftcrawl_delete_pending_overpass_location($conn, $location_id) {
     return $conn->affected_rows;
 }
 
-function craftcrawl_import_overpass_place($conn, $batch_id, array &$candidate, array $chain_patterns, $dry_run = false) {
+function craftcrawl_import_overpass_place($conn, $batch_id, array &$candidate, array $chain_patterns, $dry_run = false, $stmt_cache = null) {
     $classification = craftcrawl_classify_location_candidate($candidate, $chain_patterns);
 
-    $existing = craftcrawl_fetch_overpass_location_by_place_id($conn, $candidate['source_place_id'] ?? '');
+    if (!empty($classification['hard_reject'])) {
+        if (!$dry_run) {
+            craftcrawl_record_overpass_place_import($conn, $batch_id, $candidate, $classification, 'reject', null, $stmt_cache);
+        }
+        return ['decision' => 'reject', 'location_id' => null, 'classification' => $classification];
+    }
+
+    $existing = craftcrawl_fetch_overpass_location_by_place_id($conn, $candidate['source_place_id'] ?? '', $stmt_cache);
     if ($existing && ($existing['visibility_status'] ?? '') === 'pending_import_review') {
         $decision = $classification['decision'];
         $location_id = (int) $existing['id'];
@@ -522,7 +559,7 @@ function craftcrawl_import_overpass_place($conn, $batch_id, array &$candidate, a
             if ($location_id && !empty($candidate['opening_hours']) && craftcrawl_validate_business_hours($candidate['opening_hours']) === null) {
                 craftcrawl_save_location_hours($conn, $location_id, $candidate['opening_hours'], 'provider_import');
             }
-            craftcrawl_record_overpass_place_import($conn, $batch_id, $candidate, $classification, $decision, $location_id);
+            craftcrawl_record_overpass_place_import($conn, $batch_id, $candidate, $classification, $decision, $location_id, $stmt_cache);
         }
 
         return ['decision' => $decision, 'location_id' => $location_id, 'classification' => $classification];
@@ -530,7 +567,7 @@ function craftcrawl_import_overpass_place($conn, $batch_id, array &$candidate, a
 
     if ($classification['decision'] === 'reject') {
         if (!$dry_run) {
-            craftcrawl_record_overpass_place_import($conn, $batch_id, $candidate, $classification, 'reject');
+            craftcrawl_record_overpass_place_import($conn, $batch_id, $candidate, $classification, 'reject', null, $stmt_cache);
         }
         return ['decision' => 'reject', 'location_id' => null, 'classification' => $classification];
     }
@@ -544,7 +581,7 @@ function craftcrawl_import_overpass_place($conn, $batch_id, array &$candidate, a
         'longitude' => $candidate['longitude'],
         'source_provider' => 'overpass',
         'source_place_id' => $candidate['source_place_id'],
-    ]));
+    ], $stmt_cache));
 
     if (!empty($dupes['hard_block'])) {
         $decision = 'duplicate';
@@ -561,7 +598,7 @@ function craftcrawl_import_overpass_place($conn, $batch_id, array &$candidate, a
     }
 
     if (!$dry_run) {
-        craftcrawl_record_overpass_place_import($conn, $batch_id, $candidate, $classification, $decision, $location_id);
+        craftcrawl_record_overpass_place_import($conn, $batch_id, $candidate, $classification, $decision, $location_id, $stmt_cache);
     }
 
     return ['decision' => $decision, 'location_id' => $location_id, 'classification' => $classification];
@@ -635,6 +672,7 @@ function craftcrawl_process_overpass_import_operation_step($conn, $operation_id,
     $chain_patterns = craftcrawl_active_chain_patterns($conn);
     $steps = max(1, (int) $steps);
     $seen_place_ids = [];
+    $stmt_cache = craftcrawl_overpass_stmt_cache_create();
 
     for ($processed = 0; $processed < $steps && $completed_steps < $total_steps; $processed++) {
         $tile = $tiles[$completed_steps] ?? [];
@@ -701,7 +739,7 @@ function craftcrawl_process_overpass_import_operation_step($conn, $operation_id,
                 $candidate['state'] = $state;
             }
 
-            $result = craftcrawl_import_overpass_place($conn, $batch_id, $candidate, $chain_patterns, $dry_run);
+            $result = craftcrawl_import_overpass_place($conn, $batch_id, $candidate, $chain_patterns, $dry_run, $stmt_cache);
             if ($result['decision'] === 'auto_add') {
                 $counts['created']++;
             } elseif ($result['decision'] === 'needs_review') {
@@ -722,7 +760,7 @@ function craftcrawl_process_overpass_import_operation_step($conn, $operation_id,
         $completed_steps++;
         craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile, $tile_term, 'running');
 
-        usleep(2000000);
+        usleep(craftcrawl_overpass_adaptive_delay_us($payload['_request_time_s'] ?? 2.0, $payload['_http_status'] ?? 200));
     }
 
     if ($completed_steps >= $total_steps) {
@@ -732,16 +770,74 @@ function craftcrawl_process_overpass_import_operation_step($conn, $operation_id,
     return $summary;
 }
 
+function craftcrawl_overpass_process_elements($conn, array $elements, $state, $batch_id, array $chain_patterns, array $tile, $dry_run, $include_results, &$seen_place_ids, &$stmt_cache) {
+    $counts = ['raw' => count($elements), 'created' => 0, 'review' => 0, 'rejected' => 0, 'duplicate' => 0, 'skipped' => 0, 'error' => 0];
+    $results = ['created' => [], 'review' => [], 'rejected' => [], 'duplicate' => [], 'skipped' => [], 'error' => []];
+    $check_tile_bounds = !empty($tile['latitude']);
+
+    foreach ($elements as $element) {
+        $candidate = craftcrawl_normalize_overpass_element($element);
+        if (!$candidate || trim($candidate['name']) === '') {
+            $counts['skipped']++;
+            if ($include_results) {
+                $results['skipped'][] = craftcrawl_overpass_import_result_item($candidate ?: [], ['decision' => 'skipped', 'classification' => ['decision_reason' => 'missing name or coordinates']], $tile);
+            }
+            continue;
+        }
+        if ($check_tile_bounds && !craftcrawl_overpass_candidate_in_tile($candidate, $tile)) {
+            $counts['skipped']++;
+            continue;
+        }
+        if (!craftcrawl_overpass_candidate_matches_import_state($candidate, $state)) {
+            $counts['skipped']++;
+            continue;
+        }
+
+        $place_id = $candidate['source_place_id'];
+        if (isset($seen_place_ids[$place_id])) {
+            $counts['duplicate']++;
+            continue;
+        }
+        $seen_place_ids[$place_id] = true;
+
+        if (($candidate['state'] ?? '') === '') {
+            $candidate['state'] = $state;
+        }
+
+        $result = craftcrawl_import_overpass_place($conn, $batch_id, $candidate, $chain_patterns, $dry_run, $stmt_cache);
+        $decision = $result['decision'];
+        if ($decision === 'auto_add') {
+            $counts['created']++;
+            if ($include_results) {
+                $results['created'][] = craftcrawl_overpass_import_result_item($candidate, $result, $tile);
+            }
+        } elseif ($decision === 'needs_review') {
+            $counts['review']++;
+            if ($include_results) {
+                $results['review'][] = craftcrawl_overpass_import_result_item($candidate, $result, $tile);
+            }
+        } elseif ($decision === 'duplicate') {
+            $counts['duplicate']++;
+            if ($include_results) {
+                $results['duplicate'][] = craftcrawl_overpass_import_result_item($candidate, $result, $tile);
+            }
+        } else {
+            $counts['rejected']++;
+            if ($include_results) {
+                $results['rejected'][] = craftcrawl_overpass_import_result_item($candidate, $result, $tile);
+            }
+        }
+    }
+
+    return ['counts' => $counts, 'results' => $results];
+}
+
 function craftcrawl_run_overpass_import($conn, $state, array $options = []) {
     $state = strtoupper($state);
     $limit_tiles = isset($options['limit_tiles']) ? (int) $options['limit_tiles'] : 0;
     $dry_run = !empty($options['dry_run']);
     $scope = $options['scope'] ?? 'state';
     $operation_id = $options['operation_id'] ?? craftcrawl_google_import_operation_id();
-    $tiles = craftcrawl_state_search_tiles($state);
-    if ($limit_tiles > 0) {
-        $tiles = array_slice($tiles, 0, $limit_tiles);
-    }
 
     $chain_patterns = craftcrawl_active_chain_patterns($conn);
     $summary = ['raw' => 0, 'created' => 0, 'review' => 0, 'rejected' => 0, 'duplicate' => 0, 'skipped' => 0, 'error' => 0];
@@ -752,117 +848,119 @@ function craftcrawl_run_overpass_import($conn, $state, array $options = []) {
     $completed_steps = 0;
     $operation_stopped = false;
     $tile_term = ['term' => 'overpass'];
+    $stmt_cache = craftcrawl_overpass_stmt_cache_create();
+    $used_area_query = false;
 
-    if ($track_operation) {
-        craftcrawl_mark_google_import_operation_running($conn, $operation_id, $state, $limit_tiles ?: count($tiles), $dry_run, count($tiles), 1, 'overpass');
-    }
-
-    foreach ($tiles as $tile) {
-        craftcrawl_overpass_ensure_db($conn);
+    if ($limit_tiles === 0) {
+        $area_query = craftcrawl_overpass_build_state_query($state, 120);
+        $area_tile = ['label' => $state . '-area', 'tile_kind' => 'area_query'];
+        $area_timeout = 130;
 
         if ($track_operation) {
-            $latest_operation = craftcrawl_fetch_google_import_operation($conn, $operation_id);
-            if (!$latest_operation || !in_array($latest_operation['status'], ['queued', 'running'], true)) {
-                $operation_stopped = true;
-                break;
-            }
-            craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile, $tile_term);
+            craftcrawl_mark_google_import_operation_running($conn, $operation_id, $state, 1, $dry_run, 1, 1, 'overpass');
+            craftcrawl_update_google_import_operation_progress($conn, $operation_id, 0, $summary, $area_tile, $tile_term, 'running');
         }
 
-        $bbox = craftcrawl_overpass_tile_bbox($tile);
-        $batch_id = $dry_run ? 0 : craftcrawl_insert_location_import_batch($conn, $operation_id, $scope, $state, $tile_term, $tile, 'overpass');
-        $payload = craftcrawl_overpass_request($bbox);
+        $bbox_unused = [0, 0, 0, 0];
+        $payload = craftcrawl_overpass_request($bbox_unused, $area_timeout, $area_query);
 
-        if (!empty($payload['error'])) {
-            $summary['error']++;
+        if (empty($payload['error'])) {
+            $used_area_query = true;
+            $elements = $payload['elements'] ?? [];
+            $batch_id = $dry_run ? 0 : craftcrawl_insert_location_import_batch($conn, $operation_id, $scope, $state, $tile_term, $area_tile, 'overpass');
+
+            craftcrawl_overpass_ensure_db($conn);
+
+            $processed = craftcrawl_overpass_process_elements($conn, $elements, $state, $batch_id, $chain_patterns, $area_tile, $dry_run, $include_results, $seen_place_ids, $stmt_cache);
+
+            foreach ($processed['counts'] as $key => $value) {
+                $summary[$key] += $value;
+            }
             if ($include_results) {
-                $results['error'][] = craftcrawl_overpass_import_result_item([], ['classification' => ['decision_reason' => $payload['error']]], $tile, $payload['error']);
+                foreach ($processed['results'] as $key => $items) {
+                    $results[$key] = array_merge($results[$key], $items);
+                }
             }
             if (!$dry_run) {
-                craftcrawl_complete_location_import_batch($conn, $batch_id, ['raw' => 0, 'created' => 0, 'review' => 0, 'rejected' => 0, 'duplicate' => 0, 'error' => 1], 'failed', $payload['error']);
+                craftcrawl_complete_location_import_batch($conn, $batch_id, $processed['counts']);
+            }
+            $completed_steps = 1;
+
+            if ($track_operation) {
+                $final_status = $summary['error'] > 0 ? 'failed' : 'completed';
+                craftcrawl_update_google_import_operation_progress($conn, $operation_id, 1, $summary, $area_tile, $tile_term, $final_status);
+            }
+        }
+    }
+
+    if (!$used_area_query) {
+        $tiles = craftcrawl_state_search_tiles($state);
+        if ($limit_tiles > 0) {
+            $tiles = array_slice($tiles, 0, $limit_tiles);
+        }
+
+        if ($track_operation && $completed_steps === 0) {
+            craftcrawl_mark_google_import_operation_running($conn, $operation_id, $state, $limit_tiles ?: count($tiles), $dry_run, count($tiles), 1, 'overpass');
+        }
+
+        foreach ($tiles as $tile) {
+            if ($track_operation) {
+                $latest_operation = craftcrawl_fetch_google_import_operation($conn, $operation_id);
+                if (!$latest_operation || !in_array($latest_operation['status'], ['queued', 'running'], true)) {
+                    $operation_stopped = true;
+                    break;
+                }
+                craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile, $tile_term);
+            }
+
+            $bbox = craftcrawl_overpass_tile_bbox($tile);
+            $batch_id = $dry_run ? 0 : craftcrawl_insert_location_import_batch($conn, $operation_id, $scope, $state, $tile_term, $tile, 'overpass');
+            $payload = craftcrawl_overpass_request($bbox);
+
+            if (!empty($payload['error'])) {
+                $summary['error']++;
+                if ($include_results) {
+                    $results['error'][] = craftcrawl_overpass_import_result_item([], ['classification' => ['decision_reason' => $payload['error']]], $tile, $payload['error']);
+                }
+                if (!$dry_run) {
+                    craftcrawl_complete_location_import_batch($conn, $batch_id, ['raw' => 0, 'created' => 0, 'review' => 0, 'rejected' => 0, 'duplicate' => 0, 'error' => 1], 'failed', $payload['error']);
+                }
+                $completed_steps++;
+                if ($track_operation) {
+                    craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile, $tile_term, 'running', $payload['error']);
+                }
+                continue;
+            }
+
+            $elements = $payload['elements'] ?? [];
+
+            craftcrawl_overpass_ensure_db($conn);
+
+            $processed = craftcrawl_overpass_process_elements($conn, $elements, $state, $batch_id, $chain_patterns, $tile, $dry_run, $include_results, $seen_place_ids, $stmt_cache);
+
+            foreach ($processed['counts'] as $key => $value) {
+                $summary[$key] += $value;
+            }
+            if ($include_results) {
+                foreach ($processed['results'] as $key => $items) {
+                    $results[$key] = array_merge($results[$key], $items);
+                }
+            }
+            if (!$dry_run) {
+                craftcrawl_complete_location_import_batch($conn, $batch_id, $processed['counts']);
             }
             $completed_steps++;
             if ($track_operation) {
-                craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile, $tile_term, 'running', $payload['error']);
+                craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile, $tile_term);
             }
-            continue;
+
+            usleep(craftcrawl_overpass_adaptive_delay_us($payload['_request_time_s'] ?? 2.0, $payload['_http_status'] ?? 200));
         }
 
-        $elements = $payload['elements'] ?? [];
-        $counts = ['raw' => count($elements), 'created' => 0, 'review' => 0, 'rejected' => 0, 'duplicate' => 0, 'skipped' => 0, 'error' => 0];
-
-        craftcrawl_overpass_ensure_db($conn);
-
-        foreach ($elements as $element) {
-            $candidate = craftcrawl_normalize_overpass_element($element);
-            if (!$candidate || trim($candidate['name']) === '') {
-                $counts['skipped']++;
-                if ($include_results) {
-                    $results['skipped'][] = craftcrawl_overpass_import_result_item($candidate ?: [], ['decision' => 'skipped', 'classification' => ['decision_reason' => 'missing name or coordinates']], $tile);
-                }
-                continue;
-            }
-            if (!craftcrawl_overpass_candidate_in_tile($candidate, $tile)) {
-                $counts['skipped']++;
-                continue;
-            }
-            if (!craftcrawl_overpass_candidate_matches_import_state($candidate, $state)) {
-                $counts['skipped']++;
-                continue;
-            }
-
-            $place_id = $candidate['source_place_id'];
-            if (isset($seen_place_ids[$place_id])) {
-                $counts['duplicate']++;
-                continue;
-            }
-            $seen_place_ids[$place_id] = true;
-
-            if (($candidate['state'] ?? '') === '') {
-                $candidate['state'] = $state;
-            }
-
-            $result = craftcrawl_import_overpass_place($conn, $batch_id, $candidate, $chain_patterns, $dry_run);
-            if ($result['decision'] === 'auto_add') {
-                $counts['created']++;
-                if ($include_results) {
-                    $results['created'][] = craftcrawl_overpass_import_result_item($candidate, $result, $tile);
-                }
-            } elseif ($result['decision'] === 'needs_review') {
-                $counts['review']++;
-                if ($include_results) {
-                    $results['review'][] = craftcrawl_overpass_import_result_item($candidate, $result, $tile);
-                }
-            } elseif ($result['decision'] === 'duplicate') {
-                $counts['duplicate']++;
-                if ($include_results) {
-                    $results['duplicate'][] = craftcrawl_overpass_import_result_item($candidate, $result, $tile);
-                }
-            } else {
-                $counts['rejected']++;
-                if ($include_results) {
-                    $results['rejected'][] = craftcrawl_overpass_import_result_item($candidate, $result, $tile);
-                }
-            }
+        if ($track_operation && !$operation_stopped) {
+            $final_status = $summary['error'] > 0 ? 'failed' : 'completed';
+            craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile ?? [], $tile_term, $final_status);
         }
-
-        foreach ($counts as $key => $value) {
-            $summary[$key] += $value;
-        }
-        if (!$dry_run) {
-            craftcrawl_complete_location_import_batch($conn, $batch_id, $counts);
-        }
-        $completed_steps++;
-        if ($track_operation) {
-            craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile, $tile_term);
-        }
-
-        usleep(2000000);
-    }
-
-    if ($track_operation && !$operation_stopped) {
-        $final_status = $summary['error'] > 0 ? 'failed' : 'completed';
-        craftcrawl_update_google_import_operation_progress($conn, $operation_id, $completed_steps, $summary, $tile ?? [], $tile_term, $final_status);
     }
 
     return $include_results ? ['summary' => $summary, 'results' => $results] : $summary;

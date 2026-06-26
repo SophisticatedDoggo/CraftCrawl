@@ -15,7 +15,7 @@ function craftcrawl_location_website_domain($website) {
     return preg_replace('/^www\./', '', $host);
 }
 
-function craftcrawl_location_duplicate_candidates($conn, array $candidate) {
+function craftcrawl_location_duplicate_candidates($conn, array $candidate, &$stmt_cache = null) {
     $exclude_location_id = isset($candidate['exclude_location_id']) ? (int) $candidate['exclude_location_id'] : 0;
     $source_provider = $candidate['source_provider'] ?? null;
     $source_place_id = $candidate['source_place_id'] ?? null;
@@ -29,7 +29,12 @@ function craftcrawl_location_duplicate_candidates($conn, array $candidate) {
     $matches = [];
 
     if ($source_provider && $source_place_id) {
-        $stmt = $conn->prepare("SELECT id, name, street_address, city, state, 'exact_provider_match' AS match_type FROM locations WHERE source_provider=? AND source_place_id=? AND id<>? LIMIT 1");
+        $sql = "SELECT id, name, street_address, city, state, 'exact_provider_match' AS match_type FROM locations WHERE source_provider=? AND source_place_id=? AND id<>? LIMIT 1";
+        if ($stmt_cache !== null) {
+            $stmt = craftcrawl_overpass_stmt_cache_get($stmt_cache, $conn, 'dup_provider', $sql);
+        } else {
+            $stmt = $conn->prepare($sql);
+        }
         $stmt->bind_param('ssi', $source_provider, $source_place_id, $exclude_location_id);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
@@ -39,13 +44,18 @@ function craftcrawl_location_duplicate_candidates($conn, array $candidate) {
     }
 
     if ($normalized_name !== '' && $normalized_address !== '') {
-        $stmt = $conn->prepare("
+        $sql = "
             SELECT id, name, street_address, city, state, 'same_address_similar_name' AS match_type
             FROM locations
             WHERE normalized_address=?
               AND normalized_name LIKE CONCAT('%', ?, '%')
               AND id<>?
-        ");
+        ";
+        if ($stmt_cache !== null) {
+            $stmt = craftcrawl_overpass_stmt_cache_get($stmt_cache, $conn, 'dup_name_addr', $sql);
+        } else {
+            $stmt = $conn->prepare($sql);
+        }
         $stmt->bind_param('ssi', $normalized_address, $normalized_name, $exclude_location_id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -76,7 +86,11 @@ function craftcrawl_location_duplicate_candidates($conn, array $candidate) {
         $max_lat = $latitude !== null ? $latitude + $lat_delta : null;
         $min_lng = $longitude !== null ? $longitude - $lng_delta : null;
         $max_lng = $longitude !== null ? $longitude + $lng_delta : null;
-        $stmt = $conn->prepare($sql);
+        if ($stmt_cache !== null) {
+            $stmt = craftcrawl_overpass_stmt_cache_get($stmt_cache, $conn, 'dup_contact_coords', $sql);
+        } else {
+            $stmt = $conn->prepare($sql);
+        }
         $stmt->bind_param(
             'ssssssssddddddi',
             $phone,
