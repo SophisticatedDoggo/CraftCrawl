@@ -1,10 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../lib/overpass_import.php';
-
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 function usage() {
     echo "Usage: php tools/overpass_import.php --state=PA [--limit-tiles=1] [--dry-run] [--write-results] [--operation-id=id] [--track-operation]\n";
@@ -72,10 +69,8 @@ if (!isset(craftcrawl_us_state_bounds()[$state])) {
     exit(1);
 }
 
-if (!$conn->ping()) {
-    $conn->close();
-    include __DIR__ . '/../db.php';
-}
+include __DIR__ . '/../db.php';
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 echo ($dry_run ? '[dry-run] ' : '') . "Importing {$state} via Overpass (OSM)\n";
 try {
