@@ -201,11 +201,66 @@ $recent_google_operations = $conn->query("
     LIMIT 10
 ");
 $admin_page_title = 'Import Locations';
-$admin_page_subtitle = 'Run Google Places batches and import individual locations.';
-$admin_page_extra_scripts = ['../js/admin_google_import_tiles.js'];
+$admin_page_subtitle = 'Run Overpass (OSM) or Google Places batches and import individual locations.';
+$admin_page_extra_scripts = ['../js/admin_overpass_import_tiles.js', '../js/admin_google_import_tiles.js'];
 include __DIR__ . '/admin_header.php';
 ?>
 
+        <section class="admin-panel" data-overpass-import-tiles data-tile-catalog="<?php echo import_escape(json_encode($google_tile_catalog)); ?>">
+            <h2>Run Overpass (OSM) Batch</h2>
+            <p class="form-help">Free &mdash; no API key required. Uses OpenStreetMap data via the Overpass API. One query per tile fetches all establishment types at once.</p>
+            <form method="POST" class="admin-search-form" data-overpass-import-operation-form data-operation-endpoint="overpass_import_operation.php">
+                <?php echo craftcrawl_csrf_input(); ?>
+                <input type="hidden" name="form_action" value="run_overpass_import">
+                <div class="admin-field">
+                    <label for="overpass_state">State</label>
+                    <select id="overpass_state" name="overpass_state">
+                    <?php foreach (array_keys(craftcrawl_us_state_bounds()) as $state_code) : ?>
+                            <option value="<?php echo import_escape($state_code); ?>" <?php echo $google_state === $state_code ? 'selected' : ''; ?>>
+                                <?php echo import_escape($state_code); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="admin-field">
+                    <label for="overpass_limit_tiles">Tile limit</label>
+                    <input id="overpass_limit_tiles" name="overpass_limit_tiles" type="number" min="1" max="<?php echo import_escape(count($google_tiles)); ?>" value="<?php echo import_escape($google_limit_tiles); ?>">
+                </div>
+                <label><input type="checkbox" name="overpass_dry_run" value="1" <?php echo $google_dry_run ? 'checked' : ''; ?>> Dry run only</label>
+                <button type="submit">Run Overpass Import</button>
+                <a href="import_review.php?import_provider=overpass">Review Overpass imports</a>
+            </form>
+            <p id="overpass_tile_count_info"><?php echo import_escape($google_state); ?> has <?php echo import_escape(count($google_tiles)); ?> import tile<?php echo count($google_tiles) === 1 ? '' : 's'; ?>, starting with priority city/metro seeds followed by a shape-filtered coarse grid. Tile limit runs from the first tile through that number.</p>
+            <p class="form-help">Imports run as a server background worker when PHP exec() is available. If background launch is unavailable, this page falls back to small browser work requests and can resume queued or running operations when you return.</p>
+            <details>
+                <summary id="overpass_tile_preview_summary">Preview <?php echo import_escape($google_state); ?> tiles</summary>
+                <div id="overpass_tile_preview_list">
+                    <?php foreach ($google_tiles as $index => $tile) : ?>
+                        <article class="admin-list-item">
+                            <div>
+                                <h3>Tile <?php echo import_escape($index + 1); ?> · <?php echo import_escape($tile['label']); ?></h3>
+                                <p><?php echo import_escape(($tile['tile_kind'] ?? 'coarse_grid') === 'priority_seed' ? 'Priority city/metro seed' : 'Shape-filtered coarse grid'); ?> · Center: <?php echo import_escape($tile['latitude']); ?>, <?php echo import_escape($tile['longitude']); ?> · Radius: <?php echo import_escape($tile['radius_meters']); ?> meters</p>
+                                <p><a href="https://www.openstreetmap.org/#map=10/<?php echo rawurlencode($tile['latitude']); ?>/<?php echo rawurlencode($tile['longitude']); ?>" target="_blank" rel="noopener">Open center in OpenStreetMap</a></p>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            </details>
+            <section class="admin-list-item" data-overpass-current-operation hidden>
+                <div>
+                    <h3>Current Operation</h3>
+                    <p data-overpass-operation-status>No operation is running.</p>
+                    <progress data-overpass-operation-progress value="0" max="100"></progress>
+                    <p data-overpass-operation-detail></p>
+                    <p data-overpass-operation-summary></p>
+                    <button type="button" data-overpass-operation-stop hidden>Stop operation</button>
+                    <p data-overpass-operation-error class="form-message form-message-error" hidden></p>
+                </div>
+            </section>
+        </section>
+
+        <details>
+        <summary class="admin-panel-toggle">Google Places Batch (secondary &mdash; requires API key)</summary>
         <section class="admin-panel" data-google-import-tiles data-tile-catalog="<?php echo import_escape(json_encode($google_tile_catalog)); ?>">
             <h2>Run Google Places Batch</h2>
             <?php if ($google_import_error) : ?>
@@ -305,6 +360,8 @@ include __DIR__ . '/admin_header.php';
                 <?php endwhile; ?>
             <?php endif; ?>
         </section>
+
+        </details>
 
         <section class="admin-panel">
             <h2>Search Google Places</h2>

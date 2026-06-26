@@ -227,7 +227,7 @@ CREATE TABLE IF NOT EXISTS locations (
     display_palette VARCHAR(20) NOT NULL DEFAULT 'trail-map',
     checkin_message VARCHAR(500),
     visibility_status ENUM('pending_new_business', 'pending_import_review', 'public_unclaimed', 'public_claimed', 'rejected', 'hidden') NOT NULL DEFAULT 'pending_new_business',
-    source_provider ENUM('manual', 'mapbox', 'google', 'user_suggested') NOT NULL DEFAULT 'manual',
+    source_provider ENUM('manual', 'mapbox', 'google', 'overpass', 'user_suggested') NOT NULL DEFAULT 'manual',
     source_place_id VARCHAR(255),
     normalized_name VARCHAR(255),
     normalized_address VARCHAR(255),
@@ -832,12 +832,12 @@ INSERT IGNORE INTO chain_exclusion_patterns (pattern, reason) VALUES
 
 CREATE TABLE IF NOT EXISTS location_import_batches (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    source_provider ENUM('google') NOT NULL DEFAULT 'google',
+    source_provider ENUM('google', 'overpass') NOT NULL DEFAULT 'google',
     operation_id VARCHAR(40),
     import_scope ENUM('state', 'all_states', 'manual') NOT NULL DEFAULT 'state',
     state CHAR(2),
     search_term VARCHAR(100) NOT NULL,
-    google_search_mode ENUM('nearby', 'text') NOT NULL,
+    google_search_mode ENUM('nearby', 'text', 'overpass') NOT NULL,
     tile_label VARCHAR(100),
     tile_center_latitude DECIMAL(9,6),
     tile_center_longitude DECIMAL(9,6),
@@ -860,7 +860,7 @@ CREATE TABLE IF NOT EXISTS location_import_batches (
 
 CREATE TABLE IF NOT EXISTS location_import_operations (
     operation_id VARCHAR(40) PRIMARY KEY,
-    source_provider ENUM('google') NOT NULL DEFAULT 'google',
+    source_provider ENUM('google', 'overpass') NOT NULL DEFAULT 'google',
     state CHAR(2) NOT NULL,
     limit_tiles INT NOT NULL DEFAULT 0,
     dry_run BOOL NOT NULL DEFAULT TRUE,
@@ -911,6 +911,37 @@ CREATE TABLE IF NOT EXISTS google_place_imports (
     CONSTRAINT fk_google_place_import_batchId FOREIGN KEY (batch_id)
     REFERENCES location_import_batches(id),
     CONSTRAINT fk_google_place_import_locationId FOREIGN KEY (location_id)
+    REFERENCES locations(id)
+);
+
+CREATE TABLE IF NOT EXISTS overpass_place_imports (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    batch_id INT,
+    location_id INT,
+    osm_type ENUM('node', 'way', 'relation') NOT NULL,
+    osm_id BIGINT NOT NULL,
+    source_place_id VARCHAR(255) NOT NULL,
+    state CHAR(2),
+    osm_amenity VARCHAR(100),
+    osm_craft VARCHAR(100),
+    osm_tags JSON,
+    raw_element_json JSON,
+    fit_score INT NOT NULL DEFAULT 0,
+    suggested_category VARCHAR(100),
+    decision ENUM('auto_add', 'needs_review', 'reject', 'duplicate', 'error') NOT NULL,
+    positive_signals JSON,
+    negative_signals JSON,
+    decision_reason VARCHAR(1024),
+    createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_overpass_place_import (source_place_id),
+    KEY idx_overpass_place_imports_batch (batch_id),
+    KEY idx_overpass_place_imports_location (location_id),
+    KEY idx_overpass_place_imports_decision (decision),
+    KEY idx_overpass_place_imports_score (fit_score),
+    KEY idx_overpass_place_imports_osm (osm_type, osm_id),
+    CONSTRAINT fk_overpass_place_import_batchId FOREIGN KEY (batch_id)
+    REFERENCES location_import_batches(id),
+    CONSTRAINT fk_overpass_place_import_locationId FOREIGN KEY (location_id)
     REFERENCES locations(id)
 );
 

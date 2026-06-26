@@ -121,6 +121,9 @@ function admin_delete_pending_import_location($conn, $location_id, $admin_id, $n
     $g = $conn->prepare("UPDATE google_place_imports SET location_id=NULL,decision=?,decision_reason=? WHERE location_id=?");
     $g->bind_param('ssi', $d, $reason, $location_id);
     $g->execute();
+    $o = $conn->prepare("UPDATE overpass_place_imports SET location_id=NULL,decision=?,decision_reason=? WHERE location_id=?");
+    $o->bind_param('ssi', $d, $reason, $location_id);
+    $o->execute();
     $h = $conn->prepare("DELETE FROM location_hours WHERE location_id=?");
     $h->bind_param('i', $location_id);
     $h->execute();
@@ -153,15 +156,15 @@ function admin_build_import_filter_where(array $filters, array &$params, &$types
             $params[] = $like;
             $types .= 's';
         }
-        $where[] = "(l.name LIKE ? OR l.city LIKE ? OR l.state LIKE ? OR l.street_address LIKE ? OR l.source_place_id LIKE ? OR l.location_type LIKE ? OR gpi.suggested_category LIKE ? OR gpi.google_primary_type LIKE ? OR gpi.search_term LIKE ? OR gpi.decision_reason LIKE ? OR gpi.positive_signals LIKE ? OR gpi.negative_signals LIKE ?)";
+        $where[] = "(l.name LIKE ? OR l.city LIKE ? OR l.state LIKE ? OR l.street_address LIKE ? OR l.source_place_id LIKE ? OR l.location_type LIKE ? OR COALESCE(gpi.suggested_category, opi.suggested_category) LIKE ? OR COALESCE(gpi.google_primary_type, opi.osm_craft, opi.osm_amenity) LIKE ? OR COALESCE(gpi.search_term, '') LIKE ? OR COALESCE(gpi.decision_reason, opi.decision_reason) LIKE ? OR COALESCE(gpi.positive_signals, opi.positive_signals) LIKE ? OR COALESCE(gpi.negative_signals, opi.negative_signals) LIKE ?)";
     }
-    if (in_array($filters['provider'] ?? '', ['google', 'mapbox', 'user_suggested', 'manual'], true)) {
+    if (in_array($filters['provider'] ?? '', ['google', 'mapbox', 'overpass', 'user_suggested', 'manual'], true)) {
         $where[] = 'l.source_provider=?';
         $params[] = $filters['provider'];
         $types .= 's';
     }
     if (in_array($filters['decision'] ?? '', ['auto_add', 'needs_review', 'reject', 'duplicate', 'error'], true)) {
-        $where[] = 'gpi.decision=?';
+        $where[] = 'COALESCE(gpi.decision, opi.decision)=?';
         $params[] = $filters['decision'];
         $types .= 's';
     }
@@ -176,12 +179,12 @@ function admin_build_import_filter_where(array $filters, array &$params, &$types
         $types .= 's';
     }
     if (($filters['score_min'] ?? '') !== '' && is_numeric($filters['score_min'])) {
-        $where[] = 'gpi.fit_score>=?';
+        $where[] = 'COALESCE(gpi.fit_score, opi.fit_score)>=?';
         $params[] = (int) $filters['score_min'];
         $types .= 'i';
     }
     if (($filters['score_max'] ?? '') !== '' && is_numeric($filters['score_max'])) {
-        $where[] = 'gpi.fit_score<=?';
+        $where[] = 'COALESCE(gpi.fit_score, opi.fit_score)<=?';
         $params[] = (int) $filters['score_max'];
         $types .= 'i';
     }

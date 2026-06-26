@@ -458,26 +458,27 @@ function craftcrawl_google_import_operation_id() {
     }
 }
 
-function craftcrawl_create_google_import_operation($conn, $operation_id, $state, $limit_tiles, $dry_run, $total_tiles, $total_searches) {
+function craftcrawl_create_google_import_operation($conn, $operation_id, $state, $limit_tiles, $dry_run, $total_tiles, $total_searches, $source_provider = 'google') {
     $total_steps = max(0, (int) $total_tiles * (int) $total_searches);
     $dry_run_value = $dry_run ? 1 : 0;
     $stmt = $conn->prepare("
         INSERT INTO location_import_operations
-        (operation_id,state,limit_tiles,dry_run,total_tiles,total_searches,total_steps,status,startedAt,updatedAt)
-        VALUES (?,?,?,?,?,?,?,'queued',NOW(),NOW())
+        (operation_id,source_provider,state,limit_tiles,dry_run,total_tiles,total_searches,total_steps,status,startedAt,updatedAt)
+        VALUES (?,?,?,?,?,?,?,?,'queued',NOW(),NOW())
     ");
-    $stmt->bind_param('ssiiiii', $operation_id, $state, $limit_tiles, $dry_run_value, $total_tiles, $total_searches, $total_steps);
+    $stmt->bind_param('sssiiiii', $operation_id, $source_provider, $state, $limit_tiles, $dry_run_value, $total_tiles, $total_searches, $total_steps);
     $stmt->execute();
 }
 
-function craftcrawl_mark_google_import_operation_running($conn, $operation_id, $state, $limit_tiles, $dry_run, $total_tiles, $total_searches) {
+function craftcrawl_mark_google_import_operation_running($conn, $operation_id, $state, $limit_tiles, $dry_run, $total_tiles, $total_searches, $source_provider = 'google') {
     $total_steps = max(0, (int) $total_tiles * (int) $total_searches);
     $dry_run_value = $dry_run ? 1 : 0;
     $stmt = $conn->prepare("
         INSERT INTO location_import_operations
-        (operation_id,state,limit_tiles,dry_run,total_tiles,total_searches,total_steps,status,startedAt,updatedAt)
-        VALUES (?,?,?,?,?,?,?,'running',NOW(),NOW())
+        (operation_id,source_provider,state,limit_tiles,dry_run,total_tiles,total_searches,total_steps,status,startedAt,updatedAt)
+        VALUES (?,?,?,?,?,?,?,?,'running',NOW(),NOW())
         ON DUPLICATE KEY UPDATE
+            source_provider=VALUES(source_provider),
             state=VALUES(state),
             limit_tiles=VALUES(limit_tiles),
             dry_run=VALUES(dry_run),
@@ -497,7 +498,7 @@ function craftcrawl_mark_google_import_operation_running($conn, $operation_id, $
             completedAt=NULL,
             updatedAt=NOW()
     ");
-    $stmt->bind_param('ssiiiii', $operation_id, $state, $limit_tiles, $dry_run_value, $total_tiles, $total_searches, $total_steps);
+    $stmt->bind_param('sssiiiii', $operation_id, $source_provider, $state, $limit_tiles, $dry_run_value, $total_tiles, $total_searches, $total_steps);
     $stmt->execute();
 }
 
@@ -745,10 +746,10 @@ function craftcrawl_process_google_import_operation_step($conn, $api_key, $opera
     return $summary;
 }
 
-function craftcrawl_insert_location_import_batch($conn, $operation_id, $scope, $state, array $term, array $tile) {
-    $stmt = $conn->prepare("INSERT INTO location_import_batches (operation_id,import_scope,state,search_term,google_search_mode,tile_label,tile_center_latitude,tile_center_longitude,tile_radius_meters) VALUES (?,?,?,?,?,?,?,?,?)");
-    $mode = $term['mode'] ?? 'text';
-    $stmt->bind_param('ssssssddi', $operation_id, $scope, $state, $term['term'], $mode, $tile['label'], $tile['latitude'], $tile['longitude'], $tile['radius_meters']);
+function craftcrawl_insert_location_import_batch($conn, $operation_id, $scope, $state, array $term, array $tile, $source_provider = 'google') {
+    $stmt = $conn->prepare("INSERT INTO location_import_batches (source_provider,operation_id,import_scope,state,search_term,google_search_mode,tile_label,tile_center_latitude,tile_center_longitude,tile_radius_meters) VALUES (?,?,?,?,?,?,?,?,?,?)");
+    $mode = $source_provider === 'overpass' ? 'overpass' : ($term['mode'] ?? 'text');
+    $stmt->bind_param('sssssssddi', $source_provider, $operation_id, $scope, $state, $term['term'], $mode, $tile['label'], $tile['latitude'], $tile['longitude'], $tile['radius_meters']);
     $stmt->execute();
     return (int) $stmt->insert_id;
 }
