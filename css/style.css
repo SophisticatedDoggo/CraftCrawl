@@ -1742,6 +1742,7 @@ a.text-link:focus {
 }
 
 .business-list-icon {
+    display: block;
     width: 20px;
     height: 20px;
     object-fit: contain;
@@ -6319,6 +6320,13 @@ a.profile-card-link:not(.mapboxgl-ctrl-logo):focus {
 .friend-recommendation-card span,
 .friends-leaderboard span {
     color: var(--color-muted);
+}
+
+.friend-location-card .business-list-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
 }
 
 .friends-leaderboard span span {
