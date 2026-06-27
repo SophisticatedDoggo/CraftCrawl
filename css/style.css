@@ -6231,40 +6231,69 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
 }
 
 .friend-location-card:has(.profile-card-link) {
+    grid-template-columns: auto minmax(0, 1fr);
+    cursor: pointer;
+}
+
+.friend-location-card:has(.profile-card-link):hover {
+    border-color: var(--color-primary);
+}
+
+.friend-location-card > :not(.profile-card-link) {
+    position: relative;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.friend-location-card > .profile-card-menu {
+    pointer-events: auto;
+}
+
+a.profile-card-link:not(.mapboxgl-ctrl-logo),
+a.profile-card-link:not(.mapboxgl-ctrl-logo):hover,
+a.profile-card-link:not(.mapboxgl-ctrl-logo):focus {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: block;
+    min-height: 0;
     padding: 0;
-    gap: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: transparent;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 .friend-suggestion-card {
     grid-template-columns: auto minmax(0, 1fr) max-content;
 }
 
-.profile-card-link {
-    display: flex;
+.profile-card-type-icon {
+    display: inline-flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px;
-    color: inherit;
-    text-decoration: none;
-    grid-column: 1 / -1;
-    min-width: 0;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--color-muted);
 }
 
-.profile-card-link:hover,
-.profile-card-link:focus-visible {
-    text-decoration: none;
-    color: inherit;
-}
-
-.friend-location-card:has(.profile-card-menu) .profile-card-link {
-    padding-right: 40px;
-}
+.profile-card-type-icon-brewery { background: #f97316; }
+.profile-card-type-icon-winery { background: #9333ea; }
+.profile-card-type-icon-cidery { background: #dc2626; }
+.profile-card-type-icon-distillery { background: #2563eb; }
+.profile-card-type-icon-meadery { background: #facc15; }
+.profile-card-type-icon-bar { background: #0f766e; }
+.profile-card-type-icon-social_club { background: #92400e; }
 
 .profile-card-icon {
-    width: 28px;
-    height: 28px;
+    width: 20px;
+    height: 20px;
     object-fit: contain;
-    flex-shrink: 0;
 }
 
 .profile-card-info {
@@ -6285,10 +6314,14 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
     color: var(--color-muted);
 }
 
+.friend-location-card:has(.profile-card-menu) .profile-card-info {
+    padding-right: 24px;
+}
+
 .profile-card-menu {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: 6px;
+    right: 6px;
     z-index: 2;
 }
 
