@@ -6272,32 +6272,6 @@ a.profile-card-link:not(.mapboxgl-ctrl-logo):focus {
     grid-template-columns: auto minmax(0, 1fr) max-content;
 }
 
-.profile-card-type-icon {
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background: var(--color-muted);
-    line-height: 0;
-}
-
-.profile-card-type-icon-brewery { background: #f97316; }
-.profile-card-type-icon-winery { background: #9333ea; }
-.profile-card-type-icon-cidery { background: #dc2626; }
-.profile-card-type-icon-distillery { background: #2563eb; }
-.profile-card-type-icon-meadery { background: #facc15; }
-.profile-card-type-icon-bar { background: #0f766e; }
-.profile-card-type-icon-social_club { background: #92400e; }
-
-.profile-card-icon {
-    display: block;
-    width: 20px;
-    height: 20px;
-    object-fit: contain;
-}
-
 .profile-card-info {
     display: block;
     min-width: 0;

@@ -810,8 +810,8 @@ if (!$profile) {
                             <?php endif; ?>
                             <?php while ($business = $followed_businesses->fetch_assoc()) : ?>
                                 <article class="friend-location-card" data-profile-filter-item>
-                                    <span class="profile-card-type-icon profile-card-type-icon-<?php echo escape_output($business['bType']); ?>">
-                                        <img src="../images/map_icons/<?php echo escape_output($business['bType']); ?>.png" class="profile-card-icon" alt="">
+                                    <span class="business-list-number business-list-number-<?php echo escape_output($business['bType']); ?>">
+                                        <img src="../images/map_icons/<?php echo escape_output($business['bType']); ?>.png" class="business-list-icon" alt="">
                                     </span>
                                     <span class="profile-card-info">
                                         <strong><?php echo escape_output($business['bName']); ?></strong>
@@ -853,8 +853,8 @@ if (!$profile) {
                             <?php endif; ?>
                             <?php while ($business = $want_to_go_businesses->fetch_assoc()) : ?>
                                 <article class="friend-location-card" data-profile-filter-item>
-                                    <span class="profile-card-type-icon profile-card-type-icon-<?php echo escape_output($business['bType']); ?>">
-                                        <img src="../images/map_icons/<?php echo escape_output($business['bType']); ?>.png" class="profile-card-icon" alt="">
+                                    <span class="business-list-number business-list-number-<?php echo escape_output($business['bType']); ?>">
+                                        <img src="../images/map_icons/<?php echo escape_output($business['bType']); ?>.png" class="business-list-icon" alt="">
                                     </span>
                                     <span class="profile-card-info">
                                         <strong><?php echo escape_output($business['bName']); ?></strong>
