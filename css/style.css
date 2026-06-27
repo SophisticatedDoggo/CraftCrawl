@@ -6246,6 +6246,7 @@ a.friend-card-link:not(.mapboxgl-ctrl-logo):focus {
 }
 
 .friend-location-card > .profile-card-menu {
+    position: absolute;
     pointer-events: auto;
 }
 
@@ -6291,6 +6292,7 @@ a.profile-card-link:not(.mapboxgl-ctrl-logo):focus {
 .profile-card-type-icon-social_club { background: #92400e; }
 
 .profile-card-icon {
+    display: block;
     width: 20px;
     height: 20px;
     object-fit: contain;
