@@ -6272,6 +6272,11 @@ a.profile-card-link:not(.mapboxgl-ctrl-logo):focus {
     grid-template-columns: auto minmax(0, 1fr) max-content;
 }
 
+.friend-location-card .business-list-number {
+    border: none;
+    box-shadow: none;
+}
+
 .profile-card-info {
     display: block;
     min-width: 0;
