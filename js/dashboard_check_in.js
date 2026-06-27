@@ -345,7 +345,7 @@
             var meta = document.createElement('span');
             var action = document.createElement('button');
 
-            item.className = 'dashboard-checkin-item';
+            item.className = 'dashboard-checkin-item' + (location.in_range === false ? ' dashboard-checkin-item-out-of-range' : '');
             title.textContent = location.name;
 
             var visitText = location.visit_type === 'first_time'
@@ -370,6 +370,8 @@
                         action.textContent = 'Check In';
                     });
                 }
+            } else if (location.in_range === false) {
+                action.textContent = 'Move Closer';
             } else {
                 action.textContent = location.eligible ? 'Check In' : (location.is_open ? 'On Cooldown' : 'Closed');
             }
@@ -484,7 +486,14 @@
                         return;
                     }
 
-                    showStatus('Found ' + data.locations.length + ' nearby check-in location' + (data.locations.length === 1 ? '' : 's') + '.', false);
+                    var inRangeCount = data.locations.filter(function (l) { return l.in_range !== false; }).length;
+                    var totalCount = data.locations.length;
+                    var statusMsg = 'Found ' + totalCount + ' nearby location' + (totalCount === 1 ? '' : 's');
+                    if (inRangeCount < totalCount) {
+                        statusMsg += ' (' + inRangeCount + ' in check-in range)';
+                    }
+                    statusMsg += '.';
+                    showStatus(statusMsg, false);
                     renderLocations(data.locations);
                 })
                 .catch(function () {
