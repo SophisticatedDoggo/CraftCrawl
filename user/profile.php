@@ -810,19 +810,23 @@ if (!$profile) {
                             <?php endif; ?>
                             <?php while ($business = $followed_businesses->fetch_assoc()) : ?>
                                 <article class="friend-location-card" data-profile-filter-item>
-                                    <strong><?php echo escape_output($business['bName']); ?></strong>
-                                    <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
-                                    <div class="profile-location-actions">
-                                        <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View</a>
-                                        <?php if ($is_own_profile) : ?>
-                                            <form method="POST" action="">
-                                                <?php echo craftcrawl_csrf_input(); ?>
-                                                <input type="hidden" name="form_action" value="unfollow_business">
-                                                <input type="hidden" name="location_id" value="<?php echo escape_output($business['id']); ?>">
-                                                <button type="submit" class="button-link-secondary profile-location-remove">Unfollow</button>
-                                            </form>
-                                        <?php endif; ?>
-                                    </div>
+                                    <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>" class="profile-card-link">
+                                        <img src="../images/map_icons/<?php echo escape_output($business['bType']); ?>.png" class="profile-card-icon" alt="">
+                                        <span class="profile-card-info">
+                                            <strong><?php echo escape_output($business['bName']); ?></strong>
+                                            <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
+                                        </span>
+                                    </a>
+                                    <?php if ($is_own_profile) : ?>
+                                        <div class="post-menu profile-card-menu" data-post-menu data-profile-action="unfollow_business" data-profile-location-id="<?php echo escape_output($business['id']); ?>">
+                                            <button type="button" class="post-menu-trigger" aria-expanded="false" aria-label="More options">
+                                                <span class="post-menu-trigger-icon" aria-hidden="true"></span>
+                                            </button>
+                                            <div class="post-menu-dropdown">
+                                                <button type="button" class="post-menu-dropdown-item is-danger" data-post-menu-action="profile_remove">Unfollow</button>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
                                 </article>
                             <?php endwhile; ?>
                             <p class="profile-list-empty" data-profile-filter-empty hidden>No followed businesses match your search.</p>
@@ -848,19 +852,23 @@ if (!$profile) {
                             <?php endif; ?>
                             <?php while ($business = $want_to_go_businesses->fetch_assoc()) : ?>
                                 <article class="friend-location-card" data-profile-filter-item>
-                                    <strong><?php echo escape_output($business['bName']); ?></strong>
-                                    <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
-                                    <div class="profile-location-actions">
-                                        <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>">View</a>
-                                        <?php if ($is_own_profile) : ?>
-                                            <form method="POST" action="">
-                                                <?php echo craftcrawl_csrf_input(); ?>
-                                                <input type="hidden" name="form_action" value="remove_want_to_go">
-                                                <input type="hidden" name="location_id" value="<?php echo escape_output($business['id']); ?>">
-                                                <button type="submit" class="button-link-secondary profile-location-remove">Remove</button>
-                                            </form>
-                                        <?php endif; ?>
-                                    </div>
+                                    <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>" class="profile-card-link">
+                                        <img src="../images/map_icons/<?php echo escape_output($business['bType']); ?>.png" class="profile-card-icon" alt="">
+                                        <span class="profile-card-info">
+                                            <strong><?php echo escape_output($business['bName']); ?></strong>
+                                            <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
+                                        </span>
+                                    </a>
+                                    <?php if ($is_own_profile) : ?>
+                                        <div class="post-menu profile-card-menu" data-post-menu data-profile-action="remove_want_to_go" data-profile-location-id="<?php echo escape_output($business['id']); ?>">
+                                            <button type="button" class="post-menu-trigger" aria-expanded="false" aria-label="More options">
+                                                <span class="post-menu-trigger-icon" aria-hidden="true"></span>
+                                            </button>
+                                            <div class="post-menu-dropdown">
+                                                <button type="button" class="post-menu-dropdown-item is-danger" data-post-menu-action="profile_remove">Remove</button>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
                                 </article>
                             <?php endwhile; ?>
                             <p class="profile-list-empty" data-profile-filter-empty hidden>No saved locations match your search.</p>
