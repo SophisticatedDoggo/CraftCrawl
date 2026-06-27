@@ -810,13 +810,14 @@ if (!$profile) {
                             <?php endif; ?>
                             <?php while ($business = $followed_businesses->fetch_assoc()) : ?>
                                 <article class="friend-location-card" data-profile-filter-item>
-                                    <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>" class="profile-card-link">
+                                    <span class="profile-card-type-icon profile-card-type-icon-<?php echo escape_output($business['bType']); ?>">
                                         <img src="../images/map_icons/<?php echo escape_output($business['bType']); ?>.png" class="profile-card-icon" alt="">
-                                        <span class="profile-card-info">
-                                            <strong><?php echo escape_output($business['bName']); ?></strong>
-                                            <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
-                                        </span>
-                                    </a>
+                                    </span>
+                                    <span class="profile-card-info">
+                                        <strong><?php echo escape_output($business['bName']); ?></strong>
+                                        <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
+                                    </span>
+                                    <a class="profile-card-link" href="../business_details.php?id=<?php echo escape_output($business['id']); ?>" aria-label="View <?php echo escape_output($business['bName']); ?>"></a>
                                     <?php if ($is_own_profile) : ?>
                                         <div class="post-menu profile-card-menu" data-post-menu data-profile-action="unfollow_business" data-profile-location-id="<?php echo escape_output($business['id']); ?>">
                                             <button type="button" class="post-menu-trigger" aria-expanded="false" aria-label="More options">
@@ -852,13 +853,14 @@ if (!$profile) {
                             <?php endif; ?>
                             <?php while ($business = $want_to_go_businesses->fetch_assoc()) : ?>
                                 <article class="friend-location-card" data-profile-filter-item>
-                                    <a href="../business_details.php?id=<?php echo escape_output($business['id']); ?>" class="profile-card-link">
+                                    <span class="profile-card-type-icon profile-card-type-icon-<?php echo escape_output($business['bType']); ?>">
                                         <img src="../images/map_icons/<?php echo escape_output($business['bType']); ?>.png" class="profile-card-icon" alt="">
-                                        <span class="profile-card-info">
-                                            <strong><?php echo escape_output($business['bName']); ?></strong>
-                                            <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
-                                        </span>
-                                    </a>
+                                    </span>
+                                    <span class="profile-card-info">
+                                        <strong><?php echo escape_output($business['bName']); ?></strong>
+                                        <span><?php echo escape_output(craftcrawl_profile_business_type_label($business['bType'])); ?> · <?php echo escape_output($business['city']); ?>, <?php echo escape_output($business['state']); ?></span>
+                                    </span>
+                                    <a class="profile-card-link" href="../business_details.php?id=<?php echo escape_output($business['id']); ?>" aria-label="View <?php echo escape_output($business['bName']); ?>"></a>
                                     <?php if ($is_own_profile) : ?>
                                         <div class="post-menu profile-card-menu" data-post-menu data-profile-action="remove_want_to_go" data-profile-location-id="<?php echo escape_output($business['id']); ?>">
                                             <button type="button" class="post-menu-trigger" aria-expanded="false" aria-label="More options">
