@@ -6273,14 +6273,14 @@ a.profile-card-link:not(.mapboxgl-ctrl-logo):focus {
 }
 
 .profile-card-type-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    place-items: center;
     flex-shrink: 0;
     width: 34px;
     height: 34px;
     border-radius: 50%;
     background: var(--color-muted);
+    line-height: 0;
 }
 
 .profile-card-type-icon-brewery { background: #f97316; }
