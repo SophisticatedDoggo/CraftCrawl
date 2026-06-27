@@ -91,6 +91,21 @@
                 });
             }
         }
+        if (action === 'profile_remove') {
+            var formAction = container.getAttribute('data-profile-action');
+            var locationId = container.getAttribute('data-profile-location-id');
+            if (!formAction || !locationId) return;
+            var csrfToken = document.querySelector('[data-csrf-token]');
+            if (!csrfToken) return;
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.style.display = 'none';
+            form.innerHTML = '<input type="hidden" name="csrf_token" value="' + escapeHtml(csrfToken.getAttribute('data-csrf-token')) + '">'
+                + '<input type="hidden" name="form_action" value="' + escapeHtml(formAction) + '">'
+                + '<input type="hidden" name="location_id" value="' + escapeHtml(locationId) + '">';
+            document.body.appendChild(form);
+            form.submit();
+        }
     }
 
     document.addEventListener('click', function (e) {
