@@ -3014,6 +3014,16 @@ a.text-link:focus {
     font-size: 14px;
 }
 
+.dashboard-checkin-item-out-of-range {
+    opacity: 0.7;
+    border-style: dashed;
+}
+
+.dashboard-checkin-item-out-of-range button {
+    color: var(--color-muted);
+    cursor: not-allowed;
+}
+
 .quests-panel {
     display: grid;
     gap: 18px;

@@ -48,7 +48,7 @@ while ($business = $businesses->fetch_assoc()) {
         (float) $business['longitude']
     );
 
-    if ($distance_meters > CRAFTCRAWL_CHECKIN_RADIUS_METERS) {
+    if ($distance_meters > CRAFTCRAWL_CHECKIN_DISCOVERY_RADIUS_METERS) {
         continue;
     }
 
@@ -89,6 +89,13 @@ while ($business = $businesses->fetch_assoc()) {
         $xp_awarded = 0;
     }
 
+    $in_range = $distance_meters <= CRAFTCRAWL_CHECKIN_RADIUS_METERS;
+    if (!$in_range) {
+        $eligible = false;
+        $eligible_at = null;
+        $unavailable_reason = 'Move closer to check in';
+    }
+
     $nearby[] = [
         'id' => (int) $business['id'],
         'name' => $business['name'],
@@ -96,6 +103,7 @@ while ($business = $businesses->fetch_assoc()) {
         'city' => $business['city'],
         'state' => $business['state'],
         'distance_meters' => round($distance_meters),
+        'in_range' => $in_range,
         'visit_type' => $visit_type,
         'eligible' => $eligible,
         'eligible_at' => $eligible_at,
@@ -112,6 +120,8 @@ usort($nearby, function ($a, $b) {
 echo json_encode([
     'ok' => true,
     'radius_meters' => CRAFTCRAWL_CHECKIN_RADIUS_METERS,
+    'checkin_radius_meters' => CRAFTCRAWL_CHECKIN_RADIUS_METERS,
+    'discovery_radius_meters' => CRAFTCRAWL_CHECKIN_DISCOVERY_RADIUS_METERS,
     'locations' => $nearby
 ]);
 
