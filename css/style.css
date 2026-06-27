@@ -5666,7 +5666,7 @@ body:not(.feed-page-body) .feed-scroll-to-notification-fab {
 
 .feed-caption-area {
     padding: 8px 0 0;
-    font-size: 14px;
+    font-size: 17px;
     line-height: 1.45;
 }
 
@@ -5686,7 +5686,7 @@ body:not(.feed-page-body) .feed-scroll-to-notification-fab {
     white-space: nowrap;
     overflow: hidden;
     word-break: normal;
-    font-size: 13px;
+    font-size: 16px;
 }
 
 .feed-caption-preview .feed-caption-preview-title {
@@ -5718,7 +5718,7 @@ body:not(.feed-page-body) .feed-scroll-to-notification-fab {
 .feed-caption-content .feed-caption-full-text {
     margin: 0;
     word-break: break-word;
-    font-size: 13px;
+    font-size: 16px;
 }
 
 .feed-caption-full-text + .feed-accomplishment-list {
@@ -5735,7 +5735,7 @@ body:not(.feed-page-body) .feed-scroll-to-notification-fab {
     border: none;
     background: none;
     color: var(--color-muted);
-    font-size: 14px;
+    font-size: 17px;
     font-weight: 400;
     cursor: pointer;
     position: relative;
@@ -5778,13 +5778,13 @@ body:not(.feed-page-body) .feed-scroll-to-notification-fab {
     gap: 0 4px;
     margin: 0;
     color: var(--color-text);
-    font-size: 13px;
+    font-size: 16px;
 }
 
 .feed-accomplishment-list .feed-accomplishment-description {
     margin: 2px 0 0;
     color: var(--color-muted);
-    font-size: 13px;
+    font-size: 16px;
 }
 
 .feed-caption-less {
