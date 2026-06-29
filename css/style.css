@@ -1581,6 +1581,8 @@ a.text-link:focus {
     color: var(--color-primary);
     background: none;
     box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     font-size: 0.825rem;
     font-weight: 800;
     line-height: 1;
