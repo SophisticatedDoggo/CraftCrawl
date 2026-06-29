@@ -1543,23 +1543,49 @@ a.text-link:focus {
     list-style: none;
 }
 
-.toolbar-suggestion-link {
-    display: inline-flex;
+.toolbar-suggestion-card {
+    display: flex;
     align-items: center;
+    gap: 6px;
     margin: 0 auto;
+    padding: 8px 14px;
+    border: 1px solid color-mix(in srgb, var(--color-accent) 30%, var(--color-border));
+    border-radius: 999px;
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.12), transparent 60%),
+        color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
+    white-space: nowrap;
+    transition: border-color 160ms ease, background 160ms ease;
+}
+
+.toolbar-suggestion-card:hover {
+    border-color: color-mix(in srgb, var(--color-accent) 50%, var(--color-border));
+    background:
+        radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.16), transparent 60%),
+        color-mix(in srgb, var(--color-accent) 14%, var(--color-surface));
+}
+
+.toolbar-suggestion-text {
+    color: var(--color-text-secondary);
+    font-size: 0.825rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.toolbar-suggestion-link {
+    display: inline;
+    min-height: 0;
     padding: 0;
     border: 0;
     border-radius: 0;
     color: var(--color-primary);
     background: none;
     box-shadow: none;
-    font-size: 0.875rem;
-    font-weight: 700;
+    font-size: 0.825rem;
+    font-weight: 800;
     line-height: 1;
-    white-space: nowrap;
-    text-decoration: none;
-    opacity: 0.85;
-    transition: opacity 160ms ease, color 160ms ease;
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
 .toolbar-suggestion-link:hover,
@@ -1568,8 +1594,6 @@ a.text-link:focus {
     color: var(--color-primary-dark);
     background: none;
     box-shadow: none;
-    text-decoration: underline;
-    opacity: 1;
 }
 
 .business-list-toolbar {
@@ -14815,7 +14839,7 @@ a.admin-stat-link:focus {
     }
 
     #map-panel.is-map-expanded .business-list,
-    #map-panel.is-map-expanded .toolbar-suggestion-link {
+    #map-panel.is-map-expanded .toolbar-suggestion-card {
         display: none;
     }
 
@@ -14849,10 +14873,9 @@ a.admin-stat-link:focus {
         gap: 6px;
     }
 
-    .toolbar-suggestion-link {
+    .toolbar-suggestion-card {
         margin: 0;
         align-self: center;
-        font-size: 0.9rem;
     }
 
     .business-list-toolbar select {
