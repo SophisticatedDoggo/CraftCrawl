@@ -1547,10 +1547,10 @@ a.text-link:focus {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin: 0 auto;
+    margin: 0;
     padding: 8px 14px;
     border: 1px solid color-mix(in srgb, var(--color-accent) 30%, var(--color-border));
-    border-radius: 999px;
+    border-radius: 8px;
     background:
         radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.12), transparent 60%),
         color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
@@ -1572,7 +1572,7 @@ a.text-link:focus {
     line-height: 1;
 }
 
-.toolbar-suggestion-link {
+.toolbar-suggestion-card a.toolbar-suggestion-link {
     display: inline;
     min-height: 0;
     padding: 0;
@@ -1590,8 +1590,8 @@ a.text-link:focus {
     text-underline-offset: 2px;
 }
 
-.toolbar-suggestion-link:hover,
-.toolbar-suggestion-link:focus-visible {
+.toolbar-suggestion-card a.toolbar-suggestion-link:hover,
+.toolbar-suggestion-card a.toolbar-suggestion-link:focus-visible {
     border: 0;
     color: var(--color-primary-dark);
     background: none;
