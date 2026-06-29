@@ -120,7 +120,10 @@ if (!function_exists('craftcrawl_render_portal_quest_card')) {
                         <option value="social_club">Social Clubs</option>
                     </select>
                 </div>
-                <a class="toolbar-suggestion-link" href="<?php echo escape_output(craftcrawl_app_base_path() . '/suggest_location.php'); ?>">Suggest a location</a>
+                <div class="toolbar-suggestion-card">
+                    <span class="toolbar-suggestion-text">Not seeing a location?</span>
+                    <a class="toolbar-suggestion-link" href="<?php echo escape_output(craftcrawl_app_base_path() . '/suggest_location.php'); ?>">Suggest one</a>
+                </div>
                 <div class="business-list-radius-control" role="group" aria-labelledby="business-list-radius-label">
                     <span id="business-list-radius-label">Radius</span>
                     <div class="business-list-radius-toggle">
