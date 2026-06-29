@@ -104,19 +104,6 @@ if (!function_exists('craftcrawl_render_portal_quest_card')) {
                 </button>
             </div>
             <div class="business-list-toolbar">
-                <div class="business-list-radius-control" role="group" aria-labelledby="business-list-radius-label">
-                    <span id="business-list-radius-label">Radius</span>
-                    <div class="business-list-radius-toggle">
-                        <input type="radio" id="business-list-radius-50" name="business-list-radius" value="50" checked>
-                        <label for="business-list-radius-50">50 mi</label>
-                        <input type="radio" id="business-list-radius-25" name="business-list-radius" value="25">
-                        <label for="business-list-radius-25">25 mi</label>
-                        <input type="radio" id="business-list-radius-10" name="business-list-radius" value="10">
-                        <label for="business-list-radius-10">10 mi</label>
-                        <input type="radio" id="business-list-radius-5" name="business-list-radius" value="5">
-                        <label for="business-list-radius-5">5 mi</label>
-                    </div>
-                </div>
                 <div class="business-list-sort-control">
                     <label for="business-list-sort">Sort list</label>
                     <select id="business-list-sort">
@@ -133,11 +120,22 @@ if (!function_exists('craftcrawl_render_portal_quest_card')) {
                         <option value="social_club">Social Clubs</option>
                     </select>
                 </div>
+                <a class="toolbar-suggestion-link" href="<?php echo escape_output(craftcrawl_app_base_path() . '/suggest_location.php'); ?>">Suggest a location</a>
+                <div class="business-list-radius-control" role="group" aria-labelledby="business-list-radius-label">
+                    <span id="business-list-radius-label">Radius</span>
+                    <div class="business-list-radius-toggle">
+                        <input type="radio" id="business-list-radius-50" name="business-list-radius" value="50" checked>
+                        <label for="business-list-radius-50">50 mi</label>
+                        <input type="radio" id="business-list-radius-25" name="business-list-radius" value="25">
+                        <label for="business-list-radius-25">25 mi</label>
+                        <input type="radio" id="business-list-radius-10" name="business-list-radius" value="10">
+                        <label for="business-list-radius-10">10 mi</label>
+                        <input type="radio" id="business-list-radius-5" name="business-list-radius" value="5">
+                        <label for="business-list-radius-5">5 mi</label>
+                    </div>
+                </div>
             </div>
             <ol id="business-list" class="business-list"></ol>
-            <p class="location-suggestion-prompt">
-                Not seeing a location? Make a location suggestion <a class="location-suggestion-link" href="<?php echo escape_output(craftcrawl_app_base_path() . '/suggest_location.php'); ?>">here</a>.
-            </p>
         </section>
     </div>
 

@@ -1543,39 +1543,33 @@ a.text-link:focus {
     list-style: none;
 }
 
-.location-suggestion-prompt {
-    margin: 18px 0 0;
-    padding: 14px 16px;
-    border: 1px solid color-mix(in srgb, var(--color-accent) 40%, var(--color-border));
-    border-radius: 8px;
-    color: var(--color-text);
-    background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface));
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 1.45;
-}
-
-.location-suggestion-prompt .location-suggestion-link {
-    display: inline;
-    min-height: 0;
+.toolbar-suggestion-link {
+    display: inline-flex;
+    align-items: center;
+    margin: 0 auto;
     padding: 0;
     border: 0;
     border-radius: 0;
     color: var(--color-primary);
     background: none;
     box-shadow: none;
-    font-weight: 800;
-    line-height: inherit;
-    text-decoration: underline;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    text-decoration: none;
+    opacity: 0.85;
+    transition: opacity 160ms ease, color 160ms ease;
 }
 
-.location-suggestion-prompt .location-suggestion-link:hover,
-.location-suggestion-prompt .location-suggestion-link:focus {
+.toolbar-suggestion-link:hover,
+.toolbar-suggestion-link:focus-visible {
     border: 0;
     color: var(--color-primary-dark);
     background: none;
     box-shadow: none;
     text-decoration: underline;
+    opacity: 1;
 }
 
 .business-list-toolbar {
@@ -14824,7 +14818,7 @@ a.admin-stat-link:focus {
     }
 
     #map-panel.is-map-expanded .business-list,
-    #map-panel.is-map-expanded .location-suggestion-prompt {
+    #map-panel.is-map-expanded .toolbar-suggestion-link {
         display: none;
     }
 
@@ -14856,6 +14850,12 @@ a.admin-stat-link:focus {
         align-items: stretch;
         flex-direction: column;
         gap: 6px;
+    }
+
+    .toolbar-suggestion-link {
+        margin: 0;
+        align-self: center;
+        font-size: 0.9rem;
     }
 
     .business-list-toolbar select {
